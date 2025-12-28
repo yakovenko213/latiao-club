@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Latiao Club | KeyCRM Luxury Integration</title>
+    <title>Latiao Club | Luxury CRM Integration</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@200;400;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
 
@@ -22,189 +22,193 @@
         body { background-color: var(--bg-deep); color: #fff; min-height: 100vh; display: flex; overflow-x: hidden; }
         .bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at 50% -20%, #1a150e 0%, #0a0a0a 80%); }
 
-        /* SIDEBAR */
-        .sidebar { width: 280px; background: rgba(5, 5, 5, 0.9); backdrop-filter: blur(20px); border-right: 1px solid var(--glass-border); display: flex; flex-direction: column; padding: 40px 20px; z-index: 100; }
+        .sidebar { width: 280px; background: rgba(5, 5, 5, 0.95); backdrop-filter: blur(20px); border-right: 1px solid var(--glass-border); display: flex; flex-direction: column; padding: 40px 20px; z-index: 100; transition: 0.3s; }
         .logo { font-family: var(--font-title); font-size: 26px; background: var(--gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; letter-spacing: 2px; margin-bottom: 50px; }
         .nav-item { padding: 15px 20px; color: #666; text-transform: uppercase; font-size: 11px; letter-spacing: 2px; cursor: pointer; transition: 0.3s; border-radius: 2px; margin-bottom: 5px; }
         .nav-item:hover, .nav-item.active { background: var(--glass); color: var(--text-gold); padding-left: 25px; }
 
-        /* MAIN CONTENT */
         .main { flex: 1; padding: 50px; max-width: 1200px; margin: 0 auto; animation: fadeIn 0.8s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .glass-card { background: var(--glass); border: 1px solid var(--glass-border); padding: 35px; border-radius: 2px; margin-bottom: 30px; }
+        .glass-card { background: var(--glass); border: 1px solid var(--glass-border); padding: 35px; border-radius: 2px; margin-bottom: 30px; position: relative; }
         .gold-btn { background: var(--gold); color: #000; border: none; padding: 15px 25px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-size: 11px; cursor: pointer; transition: 0.3s; }
         .gold-btn:hover { filter: brightness(1.2); box-shadow: 0 0 15px rgba(197, 160, 89, 0.3); }
 
         .input-luxe { background: transparent; border: none; border-bottom: 1px solid var(--glass-border); color: #fff; padding: 12px 0; width: 100%; font-size: 15px; outline: none; margin-bottom: 25px; }
         
-        /* ORDERS TABLE */
-        .order-row { display: grid; grid-template-columns: 1fr 1fr 1fr; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
-        .status-pill { padding: 2px 8px; border-radius: 10px; font-size: 10px; text-transform: uppercase; background: var(--glass-border); color: var(--gold-static); }
+        .order-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .order-table th { text-align: left; color: var(--gold-static); font-size: 10px; padding: 15px 10px; border-bottom: 1px solid var(--glass-border); }
+        .order-table td { padding: 15px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
+        .status-badge { font-size: 10px; padding: 3px 8px; border: 1px solid var(--gold-static); border-radius: 10px; color: var(--gold-static); text-transform: uppercase; }
 
         .hidden { display: none !important; }
-        @media (max-width: 900px) { body { flex-direction: column; } .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--glass-border); } }
+        .loader { width: 20px; height: 20px; border: 2px solid var(--gold-static); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; margin-right: 10px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div class="bg-overlay"></div>
+<div class="bg-overlay"></div>
 
-    <aside id="sidebar" class="sidebar hidden">
-        <div class="logo">LATIAO CLUB</div>
-        <nav style="flex: 1;">
-            <div class="nav-item active" onclick="showScreen('home')">Кабінет</div>
-            <div class="nav-item" onclick="showScreen('promo')">Привілеї</div>
-            <div class="nav-item" onclick="checkAdmin()">Адмін-панель</div>
-        </nav>
-        <div class="nav-item" onclick="location.reload()" style="color: #833;">Вийти</div>
-    </aside>
+<aside id="sidebar" class="sidebar hidden">
+    <div class="logo">LATIAO CLUB</div>
+    <nav style="flex: 1;">
+        <div class="nav-item active" onclick="showScreen('home')">Кабінет</div>
+        <div class="nav-item" onclick="showScreen('promo')">Привілеї</div>
+        <div class="nav-item" onclick="checkAdmin()">Адмін-панель</div>
+    </nav>
+    <div class="nav-item" onclick="location.reload()" style="color: #833; border-top: 1px solid #222;">Вийти</div>
+</aside>
 
-    <main class="main">
-        <section id="screen-login" style="max-width: 400px; margin: 15vh auto;">
-            <div class="glass-card" style="text-align: center;">
-                <h1 class="logo">ВХІД У КЛУБ</h1>
-                <input type="text" id="login-phone" class="input-luxe" placeholder="ВВЕДІТЬ НОМЕР ТЕЛЕФОНУ">
-                <button class="gold-btn" style="width: 100%;" onclick="login()">Авторизуватись</button>
+<main class="main">
+    <section id="screen-login" style="max-width: 400px; margin: 15vh auto;">
+        <div class="glass-card" style="text-align: center; border-top: 3px solid var(--gold-static);">
+            <h1 class="logo">PRIVATE ENTRY</h1>
+            <p style="font-size: 10px; letter-spacing: 3px; color: #666; margin-bottom: 30px;">ТІЛЬКИ ДЛЯ ЧЛЕНІВ КЛУБУ</p>
+            <input type="text" id="login-phone" class="input-luxe" placeholder="+380000000000">
+            <button class="gold-btn" style="width: 100%;" onclick="login()">Увійти</button>
+        </div>
+    </section>
+
+    <section id="screen-home" class="hidden">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px;">
+            <div>
+                <p style="color: var(--gold-static); letter-spacing: 2px; font-size: 11px;">ПРИВАТНИЙ КАБІНЕТ</p>
+                <h1 id="user-display" class="font-title" style="font-size: 42px;">...</h1>
             </div>
-        </section>
-
-        <section id="screen-home" class="hidden">
-            <h1 id="user-title" class="font-title" style="font-size: 36px; margin-bottom: 30px;">Вітаємо</h1>
-            
-            <div class="glass-card">
-                <p style="font-size: 10px; color: var(--gold-static); letter-spacing: 2px; margin-bottom: 20px;">ВАШІ ЗАМОВЛЕННЯ (KEYCRM)</p>
-                <div id="orders-container">
-                    <p style="color: #666; font-size: 12px;">Завантаження даних...</p>
-                </div>
+            <div id="sync-status"></div>
+        </div>
+        
+        <div class="glass-card">
+            <h3 style="font-family: var(--font-title); color: var(--gold-static); margin-bottom: 20px;">Історія ваших замовлень</h3>
+            <div id="orders-list">
+                <div class="loader"></div> <span style="color: #666;">З'єднуємо з KeyCRM...</span>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <section id="screen-admin" class="hidden">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-                <h2 class="font-title">Налаштування Системи</h2>
-                <button class="gold-btn" onclick="showScreen('home')">Назад</button>
-            </div>
+    <section id="screen-admin" class="hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
+            <h2 class="font-title" style="font-size: 32px;">Конфігурація</h2>
+            <button class="gold-btn" onclick="showScreen('home')">Закрити</button>
+        </div>
 
-            <div class="glass-card">
-                <p style="font-size: 10px; color: var(--gold-static); margin-bottom: 15px;">ІНТЕГРАЦІЯ KEYCRM</p>
-                <input type="password" id="keycrm-api-input" class="input-luxe" placeholder="ВСТАВТЕ ВАШ API KEY">
-                <button class="gold-btn" onclick="saveApiKey()">Зберегти Ключ</button>
-                <p id="api-status" style="margin-top: 10px; font-size: 11px;"></p>
-            </div>
-
-            <div class="glass-card">
-                <p style="font-size: 10px; color: var(--gold-static);">ЛОГ КОРИСТУВАЧІВ</p>
-                <div id="admin-user-list" style="margin-top: 20px;"></div>
-            </div>
-        </section>
-    </main>
+        <div class="glass-card">
+            <h3 style="color: var(--gold-static); font-size: 12px; letter-spacing: 2px; margin-bottom: 20px;">API КЛЮЧ KEYCRM</h3>
+            <input type="password" id="api-key-val" class="input-luxe" placeholder="Введіть ключ...">
+            <button class="gold-btn" onclick="saveConfig()">Оновити систему</button>
+            <p id="admin-msg" style="margin-top: 15px; font-size: 11px;"></p>
+        </div>
+    </section>
+</main>
 
 <script>
-    const DB_KEY = 'latiao_keycrm_db';
-    let db = JSON.parse(localStorage.getItem(DB_KEY)) || {
-        apiKey: '',
-        users: []
+    const CONFIG = {
+        db_key: 'latiao_luxe_keycrm',
+        admin_pass: 'latiao2026',
+        // Проксі для обходу CORS (якщо не працює, можна спробувати інший)
+        proxy: 'https://api.allorigins.win/get?url='
     };
 
+    let state = JSON.parse(localStorage.getItem(CONFIG.db_key)) || { apiKey: '', users: [] };
     let currentUser = null;
 
-    function save() { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+    function save() { localStorage.setItem(CONFIG.db_key, JSON.stringify(state)); }
 
     function showScreen(id) {
         document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
         document.getElementById(`screen-${id}`).classList.remove('hidden');
-        if(id === 'home') fetchOrders();
-        if(id === 'admin') renderAdmin();
+        if(id === 'home') loadKeyCRMData();
+        if(id === 'admin') document.getElementById('api-key-val').value = state.apiKey;
     }
 
     function login() {
         const phone = document.getElementById('login-phone').value.trim();
-        if(!phone) return alert('Введіть телефон');
-        
-        let user = db.users.find(u => u.phone === phone);
-        if(!user) {
-            user = { phone, name: 'Гість Клубу', joined: new Date().toLocaleDateString() };
-            db.users.push(user);
-            save();
-        }
-        currentUser = user;
+        if(!phone) return alert('Введіть номер телефону');
+        currentUser = { phone };
         document.getElementById('screen-login').classList.add('hidden');
         document.getElementById('sidebar').classList.remove('hidden');
         showScreen('home');
     }
 
-    // --- KEYCRM INTEGRATION ---
-    async function fetchOrders() {
-        const container = document.getElementById('orders-container');
-        document.getElementById('user-title').innerText = `Вітаємо, ${currentUser.phone}`;
+    async function loadKeyCRMData() {
+        const listContainer = document.getElementById('orders-list');
+        const syncStatus = document.getElementById('sync-status');
+        document.getElementById('user-display').innerText = currentUser.phone;
 
-        if(!db.apiKey) {
-            container.innerHTML = `<p style="color:#833;">Ключ API не налаштовано в адмінці.</p>`;
+        if(!state.apiKey) {
+            listContainer.innerHTML = `<p style="color:#844;">Система не налаштована. Зверніться до адміністратора.</p>`;
             return;
         }
 
+        syncStatus.innerHTML = `<div class="loader"></div>`;
+
         try {
-            // Використовуємо CORS Proxy для локальної роботи (оскільки KeyCRM не пустить запит прямо з браузера через CORS)
-            const proxy = "https://api.allorigins.win/raw?url=";
-            const targetUrl = `https://openapi.keycrm.app/v1/order?filter[contact_phone]=${currentUser.phone}`;
+            // Формуємо URL для запиту замовлень конкретного клієнта за телефоном
+            // Використовуємо filter[query], що шукає по контактах
+            const apiUrl = `https://openapi.keycrm.app/v1/order?filter[contact_phone]=${encodeURIComponent(currentUser.phone)}&include=status`;
             
-            const response = await fetch(proxy + encodeURIComponent(targetUrl), {
-                method: 'GET',
+            // Запит через проксі для обходу CORS
+            const response = await fetch(CONFIG.proxy + encodeURIComponent(apiUrl), {
                 headers: {
-                    'Authorization': `Bearer ${db.apiKey}`,
+                    'Authorization': `Bearer ${state.apiKey}`,
                     'Accept': 'application/json'
                 }
             });
 
-            const data = await response.json();
-            
-            if(data.data && data.data.length > 0) {
-                let html = `
-                    <div class="order-row" style="color: var(--gold-static); border-bottom: 2px solid var(--glass-border);">
-                        <span>НОМЕР</span><span>СУМА</span><span>СТАТУС</span>
-                    </div>`;
-                data.data.forEach(order => {
-                    html += `
-                        <div class="order-row">
-                            <span>#${order.id}</span>
-                            <span>${order.grand_total} ${order.currency_code}</span>
-                            <span><span class="status-pill">${order.status_id}</span></span>
-                        </div>`;
-                });
-                container.innerHTML = html;
+            const proxyData = await response.json();
+            // AllOrigins повертає дані в полі "contents" як рядок, треба розпарсити
+            const data = JSON.parse(proxyData.contents);
+
+            if(data && data.data) {
+                if(data.data.length === 0) {
+                    listContainer.innerHTML = `<p style="color:#666;">Замовлень не знайдено для цього номера.</p>`;
+                } else {
+                    let table = `
+                        <table class="order-table">
+                            <thead>
+                                <tr><th>ДАТА</th><th>ЗАМОВЛЕННЯ</th><th>СУМА</th><th>СТАТУС</th></tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.data.forEach(order => {
+                        const date = new Date(order.created_at).toLocaleDateString('uk-UA');
+                        table += `
+                            <tr>
+                                <td style="color:#666">${date}</td>
+                                <td><b>#${order.id}</b></td>
+                                <td style="color:var(--text-gold)">${order.grand_total} ${order.currency_code || 'грн'}</td>
+                                <td><span class="status-badge">${order.status?.name || 'В обробці'}</span></td>
+                            </tr>
+                        `;
+                    });
+                    table += `</tbody></table>`;
+                    listContainer.innerHTML = table;
+                }
+                syncStatus.innerHTML = `<span style="color:#4a4; font-size:10px;">● Синхронізовано</span>`;
             } else {
-                container.innerHTML = `<p style="color:#666;">Замовлень за цим номером не знайдено.</p>`;
+                throw new Error("Invalid format");
             }
-        } catch (e) {
-            container.innerHTML = `<p style="color:#833;">Помилка запиту до KeyCRM. Перевірте API ключ.</p>`;
+        } catch (err) {
+            console.error(err);
+            listContainer.innerHTML = `<p style="color:#844;">Помилка зв'язку з CRM. Перевірте API ключ в адмін-панелі або CORS доступ.</p>`;
+            syncStatus.innerHTML = `<span style="color:#a44; font-size:10px;">○ Помилка API</span>`;
         }
     }
 
-    // --- ADMIN LOGIC ---
     function checkAdmin() {
-        if(prompt('ВВЕДІТЬ ПАРОЛЬ:') === 'latiao2026') showScreen('admin');
+        if(prompt('ПАРОЛЬ АДМІНІСТРАТОРА:') === CONFIG.admin_pass) showScreen('admin');
     }
 
-    function saveApiKey() {
-        const key = document.getElementById('keycrm-api-input').value.trim();
-        if(key) {
-            db.apiKey = key;
-            save();
-            document.getElementById('api-status').innerText = 'Ключ збережено успішно!';
-            document.getElementById('api-status').style.color = '#4a4';
-        }
-    }
-
-    function renderAdmin() {
-        document.getElementById('keycrm-api-input').value = db.apiKey;
-        const list = document.getElementById('admin-user-list');
-        list.innerHTML = db.users.map(u => `
-            <div style="font-size:12px; margin-bottom:10px; border-bottom:1px solid #222; padding-bottom:5px;">
-                📞 ${u.phone} | Приєднався: ${u.joined}
-            </div>
-        `).join('');
+    function saveConfig() {
+        const key = document.getElementById('api-key-val').value.trim();
+        state.apiKey = key;
+        save();
+        const msg = document.getElementById('admin-msg');
+        msg.innerText = "Конфігурацію оновлено. Перевіряємо з'єднання...";
+        msg.style.color = "#c5a059";
     }
 </script>
+
 </body>
 </html>
