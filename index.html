@@ -107,7 +107,7 @@
             <input type="password" id="user-pass" class="luxe-input" placeholder="Пароль">
             
             <button class="premium-btn" style="width: 100%; justify-content: center;" onclick="handleUnifiedLogin()">Увійти</button>
-            <p style="margin-top: 20px; font-size: 11px; color: var(--text-muted); cursor: pointer;" onclick="alert('Логін admin, пароль latiao_admin')">Вхід для персоналу</p>
+            <p style="margin-top: 20px; font-size: 11px; color: var(--text-muted); cursor: pointer;" onclick="alert('Логін: admin, Пароль: latiao_admin')">Вхід для персоналу</p>
         </div>
     </div>
 
@@ -189,17 +189,25 @@
     </div>
 
     <script>
+        // Ініціалізація бази
         const DB_KEY = 'latiao_luxury_db';
         let state = JSON.parse(localStorage.getItem(DB_KEY)) || { users: [], botUsers: [], settings: { tgToken: '' } };
         let selectedBotUser = null;
 
         function save() { localStorage.setItem(DB_KEY, JSON.stringify(state)); }
 
+        // ВИПРАВЛЕНА ЛОГІКА ВХОДУ
         function handleUnifiedLogin() {
-            const login = document.getElementById('user-login').value.trim();
-            const pass = document.getElementById('user-pass').value.trim();
+            const loginInput = document.getElementById('user-login').value.trim().toLowerCase();
+            const passInput = document.getElementById('user-pass').value.trim();
 
-            if (login === 'admin' && pass === 'latiao_admin') {
+            if (!loginInput || !passInput) {
+                alert("Заповніть всі поля");
+                return;
+            }
+
+            // Перевірка на адміна
+            if (loginInput === 'admin' && passInput === 'latiao_admin') {
                 document.getElementById('unified-auth').classList.add('hidden');
                 document.getElementById('admin-suite').classList.remove('hidden');
                 document.getElementById('tg-token-field').value = state.settings.tgToken;
@@ -208,14 +216,18 @@
                 return;
             }
 
-            const user = state.users.find(u => u.login === login && u.pass === pass);
+            // Пошук клієнта в базі (localStorage)
+            const user = state.users.find(u => u.login.toLowerCase() === loginInput && u.pass === passInput);
+            
             if (user) {
                 document.getElementById('unified-auth').classList.add('hidden');
                 document.getElementById('client-cabinet').classList.remove('hidden');
                 document.getElementById('client-welcome').innerText = `Вітаємо, ${user.pib}`;
                 document.getElementById('client-phone').innerText = user.phone;
             } else {
-                alert("Невірний логін або пароль. Переконайтеся, що ви вводите логін англійською.");
+                alert("Помилка: Логін або Пароль не вірні. Перевірте дані з Telegram повідомлення.");
+                console.log("Спроба входу:", loginInput, passInput);
+                console.log("Доступні користувачі в базі:", state.users);
             }
         }
 
@@ -239,6 +251,7 @@
 
         function renderBotUsers() {
             const container = document.getElementById('bot-users-container');
+            if(!container) return;
             document.getElementById('bot-count').innerText = state.botUsers.length;
             container.innerHTML = '';
             state.botUsers.forEach(u => {
@@ -264,14 +277,15 @@
             const phone = document.getElementById('reg-phone').value.trim();
             if(!pib || !phone) return alert("Заповніть дані");
 
-            // ГЕНЕРАЦІЯ АНГЛІЙСЬКОГО ЛОГІНУ
-            const login = "latiao_" + Math.floor(1000 + Math.random() * 8999);
+            // ГЕНЕРАЦІЯ ЛОГІНУ (тільки англійська)
+            const randomID = Math.floor(1000 + Math.random() * 8999);
+            const login = "latiao_" + randomID;
             const pass = Math.floor(1000 + Math.random() * 8999).toString();
 
             state.users.push({ tgId: selectedBotUser.id, pib, phone, login, pass });
             save();
 
-            const msg = `🔐 Вітаємо у Latiao Club!\n\nВаші дані для входу в кабінет:\nЛогін: ${login}\nПароль: ${pass}\n\nНе передавайте ці дані третім особам.`;
+            const msg = `🔐 Вітаємо у Latiao Club!\n\nВаші дані для входу в кабінет:\nЛогін: ${login}\nПароль: ${pass}\n\nВведіть ці дані на сайті клубу.`;
             
             try {
                 await fetch(`https://api.telegram.org/bot${state.settings.tgToken}/sendMessage`, {
@@ -279,7 +293,7 @@
                     body: JSON.stringify({ chat_id: selectedBotUser.id, text: msg })
                 });
                 alert(`Клієнта зареєстровано! Логін: ${login}`);
-            } catch(e) { alert("Клієнта додано, але не вдалося надіслати повідомлення в ТГ."); }
+            } catch(e) { alert("Клієнта додано, але не вдалося надіслати повідомлення."); }
 
             document.getElementById('register-modal').classList.add('hidden');
             renderBotUsers();
@@ -287,7 +301,9 @@
         }
 
         function renderClients() {
-            document.getElementById('clients-table-body').innerHTML = state.users.map(u => 
+            const tableBody = document.getElementById('clients-table-body');
+            if(!tableBody) return;
+            tableBody.innerHTML = state.users.map(u => 
                 `<tr><td>${u.pib}</td><td><code>${u.login}</code></td><td><code>${u.pass}</code></td><td>${u.phone}</td></tr>`
             ).join('');
         }
@@ -303,6 +319,11 @@
             state.settings.tgToken = document.getElementById('tg-token-field').value.trim();
             save(); alert("Збережено");
         }
+
+        // Початковий рендер
+        window.onload = () => {
+            if (state.users.length > 0) renderClients();
+        };
     </script>
 </body>
 </html>
