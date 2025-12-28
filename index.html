@@ -3,212 +3,790 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Latiao Club | Luxury CRM Integration</title>
+    <title>Latiao Club | Premium Loyal System</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@200;400;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
-
         :root {
-            --gold: linear-gradient(135deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c);
-            --gold-static: #c5a059;
-            --bg-deep: #0a0a0a;
-            --glass: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(197, 160, 89, 0.2);
-            --text-gold: #e2c275;
-            --font-main: 'Montserrat', sans-serif;
-            --font-title: 'Playfair Display', serif;
+            --primary: #FF6B00;
+            --primary-light: #FF8533;
+            --dark: #1A1A1A;
+            --bg: #F8F9FA;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --border: rgba(0, 0, 0, 0.05);
+            --text-main: #2D2D2D;
+            --text-muted: #757575;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+            --glass: blur(12px) saturate(180%);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-main); }
-        body { background-color: var(--bg-deep); color: #fff; min-height: 100vh; display: flex; overflow-x: hidden; }
-        .bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at 50% -20%, #1a150e 0%, #0a0a0a 80%); }
+        [data-theme="dark"] {
+            --bg: #0F0F0F;
+            --card-bg: rgba(30, 30, 30, 0.8);
+            --border: rgba(255, 255, 255, 0.05);
+            --text-main: #EDEDED;
+            --text-muted: #A0A0A0;
+            --shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
 
-        .sidebar { width: 280px; background: rgba(5, 5, 5, 0.95); backdrop-filter: blur(20px); border-right: 1px solid var(--glass-border); display: flex; flex-direction: column; padding: 40px 20px; z-index: 100; transition: 0.3s; }
-        .logo { font-family: var(--font-title); font-size: 26px; background: var(--gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; letter-spacing: 2px; margin-bottom: 50px; }
-        .nav-item { padding: 15px 20px; color: #666; text-transform: uppercase; font-size: 11px; letter-spacing: 2px; cursor: pointer; transition: 0.3s; border-radius: 2px; margin-bottom: 5px; }
-        .nav-item:hover, .nav-item.active { background: var(--glass); color: var(--text-gold); padding-left: 25px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, sans-serif; }
+        body { background: var(--bg); color: var(--text-main); transition: var(--transition); min-height: 100vh; overflow-x: hidden; }
 
-        .main { flex: 1; padding: 50px; max-width: 1200px; margin: 0 auto; animation: fadeIn 0.8s ease; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        .glass-card { background: var(--glass); border: 1px solid var(--glass-border); padding: 35px; border-radius: 2px; margin-bottom: 30px; position: relative; }
-        .gold-btn { background: var(--gold); color: #000; border: none; padding: 15px 25px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-size: 11px; cursor: pointer; transition: 0.3s; }
-        .gold-btn:hover { filter: brightness(1.2); box-shadow: 0 0 15px rgba(197, 160, 89, 0.3); }
-
-        .input-luxe { background: transparent; border: none; border-bottom: 1px solid var(--glass-border); color: #fff; padding: 12px 0; width: 100%; font-size: 15px; outline: none; margin-bottom: 25px; }
-        
-        .order-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .order-table th { text-align: left; color: var(--gold-static); font-size: 10px; padding: 15px 10px; border-bottom: 1px solid var(--glass-border); }
-        .order-table td { padding: 15px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
-        .status-badge { font-size: 10px; padding: 3px 8px; border: 1px solid var(--gold-static); border-radius: 10px; color: var(--gold-static); text-transform: uppercase; }
-
+        /* Utils */
         .hidden { display: none !important; }
-        .loader { width: 20px; height: 20px; border: 2px solid var(--gold-static); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; margin-right: 10px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .glass { background: var(--card-bg); backdrop-filter: var(--glass); -webkit-backdrop-filter: var(--glass); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow); }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .flex { display: flex; align-items: center; gap: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .btn { padding: 12px 24px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; transition: var(--transition); text-align: center; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-light); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255, 107, 0, 0.3); }
+        .btn-secondary { background: var(--dark); color: white; }
+        .badge { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+
+        /* Typography */
+        h1, h2, h3 { font-weight: 800; letter-spacing: -0.5px; }
+        .text-orange { color: var(--primary); }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate { animation: fadeIn 0.5s ease forwards; }
+
+        /* Sidebar/Header */
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .logo { font-size: 24px; font-weight: 900; letter-spacing: -1px; }
+
+        /* Progress Bar */
+        .progress-container { width: 100%; height: 8px; background: rgba(0,0,0,0.05); border-radius: 10px; margin: 15px 0; overflow: hidden; }
+        .progress-bar { height: 100%; background: var(--primary); width: 0%; transition: width 1s ease; }
+
+        /* Stats Card */
+        .stat-card { padding: 25px; display: flex; flex-direction: column; gap: 10px; }
+        .stat-val { font-size: 28px; font-weight: 800; }
+        .stat-label { font-size: 14px; color: var(--text-muted); }
+
+        /* Inputs */
+        input, select, textarea { 
+            width: 100%; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border); 
+            background: var(--card-bg); color: var(--text-main); outline: none; transition: var(--transition);
+        }
+        input:focus { border-color: var(--primary); }
+
+        /* Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        
+        /* Form elements */
+        .form-group { margin-bottom: 15px; }
+        .form-label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; }
+
+        /* Admin Table */
+        .admin-table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { text-align: left; padding: 15px; border-bottom: 1px solid var(--border); }
+        th { color: var(--text-muted); font-size: 12px; text-transform: uppercase; }
+
+        /* Responsive Mobile */
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+            .logo { font-size: 20px; }
+        }
     </style>
 </head>
-<body>
+<body data-theme="light">
 
-<div class="bg-overlay"></div>
-
-<aside id="sidebar" class="sidebar hidden">
-    <div class="logo">LATIAO CLUB</div>
-    <nav style="flex: 1;">
-        <div class="nav-item active" onclick="showScreen('home')">Кабінет</div>
-        <div class="nav-item" onclick="showScreen('promo')">Привілеї</div>
-        <div class="nav-item" onclick="checkAdmin()">Адмін-панель</div>
-    </nav>
-    <div class="nav-item" onclick="location.reload()" style="color: #833; border-top: 1px solid #222;">Вийти</div>
-</aside>
-
-<main class="main">
-    <section id="screen-login" style="max-width: 400px; margin: 15vh auto;">
-        <div class="glass-card" style="text-align: center; border-top: 3px solid var(--gold-static);">
-            <h1 class="logo">PRIVATE ENTRY</h1>
-            <p style="font-size: 10px; letter-spacing: 3px; color: #666; margin-bottom: 30px;">ТІЛЬКИ ДЛЯ ЧЛЕНІВ КЛУБУ</p>
-            <input type="text" id="login-phone" class="input-luxe" placeholder="+380000000000">
-            <button class="gold-btn" style="width: 100%;" onclick="login()">Увійти</button>
-        </div>
-    </section>
-
-    <section id="screen-home" class="hidden">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px;">
-            <div>
-                <p style="color: var(--gold-static); letter-spacing: 2px; font-size: 11px;">ПРИВАТНИЙ КАБІНЕТ</p>
-                <h1 id="user-display" class="font-title" style="font-size: 42px;">...</h1>
+    <div id="login-screen" class="container" style="max-width: 450px; margin-top: 10vh;">
+        <div class="glass animate" style="padding: 40px; text-align: center;">
+            <div class="logo" style="margin-bottom: 10px;">LATIAO <span class="text-orange">CLUB</span></div>
+            <p style="color: var(--text-muted); margin-bottom: 30px;">Ввійдіть за номером телефону</p>
+            <div class="form-group" style="text-align: left;">
+                <label class="form-label">Телефон</label>
+                <input type="text" id="login-phone" placeholder="099 123 45 67">
             </div>
-            <div id="sync-status"></div>
+            <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="handleLogin()">Увійти</button>
+            <button class="btn" style="margin-top: 20px; font-size: 13px; color: var(--text-muted);" onclick="showAdminLogin()">Вхід для персоналу</button>
         </div>
-        
-        <div class="glass-card">
-            <h3 style="font-family: var(--font-title); color: var(--gold-static); margin-bottom: 20px;">Історія ваших замовлень</h3>
-            <div id="orders-list">
-                <div class="loader"></div> <span style="color: #666;">З'єднуємо з KeyCRM...</span>
+    </div>
+
+    <div id="birthday-modal" class="modal-overlay hidden">
+        <div class="glass animate" style="padding: 30px; width: 90%; max-width: 400px;">
+            <h3>Привіт! 🎁</h3>
+            <p style="font-size: 14px; margin: 15px 0;">Нам важливо знати дату твого народження, щоб дарувати особливі бонуси.</p>
+            <div class="form-group">
+                <label class="form-label">Ваше ім'я</label>
+                <input type="text" id="set-name" placeholder="Іван">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Дата народження</label>
+                <input type="date" id="set-dob">
+            </div>
+            <button class="btn btn-primary" style="width: 100%;" onclick="saveBirthday()">Зберегти та почати</button>
+        </div>
+    </div>
+
+    <div id="client-app" class="hidden animate">
+        <header class="container">
+            <div class="logo">LATIAO <span class="text-orange">CLUB</span></div>
+            <div class="flex">
+                <span id="header-name" style="font-weight: 600;"></span>
+                <button class="btn btn-secondary" style="padding: 8px 15px; font-size: 12px;" onclick="logout()">Вийти</button>
+            </div>
+        </header>
+
+        <main class="container">
+            <div class="grid" style="margin-bottom: 30px;">
+                <div class="glass stat-card">
+                    <span class="stat-label">Замовлень</span>
+                    <span class="stat-val" id="stat-orders">0</span>
+                </div>
+                <div class="glass stat-card">
+                    <span class="stat-label">Витрачено</span>
+                    <span class="stat-val"><span id="stat-spent">0</span> <small>грн</small></span>
+                </div>
+                <div class="glass stat-card">
+                    <span class="stat-label">Пачок з'їдено</span>
+                    <span class="stat-val" id="stat-packs">0</span>
+                </div>
+                <div class="glass stat-card">
+                    <span class="stat-label">Ви з нами</span>
+                    <span class="stat-val" id="stat-time" style="font-size: 16px; font-weight: 700;">0д 0г 0хв</span>
+                </div>
+            </div>
+
+            <div class="grid" style="grid-template-columns: 2fr 1fr; align-items: start;">
+                <div style="display: flex; flex-direction: column; gap: 30px;">
+                    <div class="glass" style="padding: 30px;">
+                        <div class="flex" style="justify-content: space-between;">
+                            <h3>Ваш статус: <span id="rank-name" class="text-orange">New</span></h3>
+                            <span id="rank-badge" class="badge" style="background: #E0E0E0; color: #333;">NEW</span>
+                        </div>
+                        <div class="progress-container">
+                            <div id="rank-progress" class="progress-bar"></div>
+                        </div>
+                        <div class="flex" style="justify-content: space-between; font-size: 14px;">
+                            <span id="progress-spent">0 грн</span>
+                            <span id="next-rank-info" style="color: var(--text-muted);">До VIP ще 5000 грн</span>
+                        </div>
+                        <div id="rank-perks" style="margin-top: 20px; font-size: 14px; background: rgba(255,107,0,0.05); padding: 15px; border-radius: 12px;">
+                            <b>Бонуси рівня:</b> <span id="rank-perks-text">Знижка 0%</span>
+                        </div>
+                    </div>
+
+                    <div class="glass" style="padding: 30px;">
+                        <h3 style="margin-bottom: 20px;">Ваші промокоди</h3>
+                        <div id="promo-list" style="display: flex; flex-direction: column; gap: 15px;">
+                            </div>
+                    </div>
+
+                    <div class="glass" style="padding: 30px; border-left: 5px solid #27AE60;">
+                        <div class="flex" style="justify-content: space-between;">
+                            <h3>Безкоштовні доставки</h3>
+                            <span style="font-size: 24px; font-weight: 800;" id="free-delivery-count">0</span>
+                        </div>
+                        <p style="font-size: 14px; color: var(--text-muted); margin-top: 10px;">
+                            Доступно у цьому місяці. <span id="delivery-warning" class="hidden" style="color: #E74C3C; font-weight: 700;">⚠ Згорять за 3 дні!</span>
+                        </p>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 30px;">
+                    <div class="glass" style="padding: 25px;">
+                        <h4 style="margin-bottom: 15px;">Підписки</h4>
+                        <div class="form-group flex" style="gap: 10px;">
+                            <input type="checkbox" id="sub-supply" style="width: auto;" onchange="updateSubs()">
+                            <label style="font-size: 14px;">Нові поставки</label>
+                        </div>
+                        <div class="form-group flex" style="gap: 10px;">
+                            <input type="checkbox" id="sub-promo" style="width: auto;" onchange="updateSubs()">
+                            <label style="font-size: 14px;">Акції та новинки</label>
+                        </div>
+                    </div>
+
+                    <div class="glass" style="padding: 25px;">
+                        <h4 style="margin-bottom: 15px;">Підтримка</h4>
+                        <input type="text" id="support-subject" placeholder="Тема" style="margin-bottom: 10px; font-size: 13px;">
+                        <textarea id="support-msg" placeholder="Опишіть проблему..." style="height: 80px; font-size: 13px; margin-bottom: 10px;"></textarea>
+                        <button class="btn btn-secondary" style="width: 100%; font-size: 13px;" onclick="sendSupport()">Надіслати</button>
+                    </div>
+
+                    <div class="glass" style="padding: 25px;">
+                        <h4 style="margin-bottom: 15px;">Посилання</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <a href="#" class="btn btn-secondary" style="font-size: 11px; text-decoration: none;">Instagram</a>
+                            <a href="#" class="btn btn-secondary" style="font-size: 11px; text-decoration: none; background: #0088cc;">Telegram</a>
+                            <a href="#" class="btn btn-secondary" style="font-size: 11px; text-decoration: none; background: #000;">TikTok</a>
+                            <a href="#" class="btn btn-primary" style="font-size: 11px; text-decoration: none;">Сайт</a>
+                        </div>
+                        <a href="#" class="btn btn-secondary" style="width: 100%; margin-top: 10px; font-size: 11px; text-decoration: none; background: #444;">Оптовий канал</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="admin-login-screen" class="container hidden" style="max-width: 400px; margin-top: 15vh;">
+        <div class="glass animate" style="padding: 40px;">
+            <h2 style="margin-bottom: 20px;">Вхід в Адмін-панель</h2>
+            <div class="form-group">
+                <input type="password" id="admin-pass-input" placeholder="Пароль">
+            </div>
+            <button class="btn btn-primary" style="width: 100%;" onclick="handleAdminLogin()">Увійти</button>
+            <button class="btn" style="width: 100%; margin-top: 10px; font-size: 13px;" onclick="showClientLogin()">Назад до клубу</button>
+        </div>
+    </div>
+
+    <div id="admin-panel" class="hidden animate">
+        <header class="container" style="border-bottom: 1px solid var(--border); padding-bottom: 20px;">
+            <div class="logo">LATIAO <span class="text-orange">ADMIN</span></div>
+            <div class="flex">
+                <button class="btn" onclick="toggleTheme()" id="theme-toggle">🌙</button>
+                <button class="btn btn-secondary" onclick="logout()">Вихід</button>
+            </div>
+        </header>
+
+        <main class="container">
+            <div class="flex" style="margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+                <button class="btn" style="background: none; color: var(--text-main);" onclick="showAdminTab('customers')">Клієнти</button>
+                <button class="btn" style="background: none; color: var(--text-main);" onclick="showAdminTab('promos')">Промокоди</button>
+                <button class="btn" style="background: none; color: var(--text-main);" onclick="showAdminTab('analytics')">Аналітика</button>
+                <button class="btn" style="background: none; color: var(--text-main);" onclick="showAdminTab('settings')">Налаштування</button>
+            </div>
+
+            <div id="tab-customers" class="admin-tab">
+                <div class="flex" style="justify-content: space-between;">
+                    <h3>Управління клієнтами</h3>
+                </div>
+                <div class="glass" style="margin-top: 20px; padding: 20px;">
+                    <div class="admin-table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Клієнт</th>
+                                    <th>Витрати</th>
+                                    <th>Доставки</th>
+                                    <th>Рівень</th>
+                                    <th>Дії</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-user-table-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-promos" class="admin-tab hidden">
+                <div class="grid" style="grid-template-columns: 1fr 2fr;">
+                    <div class="glass" style="padding: 25px;">
+                        <h4 style="margin-bottom: 15px;">Створити промокод</h4>
+                        <div class="form-group">
+                            <label class="form-label">Код</label>
+                            <input type="text" id="new-promo-code" placeholder="NEW2024">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Тип</label>
+                            <select id="new-promo-type">
+                                <option value="discount">Знижка %</option>
+                                <option value="delivery">Безкоштовна доставка</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Значення / Мін. сума</label>
+                            <input type="number" id="new-promo-val" placeholder="10">
+                        </div>
+                        <button class="btn btn-primary" style="width: 100%;" onclick="createPromo()">Створити</button>
+                    </div>
+                    <div class="glass" style="padding: 25px;">
+                        <h4 style="margin-bottom: 15px;">Всі промокоди</h4>
+                        <div id="admin-promo-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-analytics" class="admin-tab hidden">
+                <div class="grid">
+                    <div class="glass stat-card">
+                        <span class="stat-label">Всього клієнтів</span>
+                        <span class="stat-val" id="total-customers">0</span>
+                    </div>
+                    <div class="glass stat-card">
+                        <span class="stat-label">Загальний оборот</span>
+                        <span class="stat-val" id="total-revenue">0 грн</span>
+                    </div>
+                    <div class="glass stat-card">
+                        <span class="stat-label">Використано промо</span>
+                        <span class="stat-val" id="total-promos-used">0</span>
+                    </div>
+                </div>
+                <div class="glass" style="margin-top: 30px; padding: 30px;">
+                    <h3>ТОП Клієнтів</h3>
+                    <div id="top-customers-list"></div>
+                </div>
+            </div>
+
+            <div id="tab-settings" class="admin-tab hidden">
+                <div class="glass" style="max-width: 600px; padding: 30px;">
+                    <h3>Налаштування Telegram</h3>
+                    <div class="form-group">
+                        <label class="form-label">Telegram Bot Token</label>
+                        <input type="text" id="tg-token" placeholder="7123456:ABC-DEF...">
+                    </div>
+                    <button class="btn btn-primary" onclick="saveSettings()">Зберегти налаштування</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="edit-user-modal" class="modal-overlay hidden">
+        <div class="glass animate" style="padding: 30px; width: 95%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
+            <div class="flex" style="justify-content: space-between; margin-bottom: 20px;">
+                <h3 id="edit-user-title">Редагування клієнта</h3>
+                <button onclick="closeModal('edit-user-modal')">✖</button>
+            </div>
+            
+            <div class="grid" style="grid-template-columns: 1fr 1fr;">
+                <div>
+                    <div class="form-group">
+                        <label class="form-label">Ім'я</label>
+                        <input type="text" id="edit-user-name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Витрати (грн)</label>
+                        <input type="number" id="edit-user-spent">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Пачки (шт)</label>
+                        <input type="number" id="edit-user-packs">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Замовлення (шт)</label>
+                        <input type="number" id="edit-user-orders">
+                    </div>
+                </div>
+                <div>
+                    <div class="form-group">
+                        <label class="form-label">Безкоштовні доставки</label>
+                        <input type="number" id="edit-user-deliveries">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Telegram ID</label>
+                        <input type="text" id="edit-user-tg">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Статус</label>
+                        <select id="edit-user-status">
+                            <option value="active">Активний</option>
+                            <option value="blocked">Заблокований</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="saveUserEdit()">Зберегти зміни</button>
+                <button class="btn btn-secondary" id="tg-msg-btn">Написати в Telegram</button>
             </div>
         </div>
-    </section>
+    </div>
 
-    <section id="screen-admin" class="hidden">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
-            <h2 class="font-title" style="font-size: 32px;">Конфігурація</h2>
-            <button class="gold-btn" onclick="showScreen('home')">Закрити</button>
-        </div>
+    <script>
+        // --- INITIAL DATA & MODELS ---
+        const RANKS = [
+            { id: 'new', name: 'New', min: 0, perks: 'Знижка 0%', color: '#95A5A6' },
+            { id: 'regular', name: 'Regular', min: 1000, perks: 'Знижка 3% + 1 дост.', color: '#3498DB' },
+            { id: 'vip', name: 'VIP', min: 5000, perks: 'Знижка 7% + 3 дост.', color: '#9B59B6' },
+            { id: 'legend', name: 'Legend', min: 15000, perks: 'Знижка 15% + Безлім дост.', color: '#F1C40F' }
+        ];
 
-        <div class="glass-card">
-            <h3 style="color: var(--gold-static); font-size: 12px; letter-spacing: 2px; margin-bottom: 20px;">API КЛЮЧ KEYCRM</h3>
-            <input type="password" id="api-key-val" class="input-luxe" placeholder="Введіть ключ...">
-            <button class="gold-btn" onclick="saveConfig()">Оновити систему</button>
-            <p id="admin-msg" style="margin-top: 15px; font-size: 11px;"></p>
-        </div>
-    </section>
-</main>
+        let state = {
+            users: JSON.parse(localStorage.getItem('lc_users')) || [],
+            promos: JSON.parse(localStorage.getItem('lc_promos')) || [
+                { id: 1, code: 'WELCOME', type: 'discount', val: 10, min: 200, status: 'active' }
+            ],
+            settings: JSON.parse(localStorage.getItem('lc_settings')) || {
+                tgToken: '',
+                theme: 'light'
+            },
+            currentUserPhone: localStorage.getItem('lc_current_user') || null
+        };
 
-<script>
-    const CONFIG = {
-        db_key: 'latiao_luxe_keycrm',
-        admin_pass: 'latiao2026',
-        // Проксі для обходу CORS (якщо не працює, можна спробувати інший)
-        proxy: 'https://api.allorigins.win/get?url='
-    };
-
-    let state = JSON.parse(localStorage.getItem(CONFIG.db_key)) || { apiKey: '', users: [] };
-    let currentUser = null;
-
-    function save() { localStorage.setItem(CONFIG.db_key, JSON.stringify(state)); }
-
-    function showScreen(id) {
-        document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
-        document.getElementById(`screen-${id}`).classList.remove('hidden');
-        if(id === 'home') loadKeyCRMData();
-        if(id === 'admin') document.getElementById('api-key-val').value = state.apiKey;
-    }
-
-    function login() {
-        const phone = document.getElementById('login-phone').value.trim();
-        if(!phone) return alert('Введіть номер телефону');
-        currentUser = { phone };
-        document.getElementById('screen-login').classList.add('hidden');
-        document.getElementById('sidebar').classList.remove('hidden');
-        showScreen('home');
-    }
-
-    async function loadKeyCRMData() {
-        const listContainer = document.getElementById('orders-list');
-        const syncStatus = document.getElementById('sync-status');
-        document.getElementById('user-display').innerText = currentUser.phone;
-
-        if(!state.apiKey) {
-            listContainer.innerHTML = `<p style="color:#844;">Система не налаштована. Зверніться до адміністратора.</p>`;
-            return;
+        // --- CORE FUNCTIONS ---
+        function saveState() {
+            localStorage.setItem('lc_users', JSON.stringify(state.users));
+            localStorage.setItem('lc_promos', JSON.stringify(state.promos));
+            localStorage.setItem('lc_settings', JSON.stringify(state.settings));
         }
 
-        syncStatus.innerHTML = `<div class="loader"></div>`;
-
-        try {
-            // Формуємо URL для запиту замовлень конкретного клієнта за телефоном
-            // Використовуємо filter[query], що шукає по контактах
-            const apiUrl = `https://openapi.keycrm.app/v1/order?filter[contact_phone]=${encodeURIComponent(currentUser.phone)}&include=status`;
+        function calculateRank(spent) {
+            let current = RANKS[0];
+            for (let i = RANKS.length - 1; i >= 0; i--) {
+                if (spent >= RANKS[i].min) {
+                    current = RANKS[i];
+                    break;
+                }
+            }
+            let nextIndex = RANKS.indexOf(current) + 1;
+            let next = nextIndex < RANKS.length ? RANKS[nextIndex] : null;
             
-            // Запит через проксі для обходу CORS
-            const response = await fetch(CONFIG.proxy + encodeURIComponent(apiUrl), {
-                headers: {
-                    'Authorization': `Bearer ${state.apiKey}`,
-                    'Accept': 'application/json'
+            let progress = 0;
+            if (next) {
+                progress = ((spent - current.min) / (next.min - current.min)) * 100;
+            } else {
+                progress = 100;
+            }
+
+            return { current, next, progress };
+        }
+
+        // --- AUTH ---
+        function handleLogin() {
+            const phone = document.getElementById('login-phone').value.trim();
+            if (!phone) return alert('Введіть телефон');
+
+            let user = state.users.find(u => u.phone === phone);
+            if (!user) {
+                user = {
+                    phone,
+                    name: '',
+                    lastName: '',
+                    dob: '',
+                    spent: 0,
+                    orders: 0,
+                    packs: 0,
+                    deliveries: 0,
+                    status: 'active',
+                    joinedAt: new Date().toISOString(),
+                    subsSupply: true,
+                    subsPromo: true,
+                    tgId: '',
+                    promos: ['WELCOME']
+                };
+                state.users.push(user);
+                saveState();
+            }
+
+            if (user.status === 'blocked') return alert('Ваш аккаунт заблоковано');
+
+            state.currentUserPhone = phone;
+            localStorage.setItem('lc_current_user', phone);
+            
+            if (!user.dob) {
+                document.getElementById('birthday-modal').classList.remove('hidden');
+            } else {
+                initApp();
+            }
+        }
+
+        function saveBirthday() {
+            const name = document.getElementById('set-name').value.trim();
+            const dob = document.getElementById('set-dob').value;
+            if (!name || !dob) return alert('Заповніть всі поля');
+
+            let user = state.users.find(u => u.phone === state.currentUserPhone);
+            user.name = name;
+            user.dob = dob;
+            saveState();
+            
+            document.getElementById('birthday-modal').classList.add('hidden');
+            initApp();
+        }
+
+        function logout() {
+            state.currentUserPhone = null;
+            localStorage.removeItem('lc_current_user');
+            location.reload();
+        }
+
+        // --- CLIENT UI ---
+        function initApp() {
+            const user = state.users.find(u => u.phone === state.currentUserPhone);
+            if (!user) return showClientLogin();
+
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('admin-panel').classList.add('hidden');
+            document.getElementById('client-app').classList.remove('hidden');
+
+            document.getElementById('header-name').innerText = user.name;
+            document.getElementById('stat-orders').innerText = user.orders;
+            document.getElementById('stat-spent').innerText = user.spent;
+            document.getElementById('stat-packs').innerText = user.packs;
+            
+            // Time counting
+            const joined = new Date(user.joinedAt);
+            setInterval(() => {
+                const now = new Date();
+                const diff = now - joined;
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const secs = Math.floor((diff % (1000 * 60)) / 1000);
+                document.getElementById('stat-time').innerText = `${days}д ${hours}г ${mins}хв ${secs}с`;
+            }, 1000);
+
+            // Rank UI
+            const rankData = calculateRank(user.spent);
+            document.getElementById('rank-name').innerText = rankData.current.name;
+            document.getElementById('rank-badge').innerText = rankData.current.name.toUpperCase();
+            document.getElementById('rank-badge').style.background = rankData.current.color;
+            document.getElementById('rank-progress').style.width = rankData.progress + '%';
+            document.getElementById('progress-spent').innerText = user.spent + ' грн';
+            
+            if (rankData.next) {
+                document.getElementById('next-rank-info').innerText = `До ${rankData.next.name} ще ${rankData.next.min - user.spent} грн`;
+            } else {
+                document.getElementById('next-rank-info').innerText = `Максимальний статус!`;
+            }
+            document.getElementById('rank-perks-text').innerText = rankData.current.perks;
+
+            // Deliveries
+            document.getElementById('free-delivery-count').innerText = user.deliveries;
+            const now = new Date();
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            if (lastDay - now.getDate() <= 3) {
+                document.getElementById('delivery-warning').classList.remove('hidden');
+            }
+
+            // Promos
+            renderClientPromos(user);
+
+            // Checkboxes
+            document.getElementById('sub-supply').checked = user.subsSupply;
+            document.getElementById('sub-promo').checked = user.subsPromo;
+        }
+
+        function renderClientPromos(user) {
+            const list = document.getElementById('promo-list');
+            list.innerHTML = '';
+            
+            if (!user.promos || user.promos.length === 0) {
+                list.innerHTML = '<p style="font-size: 13px; color: var(--text-muted);">Промокодів поки немає</p>';
+                return;
+            }
+
+            user.promos.forEach(code => {
+                const promo = state.promos.find(p => p.code === code);
+                if (promo) {
+                    const card = document.createElement('div');
+                    card.className = 'flex';
+                    card.style = 'justify-content: space-between; padding: 12px; border-radius: 10px; background: rgba(0,0,0,0.03);';
+                    card.innerHTML = `
+                        <div>
+                            <div style="font-weight: 700; color: var(--primary);">${promo.code}</div>
+                            <div style="font-size: 11px; color: var(--text-muted);">${promo.type === 'discount' ? promo.val + '% знижка' : 'Безкоштовна доставка'} • Від ${promo.min}грн</div>
+                        </div>
+                        <span class="badge" style="background: ${promo.status === 'active' ? '#27AE60' : '#E74C3C'}; color: white;">${promo.status}</span>
+                    `;
+                    list.appendChild(card);
                 }
             });
-
-            const proxyData = await response.json();
-            // AllOrigins повертає дані в полі "contents" як рядок, треба розпарсити
-            const data = JSON.parse(proxyData.contents);
-
-            if(data && data.data) {
-                if(data.data.length === 0) {
-                    listContainer.innerHTML = `<p style="color:#666;">Замовлень не знайдено для цього номера.</p>`;
-                } else {
-                    let table = `
-                        <table class="order-table">
-                            <thead>
-                                <tr><th>ДАТА</th><th>ЗАМОВЛЕННЯ</th><th>СУМА</th><th>СТАТУС</th></tr>
-                            </thead>
-                            <tbody>
-                    `;
-                    data.data.forEach(order => {
-                        const date = new Date(order.created_at).toLocaleDateString('uk-UA');
-                        table += `
-                            <tr>
-                                <td style="color:#666">${date}</td>
-                                <td><b>#${order.id}</b></td>
-                                <td style="color:var(--text-gold)">${order.grand_total} ${order.currency_code || 'грн'}</td>
-                                <td><span class="status-badge">${order.status?.name || 'В обробці'}</span></td>
-                            </tr>
-                        `;
-                    });
-                    table += `</tbody></table>`;
-                    listContainer.innerHTML = table;
-                }
-                syncStatus.innerHTML = `<span style="color:#4a4; font-size:10px;">● Синхронізовано</span>`;
-            } else {
-                throw new Error("Invalid format");
-            }
-        } catch (err) {
-            console.error(err);
-            listContainer.innerHTML = `<p style="color:#844;">Помилка зв'язку з CRM. Перевірте API ключ в адмін-панелі або CORS доступ.</p>`;
-            syncStatus.innerHTML = `<span style="color:#a44; font-size:10px;">○ Помилка API</span>`;
         }
-    }
 
-    function checkAdmin() {
-        if(prompt('ПАРОЛЬ АДМІНІСТРАТОРА:') === CONFIG.admin_pass) showScreen('admin');
-    }
+        function updateSubs() {
+            const user = state.users.find(u => u.phone === state.currentUserPhone);
+            user.subsSupply = document.getElementById('sub-supply').checked;
+            user.subsPromo = document.getElementById('sub-promo').checked;
+            saveState();
+        }
 
-    function saveConfig() {
-        const key = document.getElementById('api-key-val').value.trim();
-        state.apiKey = key;
-        save();
-        const msg = document.getElementById('admin-msg');
-        msg.innerText = "Конфігурацію оновлено. Перевіряємо з'єднання...";
-        msg.style.color = "#c5a059";
-    }
-</script>
+        function sendSupport() {
+            const subj = document.getElementById('support-subject').value;
+            const msg = document.getElementById('support-msg').value;
+            if (!subj || !msg) return alert('Заповніть поля');
+            alert('Ваш запит надіслано! Ми відповімо найближчим часом.');
+            document.getElementById('support-subject').value = '';
+            document.getElementById('support-msg').value = '';
+        }
 
+        // --- ADMIN UI ---
+        function showAdminLogin() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('admin-login-screen').classList.remove('hidden');
+        }
+
+        function showClientLogin() {
+            document.getElementById('admin-login-screen').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+        }
+
+        function handleAdminLogin() {
+            const pass = document.getElementById('admin-pass-input').value;
+            if (pass === 'latiao_admin') {
+                initAdmin();
+            } else {
+                alert('Невірний пароль');
+            }
+        }
+
+        function initAdmin() {
+            document.getElementById('admin-login-screen').classList.add('hidden');
+            document.getElementById('admin-panel').classList.remove('hidden');
+            showAdminTab('customers');
+            applyTheme();
+        }
+
+        function showAdminTab(tab) {
+            document.querySelectorAll('.admin-tab').forEach(el => el.classList.add('hidden'));
+            document.getElementById('tab-' + tab).classList.remove('hidden');
+            
+            if (tab === 'customers') renderAdminUsers();
+            if (tab === 'promos') renderAdminPromos();
+            if (tab === 'analytics') renderAnalytics();
+            if (tab === 'settings') {
+                document.getElementById('tg-token').value = state.settings.tgToken;
+            }
+        }
+
+        function renderAdminUsers() {
+            const body = document.getElementById('admin-user-table-body');
+            body.innerHTML = '';
+            state.users.forEach(user => {
+                const tr = document.createElement('tr');
+                const rank = calculateRank(user.spent).current.name;
+                tr.innerHTML = `
+                    <td>
+                        <div style="font-weight: 700;">${user.name || 'Анонім'}</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">${user.phone}</div>
+                    </td>
+                    <td>${user.spent} <small>грн</small></td>
+                    <td>${user.deliveries}</td>
+                    <td><span class="badge" style="background: #EEE;">${rank}</span></td>
+                    <td>
+                        <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 10px;" onclick="openEditUser('${user.phone}')">Редагувати</button>
+                    </td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        let editingPhone = null;
+        function openEditUser(phone) {
+            editingPhone = phone;
+            const user = state.users.find(u => u.phone === phone);
+            document.getElementById('edit-user-title').innerText = `Клієнт: ${user.phone}`;
+            document.getElementById('edit-user-name').value = user.name;
+            document.getElementById('edit-user-spent').value = user.spent;
+            document.getElementById('edit-user-packs').value = user.packs;
+            document.getElementById('edit-user-orders').value = user.orders;
+            document.getElementById('edit-user-deliveries').value = user.deliveries;
+            document.getElementById('edit-user-tg').value = user.tgId;
+            document.getElementById('edit-user-status').value = user.status;
+            
+            document.getElementById('tg-msg-btn').onclick = () => sendTgMessage(user.tgId);
+            document.getElementById('edit-user-modal').classList.remove('hidden');
+        }
+
+        function saveUserEdit() {
+            const user = state.users.find(u => u.phone === editingPhone);
+            user.name = document.getElementById('edit-user-name').value;
+            user.spent = parseFloat(document.getElementById('edit-user-spent').value);
+            user.packs = parseInt(document.getElementById('edit-user-packs').value);
+            user.orders = parseInt(document.getElementById('edit-user-orders').value);
+            user.deliveries = parseInt(document.getElementById('edit-user-deliveries').value);
+            user.tgId = document.getElementById('edit-user-tg').value;
+            user.status = document.getElementById('edit-user-status').value;
+            
+            saveState();
+            closeModal('edit-user-modal');
+            renderAdminUsers();
+        }
+
+        function renderAdminPromos() {
+            const list = document.getElementById('admin-promo-list');
+            list.innerHTML = '';
+            state.promos.forEach(promo => {
+                const card = document.createElement('div');
+                card.className = 'glass';
+                card.style = 'padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;';
+                card.innerHTML = `
+                    <div>
+                        <b>${promo.code}</b> <small>(${promo.type})</small><br>
+                        <span style="font-size: 12px; color: var(--text-muted);">Значення: ${promo.val} | Від ${promo.min}грн</span>
+                    </div>
+                    <button class="btn btn-secondary" style="background: #C0392B; padding: 5px 10px;" onclick="deletePromo(${promo.id})">Видалити</button>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function createPromo() {
+            const code = document.getElementById('new-promo-code').value.trim();
+            const type = document.getElementById('new-promo-type').value;
+            const val = parseFloat(document.getElementById('new-promo-val').value);
+            if (!code || isNaN(val)) return alert('Заповніть поля');
+            
+            state.promos.push({
+                id: Date.now(),
+                code, type, val, min: val * 10, status: 'active'
+            });
+            saveState();
+            renderAdminPromos();
+        }
+
+        function deletePromo(id) {
+            state.promos = state.promos.filter(p => p.id !== id);
+            saveState();
+            renderAdminPromos();
+        }
+
+        function renderAnalytics() {
+            const totalUsers = state.users.length;
+            const totalRevenue = state.users.reduce((sum, u) => sum + u.spent, 0);
+            document.getElementById('total-customers').innerText = totalUsers;
+            document.getElementById('total-revenue').innerText = totalRevenue + ' грн';
+            
+            const topBody = document.getElementById('top-customers-list');
+            topBody.innerHTML = '';
+            [...state.users].sort((a,b) => b.spent - a.spent).slice(0, 5).forEach((u, i) => {
+                const item = document.createElement('div');
+                item.style = 'padding: 10px; border-bottom: 1px solid var(--border);';
+                item.innerHTML = `${i+1}. <b>${u.name || u.phone}</b> — ${u.spent} грн`;
+                topBody.appendChild(item);
+            });
+        }
+
+        function saveSettings() {
+            state.settings.tgToken = document.getElementById('tg-token').value;
+            saveState();
+            alert('Налаштування збережено');
+        }
+
+        async function sendTgMessage(chatId) {
+            if (!state.settings.tgToken) return alert('Спочатку налаштуйте Bot Token');
+            if (!chatId) return alert('ID клієнта не вказано');
+            
+            const text = prompt('Введіть повідомлення для клієнта:');
+            if (!text) return;
+
+            const url = `https://api.telegram.org/bot${state.settings.tgToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(text)}`;
+            
+            try {
+                await fetch(url);
+                alert('Повідомлення надіслано!');
+            } catch (e) {
+                alert('Помилка надсилання: ' + e.message);
+            }
+        }
+
+        // --- HELPERS ---
+        function toggleTheme() {
+            state.settings.theme = state.settings.theme === 'light' ? 'dark' : 'light';
+            saveState();
+            applyTheme();
+        }
+
+        function applyTheme() {
+            document.body.setAttribute('data-theme', state.settings.theme);
+            document.getElementById('theme-toggle').innerText = state.settings.theme === 'light' ? '🌙' : '☀️';
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // --- INIT ---
+        window.onload = () => {
+            if (state.currentUserPhone) {
+                initApp();
+            }
+            applyTheme();
+        };
+
+    </script>
 </body>
 </html>
