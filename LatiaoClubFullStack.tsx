@@ -1,457 +1,566 @@
 <!DOCTYPE html>
-<html lang="uk" class="bg-slate-50/50">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Latiao Finance | Enterprise v14.1 Mobile Ready</title>
-    
-    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Manrope', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
-                    colors: { 
-                        brand: { 50: '#fff1ec', 100: '#ffe4d9', 500: '#FF5722', 600: '#ea580c', 700: '#c2410c' },
-                        slate: { 850: '#172033' }
-                    },
-                    boxShadow: {
-                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -2px rgba(0, 0, 0, 0.03)',
-                        'glow-brand': '0 0 20px -5px rgba(255, 87, 34, 0.4)'
-                    }
-                }
-            }
-        }
-    </script>
+    <title>Latiao Club | Premium Rewards</title>
     <style>
-        body { color: #1e293b; -webkit-tap-highlight-color: transparent; }
-        main { background-image: radial-gradient(circle at center, #f1f5f9 1px, transparent 1px); background-size: 40px 40px; }
-        .sidebar-link { transition: all 0.2s ease-in-out; }
-        .sidebar-link.active { background: linear-gradient(135deg, #FF5722 0%, #ea580c 100%); color: white; box-shadow: 0 8px 16px -4px rgba(255, 87, 34, 0.3); border-radius: 16px; }
-        .sidebar-link:hover:not(.active) { background: #fff1ec; color: #ea580c; border-radius: 16px; }
-        .card-modern { background: white; border-radius: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05); }
-        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .logo-mono { background-image: url('https://multicast.com.ua/wp-content/uploads/2024/04/monobank-logo.png'); background-size: contain; background-repeat: no-repeat; background-position: center; }
-        .logo-nova { background-image: url('https://novapay.ua/wp-content/themes/novapay/assets/img/logo.svg'); background-size: contain; background-repeat: no-repeat; background-position: center; }
-        
-        /* Mobile Navigation Bottom Bar */
-        @media (max-width: 768px) {
-            .sidebar-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; height: 70px; display: flex !important; flex-direction: row !important; border-top: 1px solid #e2e8f0; padding: 5px !important; z-index: 999; }
-            .sidebar-nav button { flex: 1; flex-direction: column; font-size: 9px !important; gap: 4px !important; padding: 5px !important; background: transparent !important; box-shadow: none !important; color: #64748b !important; }
-            .sidebar-nav button.active { color: #FF5722 !important; }
-            .sidebar-nav .text-xs, .sidebar-nav .p-8, .sidebar-nav .pb-8, .sidebar-nav .p-4 { display: none !important; }
-            .sidebar-nav .sidebar-logo-container { display: none !important; }
-            main { padding: 15px !important; padding-bottom: 90px !important; }
-            .hero-stats { grid-template-columns: 1fr !important; }
-            .card-modern { padding: 20px !important; }
-            .mobile-hide { display: none !important; }
+        :root {
+            --primary: #ff0055;
+            --primary-glow: rgba(255, 0, 85, 0.5);
+            --secondary: #00f2ff;
+            --bg-dark: #0a0a0c;
+            --card-dark: rgba(255, 255, 255, 0.05);
+            --text-main: #ffffff;
+            --text-dim: #a0a0a0;
+            --glass: rgba(20, 20, 25, 0.8);
+            --border: rgba(255, 255, 255, 0.1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
+        .light-theme {
+            --bg-dark: #f0f2f5;
+            --card-dark: #ffffff;
+            --text-main: #1a1a1a;
+            --text-dim: #666666;
+            --glass: rgba(255, 255, 255, 0.9);
+            --border: rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: var(--transition);
+        }
+
+        /* Background Glows */
+        .glow-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        .blob {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: var(--primary-glow);
+            filter: blur(80px);
+            border-radius: 50%;
+            animation: move 20s infinite alternate;
+        }
+        @keyframes move {
+            from { transform: translate(-10%, -10%); }
+            to { transform: translate(100%, 80%); }
+        }
+
+        /* Typography & Layout */
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+
+        h1, h2, h3 { font-weight: 800; letter-spacing: -0.5px; }
+        .neon-text {
+            color: var(--primary);
+            text-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        /* Forms */
+        input, select {
+            width: 100%;
+            padding: 14px 20px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-main);
+            margin-bottom: 15px;
+            outline: none;
+            transition: var(--transition);
+        }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 10px var(--primary-glow); }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: var(--transition);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 15px var(--primary-glow); }
+        .btn-primary:hover { transform: translateY(-2px); filter: brightness(1.2); }
+        .btn-secondary { background: var(--card-dark); color: var(--text-main); border: 1px solid var(--border); }
+
+        /* Progress Bar */
+        .progress-container { background: rgba(255,255,255,0.1); height: 10px; border-radius: 5px; margin: 15px 0; overflow: hidden; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); width: 0%; transition: width 1s ease-out; }
+
+        /* Slots/Game */
+        .slot-machine {
+            text-align: center;
+            padding: 30px;
+            border: 2px dashed var(--primary);
+        }
+        .slot-box {
+            font-size: 40px;
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        .slot-item {
+            background: var(--card-dark);
+            padding: 10px;
+            border-radius: 10px;
+            min-width: 60px;
+            display: inline-block;
+        }
+        .spinning { animation: shake 0.1s infinite; }
+        @keyframes shake {
+            0% { transform: translateY(-2px); }
+            100% { transform: translateY(2px); }
+        }
+
+        /* Promo Codes */
+        .promo-list { display: grid; gap: 10px; }
+        .promo-card {
+            background: rgba(255,255,255,0.03);
+            border-left: 4px solid var(--secondary);
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .promo-card.used { opacity: 0.5; border-left-color: #666; text-decoration: line-through; }
+
+        /* Navigation */
+        .nav-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 400px;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-radius: 50px;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            border: 1px solid var(--border);
+            z-index: 100;
+        }
+        .nav-item { color: var(--text-dim); cursor: pointer; font-size: 12px; text-align: center; }
+        .nav-item.active { color: var(--primary); }
+
+        /* Admin Styles */
+        .admin-panel { max-width: 900px !important; }
+        .admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: var(--card-dark); padding: 20px; border-radius: 15px; border: 1px solid var(--border); }
+        .user-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .user-table th, .user-table td { text-align: left; padding: 12px; border-bottom: 1px solid var(--border); }
+        
+        .hidden { display: none !important; }
+
+        /* Micro-interactions */
+        .tap-scale:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
 
-<div id="root"></div>
+<div class="glow-bg"><div class="blob"></div></div>
 
-<script type="text/babel" data-type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, setDoc, getDoc, writeBatch, getDocs, limit, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+<nav id="main-nav" class="nav-bar hidden">
+    <div class="nav-item active" onclick="showScreen('client-home')">🏠<br>Home</div>
+    <div class="nav-item" onclick="showScreen('promo-screen')">🎁<br>Promos</div>
+    <div class="nav-item" onclick="showScreen('game-screen')">🎰<br>Spin</div>
+    <div class="nav-item" onclick="toggleAdmin()">⚙️<br>Admin</div>
+</nav>
 
-    // --- FIREBASE CONFIG ---
-    const firebaseConfig = {
-      apiKey: "AIzaSyDIk302oYXye-r4hRE-EB16N6K3T31g1uk",
-      authDomain: "latiao-finance.firebaseapp.com",
-      projectId: "latiao-finance",
-      storageBucket: "latiao-finance.firebasestorage.app",
-      messagingSenderId: "858773999156",
-      appId: "1:858773999156:web:fe8f4907314f83c9a88461"
+<div class="container">
+    
+    <div style="position: absolute; top: 20px; right: 20px; cursor: pointer; z-index: 10;" onclick="toggleTheme()">🌓</div>
+
+    <section id="login-screen" class="glass-card" style="margin-top: 20vh;">
+        <h1 class="neon-text" style="text-align: center; margin-bottom: 10px;">LATIAO CLUB</h1>
+        <p style="text-align: center; color: var(--text-dim); margin-bottom: 30px;">Premium Asian Snacks Rewards</p>
+        <input type="text" id="login-input" placeholder="Phone number or Nickname...">
+        <button class="btn btn-primary tap-scale" onclick="handleLogin()">ENTER CLUB</button>
+    </section>
+
+    <section id="client-home" class="hidden">
+        <div class="glass-card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h2 id="user-name-display">Welcome Back!</h2>
+                    <p id="user-rank" style="color: var(--secondary); font-weight: bold; margin-top: 5px;">VIP Member</p>
+                </div>
+                <div id="user-points" style="font-size: 24px; font-weight: 800;">1,250 <span style="font-size: 12px; color: var(--text-dim);">XP</span></div>
+            </div>
+            
+            <div class="progress-container">
+                <div id="user-progress" class="progress-bar"></div>
+            </div>
+            <p id="progress-text" style="font-size: 12px; color: var(--text-dim);"></p>
+        </div>
+
+        <h3 style="margin-bottom: 15px;">Recent History</h3>
+        <div id="history-list" class="promo-list">
+            </div>
+        <button class="btn btn-secondary" style="margin-top: 20px;" onclick="logout()">LOGOUT</button>
+    </section>
+
+    <section id="promo-screen" class="hidden">
+        <h2 class="neon-text" style="margin-bottom: 20px;">My Rewards</h2>
+        <div id="active-promos" class="promo-list">
+            </div>
+    </section>
+
+    <section id="game-screen" class="hidden">
+        <div class="glass-card slot-machine">
+            <h3>Daily Fortune</h3>
+            <p style="color: var(--text-dim); font-size: 13px;">Spin to win exclusive discounts</p>
+            <div class="slot-box">
+                <div class="slot-item" id="slot-1">🌶️</div>
+                <div class="slot-item" id="slot-2">🥢</div>
+                <div class="slot-item" id="slot-3">🍜</div>
+            </div>
+            <button id="spin-btn" class="btn btn-primary tap-scale" onclick="handleSpin()">SPIN NOW</button>
+            <p id="spin-timer" style="margin-top: 15px; font-size: 12px; color: var(--primary);"></p>
+        </div>
+    </section>
+
+    <section id="admin-auth" class="hidden glass-card">
+        <h3>Admin Access</h3>
+        <input type="password" id="admin-pass" placeholder="Password...">
+        <button class="btn btn-primary" onclick="verifyAdmin()">UNLOCK</button>
+        <button class="btn btn-secondary" onclick="showScreen('client-home')" style="margin-top: 10px;">CANCEL</button>
+    </section>
+
+    <section id="admin-dashboard" class="hidden admin-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 class="neon-text">Control Center</h2>
+            <button class="btn btn-secondary" style="width: auto; padding: 5px 15px;" onclick="showScreen('client-home')">Exit</button>
+        </div>
+
+        <div class="admin-grid">
+            <div class="stat-card">
+                <small>Total Users</small>
+                <h2 id="stat-users">0</h2>
+            </div>
+            <div class="stat-card">
+                <small>Promos Used</small>
+                <h2 id="stat-promos">0</h2>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <h3>User Management</h3>
+            <input type="text" id="user-search" placeholder="Search by name/phone..." oninput="renderAdminUsers()">
+            <div style="overflow-x: auto;">
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>XP</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-user-list"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <h3>Create Promo Code</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+                <input type="text" id="new-promo-code" placeholder="CODE (e.g. HOT25)">
+                <input type="number" id="new-promo-val" placeholder="Value (%)">
+                <input type="number" id="new-promo-min" placeholder="Min Order">
+                <input type="date" id="new-promo-expiry">
+            </div>
+            <button class="btn btn-primary" onclick="createPromo()">Generate Promo</button>
+        </div>
+    </section>
+
+</div>
+
+<script>
+    // --- DATABASE / STATE ---
+    const DB_KEY = 'latiao_db_v1';
+    let state = {
+        users: [],
+        promos: [],
+        currentUser: null,
+        isAdmin: false
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-    try { setPersistence(auth, browserLocalPersistence).catch(console.error); } catch(e) {}
-
-    const { useState, useEffect, useMemo, memo } = React;
-
-    const Icon = ({ name, size = 18, className }) => {
-        useEffect(() => { try { if(window.lucide) window.lucide.createIcons(); } catch(e){} }, [name]);
-        return <i data-lucide={name} width={size} height={size} className={className}></i>;
-    };
-
-    const DEFAULT_CATEGORIES = {
-        income: ['Продажі', 'Кешбек', 'Повернення', 'Інше'],
-        expense: ['Закупівля (COGS)', 'Реклама', 'Логістика', 'Пакування', 'Зарплата', 'Податки', 'Оренда', 'Комісії', 'Знижки', 'Інше']
-    };
-
-    const ALL_VIEWS = [
-        {id:'dashboard', label:'Огляд', icon:'layout-grid'},
-        {id:'ops', label:'Операції', icon:'list-checks'},
-        {id:'pnl', label:'P&L', icon:'pie-chart'},
-        {id:'cashflow', label:'Потік', icon:'banknote'},
-        {id:'dividends', label:'Дивіденди', icon:'gem'},
-        {id:'managers', label:'Команда', icon:'users-round'},
-        {id:'settings', label:'Налашт', icon:'sliders-horizontal'}
+    const RANKS = [
+        { name: 'New', min: 0, max: 999 },
+        { name: 'Regular', min: 1000, max: 4999 },
+        { name: 'VIP', min: 5000, max: 14999 },
+        { name: 'Legend', min: 15000, max: Infinity }
     ];
 
-    // --- COMPONENTS ---
+    // --- INITIALIZATION ---
+    function init() {
+        const saved = localStorage.getItem(DB_KEY);
+        if (saved) {
+            state = JSON.parse(saved);
+        } else {
+            // Demo Data
+            state.users = [
+                { id: '1', name: 'Admin User', phone: '000', xp: 25000, status: 'active', history: [], lastSpin: null },
+                { id: '2', name: 'Ivan G.', phone: '0971234567', xp: 1200, status: 'active', history: [], lastSpin: null }
+            ];
+            state.promos = [
+                { id: 'p1', code: 'WELCOME20', val: 20, min: 200, expiry: '2026-12-31', usedBy: [] },
+                { id: 'p2', code: 'LATIAO_KING', val: 50, min: 1000, expiry: '2026-06-01', usedBy: [] }
+            ];
+            saveState();
+        }
+    }
 
-    const DashboardView = memo(({ metrics, transactions, setView }) => {
-        const isHealthy = metrics.margin > 20;
-        return (
-            <div className="space-y-6 md:space-y-8 animate-fade-in">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 hero-stats">
-                    <div className="bg-slate-900 text-white p-6 rounded-[28px] shadow-lg relative overflow-hidden group border border-slate-800">
-                        <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform"><Icon name="wallet" size={100}/></div>
-                        <div className="relative z-10">
-                            <div className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center gap-2"><Icon name="wallet" size={12} className="text-brand-500"/> Капітал</div>
-                            <div className="text-3xl font-mono font-bold">{metrics.totalCash.toLocaleString()} ₴</div>
-                        </div>
-                    </div>
-                    <div className="card-modern p-6 border-t-4 border-emerald-500">
-                        <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-2">Чистий Прибуток</div>
-                        <div className={`text-3xl font-mono font-bold ${metrics.net >= 0 ? 'text-slate-900' : 'text-red-600'}`}>{metrics.net.toLocaleString()} ₴</div>
-                    </div>
-                    <div className="card-modern p-6 border-t-4 border-brand-500">
-                        <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-2">Запас ходу</div>
-                        <div className="text-3xl font-mono font-bold text-brand-600">{metrics.runway} <span className="text-xs font-sans">днів</span></div>
-                    </div>
-                    <div className={`card-modern p-6 flex flex-col justify-center items-center border-t-4 ${isHealthy ? 'border-emerald-500' : 'border-red-500'}`}>
-                        <div className="text-slate-500 text-[10px] font-bold uppercase mb-1">Статус</div>
-                        <div className={`text-lg font-black ${isHealthy ? 'text-emerald-600' : 'text-red-600'}`}>{isHealthy ? "OK" : "RISK"}</div>
-                    </div>
-                </div>
+    function saveState() {
+        localStorage.setItem(DB_KEY, JSON.stringify(state));
+    }
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="card-modern p-5 flex flex-col justify-between h-32 border-b-4 border-black">
-                            <div className="logo-mono w-8 h-8"></div>
-                            <div className="font-mono font-bold text-lg">{metrics.balances.mono.toLocaleString()} ₴</div>
-                        </div>
-                        <div className="card-modern p-5 flex flex-col justify-between h-32 border-b-4 border-red-500">
-                            <div className="logo-nova w-8 h-8"></div>
-                            <div className="font-mono font-bold text-lg">{metrics.balances.nova.toLocaleString()} ₴</div>
-                        </div>
-                        <div className="card-modern p-5 h-32 sm:col-span-2 flex flex-col justify-between border-b-4 border-emerald-500 bg-emerald-50/20">
-                            <div className="text-[10px] font-bold uppercase text-emerald-800 tracking-widest flex items-center gap-2"><Icon name="banknote" size={14}/> Готівка</div>
-                            <div className="font-mono font-bold text-3xl text-right text-emerald-900">{metrics.balances.cash.toLocaleString()} ₴</div>
-                        </div>
+    // --- NAVIGATION ---
+    function showScreen(screenId) {
+        document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+        document.getElementById(screenId).classList.remove('hidden');
+        
+        // Update nav active state
+        document.querySelectorAll('.nav-item').forEach(n => {
+            n.classList.remove('active');
+            if(n.innerText.toLowerCase().includes(screenId.split('-')[0])) n.classList.add('active');
+        });
+
+        if(screenId === 'client-home') renderProfile();
+        if(screenId === 'promo-screen') renderPromos();
+        if(screenId === 'admin-dashboard') renderAdmin();
+    }
+
+    // --- AUTH ---
+    function handleLogin() {
+        const val = document.getElementById('login-input').value.trim();
+        if(!val) return alert('Enter something!');
+
+        let user = state.users.find(u => u.phone === val || u.name === val);
+        if(!user) {
+            user = { id: Date.now().toString(), name: val, phone: val, xp: 0, status: 'active', history: [], lastSpin: null };
+            state.users.push(user);
+            saveState();
+        }
+
+        if(user.status === 'blocked') return alert('Account suspended. Contact Admin.');
+
+        state.currentUser = user;
+        document.getElementById('main-nav').classList.remove('hidden');
+        showScreen('client-home');
+    }
+
+    function logout() {
+        state.currentUser = null;
+        document.getElementById('main-nav').classList.add('hidden');
+        showScreen('login-screen');
+    }
+
+    function toggleAdmin() {
+        if(state.isAdmin) showScreen('admin-dashboard');
+        else showScreen('admin-auth');
+    }
+
+    function verifyAdmin() {
+        const pass = document.getElementById('admin-pass').value;
+        if(pass === 'latiao2026') {
+            state.isAdmin = true;
+            showScreen('admin-dashboard');
+        } else {
+            alert('Incorrect passcode.');
+        }
+    }
+
+    // --- CLIENT LOGIC ---
+    function renderProfile() {
+        const user = state.currentUser;
+        const rank = RANKS.find(r => user.xp >= r.min && user.xp <= r.max);
+        
+        document.getElementById('user-name-display').innerText = `Hi, ${user.name}!`;
+        document.getElementById('user-rank').innerText = rank.name;
+        document.getElementById('user-points').innerHTML = `${user.xp.toLocaleString()} <span style="font-size: 12px; color: var(--text-dim);">XP</span>`;
+        
+        const nextRank = RANKS[RANKS.indexOf(rank) + 1] || rank;
+        const progress = rank.max === Infinity ? 100 : ((user.xp - rank.min) / (rank.max - rank.min)) * 100;
+        document.getElementById('user-progress').style.width = `${progress}%`;
+        document.getElementById('progress-text').innerText = rank.max === Infinity ? 'Max Level Reached' : `${nextRank.min - user.xp} XP to ${nextRank.name}`;
+
+        const histHtml = user.history.length 
+            ? user.history.map(h => `<div class="promo-card"><span>${h.msg}</span><small>${h.date}</small></div>`).join('')
+            : '<p style="color:var(--text-dim); text-align:center;">No history yet</p>';
+        document.getElementById('history-list').innerHTML = histHtml;
+    }
+
+    function renderPromos() {
+        const html = state.promos.map(p => {
+            const isUsed = p.usedBy.includes(state.currentUser.id);
+            return `
+                <div class="promo-card ${isUsed ? 'used' : ''}">
+                    <div>
+                        <strong style="color:var(--primary)">${p.code}</strong><br>
+                        <small>${p.val}% off | Min: ${p.min}₴</small>
                     </div>
-                    <div className="card-modern p-6 md:p-8 bg-slate-50 flex flex-col justify-between">
-                         <h3 className="font-bold text-slate-800 flex items-center gap-2 text-sm uppercase tracking-widest">Експрес P&L</h3>
-                         <div className="space-y-4 py-4">
-                            <div><div className="flex justify-between text-[10px] font-black mb-1 text-slate-400 uppercase"><span>Доходи</span><span>{metrics.revenue.toLocaleString()}</span></div><div className="w-full h-1.5 bg-white rounded-full"><div className="h-full bg-emerald-400" style={{width:'100%'}}></div></div></div>
-                            <div><div className="flex justify-between text-[10px] font-black mb-1 text-slate-400 uppercase"><span>Витрати</span><span>{metrics.totalExpense.toLocaleString()}</span></div><div className="w-full h-1.5 bg-white rounded-full"><div className="h-full bg-red-400" style={{width:`${metrics.revenue ? (metrics.totalExpense/metrics.revenue)*100 : 0}%`}}></div></div></div>
-                         </div>
-                        <button onClick={()=>setView('pnl')} className="w-full py-3 font-bold text-xs text-blue-700 bg-blue-100 rounded-xl hover:bg-blue-200 transition uppercase tracking-widest">Звіт</button>
-                    </div>
-                </div>
-            </div>
-        );
-    });
-
-    const PnLView = memo(({ metrics, transactions }) => {
-        const getPct = (val) => metrics.revenue ? ((val / metrics.revenue) * 100).toFixed(1) : 0;
-        return (
-            <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
-                <div className="card-modern p-8 border-l-8 border-emerald-500">
-                    <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 tracking-tighter">Revenue</div>
-                    <div className="text-4xl md:text-5xl font-mono font-bold">+{metrics.revenue.toLocaleString()} ₴</div>
-                </div>
-                <div className="space-y-4">
-                    <div className="card-modern p-6 border-l-4 border-orange-400 flex justify-between items-center">
-                        <div><div className="text-[10px] font-bold text-slate-400 uppercase mb-1 tracking-tighter">COGS</div><div className="text-xl md:text-2xl font-mono font-bold">-{metrics.cogs.toLocaleString()} ₴</div></div>
-                        <div className="text-lg font-bold text-slate-400">{getPct(metrics.cogs)}%</div>
-                    </div>
-                    <div className="card-modern p-6 border-l-4 border-red-400 flex justify-between items-center">
-                        <div><div className="text-[10px] font-bold text-slate-400 uppercase mb-1 tracking-tighter">OpEx</div><div className="text-xl md:text-2xl font-mono font-bold">-{metrics.opex.toLocaleString()} ₴</div></div>
-                        <div className="text-lg font-bold text-slate-400">{getPct(metrics.opex)}%</div>
-                    </div>
-                </div>
-                <div className="bg-slate-900 text-white p-8 rounded-[32px] flex justify-between items-center">
-                    <div><div className="text-xs font-bold text-slate-400 uppercase mb-2 tracking-tighter">Net Profit</div><div className="text-4xl md:text-6xl font-mono font-bold text-emerald-400">{metrics.net.toLocaleString()} ₴</div></div>
-                    <div className="text-right"><div className="text-2xl md:text-4xl font-bold">{getPct(metrics.net)}%</div><div className="text-[10px] font-bold text-slate-500 uppercase">Margin</div></div>
-                </div>
-            </div>
-        );
-    });
-
-    const CashFlowView = memo(({ metrics }) => (
-        <div className="max-w-4xl mx-auto space-y-8 animate-fade-in px-1">
-             <div className="card-modern p-8 relative overflow-hidden border-l-8 border-blue-500">
-                <h3 className="font-bold text-xl mb-6 tracking-tighter">Cash Flow</h3>
-                <div className="space-y-4">
-                    <div className="flex justify-between p-5 bg-emerald-50 rounded-2xl border border-emerald-100">
-                        <span className="font-bold text-emerald-800 uppercase text-[10px] tracking-widest">In</span>
-                        <span className="text-xl font-mono font-bold text-emerald-700">+{metrics.revenue.toLocaleString()} ₴</span>
-                    </div>
-                    <div className="flex justify-between p-5 bg-red-50 rounded-2xl border border-red-100">
-                        <span className="font-bold text-red-800 uppercase text-[10px] tracking-widest">Out</span>
-                        <span className="text-xl font-mono font-bold text-red-700">-{metrics.totalExpense.toLocaleString()} ₴</span>
-                    </div>
-                </div>
-            </div>
-             <div className="bg-slate-900 text-white p-8 rounded-[28px] flex justify-between items-center shadow-xl">
-                <div className="text-lg font-bold">Total Change</div>
-                <div className={`text-3xl md:text-5xl font-mono font-bold ${metrics.netCashChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{metrics.netCashChange.toLocaleString()} ₴</div>
-            </div>
-        </div>
-    ));
-
-    const DividendsView = memo(({ metrics, transactions, setModalType }) => (
-        <div className="max-w-4xl mx-auto animate-fade-in space-y-6 md:space-y-8">
-            <div className="bg-gradient-to-br from-slate-800 to-indigo-950 text-white p-8 rounded-[32px] flex flex-col md:flex-row justify-between items-center gap-6 shadow-xl border border-indigo-900/50">
-                <div><h2 className="text-3xl font-black mb-2 tracking-tighter text-center md:text-left">Дивіденди</h2><p className="text-indigo-200 text-sm text-center md:text-left">Виведення прибутку власнику.</p></div>
-                <button onClick={()=>setModalType('dividend')} className="bg-white text-slate-900 w-full md:w-auto px-8 py-4 rounded-2xl font-black shadow-lg active:scale-95 transition">Виплатити</button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="card-modern p-6 text-center border-b-4 border-indigo-500"><div className="text-[10px] font-bold text-slate-400 uppercase mb-2">Виведено</div><div className="text-2xl font-mono font-bold text-indigo-600">{metrics.dividends.toLocaleString()} ₴</div></div>
-                <div className="card-modern p-6 text-center border-b-4 border-emerald-500"><div className="text-[10px] font-bold text-slate-400 uppercase mb-2">Прибуток</div><div className="text-2xl font-mono font-bold text-emerald-600">{metrics.net.toLocaleString()} ₴</div></div>
-                <div className="card-modern p-6 text-center border-b-4 border-slate-900 bg-slate-900 text-white"><div className="text-[10px] font-bold text-white/50 uppercase mb-2">Залишок</div><div className="text-2xl font-mono font-bold">{(metrics.net - metrics.dividends).toLocaleString()} ₴</div></div>
-            </div>
-        </div>
-    ));
-
-    const TransactionRowMemo = memo(({ t, canDelete, deleteTx }) => (
-        <tr className="hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 group">
-            <td className="p-4 text-[10px] font-mono font-bold text-slate-400">{t.date}</td>
-            <td className="p-4 font-bold text-slate-800 text-xs md:text-sm">
-                <div className="truncate max-w-[150px] md:max-w-xs">{t.description}</div>
-                <div className="md:hidden text-[9px] text-slate-400 mt-1 uppercase">{t.cat}</div>
-            </td>
-            <td className="hidden md:table-cell p-4"><span className="px-2 py-0.5 bg-slate-100 rounded-md text-[9px] font-bold text-slate-500 uppercase">{t.cat}</span></td>
-            <td className={`p-4 text-right font-mono font-bold text-xs md:text-sm ${t.type==='income'?'text-emerald-600':'text-slate-800'}`}>
-                {t.type==='income'?'+':'-'}{Number(t.amount).toLocaleString()}
-            </td>
-            <td className="p-4 text-right">
-                {canDelete && <button onClick={()=>deleteTx(t.id)} className="text-slate-200 hover:text-red-500 transition-colors"><Icon name="trash-2" size={14}/></button>}
-            </td>
-        </tr>
-    ));
-
-    const OpsView = ({ transactions, deleteTx, syncMono, canDelete, categories }) => {
-        const [isSyncing, setIsSyncing] = useState(false);
-        const [limitCount, setLimitCount] = useState(30);
-        const visibleTransactions = useMemo(() => transactions.slice(0, limitCount), [transactions, limitCount]);
-
-        return (
-            <div className="space-y-4 animate-fade-in px-1">
-                <div className="flex justify-between items-center p-4 bg-white rounded-3xl border border-slate-200 shadow-sm">
-                    <span className="font-bold text-slate-900 text-sm">{transactions.length} <span className="text-slate-400 font-normal">записів</span></span>
-                    <button onClick={async ()=>{setIsSyncing(true); await syncMono(); setIsSyncing(false);}} className="bg-brand-500 text-white px-5 py-2.5 rounded-xl font-bold flex gap-2 items-center hover:bg-brand-600 active:scale-95 transition-all text-xs">
-                        {isSyncing ? <Icon name="refresh-cw" className="animate-spin" size={14}/> : <Icon name="refresh-cw" size={14}/>} Sync
-                    </button>
-                </div>
-                <div className="card-modern overflow-hidden">
-                    <table className="w-full text-left table-fixed">
-                        <thead className="bg-slate-50/50 text-[10px] font-black uppercase text-slate-400 tracking-widest border-b">
-                            <tr><th className="p-4 w-24">Дата</th><th className="p-4">Опис</th><th className="hidden md:table-cell p-4 w-32">Категорія</th><th className="p-4 w-28 text-right">Сума</th><th className="p-4 w-10"></th></tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50">
-                            {visibleTransactions.map(t => (
-                                <TransactionRowMemo key={t.id} t={t} canDelete={canDelete} deleteTx={deleteTx} />
-                            ))}
-                        </tbody>
-                    </table>
-                    {transactions.length > limitCount && (
-                        <button onClick={() => setLimitCount(prev => prev + 50)} className="w-full p-5 text-[10px] font-black text-slate-400 hover:text-brand-500 hover:bg-slate-50 transition uppercase tracking-widest border-t">Завантажити ще...</button>
-                    )}
-                </div>
-            </div>
-        );
-    };
-
-    const ManagersView = ({ db }) => {
-        const [managers, setManagers] = useState([]);
-        useEffect(() => { const unsub = onSnapshot(query(collection(db, "managers")), (snap) => setManagers(snap.docs.map(d => ({ id: d.id, ...d.data() })))); return () => unsub(); }, []);
-        return (
-            <div className="max-w-5xl mx-auto space-y-6 animate-fade-in px-1">
-                <div className="card-modern p-8 bg-white shadow-lg flex justify-between items-center">
-                    <div><h2 className="text-2xl font-black uppercase tracking-tighter">Team</h2><p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Access Control</p></div>
-                    <Icon name="users-round" size={32} className="text-slate-200"/>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {managers.map(m => (
-                        <div key={m.id} className="card-modern p-6 relative group border-none shadow-md">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-brand-100 text-brand-600 rounded-2xl flex items-center justify-center font-bold text-xl uppercase shadow-inner">{m.name?.[0]}</div>
-                                <div className="truncate flex-1">
-                                    <div className="font-bold text-slate-800">{m.name}</div>
-                                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{m.email}</div>
-                                </div>
-                                <button onClick={async()=>{if(confirm('Видалити?')) await deleteDoc(doc(db,"managers",m.id))}} className="text-slate-200 hover:text-red-500 transition"><Icon name="trash-2" size={16}/></button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        );
-    };
-
-    const SettingsView = ({ settings, setSettings, saveSettings, categories, saveCategories }) => {
-        const [newCatIn, setNewCatIn] = useState(''); const [newCatOut, setNewCatOut] = useState('');
-        const addCat = (t, v, setter) => { if(!v) return; saveCategories({...categories, [t]: [...categories[t], v]}); setter(''); };
-        return (
-            <div className="max-w-4xl mx-auto space-y-6 md:space-y-8 animate-fade-in px-1 pb-10">
-                <div className="card-modern p-6 md:p-8"><h2 className="text-2xl font-black mb-8 uppercase tracking-tighter border-b pb-4">Categories</h2>
-                    <div className="grid md:grid-cols-2 gap-10">
-                        <div><h3 className="font-black text-[10px] text-emerald-700 mb-4 uppercase tracking-widest">Income</h3>
-                            <div className="flex gap-2 mb-4"><input value={newCatIn} onChange={e=>setNewCatIn(e.target.value)} className="flex-1 border-2 p-2 rounded-xl text-sm outline-none focus:border-emerald-500"/><button onClick={()=>addCat('income',newCatIn,setNewCatIn)} className="bg-emerald-500 text-white p-2 rounded-xl"><Icon name="plus" size={16}/></button></div>
-                            <div className="flex flex-wrap gap-2">{categories.income.map(c => (<span key={c} className="bg-emerald-50 text-emerald-700 text-[10px] font-black px-2 py-1 rounded border flex items-center gap-1 uppercase">{c} <button onClick={()=>saveCategories({...categories, income: categories.income.filter(x=>x!==c)})}><Icon name="x" size={10}/></button></span>))}</div>
-                        </div>
-                        <div><h3 className="font-black text-[10px] text-orange-700 mb-4 uppercase tracking-widest">Expenses</h3>
-                            <div className="flex gap-2 mb-4"><input value={newCatOut} onChange={e=>setNewCatOut(e.target.value)} className="flex-1 border-2 p-2 rounded-xl text-sm outline-none focus:border-brand-500"/><button onClick={()=>addCat('expense',newCatOut,setNewCatOut)} className="bg-brand-500 text-white p-2 rounded-xl"><Icon name="plus" size={16}/></button></div>
-                            <div className="flex flex-wrap gap-2">{categories.expense.map(c => (<span key={c} className="bg-orange-50 text-orange-700 text-[10px] font-black px-2 py-1 rounded border flex items-center gap-1 uppercase">{c} <button onClick={()=>saveCategories({...categories, expense: categories.expense.filter(x=>x!==c)})}><Icon name="x" size={10}/></button></span>))}</div>
-                        </div>
+                    <div style="text-align:right">
+                        <small>${p.expiry}</small><br>
+                        <strong>${isUsed ? 'USED' : 'ACTIVE'}</strong>
                     </div>
                 </div>
-                <div className="card-modern p-6 md:p-8 bg-slate-900 text-white"><h2 className="text-2xl font-black mb-8 uppercase tracking-tighter text-white/50 border-b border-white/10 pb-4 tracking-tighter">Monobank API</h2>
-                    <div className="space-y-4">
-                        <input placeholder="X-Token" type="password" value={settings.monoKey} onChange={e=>setSettings({...settings, monoKey:e.target.value})} className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl font-mono text-xs text-brand-500 outline-none focus:border-brand-500 transition-all"/>
-                        <input placeholder="Account ID" value={settings.monoAccountId} onChange={e=>setSettings({...settings, monoAccountId:e.target.value})} className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl font-mono text-xs outline-none focus:border-white/30 transition-all"/>
-                    </div>
-                    <button onClick={()=>saveSettings(settings)} className="bg-white text-slate-900 w-full py-4 rounded-[20px] font-black mt-8 active:scale-95 shadow-xl uppercase tracking-widest text-[10px]">SAVE API</button>
-                </div>
-            </div>
-        );
-    };
+            `;
+        }).join('');
+        document.getElementById('active-promos').innerHTML = html || 'No promos available';
+    }
 
-    const TransactionModal = ({ type, close, categories, db }) => {
-        const [form, setForm] = useState({ amount: '', desc: '', cat: 'Інше', source: 'Monobank ФОП' });
-        const cats = type==='income' ? categories.income : categories.expense;
-        const theme = { income: 'from-emerald-500 to-teal-600', expense: 'from-brand-500 to-orange-600', dividend: 'from-indigo-500 to-purple-600' }[type];
-        return (
-            <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
-                <div className="card-modern w-full max-w-lg overflow-hidden relative shadow-2xl animate-fade-in">
-                    <div className={`bg-gradient-to-r ${theme} p-6 text-white font-black text-xl uppercase tracking-tighter flex justify-between items-center`}><span>{type}</span> <button onClick={close} className="bg-white/20 p-2 rounded-full"><Icon name="x" size={20}/></button></div>
-                    <div className="p-6 md:p-8 space-y-6">
-                        <div className="relative"><input type="number" value={form.amount} onChange={e=>setForm({...form, amount:e.target.value})} className="w-full text-5xl font-mono font-black border-b-4 py-2 outline-none focus:border-slate-900 transition-colors bg-transparent text-center" placeholder="0"/><span className="absolute left-0 bottom-6 text-3xl text-slate-200">₴</span></div>
-                        <div className="space-y-4">
-                            <input type="text" value={form.desc} onChange={e=>setForm({...form, desc:e.target.value})} className="w-full border-2 p-4 rounded-2xl font-bold outline-none focus:border-brand-500 transition-all text-sm" placeholder="Опис операції..." />
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <select value={form.cat} onChange={e=>setForm({...form, cat:e.target.value})} className="w-full border-2 p-3 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-white">{cats.map(c=><option key={c} value={c}>{c}</option>)}</select>
-                                <select value={form.source} onChange={e=>setForm({...form, source:e.target.value})} className="w-full border-2 p-3 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-white">{['Monobank ФОП', 'NovaPay', 'Готівка'].map(a=><option key={a} value={a}>{a}</option>)}</select>
-                            </div>
-                        </div>
-                        <button onClick={async () => { if(!form.amount) return; await addDoc(collection(db, "transactions"), { amount: Number(form.amount), description: form.desc || (type==='dividend'?'Виплата дивідендів':''), cat: type==='dividend'?'Дивіденди':form.cat, source: form.source, type: (type==='dividend' || type==='expense') ? 'expense' : 'income', isDividend: type==='dividend', date: new Date().toLocaleDateString('uk-UA'), createdAt: Date.now() }); close(); }} className="w-full bg-slate-900 text-white py-5 rounded-[24px] font-black text-lg shadow-2xl active:scale-95 transition-transform uppercase tracking-widest">OK</button>
-                    </div>
-                </div>
-            </div>
-        );
-    };
+    // --- GAME LOGIC ---
+    function handleSpin() {
+        const user = state.currentUser;
+        const today = new Date().toDateString();
+        
+        if(user.lastSpin === today) {
+            return alert('You already had your fortune today! Come back tomorrow.');
+        }
 
-    // --- MAIN APP ---
+        const btn = document.getElementById('spin-btn');
+        const slots = [document.getElementById('slot-1'), document.getElementById('slot-2'), document.getElementById('slot-3')];
+        const emojis = ['🌶️', '🥢', '🍜', '🍤', '🔥', '🥡'];
+        
+        btn.disabled = true;
+        slots.forEach(s => s.classList.add('spinning'));
 
-    const App = () => {
-        const [currentUser, setCurrentUser] = useState(null);
-        const [view, setView] = useState('auth');
-        const [transactions, setTransactions] = useState([]);
-        const [loading, setLoading] = useState(true);
-        const [settings, setSettings] = useState({ monoKey: '', monoAccountId: '' });
-        const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
-        const [email, setEmail] = useState('');
-        const [pass, setPass] = useState('');
-        const [modalType, setModalType] = useState(null);
-
-        useEffect(() => {
-            onAuthStateChanged(auth, async (u) => {
-                if (u) { setCurrentUser({ uid: u.uid, email: u.email, role: 'admin' }); setView('dashboard'); loadData(); } 
-                else { const stored = localStorage.getItem('latiao_user'); if (stored) { setCurrentUser(JSON.parse(stored)); setView('dashboard'); loadData(); } else { setView('auth'); setLoading(false); } }
+        setTimeout(() => {
+            slots.forEach(s => {
+                s.classList.remove('spinning');
+                s.innerText = emojis[Math.floor(Math.random() * emojis.length)];
             });
-        }, []);
 
-        const loadData = async () => {
-            setLoading(true);
-            try {
-                const sSnap = await getDoc(doc(db, "settings", "global")); if (sSnap.exists()) setSettings(sSnap.data());
-                const cSnap = await getDoc(doc(db, "settings", "categories")); if (cSnap.exists()) setCategories(cSnap.data());
-                onSnapshot(query(collection(db, "transactions"), orderBy("createdAt", "desc"), limit(500)), (snap) => {
-                    setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-                    setLoading(false);
-                });
-            } catch (e) { setLoading(false); }
-        };
+            // Logic: 10% chance to win random promo
+            const won = Math.random() > 0.7;
+            if(won) {
+                const bonusXp = Math.floor(Math.random() * 50) + 10;
+                user.xp += bonusXp;
+                user.history.unshift({ msg: `Won ${bonusXp} XP from Spin!`, date: new Date().toLocaleDateString() });
+                alert(`JACKPOT! You won ${bonusXp} XP!`);
+            } else {
+                alert('Better luck tomorrow! You gained 5 XP for trying.');
+                user.xp += 5;
+            }
 
-        const metrics = useMemo(() => {
-            const inc = transactions.filter(t => t.type === 'income' && !t.isDividend).reduce((s,t) => s + (Number(t.amount)||0), 0);
-            const exp = transactions.filter(t => t.type === 'expense' && !t.isDividend).reduce((s,t) => s + (Number(t.amount)||0), 0);
-            const cogs = transactions.filter(t => t.cat === 'Закупівля (COGS)').reduce((s,t) => s + (Number(t.amount)||0), 0);
-            const cash = transactions.reduce((s,t) => t.type==='income' ? s+(Number(t.amount)||0) : s-(Number(t.amount)||0), 0);
-            const div = transactions.filter(t => t.isDividend).reduce((s,t) => s+(Number(t.amount)||0), 0);
-            const bal = { mono: 0, nova: 0, cash: 0 };
-            transactions.forEach(t => { const k = (t.source||'').includes('Mono') ? 'mono' : ((t.source||'').includes('Nova') ? 'nova' : 'cash'); bal[k] += (t.type==='income' ? (Number(t.amount)||0) : -(Number(t.amount)||0)); });
-            return { revenue: inc, cogs, opex: exp - cogs, net: inc - exp, totalCash: cash, dividends: div, balances: bal, margin: inc ? (((inc-exp)/inc)*100).toFixed(0) : 0, totalExpense: exp, runway: exp > 0 ? (cash / (exp / 30)).toFixed(0) : "∞", netCashChange: (inc - exp) - div };
-        }, [transactions]);
+            user.lastSpin = today;
+            saveState();
+            renderProfile();
+            btn.disabled = false;
+        }, 2000);
+    }
 
-        const canAccess = (vid) => currentUser?.role === 'admin' || currentUser?.permissions?.includes(vid) || currentUser?.permissions?.includes('all');
+    // --- ADMIN LOGIC ---
+    function renderAdmin() {
+        document.getElementById('stat-users').innerText = state.users.length;
+        document.getElementById('stat-promos').innerText = state.promos.reduce((acc, p) => acc + p.usedBy.length, 0);
+        renderAdminUsers();
+    }
 
-        if (view === 'auth') return (
-            <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-full opacity-20"><div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-brand-500 rounded-full blur-[150px] animate-pulse"></div></div>
-                <div className="glass-bg p-10 md:p-12 rounded-[48px] w-full max-w-sm text-center shadow-2xl relative z-10 border border-white/10">
-                    <div className="mb-12 flex flex-col items-center">
-                        <div className="w-16 h-16 bg-gradient-to-tr from-brand-500 to-brand-700 rounded-3xl flex items-center justify-center shadow-2xl mb-4 transform rotate-6 border-b-4 border-brand-800"><Icon name="flame" size={32} className="text-white fill-white"/></div>
-                        <h1 className="text-3xl font-black text-white tracking-tighter mb-1 uppercase tracking-widest">Latiao</h1>
-                        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.3em]">Finance ERP</p>
-                    </div>
-                    <form onSubmit={async (e)=>{e.preventDefault(); setLoading(true); try{await signInWithEmailAndPassword(auth,email,pass);}catch(err){const s=await getDocs(query(collection(db,"managers"),where("email","==",email),where("password","==",pass))); if(!s.empty){const u={uid:s.docs[0].id,...s.docs[0].data(),role:'manager'}; localStorage.setItem('latiao_user',JSON.stringify(u)); setCurrentUser(u); setView('dashboard'); loadData();}else{alert("Err!"); setLoading(false);}}}} className="space-y-4">
-                        <input type="email" placeholder="Login" value={email} onChange={e=>setEmail(e.target.value)} className="w-full p-4 rounded-2xl bg-white/5 text-white outline-none border border-white/10 focus:border-brand-500 transition-all font-bold"/>
-                        <input type="password" placeholder="Pass" value={pass} onChange={e=>setPass(e.target.value)} className="w-full p-4 rounded-2xl bg-white/5 text-white outline-none border border-white/10 focus:border-brand-500 transition-all font-bold"/>
-                        <button type="submit" className="w-full bg-brand-500 text-white py-4 rounded-2xl font-black text-lg shadow-xl active:scale-95 transition-all">ENTER</button>
-                    </form>
-                </div>
-            </div>
-        );
+    function renderAdminUsers() {
+        const search = document.getElementById('user-search').value.toLowerCase();
+        const filtered = state.users.filter(u => u.name.toLowerCase().includes(search) || u.phone.includes(search));
+        
+        const html = filtered.map(u => `
+            <tr>
+                <td>${u.name}<br><small>${u.phone}</small></td>
+                <td><input type="number" value="${u.xp}" onchange="updateUserXp('${u.id}', this.value)" style="width:80px; margin:0; padding:5px;"></td>
+                <td><span style="color: ${u.status === 'active' ? '#00ff00' : '#ff0000'}">${u.status}</span></td>
+                <td>
+                    <button onclick="toggleUserStatus('${u.id}')">🚫</button>
+                    <button onclick="giftPromo('${u.id}')">🎁</button>
+                </td>
+            </tr>
+        `).join('');
+        document.getElementById('admin-user-list').innerHTML = html;
+    }
 
-        return (
-            <div className="flex h-screen overflow-hidden bg-[#F8FAFC]">
-                <aside className="w-72 bg-white border-r border-slate-200 flex flex-col z-20 shadow-soft sidebar-nav">
-                    <div className="p-8 sidebar-logo-container"><h1 className="text-2xl font-black tracking-tighter uppercase tracking-widest">Latiao<span className="text-brand-500">.</span></h1></div>
-                    <nav className="flex-1 px-4 space-y-1 mt-2">
-                        {ALL_VIEWS.filter(v => canAccess(v.id)).map(item => (
-                            <button key={item.id} onClick={()=>setView(item.id)} className={`w-full flex items-center gap-3 p-3.5 text-[10px] md:text-xs font-black uppercase tracking-widest sidebar-link ${view===item.id ? 'active' : 'text-slate-400'}`}><Icon name={item.icon} size={20}/> <span>{item.label}</span></button>
-                        ))}
-                    </nav>
-                    <div className="p-6 border-t"><button onClick={() => {signOut(auth); localStorage.removeItem('latiao_user'); setView('auth');}} className="w-full flex items-center gap-3 p-3 text-xs font-bold text-slate-400 hover:text-red-500 transition-colors uppercase tracking-widest"><Icon name="log-out" size={18}/> EXIT</button></div>
-                </aside>
-                <main className="flex-1 overflow-y-auto p-8 relative scroll-smooth">
-                    <div className="flex justify-between items-center mb-10 sticky top-0 bg-[#F8FAFC]/80 backdrop-blur-md z-30 py-4">
-                        <div><h1 className="text-2xl md:text-3xl font-black text-slate-900 uppercase tracking-tighter">{ALL_VIEWS.find(v=>v.id===view)?.label}</h1><p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-0.5">{currentUser?.email}</p></div>
-                        {(view==='dashboard' || view==='ops') && (
-                            <div className="flex gap-4 p-1.5 bg-white rounded-2xl border border-slate-100 shadow-soft">
-                                <button onClick={()=>setModalType('income')} className="bg-emerald-500 text-white px-5 md:px-8 py-2 md:py-3 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all">In</button>
-                                <button onClick={()=>setModalType('expense')} className="bg-brand-500 text-white px-5 md:px-8 py-2 md:py-3 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all">Out</button>
-                            </div>
-                        )}
-                    </div>
-                    <div className="fade-in pb-20 md:pb-12">
-                        {loading ? <div className="text-center p-20 font-black animate-pulse text-slate-300 text-5xl tracking-tighter uppercase">Syncing...</div> : (
-                            <>
-                                {view==='dashboard' && <DashboardMemo metrics={metrics} setView={setView}/>}
-                                {view==='ops' && <OpsMemo transactions={transactions} deleteTx={(id)=>deleteDoc(doc(db,"transactions",id))} syncMono={()=>{}} canDelete={currentUser?.role==='admin'} categories={categories}/>}
-                                {view==='pnl' && <PnLMemo metrics={metrics} transactions={transactions}/>}
-                                {view==='cashflow' && <CashFlowMemo metrics={metrics}/>}
-                                {view==='dividends' && <DividendsMemo metrics={metrics} transactions={transactions} setModalType={setModalType}/>}
-                                {view==='settings' && <SettingsMemo settings={settings} setSettings={setSettings} saveSettings={(d)=>setDoc(doc(db,"settings","global"),d)} categories={categories} saveCategories={(d)=>setDoc(doc(db,"settings","categories"),d)}/>}
-                                {view==='managers' && <ManagersMemo db={db}/>}
-                            </>
-                        )}
-                    </div>
-                </main>
-                {modalType && <TransactionModal type={modalType} close={()=>setModalType(null)} categories={categories} db={db}/>}
-            </div>
-        );
-    };
+    function updateUserXp(id, val) {
+        const user = state.users.find(u => u.id === id);
+        user.xp = parseInt(val);
+        saveState();
+    }
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+    function toggleUserStatus(id) {
+        const user = state.users.find(u => u.id === id);
+        user.status = user.status === 'active' ? 'blocked' : 'active';
+        saveState();
+        renderAdminUsers();
+    }
+
+    function createPromo() {
+        const code = document.getElementById('new-promo-code').value.toUpperCase();
+        const val = document.getElementById('new-promo-val').value;
+        const min = document.getElementById('new-promo-min').value;
+        const expiry = document.getElementById('new-promo-expiry').value;
+
+        if(!code || !val) return alert('Fill details');
+
+        state.promos.push({
+            id: Date.now().toString(),
+            code, val, min, expiry, usedBy: []
+        });
+        saveState();
+        alert('Promo Created!');
+        renderAdmin();
+    }
+
+    function giftPromo(userId) {
+        const code = prompt('Enter special code to gift this user:');
+        if(!code) return;
+        const user = state.users.find(u => u.id === userId);
+        user.history.unshift({ msg: `Received special promo: ${code}`, date: new Date().toLocaleDateString() });
+        saveState();
+        alert('Promo gifted to user history!');
+    }
+
+    // --- UTILS ---
+    function toggleTheme() {
+        document.body.classList.toggle('light-theme');
+    }
+
+    // Start
+    init();
 </script>
 
 </body>
