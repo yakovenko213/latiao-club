@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Latiao Club | Cloud Invitation System</title>
+    <title>Latiao Club | Cloud & Bot Edition</title>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -56,7 +56,6 @@
         .bot-user-card { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: rgba(255,255,255,0.02); border-radius: 16px; margin-bottom: 12px; border: 1px solid var(--border); }
         table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
         td { padding: 16px; background: rgba(255,255,255,0.02); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-        .modal-blur { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
         .spin { animation: rotate 1s linear infinite; display: inline-block; }
         @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
@@ -69,7 +68,7 @@
             <input type="text" id="user-login" class="luxe-input" placeholder="Логін (latiao_...)">
             <input type="password" id="user-pass" class="luxe-input" placeholder="Пароль">
             <button class="premium-btn" style="width: 100%;" onclick="handleUnifiedLogin()">Увійти</button>
-            <p id="loading-txt" style="margin-top: 15px; color: var(--accent); font-size: 12px;" class="hidden">Перевірка доступу...</p>
+            <p id="loading-txt" style="margin-top: 15px; color: var(--accent); font-size: 11px;" class="hidden">Перевірка даних...</p>
         </div>
     </div>
 
@@ -81,9 +80,8 @@
         <main style="padding: 40px;">
             <h1 id="client-welcome">Вітаємо</h1>
             <div class="glass-card" style="margin-top: 30px;">
-                <p>Ваш статус: <span style="color: var(--accent)">VIP Member</span></p>
+                <p>Статус: <span style="color: var(--accent)">Premium Member</span></p>
                 <p id="client-phone-display" style="margin-top: 10px;"></p>
-                <div style="margin-top: 20px; font-size: 12px; color: var(--text-muted);">Дані завантажено з хмари Firebase</div>
             </div>
         </main>
     </div>
@@ -102,8 +100,7 @@
                     <button id="sync-btn" class="premium-btn" onclick="syncTelegram()"><span>🔄 Синхронізувати</span></button>
                 </div>
                 <div class="glass-card">
-                    <h3>Підписники бота (<span id="bot-count">0</span>)</h3>
-                    <div id="bot-users-container" style="margin-top: 20px;"></div>
+                    <div id="bot-users-container"></div>
                 </div>
             </div>
 
@@ -111,7 +108,7 @@
                 <h1>База клієнтів</h1>
                 <div class="glass-card" style="margin-top: 20px;">
                     <table>
-                        <thead><tr><th>ПІБ</th><th>Логін</th><th>Пароль</th><th>Телефон</th></tr></thead>
+                        <thead><tr><th>Ім'я</th><th>Логін</th><th>Пароль</th></tr></thead>
                         <tbody id="clients-table-body"></tbody>
                     </table>
                 </div>
@@ -120,8 +117,8 @@
             <div id="view-settings" class="view-content hidden">
                 <h1>Налаштування</h1>
                 <div class="glass-card" style="margin-top: 20px; max-width: 500px;">
-                    <label>TELEGRAM BOT TOKEN</label>
-                    <input type="text" id="tg-token-field" class="luxe-input" placeholder="7123...:ABC...">
+                    <label>TELEGRAM TOKEN</label>
+                    <input type="text" id="tg-token-field" class="luxe-input">
                     <button class="premium-btn" onclick="saveSettings()">Зберегти</button>
                 </div>
             </div>
@@ -131,10 +128,11 @@
     <script>
         let state = { users: [], botUsers: [], settings: { tgToken: '' } };
 
-        // --- FIREBASE CLOUD ---
         async function saveCloud() {
-            const docRef = window.fs.doc(window.db, "club_data", "main_state");
-            await window.fs.setDoc(docRef, state);
+            try {
+                const docRef = window.fs.doc(window.db, "club_data", "main_state");
+                await window.fs.setDoc(docRef, state);
+            } catch(e) { console.error("Firebase Error:", e); }
         }
 
         function initAppLogic() {
@@ -147,7 +145,6 @@
             });
         }
 
-        // --- AUTH ---
         async function handleUnifiedLogin() {
             const login = document.getElementById('user-login').value.trim().toLowerCase();
             const pass = document.getElementById('user-pass').value.trim();
@@ -156,28 +153,28 @@
             if (login === 'admin' && pass === 'latiao_admin') {
                 document.getElementById('unified-auth').classList.add('hidden');
                 document.getElementById('admin-suite').classList.remove('hidden');
-                document.getElementById('tg-token-field').value = state.settings.tgToken;
+                document.getElementById('tg-token-field').value = state.settings.tgToken || '';
                 return;
             }
 
             loading.classList.remove('hidden');
+            // Перевірка по базі
             const user = state.users.find(u => u.login.toLowerCase() === login && u.pass === pass);
             
             if (user) {
                 document.getElementById('unified-auth').classList.add('hidden');
                 document.getElementById('client-cabinet').classList.remove('hidden');
-                document.getElementById('client-welcome').innerText = `Вітаємо, ${user.pib || 'Клієнт'}`;
-                document.getElementById('client-phone-display').innerText = `Ваш номер: ${user.phone || 'Не вказано'}`;
+                document.getElementById('client-welcome').innerText = `Вітаємо, ${user.pib || 'Учасник'}`;
+                document.getElementById('client-phone-display').innerText = `ID: ${user.tgId}`;
             } else {
-                alert("Невірний логін або пароль");
+                alert("Доступ відхилено. Перевірте логін та пароль.");
                 loading.classList.add('hidden');
             }
         }
 
-        // --- TELEGRAM LOGIC ---
         async function syncTelegram() {
             const token = state.settings.tgToken;
-            if(!token) return alert('Налаштуйте токен!');
+            if(!token) return alert('Токен не вказано!');
             const btn = document.getElementById('sync-btn');
             btn.innerHTML = `<span class="spin">⏳</span>`;
             try {
@@ -194,72 +191,54 @@
                     });
                     if(newFound) await saveCloud();
                 }
-            } catch (e) { alert("API Error"); }
+            } catch (e) { alert("Помилка API Telegram"); }
             finally { btn.innerHTML = `<span>🔄 Синхронізувати</span>`; }
         }
 
-        // --- INVITATION LOGIC (NEW) ---
         async function sendInstantInvite(botId) {
             const target = state.botUsers.find(b => b.id === botId);
-            if (!target) return;
-
             const token = state.settings.tgToken;
-            if (!token) return alert('Налаштуйте токен бота!');
+            if (!target || !token) return alert('Помилка даних');
 
-            // Генеруємо дані
             const login = "latiao_" + Math.floor(1000 + Math.random() * 8999);
             const pass = Math.floor(1000 + Math.random() * 8999).toString();
 
-            // Зберігаємо в базу
-            state.users.push({
-                tgId: target.id,
-                pib: target.name,
-                phone: "Вказано в ТГ",
-                login: login,
-                pass: pass
-            });
+            const newUser = { tgId: target.id, pib: target.name, login: login, pass: pass };
+            state.users.push(newUser);
             await saveCloud();
 
-            // Відправляємо в ТГ
-            const msg = `🎉 Вітаємо! Ви отримали запрошення до Latiao Club.\n\n🔐 Ваші дані для входу в кабінет:\nЛогін: ${login}\nПароль: ${pass}\n\nВведіть ці дані на головній сторінці сайту!`;
+            const text = `🎉 Вітаємо! Твоє запрошення:\n\n🔐 Логін: ${login}\n🔑 Пароль: ${pass}\n\nВводь дані на сайті!`;
             
+            // Прямий запит без проксі для швидкості (якщо браузер дозволить)
             try {
-                await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ chat_id: target.id, text: msg })
-                });
-                alert(`Запрошення для ${target.name} надіслано! Дані збережено в хмарі.`);
+                const tgUrl = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${target.id}&text=${encodeURIComponent(text)}`;
+                const res = await fetch(tgUrl);
+                const resData = await res.json();
+                if(resData.ok) alert(`Надіслано для ${target.name}`);
+                else throw new Error(resData.description);
             } catch (e) {
-                alert("Дані збережено, але не вдалося надіслати повідомлення.");
+                alert("Помилка відправки: " + e.message);
             }
         }
 
         function renderBotUsers() {
             const container = document.getElementById('bot-users-container');
             if(!container) return;
-            document.getElementById('bot-count').innerText = state.botUsers.length;
-            container.innerHTML = '';
+            container.innerHTML = state.botUsers.length ? '' : '<p>Немає підписників. Натисніть Синхронізувати.</p>';
             state.botUsers.forEach(u => {
                 const isReg = state.users.find(user => user.tgId === u.id);
                 container.innerHTML += `
                     <div class="bot-user-card">
-                        <div>
-                            <b>${u.name}</b> ${isReg ? '<span style="color:#27AE60; font-size:12px;">✅ В КЛУБІ</span>' : ''}
-                        </div>
-                        <div style="display:flex; gap:10px;">
-                            ${!isReg ? `<button class="premium-btn secondary" style="padding:8px 16px; font-size:11px;" onclick="sendInstantInvite(${u.id})">✉️ Запросити</button>` : ''}
-                        </div>
+                        <div><b>${u.name}</b> ${isReg ? '✅' : ''}</div>
+                        ${!isReg ? `<button class="premium-btn secondary" onclick="sendInstantInvite(${u.id})">✉️ Запросити</button>` : ''}
                     </div>`;
             });
         }
 
         function renderClients() {
-            const tableBody = document.getElementById('clients-table-body');
-            if(!tableBody) return;
-            tableBody.innerHTML = state.users.map(u => 
-                `<tr><td>${u.pib}</td><td><code>${u.login}</code></td><td><code>${u.pass}</code></td><td>${u.phone}</td></tr>`
-            ).join('');
+            const tb = document.getElementById('clients-table-body');
+            if(!tb) return;
+            tb.innerHTML = state.users.map(u => `<tr><td>${u.pib}</td><td>${u.login}</td><td>${u.pass}</td></tr>`).join('');
         }
 
         function switchView(id) {
@@ -272,7 +251,7 @@
         async function saveSettings() {
             state.settings.tgToken = document.getElementById('tg-token-field').value.trim();
             await saveCloud();
-            alert("Збережено");
+            alert("Збережено!");
         }
     </script>
 </body>
