@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Latiao Club | Luxury Admin Suite</title>
+    <title>Latiao Club | Luxury CRM Suite</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
 
@@ -33,19 +33,14 @@
 
         .hidden { display: none !important; }
 
-        /* --- AUTH ANIMATION --- */
         @keyframes slideUp {
             from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* --- DASHBOARD LAYOUT --- */
-        .admin-layout {
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            min-height: 100vh;
-        }
+        .admin-layout { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
 
+        /* SIDEBAR */
         .sidebar {
             background: rgba(13, 13, 15, 0.95);
             border-right: 1px solid var(--border);
@@ -53,250 +48,122 @@
             display: flex;
             flex-direction: column;
             backdrop-filter: blur(20px);
-            position: sticky;
-            top: 0;
-            height: 100vh;
+            position: sticky; top: 0; height: 100vh;
         }
 
-        .logo-area {
-            font-weight: 800;
-            font-size: 22px;
-            letter-spacing: -1px;
-            margin-bottom: 50px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
+        .logo-area { font-weight: 800; font-size: 22px; letter-spacing: -1px; margin-bottom: 50px; display: flex; align-items: center; gap: 10px; }
         .logo-dot { width: 12px; height: 12px; background: var(--accent); border-radius: 3px; box-shadow: 0 0 15px var(--accent); }
 
-        .nav-menu { flex: 1; list-style: none; }
         .nav-item {
-            padding: 14px 18px;
-            border-radius: 12px;
-            cursor: pointer;
-            margin-bottom: 8px;
-            color: var(--text-muted);
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 14px;
-            font-weight: 600;
+            padding: 14px 18px; border-radius: 12px; cursor: pointer; margin-bottom: 8px;
+            color: var(--text-muted); transition: var(--transition); display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 600;
         }
-
         .nav-item:hover { background: var(--glass); color: #fff; }
         .nav-item.active { background: var(--accent); color: #fff; box-shadow: 0 10px 20px var(--accent-glow); }
 
-        /* --- CONTENT AREA --- */
+        /* CONTENT */
         .main-view { padding: 40px; animation: slideUp 0.6s ease; }
+        .glass-card { background: var(--panel); border: 1px solid var(--border); border-radius: 24px; padding: 30px; backdrop-filter: blur(10px); }
 
-        .header-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 40px;
-        }
-
-        .glass-card {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 30px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            transition: var(--transition);
-        }
-
-        .glass-card:hover { border-color: rgba(255,255,255,0.15); }
-
-        /* --- STATS --- */
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 30px; }
-        .stat-box h4 { color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
-        .stat-box p { font-size: 32px; font-weight: 800; }
-
-        /* --- TABLES --- */
-        table { width: 100%; border-collapse: separate; border-spacing: 0 12px; }
-        th { text-align: left; padding: 0 20px; color: var(--text-muted); font-size: 11px; text-transform: uppercase; }
-        td { padding: 20px; background: rgba(255,255,255,0.02); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-        td:first-child { border-left: 1px solid var(--border); border-radius: 16px 0 0 16px; }
-        td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16px 0; }
-
-        /* --- INPUTS & BUTTONS --- */
         .premium-btn {
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
+            background: var(--accent); color: #fff; border: none; padding: 12px 24px; border-radius: 12px;
+            font-weight: 700; cursor: pointer; transition: var(--transition); display: flex; align-items: center; gap: 8px; font-size: 14px;
         }
+        .premium-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px var(--accent-glow); }
+        .premium-btn.secondary { background: var(--glass); border: 1px solid var(--border); }
 
-        .premium-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px var(--accent-glow); filter: brightness(1.1); }
-        .premium-btn:disabled { opacity: 0.5; cursor: wait; }
+        .luxe-input { background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 14px 18px; border-radius: 12px; color: #fff; width: 100%; outline: none; }
 
-        .luxe-input {
-            background: rgba(0,0,0,0.3);
-            border: 1px solid var(--border);
-            padding: 14px 18px;
-            border-radius: 12px;
-            color: #fff;
-            width: 100%;
-            outline: none;
-            transition: var(--transition);
-        }
-
-        .luxe-input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-glow); }
-
-        /* --- MODALS --- */
-        .modal-blur {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
-            display: flex; align-items: center; justify-content: center; z-index: 1000;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* --- BOT USERS LIST --- */
+        /* BOT USER LIST */
         .bot-user-card {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            border-bottom: 1px solid var(--border);
-            transition: 0.3s;
+            display: flex; justify-content: space-between; align-items: center; padding: 16px;
+            background: rgba(255,255,255,0.02); border-radius: 16px; margin-bottom: 12px; border: 1px solid var(--border);
         }
-        .bot-user-card:hover { background: var(--glass); }
 
-        /* --- LOADER --- */
-        .spin { animation: rotate 1s linear infinite; }
+        .modal-blur {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 1000;
+        }
+
+        .spin { animation: rotate 1s linear infinite; display: inline-block; }
         @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
     </style>
 </head>
 <body>
 
     <div id="admin-auth-screen" class="hidden" style="display: flex; align-items: center; justify-content: center; height: 100vh;">
-        <div class="glass-card" style="width: 400px; text-align: center; animation: slideUp 0.8s ease;">
-            <div class="logo-area" style="justify-content: center;">
-                <div class="logo-dot"></div> LATIAO CLUB
-            </div>
-            <h3 style="margin-bottom: 30px; font-weight: 400; color: var(--text-muted);">Вхід у панель управління</h3>
+        <div class="glass-card" style="width: 400px; text-align: center;">
+            <div class="logo-area" style="justify-content: center;"><div class="logo-dot"></div> LATIAO CLUB</div>
             <input type="password" id="auth-pass" class="luxe-input" placeholder="Пароль адміністратора" style="margin-bottom: 20px; text-align: center;">
-            <button class="premium-btn" style="width: 100%; justify-content: center;" onclick="attemptLogin()">Увійти в систему</button>
+            <button class="premium-btn" style="width: 100%; justify-content: center;" onclick="attemptLogin()">Увійти</button>
         </div>
     </div>
 
     <div id="admin-suite" class="admin-layout hidden">
-        
         <aside class="sidebar">
-            <div class="logo-area">
-                <div class="logo-dot"></div> LATIAO ADMIN
-            </div>
-            <ul class="nav-menu">
-                <li class="nav-item active" onclick="switchView('dash', this)">📊 Дашборд</li>
-                <li class="nav-item" onclick="switchView('clients', this)">👥 Клієнти</li>
-                <li class="nav-item" onclick="switchView('tg', this)">🤖 Telegram CRM</li>
-                <li class="nav-item" onclick="switchView('settings', this)">⚙️ Налаштування</li>
-            </ul>
+            <div class="logo-area"><div class="logo-dot"></div> LATIAO ADMIN</div>
+            <nav>
+                <div class="nav-item active" onclick="switchView('tg', this)">🤖 Telegram CRM</div>
+                <div class="nav-item" onclick="switchView('clients', this)">👥 Клієнти</div>
+                <div class="nav-item" onclick="switchView('settings', this)">⚙️ Налаштування</div>
+            </nav>
             <div style="margin-top: auto;">
-                <div class="nav-item" onclick="logoutAdmin()" style="color: #ff4b4b;">🔒 Вийти з сесії</div>
+                <div class="nav-item" onclick="logoutAdmin()" style="color: #ff4b4b;">🔒 Вийти</div>
             </div>
         </aside>
 
         <main class="main-view">
-            
-            <div id="view-dash" class="view-content">
-                <div class="header-actions">
-                    <h1>Статистика клубу</h1>
-                    <div id="current-time" style="color: var(--text-muted); font-size: 14px;"></div>
-                </div>
-                
-                <div class="stats-grid">
-                    <div class="glass-card stat-box">
-                        <h4>Активні клієнти</h4>
-                        <p id="stat-total-users">0</p>
+            <div id="view-tg" class="view-content">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+                    <div>
+                        <h1>Telegram Менеджер</h1>
+                        <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Керування базою підписників бота</p>
                     </div>
-                    <div class="glass-card stat-box">
-                        <h4>Підписники бота</h4>
-                        <p id="stat-bot-users">0</p>
-                    </div>
-                    <div class="glass-card stat-box">
-                        <h4>Оборот (загальний)</h4>
-                        <p id="stat-revenue">0 ₴</p>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="premium-btn secondary" onclick="openMassModal()">📢 Масова розсилка</button>
+                        <button id="sync-btn" class="premium-btn" onclick="syncTelegram()"><span>🔄 Синхронізувати</span></button>
                     </div>
                 </div>
 
                 <div class="glass-card">
-                    <h3 style="margin-bottom: 20px;">Топ клієнтів</h3>
-                    <div id="top-clients-list"></div>
+                    <h3 style="margin-bottom: 20px;">Активні чати (<span id="bot-count">0</span>)</h3>
+                    <div id="bot-users-container">
+                        </div>
                 </div>
             </div>
 
             <div id="view-clients" class="view-content hidden">
-                <div class="header-actions">
-                    <h1>База клієнтів</h1>
-                </div>
-                <div class="glass-card">
-                    <table id="clients-table">
-                        <thead><tr><th>Клієнт</th><th>Витрати</th><th>Рівень</th><th>Дії</th></tr></thead>
-                        <tbody id="clients-tbody"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="view-tg" class="view-content hidden">
-                <div class="header-actions">
-                    <h1>Telegram Менеджер</h1>
-                    <button id="sync-btn" class="premium-btn" onclick="syncTelegram()">
-                        <span>🔄 Оновити базу чатів</span>
-                    </button>
-                </div>
-                
-                <div class="grid" style="display: grid; grid-template-columns: 1fr; gap: 24px;">
-                    <div class="glass-card">
-                        <div id="bot-users-container">
-                            </div>
-                    </div>
+                <h1>База клієнтів</h1>
+                <div class="glass-card" style="margin-top: 24px;">
+                    <p style="color: var(--text-muted);">Перегляд та редагування профілів клієнтів</p>
+                    <div id="clients-list-container" style="margin-top: 20px;"></div>
                 </div>
             </div>
 
             <div id="view-settings" class="view-content hidden">
                 <h1>Налаштування</h1>
-                <div class="glass-card" style="max-width: 600px; margin-top: 30px;">
-                    <h3 style="margin-bottom: 20px;">Конфігурація бота</h3>
-                    <div style="margin-bottom: 20px;">
-                        <label style="display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">BOT API TOKEN</label>
-                        <input type="text" id="tg-token-field" class="luxe-input" placeholder="7123...:ABC...">
-                    </div>
-                    <button class="premium-btn" onclick="saveSettings()">Зберегти зміни</button>
+                <div class="glass-card" style="max-width: 600px; margin-top: 24px;">
+                    <label style="display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">BOT API TOKEN</label>
+                    <input type="text" id="tg-token-field" class="luxe-input" placeholder="7123...:ABC...">
+                    <button class="premium-btn" style="margin-top: 20px;" onclick="saveSettings()">Зберегти</button>
                 </div>
             </div>
-
         </main>
     </div>
 
     <div id="msg-modal" class="modal-blur hidden">
         <div class="glass-card" style="width: 500px; animation: slideUp 0.4s ease;">
-            <h3 id="msg-target-name" style="margin-bottom: 20px;">Повідомлення</h3>
-            <textarea id="direct-msg-text" class="luxe-input" style="height: 180px; margin-bottom: 20px; resize: none;" placeholder="Введіть текст повідомлення для клієнта..."></textarea>
+            <h3 id="msg-title" style="margin-bottom: 20px;">Повідомлення</h3>
+            <textarea id="msg-text" class="luxe-input" style="height: 180px; margin-bottom: 20px; resize: none;" placeholder="Текст повідомлення..."></textarea>
             <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                <button class="premium-btn" style="background: var(--glass); color: #fff;" onclick="closeModal()">Скасувати</button>
-                <button id="send-msg-btn" class="premium-btn" onclick="sendDirectMessage()">Надіслати зараз</button>
+                <button class="premium-btn secondary" onclick="closeModal()">Скасувати</button>
+                <button id="send-btn" class="premium-btn" onclick="executeSend()">Надіслати</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- ДАНІ ТА СЕСІЯ ---
-        const DB_KEY = 'latiao_luxury_v1';
+        const DB_KEY = 'latiao_luxury_db';
         const AUTH_KEY = 'latiao_admin_session';
 
         let state = JSON.parse(localStorage.getItem(DB_KEY)) || {
@@ -305,203 +172,150 @@
             settings: { tgToken: '' }
         };
 
-        let currentChatId = null;
+        let activeTarget = null; // null для масової розсилки, або chat_id
 
         function save() { localStorage.setItem(DB_KEY, JSON.stringify(state)); }
 
-        // --- AUTH LOGIC (Раз в добу) ---
+        // AUTH
         function checkAuth() {
             const session = JSON.parse(localStorage.getItem(AUTH_KEY));
             const now = Date.now();
-            const oneDay = 24 * 60 * 60 * 1000;
-
-            if (session && (now - session.timestamp < oneDay)) {
-                showAdminPanel();
-            } else {
-                document.getElementById('admin-auth-screen').classList.remove('hidden');
-                document.getElementById('admin-suite').classList.add('hidden');
-            }
+            if (session && (now - session.timestamp < 24 * 60 * 60 * 1000)) showAdminPanel();
+            else document.getElementById('admin-auth-screen').classList.remove('hidden');
         }
 
         function attemptLogin() {
-            const pass = document.getElementById('auth-pass').value;
-            if (pass === 'latiao_admin') {
-                const session = { timestamp: Date.now() };
-                localStorage.setItem(AUTH_KEY, JSON.stringify(session));
+            if (document.getElementById('auth-pass').value === 'latiao_admin') {
+                localStorage.setItem(AUTH_KEY, JSON.stringify({ timestamp: Date.now() }));
                 showAdminPanel();
-            } else {
-                alert('Невірний пароль');
-            }
+            } else alert('Невірний пароль');
         }
 
-        function logoutAdmin() {
-            localStorage.removeItem(AUTH_KEY);
-            location.reload();
-        }
+        function logoutAdmin() { localStorage.removeItem(AUTH_KEY); location.reload(); }
 
         function showAdminPanel() {
             document.getElementById('admin-auth-screen').classList.add('hidden');
             document.getElementById('admin-suite').classList.remove('hidden');
             document.getElementById('tg-token-field').value = state.settings.tgToken;
-            updateStats();
-            renderTopClients();
+            renderBotUsers();
         }
 
-        // --- UI NAVIGATION ---
+        // NAVIGATION
         function switchView(viewId, el) {
             document.querySelectorAll('.view-content').forEach(v => v.classList.add('hidden'));
             document.getElementById('view-' + viewId).classList.remove('hidden');
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             el.classList.add('active');
-
-            if(viewId === 'clients') renderClientsTable();
-            if(viewId === 'tg') renderBotUsers();
-            if(viewId === 'dash') updateStats();
         }
 
-        // --- CRM & TELEGRAM ---
+        // TELEGRAM LOGIC
         async function syncTelegram() {
             const token = state.settings.tgToken;
-            if(!token) return alert('Налаштуйте токен бота!');
+            if(!token) return alert('Вкажіть токен у налаштуваннях');
 
             const btn = document.getElementById('sync-btn');
             btn.disabled = true;
-            btn.innerHTML = `<span class="spin logo-dot" style="background: #fff; box-shadow: none;"></span> Синхронізація...`;
+            btn.innerHTML = `<span class="spin">⏳</span> Синхронізація...`;
 
             try {
                 const proxy = 'https://api.allorigins.win/get?url=';
                 const apiUrl = encodeURIComponent(`https://api.telegram.org/bot${token}/getUpdates`);
-                
                 const response = await fetch(proxy + apiUrl);
                 const raw = await response.json();
                 const data = JSON.parse(raw.contents);
 
                 if(data.ok) {
-                    let newOnes = 0;
+                    let newCount = 0;
                     data.result.forEach(item => {
                         const msg = item.message || item.edited_message || item.callback_query?.message;
                         if(msg && msg.chat && msg.chat.type === 'private') {
-                            const chat = msg.chat;
-                            if(!state.botUsers.find(b => b.id === chat.id)) {
-                                state.botUsers.push({
-                                    id: chat.id,
-                                    name: chat.first_name || 'Клієнт',
-                                    username: chat.username || 'n/a'
-                                });
-                                newOnes++;
+                            if(!state.botUsers.find(b => b.id === msg.chat.id)) {
+                                state.botUsers.push({ id: msg.chat.id, name: msg.chat.first_name, username: msg.chat.username });
+                                newCount++;
                             }
                         }
                     });
                     save();
                     renderBotUsers();
-                    updateStats();
-                    alert(newOnes > 0 ? `Знайдено ${newOnes} нових контактів!` : "Нових підписників немає.");
+                    alert(newCount > 0 ? `Додано ${newCount} нових підписників` : "Нових підписників не знайдено");
                 }
-            } catch (e) { alert("Помилка API. Перевірте токен."); }
-            finally { 
-                btn.disabled = false; 
-                btn.innerHTML = `<span>🔄 Оновити базу чатів</span>`;
-            }
+            } catch (e) { alert("Помилка зв'язку з Telegram"); }
+            finally { btn.disabled = false; btn.innerHTML = `<span>🔄 Синхронізувати</span>`; }
         }
 
         function renderBotUsers() {
             const container = document.getElementById('bot-users-container');
-            container.innerHTML = state.botUsers.length ? '' : '<p style="color:var(--text-muted); text-align:center;">База підписників порожня</p>';
+            document.getElementById('bot-count').innerText = state.botUsers.length;
+            container.innerHTML = state.botUsers.length ? '' : '<p style="color:var(--text-muted); text-align:center;">База порожня. Натисніть синхронізацію.</p>';
             
             state.botUsers.forEach(u => {
                 container.innerHTML += `
                     <div class="bot-user-card">
                         <div>
-                            <div style="font-weight: 600;">${u.name}</div>
-                            <div style="font-size: 12px; color: var(--text-muted);">@${u.username} • ID: ${u.id}</div>
+                            <div style="font-weight:600">${u.name}</div>
+                            <div style="font-size:12px; color:var(--text-muted)">@${u.username || 'n/a'} • ID: ${u.id}</div>
                         </div>
-                        <button class="premium-btn" style="padding: 8px 16px; font-size: 12px;" onclick="openMsgModal(${u.id}, '${u.name}')">Написати</button>
+                        <button class="premium-btn" style="padding:8px 16px; font-size:12px;" onclick="openMsgModal(${u.id}, '${u.name}')">Написати</button>
                     </div>
                 `;
             });
         }
 
+        // SENDING LOGIC
         function openMsgModal(chatId, name) {
-            currentChatId = chatId;
-            document.getElementById('msg-target-name').innerText = `Повідомлення для ${name}`;
+            activeTarget = chatId;
+            document.getElementById('msg-title').innerText = `Повідомлення для ${name}`;
             document.getElementById('msg-modal').classList.remove('hidden');
         }
 
-        async function sendDirectMessage() {
-            const text = document.getElementById('direct-msg-text').value;
+        function openMassModal() {
+            activeTarget = null;
+            document.getElementById('msg-title').innerText = `📢 Масова розсилка (${state.botUsers.length} чол.)`;
+            document.getElementById('msg-modal').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('msg-modal').classList.add('hidden'); document.getElementById('msg-text').value = ''; }
+
+        async function executeSend() {
+            const text = document.getElementById('msg-text').value;
             const token = state.settings.tgToken;
-            const btn = document.getElementById('send-msg-btn');
+            if(!text) return alert("Введіть текст!");
 
-            if(!text) return alert("Введіть повідомлення!");
-
+            const btn = document.getElementById('send-btn');
             btn.disabled = true;
+
+            if(activeTarget) {
+                // Персональне
+                await sendToTg(activeTarget, text, token);
+            } else {
+                // Масове
+                if(!confirm("Надіслати всім підписникам?")) { btn.disabled = false; return; }
+                for(let u of state.botUsers) {
+                    await sendToTg(u.id, text, token);
+                    await new Promise(r => setTimeout(r, 100)); // Затримка проти спам-фільтру
+                }
+            }
+            alert("Завершено!");
+            closeModal();
+            btn.disabled = false;
+        }
+
+        async function sendToTg(chatId, text, token) {
             try {
-                const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ chat_id: currentChatId, text: text })
+                    body: JSON.stringify({ chat_id: chatId, text: text })
                 });
-                const result = await res.json();
-                if(result.ok) {
-                    alert("Надіслано!");
-                    closeModal();
-                } else alert("Помилка: " + result.description);
-            } catch (e) { alert("Помилка мережі"); }
-            finally { btn.disabled = false; }
-        }
-
-        function closeModal() {
-            document.getElementById('msg-modal').classList.add('hidden');
-            document.getElementById('direct-msg-text').value = '';
-        }
-
-        // --- DASHBOARD DATA ---
-        function updateStats() {
-            document.getElementById('stat-total-users').innerText = state.users.length;
-            document.getElementById('stat-bot-users').innerText = state.botUsers.length;
-            const rev = state.users.reduce((acc, u) => acc + (u.spent || 0), 0);
-            document.getElementById('stat-revenue').innerText = rev.toLocaleString() + ' ₴';
-            
-            const now = new Date();
-            document.getElementById('current-time').innerText = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        }
-
-        function renderTopClients() {
-            const list = document.getElementById('top-clients-list');
-            const top = [...state.users].sort((a,b) => b.spent - a.spent).slice(0, 5);
-            list.innerHTML = top.length ? '' : '<p style="color:var(--text-muted);">Дані відсутні</p>';
-            top.forEach((u, i) => {
-                list.innerHTML += `<div style="padding: 12px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between;">
-                    <span>${i+1}. ${u.phone}</span>
-                    <span style="color: var(--accent); font-weight: 800;">${u.spent} ₴</span>
-                </div>`;
-            });
-        }
-
-        function renderClientsTable() {
-            const tbody = document.getElementById('clients-tbody');
-            tbody.innerHTML = '';
-            state.users.forEach(u => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td><b>${u.phone}</b></td>
-                        <td>${u.spent} ₴</td>
-                        <td><span style="color:var(--accent)">VIP</span></td>
-                        <td><button class="premium-btn" style="padding: 6px 12px; font-size: 11px;">Керувати</button></td>
-                    </tr>
-                `;
-            });
+            } catch (e) {}
         }
 
         function saveSettings() {
             state.settings.tgToken = document.getElementById('tg-token-field').value.trim();
-            save();
-            alert("Налаштування збережено!");
+            save(); alert("Збережено!");
         }
 
-        // START
         checkAuth();
-        setInterval(updateStats, 60000);
     </script>
 </body>
 </html>
