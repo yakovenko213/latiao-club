@@ -3,326 +3,297 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Latiao Club | Premium Rewards</title>
+    <title>Latiao Club | Ultra Premium</title>
     <style>
         :root {
-            --primary: #ff0055;
-            --primary-glow: rgba(255, 0, 85, 0.5);
+            --accent: #ff0055;
+            --accent-glow: rgba(255, 0, 85, 0.6);
             --secondary: #00f2ff;
-            --bg-dark: #0a0a0c;
-            --card-dark: rgba(255, 255, 255, 0.05);
-            --text-main: #ffffff;
-            --text-dim: #a0a0a0;
-            --glass: rgba(20, 20, 25, 0.8);
-            --border: rgba(255, 255, 255, 0.1);
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --bg: #050507;
+            --panel: rgba(20, 20, 25, 0.7);
+            --border: rgba(255, 255, 255, 0.08);
+            --text: #ffffff;
+            --text-dim: #94a3b8;
+            --grad: linear-gradient(135deg, #ff0055 0%, #8000ff 100%);
         }
 
         .light-theme {
-            --bg-dark: #f0f2f5;
-            --card-dark: #ffffff;
-            --text-main: #1a1a1a;
-            --text-dim: #666666;
-            --glass: rgba(255, 255, 255, 0.9);
-            --border: rgba(0, 0, 0, 0.1);
+            --bg: #f8fafc;
+            --panel: rgba(255, 255, 255, 0.8);
+            --border: rgba(0, 0, 0, 0.05);
+            --text: #0f172a;
+            --text-dim: #64748b;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
 
         body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
+            background-color: var(--bg);
+            color: var(--text);
             min-height: 100vh;
             overflow-x: hidden;
-            transition: var(--transition);
+            display: flex;
+            transition: background 0.5s ease;
         }
 
-        /* Background Glows */
-        .glow-bg {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -1;
-            overflow: hidden;
+        /* --- BACKGROUND ANIMATION --- */
+        .bg-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: radial-gradient(circle at 50% 50%, #1a1a2e 0%, var(--bg) 100%);
         }
-        .blob {
-            position: absolute;
-            width: 400px;
-            height: 400px;
-            background: var(--primary-glow);
-            filter: blur(80px);
-            border-radius: 50%;
-            animation: move 20s infinite alternate;
+        .orb {
+            position: absolute; width: 600px; height: 600px;
+            background: var(--accent-glow); filter: blur(120px);
+            border-radius: 50%; opacity: 0.3; animation: float 20s infinite alternate;
         }
-        @keyframes move {
-            from { transform: translate(-10%, -10%); }
-            to { transform: translate(100%, 80%); }
+        @keyframes float {
+            0% { transform: translate(-10%, -10%) scale(1); }
+            100% { transform: translate(50%, 20%) scale(1.2); }
         }
 
-        /* Typography & Layout */
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 20px;
-            min-height: 100vh;
+        /* --- LAYOUT --- */
+        #app { display: flex; width: 100%; min-height: 100vh; }
+
+        /* Sidebar (Desktop) / Bottom Nav (Mobile) */
+        .sidebar {
+            width: 280px;
+            background: var(--panel);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border);
+            padding: 40px 20px;
             display: flex;
             flex-direction: column;
-        }
-
-        .glass-card {
-            background: var(--glass);
-            backdrop-filter: blur(15px);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 25px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            margin-bottom: 20px;
-        }
-
-        h1, h2, h3 { font-weight: 800; letter-spacing: -0.5px; }
-        .neon-text {
-            color: var(--primary);
-            text-shadow: 0 0 10px var(--primary-glow);
-        }
-
-        /* Forms */
-        input, select {
-            width: 100%;
-            padding: 14px 20px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            color: var(--text-main);
-            margin-bottom: 15px;
-            outline: none;
-            transition: var(--transition);
-        }
-        input:focus { border-color: var(--primary); box-shadow: 0 0 10px var(--primary-glow); }
-
-        .btn {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 12px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: var(--transition);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 15px var(--primary-glow); }
-        .btn-primary:hover { transform: translateY(-2px); filter: brightness(1.2); }
-        .btn-secondary { background: var(--card-dark); color: var(--text-main); border: 1px solid var(--border); }
-
-        /* Progress Bar */
-        .progress-container { background: rgba(255,255,255,0.1); height: 10px; border-radius: 5px; margin: 15px 0; overflow: hidden; }
-        .progress-bar { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); width: 0%; transition: width 1s ease-out; }
-
-        /* Slots/Game */
-        .slot-machine {
-            text-align: center;
-            padding: 30px;
-            border: 2px dashed var(--primary);
-        }
-        .slot-box {
-            font-size: 40px;
-            margin: 20px 0;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-        }
-        .slot-item {
-            background: var(--card-dark);
-            padding: 10px;
-            border-radius: 10px;
-            min-width: 60px;
-            display: inline-block;
-        }
-        .spinning { animation: shake 0.1s infinite; }
-        @keyframes shake {
-            0% { transform: translateY(-2px); }
-            100% { transform: translateY(2px); }
-        }
-
-        /* Promo Codes */
-        .promo-list { display: grid; gap: 10px; }
-        .promo-card {
-            background: rgba(255,255,255,0.03);
-            border-left: 4px solid var(--secondary);
-            padding: 15px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .promo-card.used { opacity: 0.5; border-left-color: #666; text-decoration: line-through; }
-
-        /* Navigation */
-        .nav-bar {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            max-width: 400px;
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            border-radius: 50px;
-            display: flex;
-            justify-content: space-around;
-            padding: 10px;
-            border: 1px solid var(--border);
             z-index: 100;
         }
-        .nav-item { color: var(--text-dim); cursor: pointer; font-size: 12px; text-align: center; }
-        .nav-item.active { color: var(--primary); }
 
-        /* Admin Styles */
-        .admin-panel { max-width: 900px !important; }
-        .admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: var(--card-dark); padding: 20px; border-radius: 15px; border: 1px solid var(--border); }
-        .user-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .user-table th, .user-table td { text-align: left; padding: 12px; border-bottom: 1px solid var(--border); }
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* --- UI COMPONENTS --- */
+        .glass {
+            background: var(--panel);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+        }
+        .glass:hover { transform: translateY(-5px); }
+
+        .btn {
+            padding: 14px 28px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-primary { background: var(--grad); color: white; box-shadow: 0 10px 20px var(--accent-glow); }
+        .btn-primary:hover { box-shadow: 0 15px 30px var(--accent-glow); filter: brightness(1.1); }
         
-        .hidden { display: none !important; }
+        .input-group input {
+            width: 100%; padding: 16px; background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border); border-radius: 12px;
+            color: white; font-size: 16px; margin-bottom: 20px;
+        }
 
-        /* Micro-interactions */
-        .tap-scale:active { transform: scale(0.95); }
+        /* --- PROGRESS BAR --- */
+        .lvl-bar { height: 12px; background: rgba(255,255,255,0.05); border-radius: 10px; margin: 20px 0; overflow: hidden; }
+        .lvl-progress { height: 100%; background: var(--grad); width: 0%; transition: 1.5s cubic-bezier(0.17, 0.67, 0.83, 0.67); }
+
+        /* --- SLOTS --- */
+        .slot-container {
+            display: flex; gap: 20px; justify-content: center; margin: 40px 0;
+        }
+        .slot-reel {
+            width: 80px; height: 100px; background: rgba(0,0,0,0.3);
+            border: 2px solid var(--accent); border-radius: 15px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 40px; text-shadow: 0 0 15px var(--accent);
+        }
+        .spinning { animation: blurSpin 0.1s infinite; }
+        @keyframes blurSpin { 0% { filter: blur(0); transform: translateY(0); } 50% { filter: blur(4px); transform: translateY(5px); } 100% { filter: blur(0); transform: translateY(0); } }
+
+        /* --- ADMIN DASH --- */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; margin-bottom: 40px; }
+        .table-res { overflow-x: auto; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 15px; color: var(--text-dim); border-bottom: 1px solid var(--border); }
+        td { padding: 15px; border-bottom: 1px solid var(--border); }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            .sidebar {
+                width: 100%; height: auto; position: fixed; bottom: 0; left: 0;
+                flex-direction: row; justify-content: space-around; padding: 15px;
+                border-right: none; border-top: 1px solid var(--border); border-radius: 25px 25px 0 0;
+            }
+            .sidebar h1, .sidebar p { display: none; }
+            .main-content { padding: 20px; padding-bottom: 100px; }
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+
+        .hidden { display: none !important; }
+        .neon-text { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; }
     </style>
 </head>
 <body>
 
-<div class="glow-bg"><div class="blob"></div></div>
+    <div class="bg-canvas"><div class="orb"></div></div>
 
-<nav id="main-nav" class="nav-bar hidden">
-    <div class="nav-item active" onclick="showScreen('client-home')">🏠<br>Home</div>
-    <div class="nav-item" onclick="showScreen('promo-screen')">🎁<br>Promos</div>
-    <div class="nav-item" onclick="showScreen('game-screen')">🎰<br>Spin</div>
-    <div class="nav-item" onclick="toggleAdmin()">⚙️<br>Admin</div>
-</nav>
-
-<div class="container">
-    
-    <div style="position: absolute; top: 20px; right: 20px; cursor: pointer; z-index: 10;" onclick="toggleTheme()">🌓</div>
-
-    <section id="login-screen" class="glass-card" style="margin-top: 20vh;">
-        <h1 class="neon-text" style="text-align: center; margin-bottom: 10px;">LATIAO CLUB</h1>
-        <p style="text-align: center; color: var(--text-dim); margin-bottom: 30px;">Premium Asian Snacks Rewards</p>
-        <input type="text" id="login-input" placeholder="Phone number or Nickname...">
-        <button class="btn btn-primary tap-scale" onclick="handleLogin()">ENTER CLUB</button>
-    </section>
-
-    <section id="client-home" class="hidden">
-        <div class="glass-card">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                    <h2 id="user-name-display">Welcome Back!</h2>
-                    <p id="user-rank" style="color: var(--secondary); font-weight: bold; margin-top: 5px;">VIP Member</p>
-                </div>
-                <div id="user-points" style="font-size: 24px; font-weight: 800;">1,250 <span style="font-size: 12px; color: var(--text-dim);">XP</span></div>
-            </div>
+    <div id="app">
+        <aside id="sidebar" class="sidebar hidden">
+            <h1 class="neon-text" style="font-size: 28px; margin-bottom: 5px;">LATIAO CLUB</h1>
+            <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 40px;">Luxury Loyalty System</p>
             
-            <div class="progress-container">
-                <div id="user-progress" class="progress-bar"></div>
-            </div>
-            <p id="progress-text" style="font-size: 12px; color: var(--text-dim);"></p>
-        </div>
+            <nav style="display: flex; flex-direction: column; gap: 10px; flex: 1;">
+                <button class="btn btn-secondary" onclick="showScreen('home')">💎 Головна</button>
+                <button class="btn btn-secondary" onclick="showScreen('promos')">🎟️ Промокоди</button>
+                <button class="btn btn-secondary" onclick="showScreen('slots')">🎰 Спін</button>
+                <button class="btn btn-secondary" id="admin-nav-btn" onclick="checkAdmin()">🛡️ Адмінка</button>
+            </nav>
 
-        <h3 style="margin-bottom: 15px;">Recent History</h3>
-        <div id="history-list" class="promo-list">
-            </div>
-        <button class="btn btn-secondary" style="margin-top: 20px;" onclick="logout()">LOGOUT</button>
-    </section>
+            <button class="btn" style="color: var(--text-dim);" onclick="logout()">Вихід</button>
+        </aside>
 
-    <section id="promo-screen" class="hidden">
-        <h2 class="neon-text" style="margin-bottom: 20px;">My Rewards</h2>
-        <div id="active-promos" class="promo-list">
-            </div>
-    </section>
+        <main class="main-content">
+            <section id="screen-login" style="max-width: 450px; margin: 15vh auto;">
+                <div class="glass">
+                    <h2 style="margin-bottom: 10px; text-align: center;">Вітаємо у Клубі</h2>
+                    <p style="color: var(--text-dim); text-align: center; margin-bottom: 30px;">Введіть дані для входу</p>
+                    <div class="input-group">
+                        <input type="text" id="auth-input" placeholder="Нікнейм або Телефон">
+                    </div>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="login()">УВІЙТИ</button>
+                    <div style="text-align: center; margin-top: 20px;">
+                        <span onclick="toggleTheme()" style="cursor:pointer; opacity: 0.5;">🌓 Змінити тему</span>
+                    </div>
+                </div>
+            </section>
 
-    <section id="game-screen" class="hidden">
-        <div class="glass-card slot-machine">
-            <h3>Daily Fortune</h3>
-            <p style="color: var(--text-dim); font-size: 13px;">Spin to win exclusive discounts</p>
-            <div class="slot-box">
-                <div class="slot-item" id="slot-1">🌶️</div>
-                <div class="slot-item" id="slot-2">🥢</div>
-                <div class="slot-item" id="slot-3">🍜</div>
-            </div>
-            <button id="spin-btn" class="btn btn-primary tap-scale" onclick="handleSpin()">SPIN NOW</button>
-            <p id="spin-timer" style="margin-top: 15px; font-size: 12px; color: var(--primary);"></p>
-        </div>
-    </section>
+            <section id="screen-home" class="hidden">
+                <div class="stats-grid">
+                    <div class="glass" style="grid-column: span 2;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h1 id="user-welcome">Привіт, Користувач!</h1>
+                                <p id="user-status-text" style="color: var(--secondary); margin-top: 5px; font-weight: 600;">Ранг: Regular</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <div id="user-xp-total" style="font-size: 32px; font-weight: 900;">2,450</div>
+                                <div style="font-size: 12px; color: var(--text-dim);">БАЛІВ ДОСВІДУ (XP)</div>
+                            </div>
+                        </div>
+                        <div class="lvl-bar"><div id="xp-progress" class="lvl-progress"></div></div>
+                        <p id="next-lvl-info" style="font-size: 13px; color: var(--text-dim);"></p>
+                    </div>
+                    <div class="glass">
+                        <h3>Сповіщення</h3>
+                        <div id="user-notifications" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
+                            </div>
+                    </div>
+                </div>
+            </section>
 
-    <section id="admin-auth" class="hidden glass-card">
-        <h3>Admin Access</h3>
-        <input type="password" id="admin-pass" placeholder="Password...">
-        <button class="btn btn-primary" onclick="verifyAdmin()">UNLOCK</button>
-        <button class="btn btn-secondary" onclick="showScreen('client-home')" style="margin-top: 10px;">CANCEL</button>
-    </section>
+            <section id="screen-promos" class="hidden">
+                <h2 style="margin-bottom: 30px;">Ваші Привілеї</h2>
+                <div id="promo-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+                    </div>
+            </section>
 
-    <section id="admin-dashboard" class="hidden admin-panel">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2 class="neon-text">Control Center</h2>
-            <button class="btn btn-secondary" style="width: auto; padding: 5px 15px;" onclick="showScreen('client-home')">Exit</button>
-        </div>
+            <section id="screen-slots" class="hidden" style="text-align: center;">
+                <div class="glass" style="max-width: 600px; margin: 0 auto;">
+                    <h2 class="neon-text">DAILY LUCKY SPIN</h2>
+                    <p style="color: var(--text-dim);">Випробуй удачу раз на 24 години</p>
+                    <div class="slot-container">
+                        <div class="slot-reel" id="reel1">🌶️</div>
+                        <div class="slot-reel" id="reel2">🍜</div>
+                        <div class="slot-reel" id="reel3">🍤</div>
+                    </div>
+                    <button id="spin-btn" class="btn btn-primary" onclick="playSlots()">КРУТИТИ БАРАБАН</button>
+                    <p id="spin-timer" style="margin-top: 20px; color: var(--accent); font-weight: bold;"></p>
+                </div>
+            </section>
 
-        <div class="admin-grid">
-            <div class="stat-card">
-                <small>Total Users</small>
-                <h2 id="stat-users">0</h2>
-            </div>
-            <div class="stat-card">
-                <small>Promos Used</small>
-                <h2 id="stat-promos">0</h2>
-            </div>
-        </div>
+            <section id="screen-admin" class="hidden">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                    <h2>Панель Управління</h2>
+                    <button class="btn btn-secondary" onclick="showScreen('home')">Закрити</button>
+                </div>
 
-        <div class="glass-card">
-            <h3>User Management</h3>
-            <input type="text" id="user-search" placeholder="Search by name/phone..." oninput="renderAdminUsers()">
-            <div style="overflow-x: auto;">
-                <table class="user-table">
-                    <thead>
-                        <tr>
-                            <th>User</th>
-                            <th>XP</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="admin-user-list"></tbody>
-                </table>
-            </div>
-        </div>
+                <div class="stats-grid">
+                    <div class="glass">
+                        <small>Всього Клієнтів</small>
+                        <h2 id="adm-total-users">0</h2>
+                    </div>
+                    <div class="glass">
+                        <small>Використано Промо</small>
+                        <h2 id="adm-total-promo">0</h2>
+                    </div>
+                    <div class="glass">
+                        <small>Активні Акції</small>
+                        <h2 id="adm-active-promo">0</h2>
+                    </div>
+                </div>
 
-        <div class="glass-card">
-            <h3>Create Promo Code</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
-                <input type="text" id="new-promo-code" placeholder="CODE (e.g. HOT25)">
-                <input type="number" id="new-promo-val" placeholder="Value (%)">
-                <input type="number" id="new-promo-min" placeholder="Min Order">
-                <input type="date" id="new-promo-expiry">
-            </div>
-            <button class="btn btn-primary" onclick="createPromo()">Generate Promo</button>
-        </div>
-    </section>
+                <div class="glass" style="margin-bottom: 30px;">
+                    <h3>Створити Промокод</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 20px;">
+                        <input type="text" id="adm-p-code" placeholder="Код (пр. HOT25)" class="btn" style="background: rgba(0,0,0,0.2); text-align: left; color: white;">
+                        <input type="number" id="adm-p-val" placeholder="Знижка %" class="btn" style="background: rgba(0,0,0,0.2); text-align: left; color: white;">
+                        <input type="number" id="adm-p-min" placeholder="Мін. замовлення" class="btn" style="background: rgba(0,0,0,0.2); text-align: left; color: white;">
+                        <button class="btn btn-primary" onclick="adminCreatePromo()">Додати</button>
+                    </div>
+                </div>
 
-</div>
+                <div class="glass">
+                    <h3>Список Користувачів</h3>
+                    <div class="table-res">
+                        <table id="admin-user-table">
+                            <thead>
+                                <tr>
+                                    <th>Клієнт</th>
+                                    <th>XP</th>
+                                    <th>Статус</th>
+                                    <th>Дії</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
 
 <script>
-    // --- DATABASE / STATE ---
-    const DB_KEY = 'latiao_db_v1';
-    let state = {
-        users: [],
-        promos: [],
-        currentUser: null,
-        isAdmin: false
+    // --- ДАНІ ТА СТАН ---
+    const DB_KEY = 'latiao_club_pro_db';
+    let db = JSON.parse(localStorage.getItem(DB_KEY)) || {
+        users: [
+            { id: '1', name: 'Олексій', phone: '0991234567', xp: 15500, status: 'active', history: [], lastSpin: null },
+            { id: '2', name: 'Марія', phone: '0670000000', xp: 2500, status: 'active', history: [], lastSpin: null }
+        ],
+        promos: [
+            { id: 'p1', code: 'LATIAO2026', val: 15, min: 500, usedBy: [] },
+            { id: 'p2', code: 'NEWBIE', val: 10, min: 200, usedBy: [] }
+        ]
     };
+
+    let currentUser = null;
 
     const RANKS = [
         { name: 'New', min: 0, max: 999 },
@@ -331,237 +302,171 @@
         { name: 'Legend', min: 15000, max: Infinity }
     ];
 
-    // --- INITIALIZATION ---
-    function init() {
-        const saved = localStorage.getItem(DB_KEY);
-        if (saved) {
-            state = JSON.parse(saved);
-        } else {
-            // Demo Data
-            state.users = [
-                { id: '1', name: 'Admin User', phone: '000', xp: 25000, status: 'active', history: [], lastSpin: null },
-                { id: '2', name: 'Ivan G.', phone: '0971234567', xp: 1200, status: 'active', history: [], lastSpin: null }
-            ];
-            state.promos = [
-                { id: 'p1', code: 'WELCOME20', val: 20, min: 200, expiry: '2026-12-31', usedBy: [] },
-                { id: 'p2', code: 'LATIAO_KING', val: 50, min: 1000, expiry: '2026-06-01', usedBy: [] }
-            ];
-            saveState();
-        }
+    // --- СИСТЕМНІ ФУНКЦІЇ ---
+    function save() { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+
+    function showScreen(id) {
+        document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+        document.getElementById(`screen-${id}`).classList.remove('hidden');
+        if(id === 'home') renderHome();
+        if(id === 'promos') renderPromos();
+        if(id === 'admin') renderAdmin();
     }
 
-    function saveState() {
-        localStorage.setItem(DB_KEY, JSON.stringify(state));
-    }
+    // --- АВТОРИЗАЦІЯ ---
+    function login() {
+        const input = document.getElementById('auth-input').value.trim();
+        if(!input) return;
 
-    // --- NAVIGATION ---
-    function showScreen(screenId) {
-        document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
-        document.getElementById(screenId).classList.remove('hidden');
-        
-        // Update nav active state
-        document.querySelectorAll('.nav-item').forEach(n => {
-            n.classList.remove('active');
-            if(n.innerText.toLowerCase().includes(screenId.split('-')[0])) n.classList.add('active');
-        });
-
-        if(screenId === 'client-home') renderProfile();
-        if(screenId === 'promo-screen') renderPromos();
-        if(screenId === 'admin-dashboard') renderAdmin();
-    }
-
-    // --- AUTH ---
-    function handleLogin() {
-        const val = document.getElementById('login-input').value.trim();
-        if(!val) return alert('Enter something!');
-
-        let user = state.users.find(u => u.phone === val || u.name === val);
+        let user = db.users.find(u => u.name === input || u.phone === input);
         if(!user) {
-            user = { id: Date.now().toString(), name: val, phone: val, xp: 0, status: 'active', history: [], lastSpin: null };
-            state.users.push(user);
-            saveState();
+            user = { id: Date.now().toString(), name: input, phone: input, xp: 0, status: 'active', history: [], lastSpin: null };
+            db.users.push(user);
+            save();
         }
 
-        if(user.status === 'blocked') return alert('Account suspended. Contact Admin.');
+        if(user.status === 'blocked') return alert('Ваш аккаунт заблоковано!');
 
-        state.currentUser = user;
-        document.getElementById('main-nav').classList.remove('hidden');
-        showScreen('client-home');
+        currentUser = user;
+        document.getElementById('screen-login').classList.add('hidden');
+        document.getElementById('sidebar').classList.remove('hidden');
+        showScreen('home');
     }
 
     function logout() {
-        state.currentUser = null;
-        document.getElementById('main-nav').classList.add('hidden');
-        showScreen('login-screen');
+        currentUser = null;
+        document.getElementById('sidebar').classList.add('hidden');
+        document.getElementById('screen-login').classList.remove('hidden');
     }
 
-    function toggleAdmin() {
-        if(state.isAdmin) showScreen('admin-dashboard');
-        else showScreen('admin-auth');
-    }
-
-    function verifyAdmin() {
-        const pass = document.getElementById('admin-pass').value;
-        if(pass === 'latiao2026') {
-            state.isAdmin = true;
-            showScreen('admin-dashboard');
-        } else {
-            alert('Incorrect passcode.');
-        }
-    }
-
-    // --- CLIENT LOGIC ---
-    function renderProfile() {
-        const user = state.currentUser;
-        const rank = RANKS.find(r => user.xp >= r.min && user.xp <= r.max);
+    // --- ЛОГІКА КЛІЄНТА ---
+    function renderHome() {
+        const rank = RANKS.find(r => currentUser.xp >= r.min && currentUser.xp <= r.max);
+        const next = RANKS[RANKS.indexOf(rank) + 1] || rank;
         
-        document.getElementById('user-name-display').innerText = `Hi, ${user.name}!`;
-        document.getElementById('user-rank').innerText = rank.name;
-        document.getElementById('user-points').innerHTML = `${user.xp.toLocaleString()} <span style="font-size: 12px; color: var(--text-dim);">XP</span>`;
+        document.getElementById('user-welcome').innerText = `Вітаємо, ${currentUser.name}!`;
+        document.getElementById('user-status-text').innerText = `Ранг: ${rank.name}`;
+        document.getElementById('user-xp-total').innerText = currentUser.xp.toLocaleString();
         
-        const nextRank = RANKS[RANKS.indexOf(rank) + 1] || rank;
-        const progress = rank.max === Infinity ? 100 : ((user.xp - rank.min) / (rank.max - rank.min)) * 100;
-        document.getElementById('user-progress').style.width = `${progress}%`;
-        document.getElementById('progress-text').innerText = rank.max === Infinity ? 'Max Level Reached' : `${nextRank.min - user.xp} XP to ${nextRank.name}`;
+        const progress = rank.max === Infinity ? 100 : ((currentUser.xp - rank.min) / (rank.max - rank.min)) * 100;
+        document.getElementById('xp-progress').style.width = `${progress}%`;
+        document.getElementById('next-lvl-info').innerText = rank.max === Infinity ? 'Ви досягли максимуму!' : `Ще ${next.min - currentUser.xp} XP до рангу ${next.name}`;
 
-        const histHtml = user.history.length 
-            ? user.history.map(h => `<div class="promo-card"><span>${h.msg}</span><small>${h.date}</small></div>`).join('')
-            : '<p style="color:var(--text-dim); text-align:center;">No history yet</p>';
-        document.getElementById('history-list').innerHTML = histHtml;
+        const notifyHtml = currentUser.history.length > 0 
+            ? currentUser.history.slice(0, 3).map(h => `<div style="font-size:13px; padding:10px; border-radius:10px; background:rgba(255,255,255,0.05)">${h}</div>`).join('')
+            : '<p style="color:var(--text-dim); font-size:12px;">Поки немає нових сповіщень</p>';
+        document.getElementById('user-notifications').innerHTML = notifyHtml;
     }
 
     function renderPromos() {
-        const html = state.promos.map(p => {
-            const isUsed = p.usedBy.includes(state.currentUser.id);
+        const grid = document.getElementById('promo-grid');
+        grid.innerHTML = db.promos.map(p => {
+            const used = p.usedBy.includes(currentUser.id);
             return `
-                <div class="promo-card ${isUsed ? 'used' : ''}">
-                    <div>
-                        <strong style="color:var(--primary)">${p.code}</strong><br>
-                        <small>${p.val}% off | Min: ${p.min}₴</small>
-                    </div>
-                    <div style="text-align:right">
-                        <small>${p.expiry}</small><br>
-                        <strong>${isUsed ? 'USED' : 'ACTIVE'}</strong>
-                    </div>
+                <div class="glass" style="opacity: ${used ? '0.5' : '1'}">
+                    <h3 style="color: var(--accent)">${p.code}</h3>
+                    <p style="font-size: 24px; font-weight: 800; margin: 10px 0;">-${p.val}%</p>
+                    <p style="font-size: 12px; color: var(--text-dim);">Мінімальна сума: ${p.min}₴</p>
+                    <button class="btn btn-secondary" style="width:100%; margin-top:15px;" ${used ? 'disabled' : ''}>
+                        ${used ? 'ВИКОРИСТАНО' : 'АКТИВНИЙ'}
+                    </button>
                 </div>
             `;
         }).join('');
-        document.getElementById('active-promos').innerHTML = html || 'No promos available';
     }
 
-    // --- GAME LOGIC ---
-    function handleSpin() {
-        const user = state.currentUser;
+    // --- ГЕЙМІФІКАЦІЯ ---
+    function playSlots() {
         const today = new Date().toDateString();
-        
-        if(user.lastSpin === today) {
-            return alert('You already had your fortune today! Come back tomorrow.');
-        }
+        if(currentUser.lastSpin === today) return alert('Ви вже крутили сьогодні! Повертайтесь завтра.');
 
         const btn = document.getElementById('spin-btn');
-        const slots = [document.getElementById('slot-1'), document.getElementById('slot-2'), document.getElementById('slot-3')];
-        const emojis = ['🌶️', '🥢', '🍜', '🍤', '🔥', '🥡'];
+        const reels = [document.getElementById('reel1'), document.getElementById('reel2'), document.getElementById('reel3')];
+        const items = ['🌶️', '🥢', '🍜', '🍤', '🔥', '🥡'];
         
         btn.disabled = true;
-        slots.forEach(s => s.classList.add('spinning'));
+        reels.forEach(r => r.classList.add('spinning'));
 
         setTimeout(() => {
-            slots.forEach(s => {
-                s.classList.remove('spinning');
-                s.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+            reels.forEach(r => {
+                r.classList.remove('spinning');
+                r.innerText = items[Math.floor(Math.random() * items.length)];
             });
 
-            // Logic: 10% chance to win random promo
-            const won = Math.random() > 0.7;
-            if(won) {
-                const bonusXp = Math.floor(Math.random() * 50) + 10;
-                user.xp += bonusXp;
-                user.history.unshift({ msg: `Won ${bonusXp} XP from Spin!`, date: new Date().toLocaleDateString() });
-                alert(`JACKPOT! You won ${bonusXp} XP!`);
-            } else {
-                alert('Better luck tomorrow! You gained 5 XP for trying.');
-                user.xp += 5;
-            }
-
-            user.lastSpin = today;
-            saveState();
-            renderProfile();
+            const winXp = Math.floor(Math.random() * 100) + 20;
+            currentUser.xp += winXp;
+            currentUser.lastSpin = today;
+            currentUser.history.unshift(`🎰 Виграно ${winXp} XP у Lucky Spin!`);
+            save();
+            alert(`Вітаємо! Ви виграли ${winXp} бонусних балів!`);
             btn.disabled = false;
         }, 2000);
     }
 
-    // --- ADMIN LOGIC ---
-    function renderAdmin() {
-        document.getElementById('stat-users').innerText = state.users.length;
-        document.getElementById('stat-promos').innerText = state.promos.reduce((acc, p) => acc + p.usedBy.length, 0);
-        renderAdminUsers();
+    // --- АДМІНКА ---
+    function checkAdmin() {
+        const p = prompt('Введіть пароль адміністратора:');
+        if(p === 'latiao2026') showScreen('admin');
+        else alert('Доступ заборонено');
     }
 
-    function renderAdminUsers() {
-        const search = document.getElementById('user-search').value.toLowerCase();
-        const filtered = state.users.filter(u => u.name.toLowerCase().includes(search) || u.phone.includes(search));
-        
-        const html = filtered.map(u => `
+    function renderAdmin() {
+        document.getElementById('adm-total-users').innerText = db.users.length;
+        document.getElementById('adm-total-promo').innerText = db.promos.reduce((acc, p) => acc + p.usedBy.length, 0);
+        document.getElementById('adm-active-promo').innerText = db.promos.length;
+
+        const tbody = document.querySelector('#admin-user-table tbody');
+        tbody.innerHTML = db.users.map(u => `
             <tr>
-                <td>${u.name}<br><small>${u.phone}</small></td>
-                <td><input type="number" value="${u.xp}" onchange="updateUserXp('${u.id}', this.value)" style="width:80px; margin:0; padding:5px;"></td>
-                <td><span style="color: ${u.status === 'active' ? '#00ff00' : '#ff0000'}">${u.status}</span></td>
+                <td><b>${u.name}</b><br><small>${u.phone}</small></td>
+                <td><input type="number" value="${u.xp}" onchange="admEditXp('${u.id}', this.value)" style="width:80px; background:none; border:1px solid var(--border); color:white; padding:5px; border-radius:5px;"></td>
+                <td style="color: ${u.status === 'active' ? '#4ade80' : '#f87171'}">${u.status.toUpperCase()}</td>
                 <td>
-                    <button onclick="toggleUserStatus('${u.id}')">🚫</button>
-                    <button onclick="giftPromo('${u.id}')">🎁</button>
+                    <button onclick="admToggleUser('${u.id}')">🚫</button>
+                    <button onclick="admGift('${u.id}')">🎁</button>
                 </td>
             </tr>
         `).join('');
-        document.getElementById('admin-user-list').innerHTML = html;
     }
 
-    function updateUserXp(id, val) {
-        const user = state.users.find(u => u.id === id);
-        user.xp = parseInt(val);
-        saveState();
+    function adminCreatePromo() {
+        const code = document.getElementById('adm-p-code').value.toUpperCase();
+        const val = document.getElementById('adm-p-val').value;
+        const min = document.getElementById('adm-p-min').value;
+        if(!code || !val) return;
+
+        db.promos.push({ id: Date.now().toString(), code, val, min, usedBy: [] });
+        save();
+        renderAdmin();
+        alert('Промокод створено!');
     }
 
-    function toggleUserStatus(id) {
-        const user = state.users.find(u => u.id === id);
-        user.status = user.status === 'active' ? 'blocked' : 'active';
-        saveState();
-        renderAdminUsers();
+    function admEditXp(id, val) {
+        const u = db.users.find(x => x.id === id);
+        u.xp = parseInt(val);
+        save();
     }
 
-    function createPromo() {
-        const code = document.getElementById('new-promo-code').value.toUpperCase();
-        const val = document.getElementById('new-promo-val').value;
-        const min = document.getElementById('new-promo-min').value;
-        const expiry = document.getElementById('new-promo-expiry').value;
-
-        if(!code || !val) return alert('Fill details');
-
-        state.promos.push({
-            id: Date.now().toString(),
-            code, val, min, expiry, usedBy: []
-        });
-        saveState();
-        alert('Promo Created!');
+    function admToggleUser(id) {
+        const u = db.users.find(x => x.id === id);
+        u.status = u.status === 'active' ? 'blocked' : 'active';
+        save();
         renderAdmin();
     }
 
-    function giftPromo(userId) {
-        const code = prompt('Enter special code to gift this user:');
-        if(!code) return;
-        const user = state.users.find(u => u.id === userId);
-        user.history.unshift({ msg: `Received special promo: ${code}`, date: new Date().toLocaleDateString() });
-        saveState();
-        alert('Promo gifted to user history!');
+    function admGift(id) {
+        const u = db.users.find(x => x.id === id);
+        const bonus = prompt('Який бонус видати (текст)?');
+        if(bonus) {
+            u.history.unshift(`🎁 АДМІН: ${bonus}`);
+            save();
+            alert('Бонус відправлено клієнту');
+        }
     }
 
-    // --- UTILS ---
     function toggleTheme() {
         document.body.classList.toggle('light-theme');
     }
-
-    // Start
-    init();
 </script>
-
 </body>
 </html>
