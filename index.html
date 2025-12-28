@@ -40,7 +40,6 @@
 
         .admin-layout { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
 
-        /* SIDEBAR */
         .sidebar {
             background: rgba(13, 13, 15, 0.95);
             border-right: 1px solid var(--border);
@@ -61,7 +60,6 @@
         .nav-item:hover { background: var(--glass); color: #fff; }
         .nav-item.active { background: var(--accent); color: #fff; box-shadow: 0 10px 20px var(--accent-glow); }
 
-        /* CONTENT */
         .main-view { padding: 40px; animation: slideUp 0.6s ease; }
         .glass-card { background: var(--panel); border: 1px solid var(--border); border-radius: 24px; padding: 30px; backdrop-filter: blur(10px); }
 
@@ -71,10 +69,10 @@
         }
         .premium-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px var(--accent-glow); }
         .premium-btn.secondary { background: var(--glass); border: 1px solid var(--border); }
+        .premium-btn.success { background: #27AE60; }
 
-        .luxe-input { background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 14px 18px; border-radius: 12px; color: #fff; width: 100%; outline: none; }
+        .luxe-input { background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 14px 18px; border-radius: 12px; color: #fff; width: 100%; outline: none; margin-bottom: 15px; }
 
-        /* BOT USER LIST */
         .bot-user-card {
             display: flex; justify-content: space-between; align-items: center; padding: 16px;
             background: rgba(255,255,255,0.02); border-radius: 16px; margin-bottom: 12px; border: 1px solid var(--border);
@@ -85,6 +83,12 @@
             backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 1000;
         }
 
+        table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+        th { text-align: left; padding: 12px; color: var(--text-muted); font-size: 12px; }
+        td { padding: 16px; background: rgba(255,255,255,0.02); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        td:first-child { border-radius: 12px 0 0 12px; border-left: 1px solid var(--border); }
+        td:last-child { border-radius: 0 12px 12px 0; border-right: 1px solid var(--border); }
+
         .spin { animation: rotate 1s linear infinite; display: inline-block; }
         @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
@@ -94,7 +98,7 @@
     <div id="admin-auth-screen" class="hidden" style="display: flex; align-items: center; justify-content: center; height: 100vh;">
         <div class="glass-card" style="width: 400px; text-align: center;">
             <div class="logo-area" style="justify-content: center;"><div class="logo-dot"></div> LATIAO CLUB</div>
-            <input type="password" id="auth-pass" class="luxe-input" placeholder="Пароль адміністратора" style="margin-bottom: 20px; text-align: center;">
+            <input type="password" id="auth-pass" class="luxe-input" placeholder="Пароль адміністратора" style="text-align: center;">
             <button class="premium-btn" style="width: 100%; justify-content: center;" onclick="attemptLogin()">Увійти</button>
         </div>
     </div>
@@ -117,26 +121,29 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
                     <div>
                         <h1>Telegram Менеджер</h1>
-                        <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Керування базою підписників бота</p>
+                        <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">База підписників та реєстрація</p>
                     </div>
                     <div style="display: flex; gap: 12px;">
-                        <button class="premium-btn secondary" onclick="openMassModal()">📢 Масова розсилка</button>
+                        <button class="premium-btn secondary" onclick="openMassModal()">📢 Розсилка</button>
                         <button id="sync-btn" class="premium-btn" onclick="syncTelegram()"><span>🔄 Синхронізувати</span></button>
                     </div>
                 </div>
 
                 <div class="glass-card">
-                    <h3 style="margin-bottom: 20px;">Активні чати (<span id="bot-count">0</span>)</h3>
-                    <div id="bot-users-container">
-                        </div>
+                    <h3 style="margin-bottom: 20px;">Активні підписники (<span id="bot-count">0</span>)</h3>
+                    <div id="bot-users-container"></div>
                 </div>
             </div>
 
             <div id="view-clients" class="view-content hidden">
                 <h1>База клієнтів</h1>
                 <div class="glass-card" style="margin-top: 24px;">
-                    <p style="color: var(--text-muted);">Перегляд та редагування профілів клієнтів</p>
-                    <div id="clients-list-container" style="margin-top: 20px;"></div>
+                    <table>
+                        <thead>
+                            <tr><th>Клієнт (ПІБ)</th><th>Логін</th><th>Пароль</th><th>Телефон</th><th>Статус</th></tr>
+                        </thead>
+                        <tbody id="clients-table-body"></tbody>
+                    </table>
                 </div>
             </div>
 
@@ -145,16 +152,30 @@
                 <div class="glass-card" style="max-width: 600px; margin-top: 24px;">
                     <label style="display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">BOT API TOKEN</label>
                     <input type="text" id="tg-token-field" class="luxe-input" placeholder="7123...:ABC...">
-                    <button class="premium-btn" style="margin-top: 20px;" onclick="saveSettings()">Зберегти</button>
+                    <button class="premium-btn" onclick="saveSettings()">Зберегти</button>
                 </div>
             </div>
         </main>
     </div>
 
+    <div id="register-modal" class="modal-blur hidden">
+        <div class="glass-card" style="width: 450px; animation: slideUp 0.4s ease;">
+            <h3 style="margin-bottom: 20px;">Додати клієнта в клуб</h3>
+            <label style="font-size: 11px; color: var(--text-muted);">ПІБ КЛІЄНТА</label>
+            <input type="text" id="reg-pib" class="luxe-input" placeholder="Іванов Іван">
+            <label style="font-size: 11px; color: var(--text-muted);">НОМЕР ТЕЛЕФОНУ</label>
+            <input type="text" id="reg-phone" class="luxe-input" placeholder="+380...">
+            <div style="display: flex; gap: 12px; margin-top: 10px; justify-content: flex-end;">
+                <button class="premium-btn secondary" onclick="closeRegisterModal()">Скасувати</button>
+                <button class="premium-btn success" onclick="confirmRegistration()">Зареєструвати та надіслати</button>
+            </div>
+        </div>
+    </div>
+
     <div id="msg-modal" class="modal-blur hidden">
         <div class="glass-card" style="width: 500px; animation: slideUp 0.4s ease;">
             <h3 id="msg-title" style="margin-bottom: 20px;">Повідомлення</h3>
-            <textarea id="msg-text" class="luxe-input" style="height: 180px; margin-bottom: 20px; resize: none;" placeholder="Текст повідомлення..."></textarea>
+            <textarea id="msg-text" class="luxe-input" style="height: 180px; resize: none;" placeholder="Текст..."></textarea>
             <div style="display: flex; gap: 12px; justify-content: flex-end;">
                 <button class="premium-btn secondary" onclick="closeModal()">Скасувати</button>
                 <button id="send-btn" class="premium-btn" onclick="executeSend()">Надіслати</button>
@@ -172,11 +193,11 @@
             settings: { tgToken: '' }
         };
 
-        let activeTarget = null; // null для масової розсилки, або chat_id
+        let activeTarget = null;
+        let selectedBotUser = null;
 
         function save() { localStorage.setItem(DB_KEY, JSON.stringify(state)); }
 
-        // AUTH
         function checkAuth() {
             const session = JSON.parse(localStorage.getItem(AUTH_KEY));
             const now = Date.now();
@@ -198,122 +219,134 @@
             document.getElementById('admin-suite').classList.remove('hidden');
             document.getElementById('tg-token-field').value = state.settings.tgToken;
             renderBotUsers();
+            renderClients();
         }
 
-        // NAVIGATION
         function switchView(viewId, el) {
             document.querySelectorAll('.view-content').forEach(v => v.classList.add('hidden'));
             document.getElementById('view-' + viewId).classList.remove('hidden');
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             el.classList.add('active');
+            if(viewId === 'clients') renderClients();
         }
 
-        // TELEGRAM LOGIC
         async function syncTelegram() {
             const token = state.settings.tgToken;
-            if(!token) return alert('Вкажіть токен у налаштуваннях');
-
+            if(!token) return alert('Вкажіть токен!');
             const btn = document.getElementById('sync-btn');
-            btn.disabled = true;
-            btn.innerHTML = `<span class="spin">⏳</span> Синхронізація...`;
-
+            btn.innerHTML = `<span class="spin">⏳</span>`;
             try {
-                const proxy = 'https://api.allorigins.win/get?url=';
-                const apiUrl = encodeURIComponent(`https://api.telegram.org/bot${token}/getUpdates`);
-                const response = await fetch(proxy + apiUrl);
-                const raw = await response.json();
-                const data = JSON.parse(raw.contents);
-
+                const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://api.telegram.org/bot' + token + '/getUpdates')}`);
+                const data = JSON.parse((await response.json()).contents);
                 if(data.ok) {
-                    let newCount = 0;
                     data.result.forEach(item => {
-                        const msg = item.message || item.edited_message || item.callback_query?.message;
-                        if(msg && msg.chat && msg.chat.type === 'private') {
-                            if(!state.botUsers.find(b => b.id === msg.chat.id)) {
-                                state.botUsers.push({ id: msg.chat.id, name: msg.chat.first_name, username: msg.chat.username });
-                                newCount++;
-                            }
+                        const m = item.message || item.callback_query?.message;
+                        if(m && m.chat.type === 'private' && !state.botUsers.find(b => b.id === m.chat.id)) {
+                            state.botUsers.push({ id: m.chat.id, name: m.chat.first_name, username: m.chat.username });
                         }
                     });
-                    save();
-                    renderBotUsers();
-                    alert(newCount > 0 ? `Додано ${newCount} нових підписників` : "Нових підписників не знайдено");
+                    save(); renderBotUsers();
                 }
-            } catch (e) { alert("Помилка зв'язку з Telegram"); }
-            finally { btn.disabled = false; btn.innerHTML = `<span>🔄 Синхронізувати</span>`; }
+            } catch (e) { alert("API Error"); }
+            finally { btn.innerHTML = `<span>🔄 Синхронізувати</span>`; }
         }
 
         function renderBotUsers() {
             const container = document.getElementById('bot-users-container');
             document.getElementById('bot-count').innerText = state.botUsers.length;
-            container.innerHTML = state.botUsers.length ? '' : '<p style="color:var(--text-muted); text-align:center;">База порожня. Натисніть синхронізацію.</p>';
-            
+            container.innerHTML = '';
             state.botUsers.forEach(u => {
+                const isReg = state.users.find(user => user.tgId === u.id);
                 container.innerHTML += `
                     <div class="bot-user-card">
                         <div>
-                            <div style="font-weight:600">${u.name}</div>
-                            <div style="font-size:12px; color:var(--text-muted)">@${u.username || 'n/a'} • ID: ${u.id}</div>
+                            <div style="font-weight:600">${u.name} ${isReg ? '<span style="color:#27AE60; font-size:10px;">(В КЛУБІ)</span>' : ''}</div>
+                            <div style="font-size:12px; color:var(--text-muted)">@${u.username || 'n/a'}</div>
                         </div>
-                        <button class="premium-btn" style="padding:8px 16px; font-size:12px;" onclick="openMsgModal(${u.id}, '${u.name}')">Написати</button>
+                        <div style="display:flex; gap:8px;">
+                            ${!isReg ? `<button class="premium-btn success" style="padding:8px 12px; font-size:11px;" onclick="openRegisterModal(${u.id}, '${u.name}')">➕ Додати клієнта</button>` : ''}
+                            <button class="premium-btn" style="padding:8px 12px; font-size:11px;" onclick="openMsgModal(${u.id}, '${u.name}')">Написати</button>
+                        </div>
                     </div>
                 `;
             });
         }
 
-        // SENDING LOGIC
-        function openMsgModal(chatId, name) {
-            activeTarget = chatId;
-            document.getElementById('msg-title').innerText = `Повідомлення для ${name}`;
-            document.getElementById('msg-modal').classList.remove('hidden');
+        function renderClients() {
+            const body = document.getElementById('clients-table-body');
+            body.innerHTML = '';
+            state.users.forEach(u => {
+                body.innerHTML += `<tr>
+                    <td><b>${u.pib}</b></td>
+                    <td><code>${u.login}</code></td>
+                    <td><code>${u.pass}</code></td>
+                    <td>${u.phone}</td>
+                    <td><span style="color:#27AE60">Active</span></td>
+                </tr>`;
+            });
         }
 
-        function openMassModal() {
-            activeTarget = null;
-            document.getElementById('msg-title').innerText = `📢 Масова розсилка (${state.botUsers.length} чол.)`;
-            document.getElementById('msg-modal').classList.remove('hidden');
+        // REGISTRATION LOGIC
+        function openRegisterModal(chatId, name) {
+            selectedBotUser = state.botUsers.find(b => b.id === chatId);
+            document.getElementById('reg-pib').value = name;
+            document.getElementById('register-modal').classList.remove('hidden');
         }
 
-        function closeModal() { document.getElementById('msg-modal').classList.add('hidden'); document.getElementById('msg-text').value = ''; }
+        function closeRegisterModal() { document.getElementById('register-modal').classList.add('hidden'); }
+
+        async function confirmRegistration() {
+            const pib = document.getElementById('reg-pib').value.trim();
+            const phone = document.getElementById('reg-phone').value.trim();
+            if(!pib || !phone) return alert("Заповніть дані");
+
+            // Генеруємо логін (трансліт спрощено)
+            const login = pib.toLowerCase().split(' ')[0] + Math.floor(10 + Math.random() * 90);
+            const pass = Math.floor(1000 + Math.random() * 9000);
+
+            const newUser = {
+                tgId: selectedBotUser.id,
+                pib: pib,
+                phone: phone,
+                login: login,
+                pass: pass.toString(),
+                spent: 0,
+                joined: new Date().toLocaleDateString()
+            };
+
+            state.users.push(newUser);
+            save();
+
+            const welcomeMsg = `🎊 Вітаємо у Latiao Club!\n\nВас було додано до нашої системи привілеїв.\n\n🔑 Ваші дані для входу:\nЛогін: ${login}\nПароль: ${pass}\n\nВикористовуйте їх для входу в особистий кабінет!`;
+            await sendToTg(selectedBotUser.id, welcomeMsg, state.settings.tgToken);
+
+            alert(`Клієнта ${pib} зареєстровано! Дані надіслано в Telegram.`);
+            closeRegisterModal();
+            renderBotUsers();
+            renderClients();
+        }
+
+        // MSG LOGIC
+        function openMsgModal(chatId, name) { activeTarget = chatId; document.getElementById('msg-title').innerText = `Повідомлення для ${name}`; document.getElementById('msg-modal').classList.remove('hidden'); }
+        function openMassModal() { activeTarget = null; document.getElementById('msg-title').innerText = `📢 Розсилка (${state.botUsers.length})`; document.getElementById('msg-modal').classList.remove('hidden'); }
+        function closeModal() { document.getElementById('msg-modal').classList.add('hidden'); }
 
         async function executeSend() {
             const text = document.getElementById('msg-text').value;
             const token = state.settings.tgToken;
-            if(!text) return alert("Введіть текст!");
-
-            const btn = document.getElementById('send-btn');
-            btn.disabled = true;
-
-            if(activeTarget) {
-                // Персональне
-                await sendToTg(activeTarget, text, token);
-            } else {
-                // Масове
-                if(!confirm("Надіслати всім підписникам?")) { btn.disabled = false; return; }
-                for(let u of state.botUsers) {
-                    await sendToTg(u.id, text, token);
-                    await new Promise(r => setTimeout(r, 100)); // Затримка проти спам-фільтру
-                }
+            if(!text || !token) return alert("Помилка даних");
+            if(activeTarget) await sendToTg(activeTarget, text, token);
+            else {
+                for(let u of state.botUsers) { await sendToTg(u.id, text, token); await new Promise(r => setTimeout(r, 150)); }
             }
-            alert("Завершено!");
-            closeModal();
-            btn.disabled = false;
+            alert("Готово!"); closeModal();
         }
 
         async function sendToTg(chatId, text, token) {
-            try {
-                await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ chat_id: chatId, text: text })
-                });
-            } catch (e) {}
+            try { await fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ chat_id: chatId, text: text }) }); } catch (e) {}
         }
 
-        function saveSettings() {
-            state.settings.tgToken = document.getElementById('tg-token-field').value.trim();
-            save(); alert("Збережено!");
-        }
+        function saveSettings() { state.settings.tgToken = document.getElementById('tg-token-field').value.trim(); save(); alert("Saved"); }
 
         checkAuth();
     </script>
