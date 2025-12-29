@@ -3,443 +3,282 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Latiao — Твій улюблений магазин</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <title>Latiao | Premium Selection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     
     <style>
-        /* --- CSS Змінні та Базові стилі --- */
         :root {
             --primary: #FF4D4F;
-            --dark: #1a1a1a;
-            --light-gray: #f9f9f9;
-            --text-gray: #555;
+            --dark: #0f0f0f;
+            --soft-gray: #f4f4f7;
+            --text-main: #1d1d1f;
+            --text-muted: #86868b;
             --white: #ffffff;
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --glass: rgba(255, 255, 255, 0.8);
+            --transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
-        }
-
-        body {
-            background-color: var(--white);
-            color: var(--dark);
-            line-height: 1.6;
-            scroll-behavior: smooth;
-        }
-
-        a { text-decoration: none; color: inherit; }
-        ul { list-style: none; }
-
-        /* --- Header --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: var(--white); color: var(--text-main); line-height: 1.5; overflow-x: hidden; }
+        
+        /* --- Преміальний Header --- */
         header {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: fixed; top: 0; width: 100%; z-index: 1000;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0,0,0,0.03);
         }
-
         .nav-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            max-width: 1400px; margin: 0 auto; padding: 1.2rem 2rem;
+            display: flex; justify-content: space-between; align-items: center;
         }
+        .logo { font-size: 1.8rem; font-weight: 800; letter-spacing: -1.5px; color: var(--dark); text-transform: uppercase; }
+        .logo span { color: var(--primary); }
+        
+        .nav-links a { font-weight: 500; font-size: 0.95rem; margin: 0 1.5rem; transition: var(--transition); opacity: 0.7; }
+        .nav-links a:hover { opacity: 1; color: var(--primary); }
 
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary);
-            letter-spacing: -1px;
+        .cart-trigger {
+            background: var(--dark); color: white; border: none; padding: 0.7rem 1.2rem;
+            border-radius: 100px; cursor: pointer; display: flex; align-items: center; gap: 8px;
+            transition: var(--transition); font-weight: 600;
         }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-        }
-
-        .nav-links a:hover {
-            color: var(--primary);
-        }
-
-        .cart-icon-btn {
-            position: relative;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 1.2rem;
-        }
-
-        #cart-count {
-            position: absolute;
-            top: -8px;
-            right: -10px;
-            background: var(--primary);
-            color: white;
-            font-size: 0.7rem;
-            padding: 2px 6px;
-            border-radius: 50%;
-            font-weight: bold;
-        }
+        .cart-trigger:hover { transform: scale(1.05); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
 
         /* --- Hero Section --- */
         .hero {
-            height: 80vh;
-            background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 0 2rem;
-            margin-top: 60px;
+            height: 90vh; display: flex; align-items: center; justify-content: center;
+            background: radial-gradient(circle at top right, #fff5f5, #ffffff);
+            padding: 0 2rem; text-align: center;
         }
+        .hero-content h1 { font-size: clamp(2.5rem, 8vw, 5rem); font-weight: 800; line-height: 1.1; letter-spacing: -3px; margin-bottom: 2rem; }
+        .hero-content p { font-size: 1.2rem; color: var(--text-muted); max-width: 600px; margin: 0 auto 2.5rem; }
 
-        .hero-content h1 {
-            font-size: 3.5rem;
-            margin-bottom: 1.5rem;
-            font-weight: 800;
+        .btn-premium {
+            background: var(--dark); color: white; padding: 1.2rem 3rem; border-radius: 100px;
+            font-size: 1rem; font-weight: 600; transition: var(--transition); border: none; cursor: pointer;
         }
+        .btn-premium:hover { background: var(--primary); transform: translateY(-5px); }
 
-        .hero-content p {
-            font-size: 1.2rem;
-            color: var(--text-gray);
-            margin-bottom: 2rem;
+        /* --- Products Grid --- */
+        .catalog-container { max-width: 1400px; margin: 6rem auto; padding: 0 2rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 3rem; }
+        
+        .card { position: relative; transition: var(--transition); border-radius: 24px; overflow: hidden; }
+        .img-wrapper { height: 400px; overflow: hidden; border-radius: 24px; background: var(--soft-gray); position: relative; }
+        .card img { width: 100%; height: 100%; object-fit: cover; transition: var(--transition); }
+        .card:hover img { transform: scale(1.08); }
+        
+        .card-info { padding: 1.5rem 0.5rem; }
+        .card-name { font-size: 1.3rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .card-price { font-size: 1.1rem; color: var(--primary); font-weight: 700; }
+        
+        .add-btn {
+            position: absolute; bottom: 20px; right: 20px; width: 50px; height: 50px;
+            background: var(--white); border: none; border-radius: 50%; cursor: pointer;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1); font-size: 1.5rem; display: flex;
+            align-items: center; justify-content: center; transition: var(--transition); opacity: 0;
         }
+        .card:hover .add-btn { opacity: 1; transform: translateY(-5px); }
+        .add-btn:hover { background: var(--primary); color: white; }
 
-        .btn-main {
-            background: var(--primary);
-            color: white;
-            padding: 1rem 2.5rem;
-            border-radius: 50px;
-            font-weight: 600;
-            display: inline-block;
-            transition: var(--transition);
-            border: none;
-            cursor: pointer;
+        /* --- Premium Cart Side Panel --- */
+        .cart-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.3); backdrop-filter: blur(5px);
+            z-index: 2000; display: none;
         }
-
-        .btn-main:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(255, 77, 79, 0.3);
+        .cart-panel {
+            position: fixed; right: 0; top: 0; width: 450px; height: 100%;
+            background: var(--white); z-index: 2001; padding: 2.5rem;
+            transform: translateX(100%); transition: var(--transition);
+            display: flex; flex-direction: column;
         }
+        .cart-panel.active { transform: translateX(0); }
+        
+        .cart-items { flex: 1; overflow-y: auto; margin-top: 2rem; }
+        .cart-item { display: flex; gap: 1rem; margin-bottom: 1.5rem; align-items: center; }
+        .cart-item img { width: 70px; height: 70px; border-radius: 12px; object-fit: cover; }
 
-        /* --- Catalog --- */
-        .container {
-            max-width: 1200px;
-            margin: 5rem auto;
-            padding: 0 2rem;
+        /* --- Допродажі (Upsell) --- */
+        .upsell-section { margin-top: 2rem; padding: 1.5rem; background: var(--soft-gray); border-radius: 20px; }
+        .upsell-title { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; margin-bottom: 1rem; color: var(--text-muted); }
+        .upsell-list { display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 5px; }
+        .upsell-card { 
+            min-width: 140px; background: white; padding: 0.8rem; border-radius: 15px; 
+            text-align: center; cursor: pointer; transition: 0.3s;
         }
+        .upsell-card:hover { border: 1px solid var(--primary); }
+        .upsell-card img { width: 100%; height: 80px; object-fit: cover; border-radius: 10px; }
+        .upsell-card p { font-size: 0.75rem; font-weight: 600; margin: 5px 0; }
+        .upsell-card span { font-size: 0.8rem; color: var(--primary); font-weight: 700; }
 
-        .section-title {
-            text-align: center;
-            margin-bottom: 3rem;
-            font-size: 2.5rem;
-        }
+        footer { padding: 4rem; text-align: center; color: var(--text-muted); border-top: 1px solid #eee; }
 
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 2.5rem;
-        }
-
-        .product-card {
-            background: var(--white);
-            border-radius: 20px;
-            overflow: hidden;
-            transition: var(--transition);
-            border: 1px solid #eee;
-        }
-
-        .product-card:hover {
-            transform: translateY(-10px);
-            box-shadow: var(--shadow);
-        }
-
-        .product-img {
-            width: 100%;
-            height: 300px;
-            object-fit: cover;
-            background: var(--light-gray);
-        }
-
-        .product-info {
-            padding: 1.5rem;
-        }
-
-        .product-name {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .product-price {
-            color: var(--primary);
-            font-weight: 700;
-            font-size: 1.1rem;
-            margin-bottom: 1rem;
-        }
-
-        .add-to-cart {
-            width: 100%;
-            padding: 0.8rem;
-            border: 2px solid var(--primary);
-            background: transparent;
-            color: var(--primary);
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .add-to-cart:hover {
-            background: var(--primary);
-            color: white;
-        }
-
-        /* --- Cart Modal --- */
-        .cart-modal {
-            position: fixed;
-            right: -100%;
-            top: 0;
-            width: 400px;
-            height: 100%;
-            background: white;
-            box-shadow: -5px 0 30px rgba(0,0,0,0.1);
-            z-index: 2000;
-            transition: 0.4s ease;
-            padding: 2rem;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .cart-modal.active { right: 0; }
-
-        .cart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        .close-cart { font-size: 1.5rem; cursor: pointer; }
-
-        .cart-items {
-            flex-grow: 1;
-            overflow-y: auto;
-        }
-
-        .cart-item {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid #eee;
-        }
-
-        .cart-item img { width: 60px; height: 60px; border-radius: 8px; }
-
-        .cart-footer {
-            padding-top: 1rem;
-            border-top: 2px solid #eee;
-        }
-
-        .total-price {
-            font-size: 1.2rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        /* --- Footer --- */
-        footer {
-            background: var(--dark);
-            color: white;
-            padding: 4rem 2rem;
-            text-align: center;
-            margin-top: 5rem;
-        }
-
-        .social-links {
-            margin-top: 1.5rem;
-            display: flex;
-            justify-content: center;
-            gap: 1.5rem;
-        }
-
-        /* --- Responsive --- */
-        @media (max-width: 768px) {
-            .hero-content h1 { font-size: 2.2rem; }
-            .cart-modal { width: 100%; }
-            .nav-links { display: none; }
-        }
+        @media (max-width: 500px) { .cart-panel { width: 100%; } }
     </style>
 </head>
 <body>
 
     <header>
         <nav class="nav-container">
-            <a href="#" class="logo">LATIAO</a>
-            <ul class="nav-links">
-                <li><a href="#">Головна</a></li>
-                <li><a href="#catalog">Каталог</a></li>
-            </ul>
-            <button class="cart-icon-btn" onclick="toggleCart()">
-                🛒 <span id="cart-count">0</span>
+            <a href="#" class="logo">Lat<span>iao</span></a>
+            <div class="nav-links">
+                <a href="#catalog">Колекції</a>
+                <a href="#">Про нас</a>
+            </div>
+            <button class="cart-trigger" onclick="toggleCart()">
+                <span>Кошик</span>
+                <span id="cart-count">0</span>
             </button>
         </nav>
     </header>
 
     <section class="hero">
         <div class="hero-content">
-            <h1>Твій стиль, твій Latiao</h1>
-            <p>Відкрийте для себе преміальну колекцію аксесуарів та смаколиків.</p>
-            <a href="#catalog" class="btn-main">Перейти до каталогу</a>
+            <h1>Elevate Your Style.</h1>
+            <p>Ексклюзивна серія аксесуарів та смаків, створена для тих, хто цінує деталі та якість.</p>
+            <button class="btn-premium" onclick="document.getElementById('catalog').scrollIntoView()">До каталогу</button>
         </div>
     </section>
 
-    <main class="container" id="catalog">
-        <h2 class="section-title">Наші Товари</h2>
-        <div class="products-grid" id="products-container">
-            </div>
-    </main>
+    <div class="catalog-container" id="catalog">
+        <div class="grid" id="product-grid"></div>
+    </div>
 
-    <div class="cart-modal" id="cart-modal">
-        <div class="cart-header">
-            <h3>Ваш кошик</h3>
-            <span class="close-cart" onclick="toggleCart()">&times;</span>
+    <div class="cart-overlay" id="cart-overlay" onclick="toggleCart()"></div>
+    <div class="cart-panel" id="cart-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="font-weight: 800;">Ваш вибір</h2>
+            <button onclick="toggleCart()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">✕</button>
         </div>
-        <div class="cart-items" id="cart-items-container">
+
+        <div class="cart-items" id="cart-content">
             </div>
-        <div class="cart-footer">
-            <div class="total-price">
-                <span>Разом:</span>
-                <span id="total-amount">0 грн</span>
+
+        <div class="upsell-section">
+            <p class="upsell-title">Доповніть ваш образ</p>
+            <div class="upsell-list" id="upsell-container">
+                </div>
+        </div>
+
+        <div style="margin-top: 2rem; border-top: 1px solid #eee; padding-top: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem;">
+                <span style="font-weight: 600;">Разом:</span>
+                <span id="total-price" style="font-size: 1.4rem; font-weight: 800; color: var(--primary);">0 грн</span>
             </div>
-            <button class="btn-main" style="width: 100%; margin-bottom: 10px;" onclick="checkout()">Оформити замовлення</button>
-            <button class="add-to-cart" style="width: 100%; border-color: #ccc; color: #777;" onclick="clearCart()">Очистити кошик</button>
+            <button class="btn-premium" style="width: 100%;" onclick="checkout()">Замовити зараз</button>
         </div>
     </div>
 
     <footer>
-        <p>© 2025 Latiao. Усі права захищено.</p>
-        <div class="social-links">
-            <a href="#">Instagram</a>
-            <a href="#">Facebook</a>
-            <a href="#">GitHub</a>
-        </div>
+        <p>© 2025 Latiao. Тільки найкраще.</p>
     </footer>
 
     <script>
-        // --- Дані про товари ---
         const products = [
-            { id: 1, name: "Latiao Classic Snack", price: 89, img: "https://images.unsplash.com/photo-1621939514649-280e2ee25f60?auto=format&fit=crop&q=80&w=400" },
-            { id: 2, name: "Premium Hoodie", price: 1250, img: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=400" },
-            { id: 3, name: "Smart Watch L1", price: 2400, img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=400" },
-            { id: 4, name: "Eco Water Bottle", price: 450, img: "https://images.unsplash.com/photo-1602143307185-8c1c55939bb0?auto=format&fit=crop&q=80&w=400" },
-            { id: 5, name: "Minimalist Backpack", price: 1800, img: "https://images.unsplash.com/photo-1553062407-98eeb94c6a62?auto=format&fit=crop&q=80&w=400" },
-            { id: 6, name: "Wireless Earbuds", price: 990, img: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&q=80&w=400" },
-            { id: 7, name: "Designer Sunglasses", price: 720, img: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?auto=format&fit=crop&q=80&w=400" },
-            { id: 8, name: "Leather Wallet", price: 550, img: "https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&q=80&w=400" }
+            { id: 1, name: "Premium Silk Scarf", price: 1200, img: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=500" },
+            { id: 2, name: "Gold Latiao Pack", price: 250, img: "https://images.unsplash.com/photo-1621939514649-280e2ee25f60?q=80&w=500" },
+            { id: 3, name: "Leather Tote Bag", price: 4500, img: "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=500" },
+            { id: 4, name: "Ambience Candle", price: 850, img: "https://images.unsplash.com/photo-1603006905003-be475563bc59?q=80&w=500" },
+            { id: 5, name: "Night Tech Watch", price: 8900, img: "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?q=80&w=500" },
+            { id: 6, name: "Velvet Sunglasses", price: 2100, img: "https://images.unsplash.com/photo-1511499767390-90342f4b4ce7?q=80&w=500" }
         ];
 
-        let cart = JSON.parse(localStorage.getItem('latiao_cart')) || [];
+        // Товари для допродажу
+        const upsells = [
+            { id: 101, name: "Luxury Gift Box", price: 150, img: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=200" },
+            { id: 102, name: "Express Delivery", price: 99, img: "https://images.unsplash.com/photo-1580915411954-282cb1b0d780?q=80&w=200" }
+        ];
 
-        // --- Ініціалізація товарів ---
-        function displayProducts() {
-            const container = document.getElementById('products-container');
-            container.innerHTML = products.map(product => `
-                <div class="product-card">
-                    <img src="${product.img}" alt="${product.name}" class="product-img">
-                    <div class="product-info">
-                        <h3 class="product-name">${product.name}</h3>
-                        <p class="product-price">${product.price} грн</p>
-                        <button class="add-to-cart" onclick="addToCart(${product.id})">Додати в кошик</button>
+        let cart = JSON.parse(localStorage.getItem('latiao_premium_cart')) || [];
+
+        function renderProducts() {
+            const grid = document.getElementById('product-grid');
+            grid.innerHTML = products.map(p => `
+                <div class="card">
+                    <div class="img-wrapper">
+                        <img src="${p.img}" alt="${p.name}">
+                        <button class="add-btn" onclick="addToCart(${p.id})">+</button>
+                    </div>
+                    <div class="card-info">
+                        <div class="card-name">${p.name}</div>
+                        <div class="card-price">${p.price} грн</div>
                     </div>
                 </div>
             `).join('');
         }
 
-        // --- Логіка кошика ---
-        function addToCart(id) {
-            const product = products.find(p => p.id === id);
+        function renderUpsells() {
+            const container = document.getElementById('upsell-container');
+            container.innerHTML = upsells.map(u => `
+                <div class="upsell-card" onclick="addToCart(${u.id}, true)">
+                    <img src="${u.img}">
+                    <p>${u.name}</p>
+                    <span>+${u.price} грн</span>
+                </div>
+            `).join('');
+        }
+
+        function addToCart(id, isUpsell = false) {
+            const allProducts = [...products, ...upsells];
+            const product = allProducts.find(p => p.id === id);
             cart.push(product);
-            updateCart();
-            
-            // Легка анімація кнопки
-            const btn = event.target;
-            btn.innerText = "Додано! ✓";
-            setTimeout(() => btn.innerText = "Додати в кошик", 1000);
-        }
-
-        function updateCart() {
-            localStorage.setItem('latiao_cart', JSON.stringify(cart));
-            document.getElementById('cart-count').innerText = cart.length;
-            
-            const cartItemsContainer = document.getElementById('cart-items-container');
-            const totalAmountSpan = document.getElementById('total-amount');
-            
-            if (cart.length === 0) {
-                cartItemsContainer.innerHTML = '<p style="text-align:center; color:#999; margin-top:2rem;">Кошик порожній</p>';
-                totalAmountSpan.innerText = '0 грн';
-                return;
-            }
-
-            cartItemsContainer.innerHTML = cart.map((item, index) => `
-                <div class="cart-item">
-                    <img src="${item.img}" alt="${item.name}">
-                    <div style="flex-grow:1">
-                        <p style="font-weight:600">${item.name}</p>
-                        <p style="color:var(--primary)">${item.price} грн</p>
-                    </div>
-                    <span style="cursor:pointer; color:#ccc" onclick="removeFromCart(${index})">&times;</span>
-                </div>
-            `).join('');
-
-            const total = cart.reduce((sum, item) => sum + item.price, 0);
-            totalAmountSpan.innerText = `${total} грн`;
+            saveAndUpdate();
+            if (!isUpsell) openCart();
         }
 
         function removeFromCart(index) {
             cart.splice(index, 1);
-            updateCart();
+            saveAndUpdate();
         }
 
-        function clearCart() {
-            cart = [];
-            updateCart();
+        function saveAndUpdate() {
+            localStorage.setItem('latiao_premium_cart', JSON.stringify(cart));
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const content = document.getElementById('cart-content');
+            const total = document.getElementById('total-price');
+            const count = document.getElementById('cart-count');
+
+            count.innerText = cart.length;
+            content.innerHTML = cart.map((item, index) => `
+                <div class="cart-item">
+                    <img src="${item.img}">
+                    <div style="flex:1">
+                        <div style="font-weight:600; font-size:0.9rem">${item.name}</div>
+                        <div style="color:var(--primary); font-size:0.85rem">${item.price} грн</div>
+                    </div>
+                    <button onclick="removeFromCart(${index})" style="background:none; border:none; color:#ccc; cursor:pointer">Видалити</button>
+                </div>
+            `).join('');
+
+            const sum = cart.reduce((a, b) => a + b.price, 0);
+            total.innerText = `${sum} грн`;
         }
 
         function toggleCart() {
-            document.getElementById('cart-modal').classList.toggle('active');
+            document.getElementById('cart-panel').classList.toggle('active');
+            const overlay = document.getElementById('cart-overlay');
+            overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function openCart() {
+            document.getElementById('cart-panel').classList.add('active');
+            document.getElementById('cart-overlay').style.display = 'block';
         }
 
         function checkout() {
-            if (cart.length === 0) {
-                alert("Ваш кошик порожній!");
-                return;
-            }
-            alert("Дякуємо за покупку ❤️ Ваше замовлення прийнято в обробку!");
-            clearCart();
+            if (cart.length === 0) return alert("Кошик порожній");
+            alert("Дякуємо за ваше замовлення. Наш менеджер зв'яжеться з вами найближчим часом.");
+            cart = [];
+            saveAndUpdate();
             toggleCart();
         }
 
-        // Запуск при завантаженні
-        displayProducts();
-        updateCart();
-
+        renderProducts();
+        renderUpsells();
+        updateCartUI();
     </script>
 </body>
 </html>
