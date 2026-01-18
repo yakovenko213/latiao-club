@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Orders collection - allow clients to create, admins to read/update
+    match /orders/{orderId} {
+      allow create: if true; // Anyone can create orders
+      allow read, update, delete: if request.auth != null; // Only authenticated users (admins)
+    }
+    
+    // Abandoned carts - allow clients to create/update/delete, admins to read
+    match /abandoned_carts/{phone} {
+      allow create, update, delete: if true; // Anyone can save/delete their abandoned cart
+      allow read: if request.auth != null; // Only admins can read
+    }
+    
+    // Products collection - read-only for clients, full access for admins
+    match /products/{productId} {
+      allow read: if true; // Anyone can read products
+      allow write: if request.auth != null; // Only admins can modify
+    }
+    
+    // Settings collection - read-only for clients (for gifts/popups), full access for admins
+    match /settings/{docId} {
+      allow read: if true; // Anyone can read settings
+      allow write: if request.auth != null; // Only admins can modify
+    }
+    
+    // Pop-ups collection - read-only for clients, full access for admins
+    match /popups/{popupId} {
+      allow read: if true; // Anyone can read active popups
+      allow write: if request.auth != null; // Only admins can modify
+    }
+    
+    // Pages collection - read-only for clients, full access for admins
+    match /pages/{pageId} {
+      allow read: if true; // Anyone can read pages
+      allow write: if request.auth != null; // Only admins can modify
+    }
+    
+    // Daily stats collection - public write access for analytics tracking
+    match /daily_stats/{dateId} {
+      allow read: if request.auth != null; // Only admins can read stats
+      allow create, update: if true; // Anyone can increment counters (visitors, cart additions)
+    }
+  }
+}

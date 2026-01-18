@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LATIAO SNACK — Вхід в кабінет</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            spicy: '#ff6b00',
+            'spicy-light': '#fff4ed',
+            'spicy-dark': '#e55d00',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes pulse-soft {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-5px); }
+      40%, 80% { transform: translateX(5px); }
+    }
+    
+    @keyframes bounce-in {
+      0% { transform: scale(0.8); opacity: 0; }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    
+    .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+    .slide-up { animation: slideUp 0.6s ease-out forwards; }
+    .pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
+    .shake { animation: shake 0.4s ease-in-out; }
+    .bounce-in { animation: bounce-in 0.5s ease-out forwards; }
+    
+    .btn-press:active { transform: scale(0.96); }
+    
+    .step-hidden { display: none; }
+    .step-visible { display: block; }
+    
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      transition: transform 0.4s ease-out;
+      z-index: 100;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type=number] { -moz-appearance: textfield; }
+    
+    /* Background Animation */
+    #bg-animation {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    
+    .floating-emoji {
+      position: absolute;
+      user-select: none;
+      pointer-events: none;
+    }
+    
+    @keyframes floatUp {
+      0% {
+        transform: translateY(0) translateX(0) rotate(0deg);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-120vh) translateX(50px) rotate(360deg);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex flex-col">
+  
+  <!-- Back to Home Button -->
+  <a href="index.html" class="fixed top-6 left-6 z-50 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-sm flex items-center justify-center text-gray-500 hover:text-[#ff6b00] hover:shadow-md transition-all duration-300 group" title="Повернутися на головну">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 transition-transform duration-300 group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+    </svg>
+  </a>
+  
+  <!-- Animated Background -->
+  <div id="bg-animation"></div>
+  
+  <!-- Toast Notification (ВИПРАВЛЕНО!) -->
+  <div id="toast" class="toast bg-green-500 text-white px-6 py-3 rounded-2xl shadow-lg font-semibold flex items-center gap-2">
+    <span id="toast-message">Успішний вхід 🎉</span>
+  </div>
+
+  <!-- Header -->
+  <header class="w-full py-6 px-4 fade-in">
+    <div class="max-w-md mx-auto text-center">
+      <div class="flex items-center justify-center gap-2 mb-2">
+        <span class="text-3xl">🌶️</span>
+        <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">LATIAO SNACK</h1>
+        <span class="text-3xl">🌶️</span>
+      </div>
+      <p class="text-gray-500 text-sm">Швидкий доступ до особистого кабінету</p>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 flex items-center justify-center px-4 py-8">
+    <div class="w-full max-w-md">
+      
+      <!-- Main Card -->
+      <div class="bg-white rounded-3xl shadow-xl shadow-gray-200/50 p-6 md:p-8 slide-up" style="animation-delay: 0.1s;">
+        
+        <!-- Step 1: Phone Input -->
+        <div id="step1" class="step-visible">
+          <div class="text-center mb-6">
+            <h2 class="text-xl md:text-2xl font-bold text-gray-900 mb-2">Вхід в кабінет</h2>
+            <p class="text-gray-500 text-sm">Введіть номер телефону, щоб отримати код доступу</p>
+          </div>
+          
+          <div class="space-y-4">
+            <div class="flex gap-2">
+              <div class="flex items-center justify-center bg-gray-100 rounded-xl px-4 py-3 text-gray-700 font-medium">
+                +380
+              </div>
+              <input 
+                type="tel" 
+                id="phoneInput" 
+                placeholder="XX XXX XX XX" 
+                maxlength="12"
+                class="flex-1 bg-gray-100 rounded-xl px-4 py-3 text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-spicy focus:bg-white transition-all placeholder:text-gray-400"
+              >
+            </div>
+            
+            <button 
+              id="getCodeBtn" 
+              disabled
+              class="w-full bg-gray-300 text-white font-semibold py-4 rounded-xl transition-all duration-300 btn-press disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              Отримати код
+            </button>
+          </div>
+        </div>
+        
+        <!-- Step 2: OTP Verification -->
+        <div id="step2" class="step-hidden">
+          <div class="text-center mb-6 relative">
+            <button id="backBtn" class="absolute left-0 top-0 text-gray-400 hover:text-gray-600 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <div class="text-4xl mb-3">🔐</div>
+            <h2 class="text-xl md:text-2xl font-bold text-gray-900 mb-2">Підтвердження</h2>
+            <p class="text-gray-500 text-sm">Ми надіслали 4-значний код на ваш номер</p>
+          </div>
+          
+          <div class="flex justify-center gap-3 mb-6">
+            <input type="number" maxlength="1" class="otp-input w-14 h-14 md:w-16 md:h-16 bg-gray-100 rounded-xl text-center text-2xl font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-spicy focus:bg-white transition-all" data-index="0">
+            <input type="number" maxlength="1" class="otp-input w-14 h-14 md:w-16 md:h-16 bg-gray-100 rounded-xl text-center text-2xl font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-spicy focus:bg-white transition-all" data-index="1">
+            <input type="number" maxlength="1" class="otp-input w-14 h-14 md:w-16 md:h-16 bg-gray-100 rounded-xl text-center text-2xl font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-spicy focus:bg-white transition-all" data-index="2">
+            <input type="number" maxlength="1" class="otp-input w-14 h-14 md:w-16 md:h-16 bg-gray-100 rounded-xl text-center text-2xl font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-spicy focus:bg-white transition-all" data-index="3">
+          </div>
+          
+          <div class="text-center mb-6">
+            <div class="inline-flex items-center gap-2 text-spicy font-medium">
+              <span>⏳</span>
+              <span id="timer">00:30</span>
+            </div>
+            <p class="text-gray-400 text-xs mt-2">Реєстрація займає до 30 секунд</p>
+          </div>
+          
+          <button 
+            id="loginBtn" 
+            disabled
+            class="w-full bg-gray-300 text-white font-semibold py-4 rounded-xl transition-all duration-300 btn-press disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            Увійти
+          </button>
+          
+          <button id="resendBtn" class="w-full mt-3 text-gray-400 text-sm hover:text-spicy transition-colors hidden">
+            Надіслати код повторно
+          </button>
+        </div>
+        
+      </div>
+      
+      <!-- Trust & Marketing Block -->
+      <div class="mt-6 bg-spicy-light rounded-2xl p-5 slide-up" style="animation-delay: 0.3s;">
+        <div class="grid grid-cols-1 gap-3">
+          <div class="flex items-center gap-3">
+            <span class="text-xl">✅</span>
+            <span class="text-gray-700 text-sm">Ми не просимо електронну пошту</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-xl">🔒</span>
+            <span class="text-gray-700 text-sm">Ваш номер телефону не передається третім особам</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-xl">⚡</span>
+            <span class="text-gray-700 text-sm">Швидкий доступ без паролів</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-xl">🎁</span>
+            <span class="text-gray-700 text-sm">Бонуси та історія замовлень у кабінеті</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Footer -->
+      <p class="text-center text-gray-400 text-xs mt-6 px-4 slide-up" style="animation-delay: 0.5s;">
+        Натискаючи кнопку, ви погоджуєтесь з <a href="#" class="text-spicy hover:underline">умовами користування</a>
+      </p>
+      
+    </div>
+  </main>
+
+  <script type="module">
+    import { functions } from './js/firebase-config.js';
+    import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
+
+    // Elements
+    const phoneInput = document.getElementById('phoneInput');
+    const getCodeBtn = document.getElementById('getCodeBtn');
+    const step1 = document.getElementById('step1');
+    const step2 = document.getElementById('step2');
+    const otpInputs = document.querySelectorAll('.otp-input');
+    const loginBtn = document.getElementById('loginBtn');
+    const backBtn = document.getElementById('backBtn');
+    const timerEl = document.getElementById('timer');
+    const resendBtn = document.getElementById('resendBtn');
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toast-message');
+    
+    let timerInterval;
+    
+    // Phone input formatting
+    phoneInput.addEventListener('input', (e) => {
+      let value = e.target.value.replace(/\D/g, '');
+      if (value.length > 9) value = value.slice(0, 9);
+      
+      // Format: XX XXX XX XX
+      let formatted = '';
+      if (value.length > 0) formatted += value.slice(0, 2);
+      if (value.length > 2) formatted += ' ' + value.slice(2, 5);
+      if (value.length > 5) formatted += ' ' + value.slice(5, 7);
+      if (value.length > 7) formatted += ' ' + value.slice(7, 9);
+      
+      e.target.value = formatted;
+      
+      // Enable/disable button
+      if (value.length === 9) {
+        getCodeBtn.disabled = false;
+        getCodeBtn.classList.remove('bg-gray-300');
+        getCodeBtn.classList.add('bg-spicy', 'hover:bg-spicy-dark', 'hover:shadow-lg', 'hover:shadow-spicy/30');
+      } else {
+        getCodeBtn.disabled = true;
+        getCodeBtn.classList.add('bg-gray-300');
+        getCodeBtn.classList.remove('bg-spicy', 'hover:bg-spicy-dark', 'hover:shadow-lg', 'hover:shadow-spicy/30');
+      }
+    });
+    
+    // Helper: Show toast notification (ВИПРАВЛЕНО!)
+    function showToast(message, type = 'error') {
+      console.log('🍞 Toast:', message, type);
+      
+      toastMessage.textContent = message;
+      toast.className = 'toast show';
+      
+      if (type === 'error') {
+        toast.classList.add('bg-red-500');
+        toast.classList.remove('bg-green-500');
+      } else {
+        toast.classList.add('bg-green-500');
+        toast.classList.remove('bg-red-500');
+      }
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+    
+    // Get code button
+    getCodeBtn.addEventListener('click', () => {
+      const phoneNumber = phoneInput.value.replace(/\s/g, ''); // Remove spaces
+      
+      console.log('📞 Sending OTP to:', phoneNumber);
+      
+      if (!phoneNumber || phoneNumber.length !== 9) {
+        showToast('Введіть коректний номер телефону');
+        return;
+      }
+      
+      // Disable button and show loading state
+      getCodeBtn.disabled = true;
+      const originalText = getCodeBtn.innerHTML;
+      getCodeBtn.innerHTML = '<div class="flex items-center justify-center gap-2"><div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div><span>Надсилаємо...</span></div>';
+      
+      // Call Cloud Function
+      const sendOtp = httpsCallable(functions, 'sendOtpCode');
+      sendOtp({ phoneNumber })
+        .then((result) => {
+          console.log('✅ OTP sent successfully:', result);
+          
+          // Success - hide Step 1
+          step1.classList.add('step-hidden');
+          step1.classList.remove('step-visible');
+          
+          // Show Step 2
+          step2.classList.remove('step-hidden');
+          step2.classList.add('step-visible', 'fade-in');
+          
+          // Reset button text (for when user goes back)
+          getCodeBtn.innerHTML = originalText;
+          getCodeBtn.disabled = false;
+          
+          // Start timer
+          startTimer();
+          
+          // Focus first OTP input
+          setTimeout(() => {
+            otpInputs[0].focus();
+          }, 150);
+          
+          // Show success toast
+          showToast('Код надіслано!', 'success');
+        })
+        .catch((error) => {
+          console.error('❌ Error sending OTP:', error);
+          
+          // Show error message
+          let errorMessage = 'Помилка відправки коду. Спробуйте пізніше.';
+          
+          if (error.code === 'functions/invalid-argument') {
+            errorMessage = 'Невірний номер телефону';
+          } else if (error.code === 'functions/failed-precondition') {
+            errorMessage = error.message || 'Налаштування SMS не знайдено';
+          } else if (error.code === 'functions/internal') {
+            errorMessage = error.message || 'Помилка відправки SMS';
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+          
+          showToast(errorMessage);
+          
+          // Re-enable button on error
+          getCodeBtn.innerHTML = originalText;
+          getCodeBtn.disabled = false;
+        });
+    });
+    
+    // Back button
+    backBtn.addEventListener('click', () => {
+      step2.classList.add('step-hidden');
+      step2.classList.remove('step-visible');
+      step1.classList.remove('step-hidden');
+      step1.classList.add('step-visible', 'fade-in');
+      
+      clearInterval(timerInterval);
+      otpInputs.forEach(input => input.value = '');
+      resetLoginBtn();
+    });
+    
+    // OTP inputs
+    otpInputs.forEach((input, index) => {
+      input.addEventListener('input', (e) => {
+        const value = e.target.value.replace(/\D/g, '');
+        e.target.value = value.slice(-1);
+        
+        if (value && index < otpInputs.length - 1) {
+          otpInputs[index + 1].focus();
+        }
+        
+        checkOtpComplete();
+      });
+      
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !e.target.value && index > 0) {
+          otpInputs[index - 1].focus();
+        }
+      });
+      
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const paste = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4);
+        paste.split('').forEach((char, i) => {
+          if (otpInputs[i]) otpInputs[i].value = char;
+        });
+        checkOtpComplete();
+        if (paste.length === 4) otpInputs[3].focus();
+      });
+    });
+    
+    function checkOtpComplete() {
+      const code = Array.from(otpInputs).map(i => i.value).join('');
+      if (code.length === 4) {
+        loginBtn.disabled = false;
+        loginBtn.classList.remove('bg-gray-300');
+        loginBtn.classList.add('bg-spicy', 'hover:bg-spicy-dark', 'hover:shadow-lg', 'hover:shadow-spicy/30', 'pulse-soft');
+      } else {
+        resetLoginBtn();
+      }
+    }
+    
+    function resetLoginBtn() {
+      loginBtn.disabled = true;
+      loginBtn.classList.add('bg-gray-300');
+      loginBtn.classList.remove('bg-spicy', 'hover:bg-spicy-dark', 'hover:shadow-lg', 'hover:shadow-spicy/30', 'pulse-soft');
+    }
+    
+    // Timer
+    function startTimer() {
+      let seconds = 30;
+      resendBtn.classList.add('hidden');
+      
+      timerInterval = setInterval(() => {
+        seconds--;
+        timerEl.textContent = `00:${seconds.toString().padStart(2, '0')}`;
+        
+        if (seconds <= 0) {
+          clearInterval(timerInterval);
+          timerEl.textContent = '00:00';
+          resendBtn.classList.remove('hidden');
+        }
+      }, 1000);
+    }
+    
+    // Resend code
+    resendBtn.addEventListener('click', async () => {
+      const phoneNumber = phoneInput.value.replace(/\s/g, '');
+      
+      resendBtn.disabled = true;
+      const originalText = resendBtn.textContent;
+      resendBtn.textContent = 'Надсилаємо...';
+      
+      try {
+        const sendOtpCode = httpsCallable(functions, 'sendOtpCode');
+        await sendOtpCode({ phoneNumber });
+        
+        startTimer();
+        otpInputs.forEach(input => input.value = '');
+        otpInputs[0].focus();
+        resetLoginBtn();
+        
+        showToast('Код надіслано повторно', 'success');
+      } catch (error) {
+        console.error('Error resending OTP:', error);
+        showToast('Помилка відправки коду');
+      } finally {
+        resendBtn.textContent = originalText;
+        resendBtn.disabled = false;
+      }
+    });
+    
+    // Login button - Verify OTP
+    loginBtn.addEventListener('click', async () => {
+      const phoneNumber = phoneInput.value.replace(/\s/g, '');
+      const code = Array.from(otpInputs).map(i => i.value).join('');
+      
+      if (code.length !== 4) {
+        showToast('Введіть 4-значний код');
+        return;
+      }
+      
+      // Show loading state
+      loginBtn.disabled = true;
+      loginBtn.innerHTML = `
+        <svg class="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      `;
+      
+      try {
+        const verifyOtpCode = httpsCallable(functions, 'verifyOtpCode');
+        const result = await verifyOtpCode({ phoneNumber, code });
+        
+        if (result.data.success) {
+          // Success!
+          loginBtn.innerHTML = '✓ Успішно!';
+          loginBtn.classList.remove('bg-spicy');
+          loginBtn.classList.add('bg-green-500');
+          
+          showToast('Ви успішно увійшли!', 'success');
+          
+          // Store user session
+          localStorage.setItem('userPhone', result.data.phoneNumber);
+          localStorage.setItem('customToken', result.data.token);
+          
+          // Redirect to dashboard after 1.5 seconds
+          setTimeout(() => {
+            window.location.href = 'dashboard.html';
+          }, 1500);
+        }
+      } catch (error) {
+        console.error('Error verifying OTP:', error);
+        
+        let errorMessage = 'Помилка перевірки коду';
+        
+        if (error.code === 'functions/invalid-argument') {
+          errorMessage = 'Невірний код. Спробуйте ще раз.';
+          // Shake animation
+          otpInputs.forEach(input => {
+            input.classList.add('shake');
+            setTimeout(() => input.classList.remove('shake'), 400);
+          });
+        } else if (error.code === 'functions/deadline-exceeded') {
+          errorMessage = 'Код застарів. Отримайте новий код.';
+        } else if (error.code === 'functions/permission-denied') {
+          errorMessage = 'Забагато спроб. Отримайте новий код.';
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        showToast(errorMessage);
+        
+        // Reset button
+        loginBtn.innerHTML = 'Увійти';
+        loginBtn.disabled = false;
+        loginBtn.classList.remove('bg-green-500');
+        loginBtn.classList.add('bg-spicy');
+      }
+    });
+    
+    // Background Animation
+    function initBackgroundAnimation() {
+      const container = document.getElementById('bg-animation');
+      const emojis = ['🌶️', '🔥'];
+      const count = 28;
+      
+      for (let i = 0; i < count; i++) {
+        const emoji = document.createElement('div');
+        emoji.className = 'floating-emoji';
+        emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        
+        // Random positioning
+        emoji.style.left = Math.random() * 100 + '%';
+        emoji.style.bottom = '-50px';
+        
+        // Random size
+        emoji.style.fontSize = (Math.random() * 2 + 1) + 'rem';
+        
+        // Random opacity for subtle effect
+        emoji.style.opacity = (Math.random() * 0.3 + 0.2).toFixed(2);
+        
+        // Random animation duration and delay
+        const duration = Math.random() * 10 + 15; // 15-25s
+        const delay = Math.random() * 5; // 0-5s
+        emoji.style.animation = `floatUp ${duration}s linear ${delay}s infinite`;
+        
+        container.appendChild(emoji);
+      }
+    }
+    
+    // Initialize background animation on load
+    document.addEventListener('DOMContentLoaded', initBackgroundAnimation);
+  </script>
+</body>
+</html>

@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Промокоди - Latiao CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { spicy: '#ff6b00' } } }
+        }
+    </script>
+    <!-- <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        * { font-family: 'Inter', sans-serif; }
+        .sidebar-link { transition: all 0.2s; }
+        .sidebar-link:hover { background: rgba(255, 107, 0, 0.1); }
+        .sidebar-link.active { background: rgba(255, 107, 0, 0.15); color: #ff6b00; font-weight: 600; }
+    </style> -->
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-900">
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-4 border-spicy border-t-transparent mx-auto mb-4"></div>
+            <p class="text-lg font-semibold text-gray-700">Завантаження...</p>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app" class="hidden">
+        <!-- Sidebar -->
+        <aside class="fixed top-0 left-0 h-screen w-64 bg-white border-r border-gray-200 z-30">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center gap-2">
+                    <span class="text-3xl">🌶️</span>
+                    <div>
+                        <h1 class="text-xl font-bold">Latiao</h1>
+                        <p class="text-xs text-gray-500">Admin Panel</p>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="p-4 space-y-1">
+                <a href="admin.html#dashboard" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                    <span>Дашборд</span>
+                </a>
+                <a href="admin.html#orders" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+                    <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+                    <span>Замовлення</span>
+                </a>
+                <a href="admin.html#products" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+                    <i data-lucide="package" class="w-5 h-5"></i>
+                    <span>Товари</span>
+                </a>
+                <a href="admin-promos.html" class="sidebar-link active flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+                    <i data-lucide="ticket" class="w-5 h-5"></i>
+                    <span>Промокоди</span>
+                </a>
+            </nav>
+
+            <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
+                <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition">
+                    <i data-lucide="log-out" class="w-5 h-5"></i>
+                    <span>Вийти</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="ml-64 p-8">
+            <!-- Header -->
+            <div class="mb-8">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900">Промокоди</h1>
+                        <p class="text-gray-600 mt-1">Керування знижками та акціями</p>
+                    </div>
+                    <button onclick="openCreateModal()" class="bg-spicy hover:bg-orange-700 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition">
+                        <i data-lucide="plus" class="w-5 h-5"></i>
+                        Створити промокод
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-xl border border-gray-200">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-sm text-gray-600">Всього промокодів</p>
+                        <i data-lucide="ticket" class="w-5 h-5 text-purple-600"></i>
+                    </div>
+                    <p class="text-3xl font-bold text-gray-900" id="stat-total">0</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-gray-200">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-sm text-gray-600">Активні</p>
+                        <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
+                    </div>
+                    <p class="text-3xl font-bold text-green-600" id="stat-active">0</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-gray-200">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-sm text-gray-600">Використано разів</p>
+                        <i data-lucide="activity" class="w-5 h-5 text-blue-600"></i>
+                    </div>
+                    <p class="text-3xl font-bold text-blue-600" id="stat-used">0</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-gray-200">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-sm text-gray-600">Знижок надано</p>
+                        <i data-lucide="trending-down" class="w-5 h-5 text-orange-600"></i>
+                    </div>
+                    <p class="text-3xl font-bold text-orange-600" id="stat-discount">0 грн</p>
+                </div>
+            </div>
+
+            <!-- Promo Codes Table -->
+            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-xl font-bold text-gray-900">Список промокодів</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Код</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Знижка</th>
+                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase">Використано</th>
+                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase">Ліміт на особу</th>
+                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
+                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase">Дата створення</th>
+                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase">Дії</th>
+                            </tr>
+                        </thead>
+                        <tbody id="promos-list" class="divide-y divide-gray-200">
+                            <tr>
+                                <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                                    <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
+                                    <p>Поки що немає промокодів</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Promo Code Modal -->
+    <div id="create-promo-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <!-- Modal Header -->
+            <div class="sticky top-0 bg-gradient-to-r from-purple-600 to-spicy p-6 border-b border-purple-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3 text-white">
+                        <i data-lucide="ticket" class="w-6 h-6"></i>
+                        <h2 class="text-2xl font-bold">Створити промокод</h2>
+                    </div>
+                    <button onclick="closeCreateModal()" class="p-2 hover:bg-white/20 rounded-full transition">
+                        <i data-lucide="x" class="w-6 h-6 text-white"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <form id="create-promo-form" class="p-6 space-y-6">
+                <!-- Code Generation Section -->
+                <div class="bg-blue-50 rounded-xl p-5 border-2 border-blue-200">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <i data-lucide="hash" class="w-5 h-5 text-blue-600"></i>
+                        Код промокоду
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <!-- Manual Input -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Введіть код вручну</label>
+                            <input 
+                                type="text" 
+                                id="promo-code" 
+                                placeholder="наприклад: SALE2024, ЛЕТО, 12345"
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-lg font-mono uppercase"
+                                required
+                            >
+                            <p class="text-xs text-gray-500 mt-1">Код буде автоматично переведено у верхній регістр</p>
+                        </div>
+
+                        <!-- Code Generator Buttons -->
+                        <div>
+                            <p class="text-sm font-medium text-gray-700 mb-2">Або згенеруйте автоматично:</p>
+                            <div class="flex gap-3">
+                                <button 
+                                    type="button" 
+                                    onclick="generateCode('alphanumeric')"
+                                    class="flex-1 px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold flex items-center justify-center gap-2 transition"
+                                >
+                                    <i data-lucide="shuffle" class="w-4 h-4"></i>
+                                    Літери + Цифри
+                                </button>
+                                <button 
+                                    type="button" 
+                                    onclick="generateCode('numeric')"
+                                    class="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold flex items-center justify-center gap-2 transition"
+                                >
+                                    <i data-lucide="hash" class="w-4 h-4"></i>
+                                    Тільки цифри
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Discount Settings -->
+                <div class="bg-green-50 rounded-xl p-5 border-2 border-green-200">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <i data-lucide="percent" class="w-5 h-5 text-green-600"></i>
+                        Налаштування знижки
+                    </h3>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- Discount Type -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Тип знижки</label>
+                            <select 
+                                id="discount-type" 
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                                required
+                            >
+                                <option value="percent">Відсоток (%)</option>
+                                <option value="fixed">Фіксована сума (₴)</option>
+                            </select>
+                        </div>
+
+                        <!-- Discount Value -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Розмір знижки</label>
+                            <input 
+                                type="number" 
+                                id="discount-value" 
+                                placeholder="10"
+                                min="0"
+                                step="0.01"
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="mt-3 p-3 bg-white rounded-lg border border-green-300">
+                        <p class="text-sm text-gray-600">
+                            <strong>Приклад:</strong> 
+                            <span id="discount-example">Знижка 10% від суми замовлення</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Usage Limits -->
+                <div class="bg-orange-50 rounded-xl p-5 border-2 border-orange-200">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <i data-lucide="shield-alert" class="w-5 h-5 text-orange-600"></i>
+                        Обмеження використання
+                    </h3>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- Total Limit -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Максимум використань (всього)</label>
+                            <input 
+                                type="number" 
+                                id="limit-total" 
+                                placeholder="100"
+                                min="0"
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
+                                required
+                            >
+                            <p class="text-xs text-gray-500 mt-1">0 = необмежено</p>
+                        </div>
+
+                        <!-- Per User Limit -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Максимум на одну людину</label>
+                            <input 
+                                type="number" 
+                                id="limit-per-user" 
+                                value="1"
+                                min="1"
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
+                                required
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Status -->
+                <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border-2 border-gray-200">
+                    <input 
+                        type="checkbox" 
+                        id="promo-active" 
+                        checked
+                        class="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                    >
+                    <label for="promo-active" class="text-sm font-medium text-gray-700">
+                        Активувати промокод одразу після створення
+                    </label>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex gap-3 pt-4">
+                    <button 
+                        type="button" 
+                        onclick="closeCreateModal()"
+                        class="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-bold transition"
+                    >
+                        Скасувати
+                    </button>
+                    <button 
+                        type="submit"
+                        class="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-spicy hover:from-purple-700 hover:to-orange-700 text-white rounded-xl font-bold transition"
+                    >
+                        Створити промокод
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js';
+        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js';
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js';
+
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBbUk58iBn-8iLSPVv20iDRpQMxm6Ps_PQ",
+            authDomain: "my-magazin-81c96.firebaseapp.com",
+            projectId: "my-magazin-81c96",
+            storageBucket: "my-magazin-81c96.firebasestorage.app",
+            messagingSenderId: "529936454089",
+            appId: "1:529936454089:web:5b34ad2c72c33dd7e38f85"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Make globally available
+        window.db = db;
+        window.auth = auth;
+        window.collection = collection;
+        window.addDoc = addDoc;
+        window.getDocs = getDocs;
+        window.doc = doc;
+        window.updateDoc = updateDoc;
+        window.deleteDoc = deleteDoc;
+        window.query = query;
+        window.orderBy = orderBy;
+        window.serverTimestamp = serverTimestamp;
+
+        // ============================================
+        // AUTH CHECK
+        // ============================================
+        onAuthStateChanged(auth, (user) => {
+            const loadingScreen = document.getElementById('loading-screen');
+            const app = document.getElementById('app');
+            
+            if (user) {
+                loadingScreen.classList.add('hidden');
+                app.classList.remove('hidden');
+                loadPromoCodes();
+            } else {
+                window.location.href = 'admin.html';
+            }
+        });
+
+        // ============================================
+        // LOGOUT
+        // ============================================
+        window.logout = async () => {
+            try {
+                await signOut(auth);
+                window.location.href = 'admin.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        };
+
+        // ============================================
+        // CODE GENERATION
+        // ============================================
+        window.generateCode = (type) => {
+            const codeInput = document.getElementById('promo-code');
+            let code = '';
+            
+            if (type === 'alphanumeric') {
+                // Letters + Numbers (8 characters)
+                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed similar looking: I, O, 0, 1
+                for (let i = 0; i < 8; i++) {
+                    code += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+            } else if (type === 'numeric') {
+                // Only numbers (6 digits)
+                for (let i = 0; i < 6; i++) {
+                    code += Math.floor(Math.random() * 10);
+                }
+            }
+            
+            codeInput.value = code;
+            codeInput.focus();
+        };
+
+        // ============================================
+        // UPDATE DISCOUNT EXAMPLE
+        // ============================================
+        document.addEventListener('DOMContentLoaded', () => {
+            const typeSelect = document.getElementById('discount-type');
+            const valueInput = document.getElementById('discount-value');
+            const exampleEl = document.getElementById('discount-example');
+            
+            const updateExample = () => {
+                const type = typeSelect.value;
+                const value = valueInput.value || 0;
+                
+                if (type === 'percent') {
+                    exampleEl.textContent = `Знижка ${value}% від суми замовлення`;
+                } else {
+                    exampleEl.textContent = `Знижка ${value} грн від суми замовлення`;
+                }
+            };
+            
+            typeSelect.addEventListener('change', updateExample);
+            valueInput.addEventListener('input', updateExample);
+        });
+
+        // ============================================
+        // LOAD PROMO CODES
+        // ============================================
+        window.loadPromoCodes = async () => {
+            try {
+                const promosRef = collection(db, 'promocodes');
+                const q = query(promosRef, orderBy('createdAt', 'desc'));
+                const snapshot = await getDocs(q);
+                
+                const promos = [];
+                snapshot.forEach(doc => {
+                    promos.push({ id: doc.id, ...doc.data() });
+                });
+                
+                renderPromoCodes(promos);
+                updateStats(promos);
+                
+            } catch (error) {
+                console.error('Error loading promo codes:', error);
+                alert('Помилка завантаження промокодів: ' + error.message);
+            }
+        };
+
+        // ============================================
+        // RENDER PROMO CODES TABLE
+        // ============================================
+        function renderPromoCodes(promos) {
+            const tbody = document.getElementById('promos-list');
+            
+            if (promos.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                            <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
+                            <p>Поки що немає промокодів</p>
+                        </td>
+                    </tr>
+                `;
+                lucide.createIcons();
+                return;
+            }
+            
+            tbody.innerHTML = promos.map(promo => {
+                const discountText = promo.type === 'percent' 
+                    ? `${promo.value}%` 
+                    : `${promo.value} грн`;
+                
+                const usageText = promo.limits.total === 0 
+                    ? `${promo.stats.usedCount} / ∞` 
+                    : `${promo.stats.usedCount} / ${promo.limits.total}`;
+                
+                const statusBadge = promo.isActive 
+                    ? '<span class="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold"><i data-lucide="check-circle" class="w-3 h-3"></i> Активний</span>'
+                    : '<span class="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold"><i data-lucide="x-circle" class="w-3 h-3"></i> Неактивний</span>';
+                
+                const createdDate = promo.createdAt?.toDate ? promo.createdAt.toDate().toLocaleDateString('uk-UA') : 'Н/Д';
+                
+                return `
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="ticket" class="w-4 h-4 text-purple-600"></i>
+                                <span class="font-mono font-bold text-lg text-gray-900">${promo.code}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-800 rounded-full font-bold">
+                                <i data-lucide="${promo.type === 'percent' ? 'percent' : 'banknote'}" class="w-3 h-3"></i>
+                                ${discountText}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="text-sm font-semibold text-gray-900">${usageText}</span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="text-sm font-semibold text-gray-700">${promo.limits.perUser}</span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            ${statusBadge}
+                        </td>
+                        <td class="px-6 py-4 text-center text-sm text-gray-600">
+                            ${createdDate}
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center justify-center gap-2">
+                                <button 
+                                    onclick="togglePromoStatus('${promo.id}', ${!promo.isActive})"
+                                    class="p-2 ${promo.isActive ? 'text-yellow-600 hover:bg-yellow-50' : 'text-green-600 hover:bg-green-50'} rounded-lg transition"
+                                    title="${promo.isActive ? 'Деактивувати' : 'Активувати'}"
+                                >
+                                    <i data-lucide="${promo.isActive ? 'pause' : 'play'}" class="w-4 h-4"></i>
+                                </button>
+                                <button 
+                                    onclick="deletePromo('${promo.id}', '${promo.code}')"
+                                    class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                                    title="Видалити"
+                                >
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            lucide.createIcons();
+        }
+
+        // ============================================
+        // UPDATE STATS
+        // ============================================
+        function updateStats(promos) {
+            const total = promos.length;
+            const active = promos.filter(p => p.isActive).length;
+            const totalUsed = promos.reduce((sum, p) => sum + (p.stats.usedCount || 0), 0);
+            
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-active').textContent = active;
+            document.getElementById('stat-used').textContent = totalUsed;
+            document.getElementById('stat-discount').textContent = '0 грн'; // TODO: Calculate from orders
+        }
+
+        // ============================================
+        // MODAL CONTROLS
+        // ============================================
+        window.openCreateModal = () => {
+            document.getElementById('create-promo-modal').classList.remove('hidden');
+            document.getElementById('promo-code').focus();
+        };
+
+        window.closeCreateModal = () => {
+            document.getElementById('create-promo-modal').classList.add('hidden');
+            document.getElementById('create-promo-form').reset();
+        };
+
+        // ============================================
+        // CREATE PROMO CODE
+        // ============================================
+        document.getElementById('create-promo-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const code = document.getElementById('promo-code').value.trim().toUpperCase();
+            const type = document.getElementById('discount-type').value;
+            const value = parseFloat(document.getElementById('discount-value').value);
+            const limitTotal = parseInt(document.getElementById('limit-total').value) || 0;
+            const limitPerUser = parseInt(document.getElementById('limit-per-user').value) || 1;
+            const isActive = document.getElementById('promo-active').checked;
+            
+            // Validation
+            if (!code) {
+                alert('⚠️ Будь ласка, введіть код промокоду');
+                return;
+            }
+            
+            if (value <= 0) {
+                alert('⚠️ Розмір знижки має бути більше 0');
+                return;
+            }
+            
+            if (type === 'percent' && value > 100) {
+                alert('⚠️ Відсоток знижки не може бути більше 100%');
+                return;
+            }
+            
+            try {
+                // Check for duplicates
+                const promosRef = collection(db, 'promocodes');
+                const snapshot = await getDocs(promosRef);
+                
+                const exists = snapshot.docs.some(doc => doc.data().code === code);
+                if (exists) {
+                    alert(`⚠️ Промокод "${code}" вже існує. Виберіть інший код.`);
+                    return;
+                }
+                
+                // Create promo code
+                await addDoc(promosRef, {
+                    code: code,
+                    type: type,
+                    value: value,
+                    limits: {
+                        total: limitTotal,
+                        perUser: limitPerUser
+                    },
+                    stats: {
+                        usedCount: 0
+                    },
+                    isActive: isActive,
+                    createdAt: serverTimestamp()
+                });
+                
+                alert(`✅ Промокод "${code}" успішно створено!`);
+                closeCreateModal();
+                loadPromoCodes();
+                
+            } catch (error) {
+                console.error('Error creating promo code:', error);
+                alert('❌ Помилка створення промокоду: ' + error.message);
+            }
+        });
+
+        // ============================================
+        // TOGGLE PROMO STATUS
+        // ============================================
+        window.togglePromoStatus = async (promoId, newStatus) => {
+            try {
+                const promoRef = doc(db, 'promocodes', promoId);
+                await updateDoc(promoRef, {
+                    isActive: newStatus
+                });
+                
+                loadPromoCodes();
+            } catch (error) {
+                console.error('Error toggling status:', error);
+                alert('Помилка зміни статусу: ' + error.message);
+            }
+        };
+
+        // ============================================
+        // DELETE PROMO
+        // ============================================
+        window.deletePromo = async (promoId, promoCode) => {
+            if (!confirm(`Видалити промокод "${promoCode}"?\n\nЦю дію неможливо скасувати.`)) {
+                return;
+            }
+            
+            try {
+                await deleteDoc(doc(db, 'promocodes', promoId));
+                alert(`✅ Промокод "${promoCode}" видалено`);
+                loadPromoCodes();
+            } catch (error) {
+                console.error('Error deleting promo:', error);
+                alert('Помилка видалення: ' + error.message);
+            }
+        };
+
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>

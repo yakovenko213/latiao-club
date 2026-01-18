@@ -1,0 +1,20 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Products images - uploaded by authenticated admins only, readable by all
+    match /products/{imageId} {
+      // Allow public read access for product images
+      allow read: if true;
+      
+      // Only authenticated users (admins) can upload/update/delete
+      allow write: if request.auth != null;
+    }
+    
+    // Default: deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

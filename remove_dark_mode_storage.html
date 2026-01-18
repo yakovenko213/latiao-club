@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Очищення Dark Mode</title>
+  <script>
+    // Видалити theme з localStorage
+    localStorage.removeItem('theme');
+    // Видалити клас dark з html
+    document.documentElement.classList.remove('dark');
+    alert('Темний режим повністю видалено! Перезавантажте сторінку.');
+    // Redirect до головної
+    setTimeout(() => window.location.href = '/index.html', 2000);
+  </script>
+</head>
+<body>
+  <h1>Очищення завершено...</h1>
+</body>
+</html>

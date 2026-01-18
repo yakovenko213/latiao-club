@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="page-title">Завантаження... — Latiao Snack</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            spicy: '#ff6b00',
+            'spicy-dark': '#e55d00',
+            fire: '#ff4444',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    
+    * { font-family: 'Inter', sans-serif; }
+    html { scroll-behavior: smooth; }
+    .fire-gradient { background: linear-gradient(135deg, #ff6b00 0%, #ff4444 100%); }
+    
+    .mobile-menu { transform: translateX(100%); transition: transform 0.3s ease; }
+    .mobile-menu.open { transform: translateX(0); }
+
+    .page-content h1 { font-size: 2rem; font-weight: 700; margin-bottom: 1rem; color: #111827; }
+    .page-content h2 { font-size: 1.5rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #1f2937; }
+    .page-content h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; color: #374151; }
+    .page-content p { margin-bottom: 1rem; line-height: 1.75; color: #4b5563; }
+    .page-content ul, .page-content ol { margin-left: 1.5rem; margin-bottom: 1rem; }
+    .page-content li { margin-bottom: 0.5rem; line-height: 1.75; color: #4b5563; }
+    .page-content a { color: #ff6b00; text-decoration: underline; }
+    .page-content a:hover { color: #e55d00; }
+    .page-content strong { font-weight: 600; color: #111827; }
+    .page-content img { max-width: 100%; height: auto; border-radius: 0.5rem; margin: 1rem 0; }
+
+    .loading-spinner { border: 4px solid #f3f4f6; border-top: 4px solid #ff6b00; border-radius: 50%; width: 48px; height: 48px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    
+    /* Fade-in-up animation for delivery page */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .animate-fade-in-up {
+      animation: fadeInUp 0.6s ease-out forwards;
+      opacity: 0;
+    }
+    .delay-100 { animation-delay: 0.1s; }
+    .delay-200 { animation-delay: 0.2s; }
+    .delay-300 { animation-delay: 0.3s; }
+    .delay-400 { animation-delay: 0.4s; }
+    .delay-500 { animation-delay: 0.5s; }
+    .delay-600 { animation-delay: 0.6s; }
+  </style>
+</head>
+<body class="bg-white text-gray-900">
+
+  <!-- Header will be injected by layout.js -->
+
+  <!-- Main Content Area -->
+  <main class="pt-24 pb-16 min-h-screen">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Loading State -->
+      <div id="loading-state" class="text-center py-20">
+        <div class="loading-spinner mx-auto mb-4"></div>
+        <p class="text-gray-600">Завантаження сторінки...</p>
+      </div>
+
+      <!-- Page Content -->
+      <div id="page-container" class="hidden">
+        <h1 id="content-title" class="text-4xl md:text-5xl font-bold text-gray-900 mb-6"></h1>
+        <div id="content-body" class="page-content prose prose-lg max-w-none"></div>
+      </div>
+
+      <!-- 404 Error -->
+      <div id="error-404" class="hidden text-center py-20">
+        <div class="text-8xl mb-6">🌶️</div>
+        <h1 class="text-4xl font-bold text-gray-900 mb-4">404 - Сторінку не знайдено</h1>
+        <p class="text-xl text-gray-600 mb-8">На жаль, запитувана сторінка не існує або була видалена.</p>
+        <a href="index.html" class="inline-block fire-gradient text-white px-8 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl transition-all">
+          Повернутися на головну
+        </a>
+      </div>
+
+      <!-- Error State -->
+      <div id="error-state" class="hidden text-center py-20">
+        <div class="text-6xl mb-6">⚠️</div>
+        <h1 class="text-3xl font-bold text-gray-900 mb-4">Помилка завантаження</h1>
+        <p id="error-message" class="text-lg text-gray-600 mb-8"></p>
+        <button onclick="location.reload()" class="fire-gradient text-white px-8 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl transition-all">
+          Спробувати знову
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer Placeholder - динамічно рендериться через layout.js -->
+  <div id="footer-placeholder"></div>
+
+  <script>
+    lucide.createIcons();
+
+    // Mobile menu toggle
+    const menuBtn = document.getElementById('menuBtn');
+    const closeMenu = document.getElementById('closeMenu');
+    const mobileMenu = document.getElementById('mobileMenu');
+
+    menuBtn.addEventListener('click', () => {
+      mobileMenu.classList.add('open');
+    });
+
+    closeMenu.addEventListener('click', () => {
+      mobileMenu.classList.remove('open');
+    });
+
+    // Close mobile menu when clicking a link
+    const menuLinks = mobileMenu.querySelectorAll('a');
+    menuLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        mobileMenu.classList.remove('open');
+      });
+    });
+  </script>
+
+  <!-- Page Content Loading Script -->
+  <script type="module">
+    import { db } from './js/firebase-config.js';
+    import { collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    // Get slug from URL parameter
+    function getSlugFromURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('slug');
+    }
+
+    // Show/hide sections
+    function showSection(sectionId) {
+      const sections = ['loading-state', 'page-container', 'error-404', 'error-state'];
+      sections.forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+      document.getElementById(sectionId).classList.remove('hidden');
+    }
+
+    // Load page content
+    async function loadPageContent() {
+      const slug = getSlugFromURL();
+
+      if (!slug) {
+        showSection('error-404');
+        document.getElementById('page-title').textContent = '404 - Сторінку не знайдено';
+        return;
+      }
+
+      // Hardcoded custom layout for delivery and payment page
+      if (slug === 'dostavka-ta-oplata') {
+        const customHTML = `
+<style>
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+  
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  .card-hover {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px -12px rgba(249, 115, 22, 0.25);
+  }
+</style>
+
+<!-- Hero Section -->
+<header class="relative overflow-hidden">
+  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute -top-10 -right-10 text-8xl opacity-20 animate-float">🌶️</div>
+    <div class="absolute top-20 left-10 text-6xl opacity-15 animate-float delay-200">🔥</div>
+    <div class="absolute bottom-10 right-20 text-7xl opacity-10 animate-float delay-300">🌶️</div>
+  </div>
+  
+  <div class="max-w-4xl mx-auto px-4 py-16 md:py-24 text-center relative">
+    <div class="opacity-0 animate-fade-in-up">
+      <span class="inline-block bg-gradient-to-r from-spicy to-spicy-dark text-white text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
+        🌶️ Latiao Snack
+      </span>
+    </div>
+    <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 mb-4 opacity-0 animate-fade-in-up delay-100">
+      Доставка та оплата
+    </h1>
+    <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto opacity-0 animate-fade-in-up delay-200">
+      Просто, швидко та без сюрпризів
+    </p>
+  </div>
+</header>
+
+<main class="max-w-4xl mx-auto px-4 pb-20">
+  
+  <!-- Important Notice -->
+  <section class="mb-12 opacity-0 animate-fade-in-up delay-300">
+    <div class="bg-gradient-to-r from-spicy to-spicy-dark rounded-3xl p-6 md:p-8 shadow-xl">
+      <div class="flex items-center gap-4">
+        <div class="flex-shrink-0 w-14 h-14 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center">
+          <span class="text-3xl">📦</span>
+        </div>
+        <div class="text-white">
+          <p class="text-sm font-medium text-white/80 mb-1">Зверніть увагу</p>
+          <p class="text-xl md:text-2xl font-bold">Мінімальна сума замовлення — 100 грн</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Delivery Section -->
+  <section class="mb-12">
+    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3 opacity-0 animate-fade-in-up delay-300">
+      <span class="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center text-xl">🚚</span>
+      Способи доставки
+    </h2>
+    
+    <div class="grid md:grid-cols-2 gap-6">
+      <!-- Nova Poshta -->
+      <div class="bg-white rounded-3xl p-6 shadow-lg card-hover opacity-0 animate-fade-in-up delay-400">
+        <div class="flex items-center gap-4 mb-5">
+          <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center">
+            <svg class="w-8 h-8 text-red-500" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-xl font-bold text-gray-900">Нова Пошта</h3>
+            <p class="text-sm text-gray-500">Швидка доставка по Україні</p>
+          </div>
+        </div>
+        
+        <div class="space-y-4">
+          <div class="flex items-center gap-3 text-gray-700">
+            <span class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center text-sm">⏱️</span>
+            <span><strong class="text-gray-900">Доставка:</strong> 1–3 дні</span>
+          </div>
+          <div class="flex items-center gap-3 text-gray-700">
+            <span class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center text-sm">💰</span>
+            <span><strong class="text-gray-900">Вартість:</strong> від 70 грн</span>
+          </div>
+          
+          <div class="pt-3 border-t border-gray-100">
+            <p class="text-sm font-semibold text-gray-700 mb-2">Доставка на:</p>
+            <div class="flex flex-wrap gap-2">
+              <span class="bg-gray-100 text-gray-700 text-sm px-3 py-1.5 rounded-full">📍 Відділення</span>
+              <span class="bg-gray-100 text-gray-700 text-sm px-3 py-1.5 rounded-full">📦 Поштомат</span>
+              <span class="bg-gray-100 text-gray-700 text-sm px-3 py-1.5 rounded-full">🏠 Кур'єром</span>
+            </div>
+          </div>
+          
+          <div class="pt-3 border-t border-gray-100">
+            <p class="text-sm font-semibold text-gray-700 mb-2">Відправка двічі на день:</p>
+            <div class="flex gap-3">
+              <span class="bg-orange-50 text-orange-700 text-sm font-medium px-4 py-2 rounded-xl">до 12:00</span>
+              <span class="bg-orange-50 text-orange-700 text-sm font-medium px-4 py-2 rounded-xl">до 17:00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ukrposhta -->
+      <div class="bg-white rounded-3xl p-6 shadow-lg card-hover opacity-0 animate-fade-in-up delay-500">
+        <div class="flex items-center gap-4 mb-5">
+          <div class="w-14 h-14 bg-yellow-50 rounded-2xl flex items-center justify-center">
+            <svg class="w-8 h-8 text-yellow-600" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-xl font-bold text-gray-900">Укрпошта</h3>
+            <p class="text-sm text-gray-500">Економна доставка</p>
+          </div>
+        </div>
+        
+        <div class="space-y-4">
+          <div class="flex items-center gap-3 text-gray-700">
+            <span class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center text-sm">⏱️</span>
+            <span><strong class="text-gray-900">Доставка:</strong> 5–15 днів</span>
+          </div>
+          <div class="flex items-center gap-3 text-gray-700">
+            <span class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center text-sm">💰</span>
+            <span><strong class="text-gray-900">Вартість:</strong> від 50 грн</span>
+          </div>
+          
+          <div class="pt-3 border-t border-gray-100">
+            <div class="flex items-center gap-3 text-gray-700 mb-3">
+              <span class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center text-sm">📤</span>
+              <span><strong class="text-gray-900">Відправка:</strong> до 12:00</span>
+            </div>
+            <div class="flex items-center gap-3 text-gray-700">
+              <span class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center text-sm">📅</span>
+              <span><strong class="text-gray-900">Працюємо:</strong> вівторок – субота</span>
+            </div>
+          </div>
+          
+          <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mt-4">
+            <p class="text-amber-800 text-sm font-medium flex items-start gap-2">
+              <span class="text-lg">❗️</span>
+              Відправка лише по повній оплаті
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Payment Section -->
+  <section class="mb-12">
+    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3 opacity-0 animate-fade-in-up" style="animation-delay: 0.6s;">
+      <span class="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center text-xl">💳</span>
+      Способи оплати
+    </h2>
+
+    <!-- Payment Icons -->
+    <div class="bg-white rounded-3xl p-6 shadow-lg mb-6 opacity-0 animate-fade-in-up" style="animation-delay: 0.7s;">
+      <p class="text-sm font-medium text-gray-500 mb-4">Ми приймаємо:</p>
+      <div class="flex flex-wrap items-center gap-4">
+        <div class="bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-center">
+          <span class="text-sm font-semibold text-gray-700">💳 Visa</span>
+        </div>
+        <div class="bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-center">
+          <span class="text-sm font-semibold text-gray-700">💳 MasterCard</span>
+        </div>
+        <div class="bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-center">
+          <span class="text-sm font-semibold text-gray-700">🍎 Apple Pay</span>
+        </div>
+        <div class="bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-center">
+          <span class="text-sm font-semibold text-gray-700">🔵 Google Pay</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+      <!-- Online Payment -->
+      <div class="bg-white rounded-3xl p-6 shadow-lg card-hover opacity-0 animate-fade-in-up" style="animation-delay: 0.8s;">
+        <div class="flex items-center gap-4 mb-5">
+          <div class="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center">
+            <span class="text-2xl">💳</span>
+          </div>
+          <div>
+            <h3 class="text-xl font-bold text-gray-900">Онлайн оплата</h3>
+            <p class="text-sm text-gray-500">Швидко та безпечно</p>
+          </div>
+        </div>
+        
+        <div class="space-y-3">
+          <div class="flex items-center gap-3 text-gray-700">
+            <span class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center text-green-600 text-sm">✓</span>
+            <span>Оплата карткою (Visa / MasterCard)</span>
+          </div>
+          <div class="flex items-center gap-3 text-gray-700">
+            <span class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center text-green-600 text-sm">✓</span>
+            <span>Apple Pay / Google Pay</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment on Delivery -->
+      <div class="bg-white rounded-3xl p-6 shadow-lg card-hover opacity-0 animate-fade-in-up" style="animation-delay: 0.9s;">
+        <div class="flex items-center gap-4 mb-5">
+          <div class="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center">
+            <span class="text-2xl">🤝</span>
+          </div>
+          <div>
+            <h3 class="text-xl font-bold text-gray-900">Оплата при отриманні</h3>
+            <p class="text-sm text-gray-500">Накладений платіж</p>
+          </div>
+        </div>
+        
+        <div class="space-y-3 mb-4">
+          <div class="flex items-center gap-3 text-gray-700">
+            <span class="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 text-sm">✓</span>
+            <span>Передоплата: <strong>100 грн</strong></span>
+          </div>
+          <div class="flex items-center gap-3 text-gray-700">
+            <span class="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 text-sm">✓</span>
+            <span>Решта — при отриманні</span>
+          </div>
+        </div>
+        
+        <div class="bg-red-50 border border-red-200 rounded-2xl p-4">
+          <p class="text-red-700 text-sm font-medium flex items-start gap-2">
+            <span class="text-lg">❗️</span>
+            Без передоплати не відправляємо
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Commission Note -->
+    <div class="mt-6 bg-gray-50 rounded-2xl p-5 opacity-0 animate-fade-in-up" style="animation-delay: 1s;">
+      <div class="flex items-start gap-3">
+        <span class="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center text-sm">📋</span>
+        <div>
+          <p class="font-semibold text-gray-900 mb-1">Комісія Нової Пошти</p>
+          <p class="text-gray-600">20 грн + 2% від суми замовлення</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Free Delivery Highlight -->
+  <section class="mb-12 opacity-0 animate-fade-in-up" style="animation-delay: 1.1s;">
+    <div class="bg-gradient-to-br from-spicy via-spicy-dark to-orange-600 rounded-3xl p-8 md:p-10 shadow-2xl text-center relative overflow-hidden">
+      <div class="absolute top-0 right-0 text-9xl opacity-10 transform rotate-12 translate-x-8 -translate-y-4">🚚</div>
+      <div class="absolute bottom-0 left-0 text-8xl opacity-10 transform -rotate-12 -translate-x-4 translate-y-4">🔥</div>
+      
+      <div class="relative">
+        <span class="inline-block bg-white/20 backdrop-blur text-white text-sm font-semibold px-4 py-1.5 rounded-full mb-4">
+          🎁 Спеціальна пропозиція
+        </span>
+        <h3 class="text-2xl md:text-3xl lg:text-4xl font-extrabold text-white mb-3">
+          Безкоштовна доставка
+        </h3>
+        <p class="text-lg md:text-xl text-white/90">
+          При замовленні від <span class="font-bold text-yellow-200">1 100 грн</span> — доставка за наш рахунок 🚚🔥
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ-Style Notes -->
+  <section class="mb-8">
+    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3 opacity-0 animate-fade-in-up" style="animation-delay: 1.2s;">
+      <span class="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center text-xl">💡</span>
+      Корисна інформація
+    </h2>
+
+    <div class="grid sm:grid-cols-2 gap-4">
+      <div class="bg-white rounded-2xl p-5 shadow-md card-hover opacity-0 animate-fade-in-up" style="animation-delay: 1.3s;">
+        <div class="flex items-start gap-3">
+          <span class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">📱</span>
+          <div>
+            <h4 class="font-semibold text-gray-900 mb-1">Як відстежити замовлення?</h4>
+            <p class="text-gray-600 text-sm">Після відправки ви отримаєте ТТН для відстеження на сайті перевізника</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 shadow-md card-hover opacity-0 animate-fade-in-up" style="animation-delay: 1.4s;">
+        <div class="flex items-start gap-3">
+          <span class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">⏰</span>
+          <div>
+            <h4 class="font-semibold text-gray-900 mb-1">Коли відправляємо?</h4>
+            <p class="text-gray-600 text-sm">Замовлення відправляємо щодня, двічі на день</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 shadow-md card-hover opacity-0 animate-fade-in-up" style="animation-delay: 1.5s;">
+        <div class="flex items-start gap-3">
+          <span class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">🔒</span>
+          <div>
+            <h4 class="font-semibold text-gray-900 mb-1">Безпечна оплата</h4>
+            <p class="text-gray-600 text-sm">Всі платежі захищені банківським шифруванням</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 shadow-md card-hover opacity-0 animate-fade-in-up" style="animation-delay: 1.6s;">
+        <div class="flex items-start gap-3">
+          <span class="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">🌶️</span>
+          <div>
+            <h4 class="font-semibold text-gray-900 mb-1">Свіжі снеки</h4>
+            <p class="text-gray-600 text-sm">Пакуємо акуратно, щоб все дійшло в ідеальному стані</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+        `;
+        
+        document.getElementById('content-title').textContent = '';
+        document.getElementById('content-body').innerHTML = customHTML;
+        document.getElementById('page-title').textContent = 'Доставка та Оплата — Latiao Snack';
+        showSection('page-container');
+        return;
+      }
+
+      // Hardcoded custom layout for exchange and return page
+      if (slug === 'obm-n-ta-povernennya') {
+        const customHTML = `
+<style>
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 20px rgba(255, 107, 53, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 30px rgba(255, 107, 53, 0.5);
+    }
+  }
+  
+  .fire-gradient {
+    background: linear-gradient(135deg, #FF6B35 0%, #E63946 100%);
+  }
+  
+  .text-gradient {
+    background: linear-gradient(135deg, #FF6B35 0%, #E63946 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .brand-orange { color: #FF6B35; }
+  .brand-red { color: #E63946; }
+  .brand-dark { color: #1A1A2E; }
+  .brand-cream { background-color: #FFF8F0; }
+  .brand-yellow { color: #FFB627; }
+  
+  .bg-brand-orange { background-color: #FF6B35; }
+  .bg-brand-red { background-color: #E63946; }
+  .bg-brand-dark { background-color: #1A1A2E; }
+  .bg-brand-cream { background-color: #FFF8F0; }
+  .bg-brand-yellow { background-color: #FFB627; }
+  
+  .border-brand-orange { border-color: #FF6B35; }
+  .border-brand-red { border-color: #E63946; }
+</style>
+
+<!-- Hero Section -->
+<header class="relative overflow-hidden bg-gradient-to-br from-orange-50 to-red-50">
+  <div class="absolute inset-0 opacity-5">
+    <div class="absolute top-10 left-10 w-32 h-32 rounded-full blur-3xl" style="background-color: #FF6B35;"></div>
+    <div class="absolute bottom-10 right-10 w-48 h-48 rounded-full blur-3xl" style="background-color: #E63946;"></div>
+  </div>
+  
+  <div class="relative max-w-4xl mx-auto px-4 py-16 md:py-24 text-center">
+    <div class="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full mb-6 opacity-0 animate-fade-in-up">
+      <span class="text-2xl">🔥</span>
+      <span class="text-sm font-medium" style="color: #FF6B35;">Latiao Snack</span>
+    </div>
+    
+    <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 opacity-0 animate-fade-in-up delay-100">
+      <span class="text-gradient">Обмін і повернення</span>
+    </h1>
+    
+    <p class="text-lg md:text-xl font-medium opacity-0 animate-fade-in-up delay-200" style="color: rgba(26, 26, 46, 0.7);">
+      Все чесно, зрозуміло і щиро 🧡
+    </p>
+  </div>
+</header>
+
+<main class="max-w-4xl mx-auto px-4 pb-16 space-y-8">
+  
+  <!-- Legal Note Card -->
+  <section class="opacity-0 animate-fade-in-up delay-300">
+    <div class="bg-white rounded-2xl p-6 md:p-8 shadow-lg border card-hover" style="border-color: rgba(255, 107, 53, 0.1);">
+      <div class="flex items-start gap-4">
+        <div class="flex-shrink-0 w-12 h-12 fire-gradient rounded-xl flex items-center justify-center text-white text-xl">
+          ⚖️
+        </div>
+        <div>
+          <h2 class="text-xl font-bold mb-3" style="color: #1A1A2E;">Що каже закон?</h2>
+          <div class="space-y-3 leading-relaxed" style="color: rgba(26, 26, 46, 0.8);">
+            <p>
+              <strong style="color: #FF6B35;">Закон України "Про захист прав споживачів"</strong> дозволяє обмін або повернення <em>непродовольчих</em> товарів належної якості протягом 14 днів за наявності чеку та збереженого товарного вигляду.
+            </p>
+            <div class="border-l-4 rounded-r-lg p-4" style="background-color: rgba(230, 57, 70, 0.05); border-color: #E63946;">
+              <p class="font-medium" style="color: #E63946;">
+                🌶️ Але! <strong>Продовольчі товари</strong> (а снеки — це саме вони) за законом <strong>не підлягають обміну чи поверненню</strong>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Our Store Policy -->
+  <section class="opacity-0 animate-fade-in-up delay-400">
+    <h2 class="text-2xl md:text-3xl font-bold mb-6 text-center">
+      <span class="text-gradient">Наша політика</span> 🔥
+    </h2>
+    
+    <div class="grid md:grid-cols-2 gap-4">
+      <!-- Policy: We Fix Our Mistakes -->
+      <div class="bg-white rounded-2xl p-6 shadow-lg border border-green-100 card-hover">
+        <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-xl mb-4">
+          ✅
+        </div>
+        <h3 class="font-bold text-lg mb-2" style="color: #1A1A2E;">Ми виправляємо свої помилки</h3>
+        <p class="text-sm leading-relaxed" style="color: rgba(26, 26, 46, 0.7);">
+          Якщо ви отримали <strong>не той товар</strong> або <strong>не ту кількість</strong> — ми виправимо це <span class="text-green-600 font-semibold">за наш рахунок</span>. Доставка теж на нас!
+        </p>
+      </div>
+      
+      <!-- Policy: No Refunds for Change of Mind -->
+      <div class="bg-white rounded-2xl p-6 shadow-lg border card-hover" style="border-color: rgba(255, 107, 53, 0.1);">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl mb-4" style="background-color: rgba(255, 107, 53, 0.1);">
+          🚫
+        </div>
+        <h3 class="font-bold text-lg mb-2" style="color: #1A1A2E;">Передумали після замовлення?</h3>
+        <p class="text-sm leading-relaxed" style="color: rgba(26, 26, 46, 0.7);">
+          На жаль, якщо ви просто <strong>передумали</strong> після оформлення — замовлення <span class="font-semibold" style="color: #E63946;">не можна скасувати</span> і кошти не повертаємо. Це відповідає закону про продовольчі товари.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How to Request Exchange -->
+  <section class="opacity-0 animate-fade-in-up delay-500">
+    <div class="rounded-2xl p-6 md:p-8 border" style="background: linear-gradient(to bottom right, rgba(255, 107, 53, 0.05), rgba(230, 57, 70, 0.05)); border-color: rgba(255, 107, 53, 0.1);">
+      <h2 class="text-xl md:text-2xl font-bold mb-6 text-center" style="color: #1A1A2E;">
+        Як повідомити про проблему? 📱
+      </h2>
+      
+      <div class="flex flex-col md:flex-row gap-4 md:gap-6 justify-center">
+        <div class="flex items-center gap-3 bg-white rounded-xl px-5 py-4 shadow-sm">
+          <span class="w-8 h-8 fire-gradient rounded-full flex items-center justify-center text-white text-sm font-bold">1</span>
+          <div>
+            <span class="text-2xl">📸</span>
+            <span class="ml-2 font-medium" style="color: #1A1A2E;">Надішліть фото</span>
+          </div>
+        </div>
+        
+        <div class="flex items-center gap-3 bg-white rounded-xl px-5 py-4 shadow-sm">
+          <span class="w-8 h-8 fire-gradient rounded-full flex items-center justify-center text-white text-sm font-bold">2</span>
+          <div>
+            <span class="text-2xl">📝</span>
+            <span class="ml-2 font-medium" style="color: #1A1A2E;">Вкажіть номер замовлення</span>
+          </div>
+        </div>
+        
+        <div class="flex items-center gap-3 bg-white rounded-xl px-5 py-4 shadow-sm">
+          <span class="w-8 h-8 fire-gradient rounded-full flex items-center justify-center text-white text-sm font-bold">3</span>
+          <div>
+            <span class="text-2xl">📦</span>
+            <span class="ml-2 font-medium" style="color: #1A1A2E;">Ми все виправимо!</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Example Cases -->
+  <section>
+    <h2 class="text-xl md:text-2xl font-bold mb-6 text-center" style="color: #1A1A2E;">
+      Приклади ситуацій 🎯
+    </h2>
+    
+    <div class="space-y-3">
+      <div class="flex items-center gap-4 bg-white rounded-xl p-4 shadow-sm border border-green-100 card-hover">
+        <span class="text-2xl">📦</span>
+        <p class="flex-1" style="color: rgba(26, 26, 46, 0.8);">Надіслали не той товар</p>
+        <span class="bg-green-100 text-green-700 text-sm font-semibold px-3 py-1 rounded-full">→ Перевідправимо правильний</span>
+      </div>
+      
+      <div class="flex items-center gap-4 bg-white rounded-xl p-4 shadow-sm border border-green-100 card-hover">
+        <span class="text-2xl">🔢</span>
+        <p class="flex-1" style="color: rgba(26, 26, 46, 0.8);">Надіслали не ту кількість</p>
+        <span class="bg-green-100 text-green-700 text-sm font-semibold px-3 py-1 rounded-full">→ Довідправимо решту</span>
+      </div>
+      
+      <div class="flex items-center gap-4 bg-white rounded-xl p-4 shadow-sm border card-hover" style="border-color: rgba(255, 107, 53, 0.2);">
+        <span class="text-2xl">🤔</span>
+        <p class="flex-1" style="color: rgba(26, 26, 46, 0.8);">Передумали після замовлення</p>
+        <span class="text-sm font-semibold px-3 py-1 rounded-full" style="background-color: rgba(255, 107, 53, 0.1); color: #E63946;">→ Без повернення</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer Reminder -->
+  <section class="text-center pt-8">
+    <div class="inline-block bg-white rounded-2xl px-8 py-6 shadow-lg border" style="border-color: rgba(255, 107, 53, 0.1);">
+      <p class="text-lg font-medium mb-2" style="color: #1A1A2E;">
+        Залишились питання? 🤔
+      </p>
+      <p style="color: rgba(26, 26, 46, 0.7);">
+        Пишіть нам — ми завжди на зв'язку та готові допомогти! 
+      </p>
+      <div class="mt-4 flex items-center justify-center gap-2">
+        <span class="text-2xl">🔥</span>
+        <span class="font-bold text-gradient">Latiao Snack</span>
+        <span style="color: rgba(26, 26, 46, 0.5);">—</span>
+        <span style="color: rgba(26, 26, 46, 0.7);">смачно, чесно, щиро</span>
+      </div>
+    </div>
+  </section>
+  
+</main>
+        `;
+        
+        document.getElementById('content-title').textContent = '';
+        document.getElementById('content-body').innerHTML = customHTML;
+        document.getElementById('page-title').textContent = 'Обмін і повернення — Latiao Snack';
+        showSection('page-container');
+        return;
+      }
+
+      // Hardcoded custom layout for about us page
+      if (slug === 'pro-nas') {
+        const customHTML = `
+<div class="max-w-3xl mx-auto px-4 py-8 font-sans text-slate-700">
+
+  <div class="text-center mb-10 opacity-0 animate-fade-in-up">
+    <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Latiao Snack 🌶️</h1>
+    <p class="text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
+      Інтернет-магазин оригінальних китайських снеків, створений для тих, хто любить гостре не на словах, а по-справжньому.
+    </p>
+  </div>
+
+  <div class="bg-gradient-to-br from-orange-50 to-red-50 border border-orange-100 rounded-3xl p-6 mb-10 shadow-sm opacity-0 animate-fade-in-up delay-100">
+    <h2 class="text-xl font-bold text-slate-900 mb-3 flex items-center gap-2">
+      <span>🔥</span> Як ми починали
+    </h2>
+    <div class="space-y-4 text-slate-700 leading-relaxed">
+      <p>
+        Ми починали з простого бажання — зробити так, щоб справжні латяо з Китаю можна було легко замовити в Україні без переплат, підробок і довгого очікування.
+      </p>
+      <p>
+        Сьогодні <strong>Latiao Snack</strong> — це бренд, якому довіряють тисячі клієнтів по всій країні. Ми самостійно відбираємо продукцію, слідкуємо за якістю, термінами та умовами зберігання.
+      </p>
+      <p class="font-medium text-orange-800">
+        У нашому асортименті — різні рівні гостроти: від легкої до максимально вогняної, щоб кожен міг знайти свій ідеальний смак.
+      </p>
+    </div>
+  </div>
+
+  <h2 class="text-2xl font-bold text-center text-slate-900 mb-6 opacity-0 animate-fade-in-up delay-200">Чому обирають нас?</h2>
+  
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10 opacity-0 animate-fade-in-up delay-300">
+    <div class="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition-shadow">
+      <div class="text-2xl mb-2">🌶️</div>
+      <h3 class="font-bold text-slate-900 mb-1">Оригінальна якість</h3>
+      <p class="text-sm text-slate-600">Тільки оригінальні латяо напряму від перевірених постачальників.</p>
+    </div>
+    <div class="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition-shadow">
+      <div class="text-2xl mb-2">🚚</div>
+      <h3 class="font-bold text-slate-900 mb-1">Швидка відправка</h3>
+      <p class="text-sm text-slate-600">Відправляємо замовлення щодня, щоб ви не чекали довго.</p>
+    </div>
+    <div class="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition-shadow">
+      <div class="text-2xl mb-2">📦</div>
+      <h3 class="font-bold text-slate-900 mb-1">Чесні умови</h3>
+      <p class="text-sm text-slate-600">Працюємо прозоро, без жодних прихованих платежів.</p>
+    </div>
+    <div class="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition-shadow">
+      <div class="text-2xl mb-2">💬</div>
+      <h3 class="font-bold text-slate-900 mb-1">Живий контакт</h3>
+      <p class="text-sm text-slate-600">Ми завжди на зв'язку, готові допомогти з вибором та порадити найкраще.</p>
+    </div>
+    <div class="md:col-span-2 bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition-shadow">
+      <div class="text-2xl mb-2">⭐</div>
+      <h3 class="font-bold text-slate-900 mb-1">Реальні відгуки</h3>
+      <p class="text-sm text-slate-600">Тисячі задоволених клієнтів, які вже скуштували наші смаколики.</p>
+    </div>
+  </div>
+
+  <div class="bg-slate-50 rounded-2xl p-8 text-center border border-slate-100 opacity-0 animate-fade-in-up delay-400">
+    <p class="text-slate-700 italic mb-4 leading-relaxed">
+      "Ми не просто продаємо снеки — ми будуємо спільноту фанатів гострого, де важливі емоції, драйв і чесний сервіс. Нам важливо, щоб кожне замовлення приносило задоволення — від моменту оформлення до першого укусу."
+    </p>
+    <div class="inline-block bg-red-600 text-white font-bold px-6 py-3 rounded-full shadow-lg transform hover:scale-105 transition-transform mt-2">
+      Latiao Snack — якщо любиш гостре, ти точно за адресою 🔥
+    </div>
+  </div>
+
+</div>
+        `;
+        
+        document.getElementById('content-title').textContent = '';
+        document.getElementById('content-body').innerHTML = customHTML;
+        document.getElementById('page-title').textContent = 'Про нас — Latiao Snack';
+        showSection('page-container');
+        return;
+      }
+
+      try {
+        // Query Firestore for the page with matching slug
+        const pagesRef = collection(db, 'pages');
+        const q = query(pagesRef, where('slug', '==', slug));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+          // No page found with this slug
+          showSection('error-404');
+          document.getElementById('page-title').textContent = '404 - Сторінку не знайдено';
+          return;
+        }
+
+        // Get the first matching document
+        const pageDoc = querySnapshot.docs[0];
+        const pageData = pageDoc.data();
+
+        // Check if page is active
+        if (pageData.isActive === false) {
+          showSection('error-404');
+          document.getElementById('page-title').textContent = '404 - Сторінку не знайдено';
+          return;
+        }
+
+        // Display the page content
+        document.getElementById('content-title').textContent = pageData.title || 'Без назви';
+        document.getElementById('content-body').innerHTML = pageData.content || '<p>Контент сторінки порожній.</p>';
+        document.getElementById('page-title').textContent = `${pageData.title} — Latiao Snack`;
+        
+        showSection('page-container');
+
+      } catch (error) {
+        console.error('Error loading page:', error);
+        document.getElementById('error-message').textContent = `Виникла помилка при завантаженні: ${error.message}`;
+        showSection('error-state');
+      }
+    }
+
+    // Load content on page load
+    document.addEventListener('DOMContentLoaded', loadPageContent);
+  </script>
+
+  <!-- Footer Placeholder -->
+  <div id="footer-placeholder"></div>
+
+  <!-- Load Firebase Initialization (Must be first!) -->
+  <script type="module" src="./js/firebase-init.js"></script>
+
+  <!-- Load Shared Layout (Header, Mobile Menu, Cart, Footer) -->
+  <script type="module" src="./js/layout.js"></script>
+  
+  <!-- Initialize Lucide Icons -->
+  <script>
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
+  </script>
+</body>
+</html>

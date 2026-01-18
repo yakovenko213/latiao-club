@@ -1,0 +1,2626 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Оформлення замовлення | LATIAO SNACK</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwindcss.config = {
+      theme: {
+        extend: {
+          colors: {
+            orange: {
+              500: '#ff6b00',
+              600: '#e55f00',
+              100: '#fff3eb'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .card-select {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card-select:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 40px -10px rgba(255, 107, 0, 0.2);
+    }
+
+    .card-select.selected {
+      border-color: #ff6b00;
+      background: linear-gradient(135deg, #fff3eb 0%, #ffffff 100%);
+    }
+
+    .checkmark {
+      transform: scale(0);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .selected .checkmark {
+      transform: scale(1);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ff6b00 0%, #ff8533 100%);
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary:not(:disabled):hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px -5px rgba(255, 107, 0, 0.5);
+    }
+
+    .btn-primary:not(:disabled):active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary:disabled {
+      background: #d1d5db;
+      cursor: not-allowed;
+    }
+
+    .pulse-animation {
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.4);
+      }
+
+      50% {
+        box-shadow: 0 0 0 10px rgba(255, 107, 0, 0);
+      }
+    }
+
+    .progress-bar {
+      background: linear-gradient(90deg, #ff6b00, #ff8533);
+      transition: width 0.5s ease-out;
+    }
+
+    input:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #ff6b00;
+      box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
+    }
+
+    .fade-in {
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0px);
+      }
+
+      50% {
+        transform: translateY(-8px);
+      }
+    }
+
+    .float-card {
+      animation: float 4s ease-in-out infinite;
+    }
+
+    .float-card-delay-1 {
+      animation: float 4s ease-in-out 0.5s infinite;
+    }
+
+    .float-card-delay-2 {
+      animation: float 4s ease-in-out 1s infinite;
+    }
+
+    .testimonial-card {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .testimonial-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    .sticky-bar {
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen pb-28 sm:pb-32 lg:pb-8">
+  <!-- Header -->
+  <header class="bg-white shadow-sm sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 py-3 lg:py-4">
+      <div class="flex justify-center items-center">
+        <a href="index.html" class="flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 70" class="h-10 md:h-16 w-auto object-contain"
+            preserveAspectRatio="xMinYMid meet">
+            <defs>
+              <linearGradient id="flameGradient" x1="0%" y1="100%" x2="0%" y2="0%">
+                <stop offset="0%" stop-color="#FF4D4F" />
+                <stop offset="50%" stop-color="#FF6B4F" />
+                <stop offset="100%" stop-color="#FFD54F" />
+              </linearGradient>
+              <linearGradient id="shineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#FF4D4F" stop-opacity="1" />
+                <stop offset="45%" stop-color="#FF4D4F" stop-opacity="1" />
+                <stop offset="50%" stop-color="#FFD54F" stop-opacity="1" />
+                <stop offset="55%" stop-color="#FF4D4F" stop-opacity="1" />
+                <stop offset="100%" stop-color="#FF4D4F" stop-opacity="1" />
+                <animate attributeName="x1" values="-100%;100%" dur="2s" repeatCount="indefinite" />
+                <animate attributeName="x2" values="0%;200%" dur="2s" repeatCount="indefinite" />
+              </linearGradient>
+            </defs>
+            <g opacity="0">
+              <animate attributeName="opacity" from="0" to="1" dur="0.6s" fill="freeze" />
+              <g transform="translate(20, 10)">
+                <path
+                  d="M25 48C25 48 10 38 10 26C10 18 15 12 20 8C20 8 18 16 22 20C26 24 30 18 30 18C30 18 35 24 35 32C35 38 30 42 30 42C30 42 38 36 38 26C38 16 30 6 25 2C25 2 40 12 40 28C40 40 32 48 25 48Z"
+                  fill="url(#flameGradient)">
+                  <animate attributeName="d"
+                    values="M25 48C25 48 10 38 10 26C10 18 15 12 20 8C20 8 18 16 22 20C26 24 30 18 30 18C30 18 35 24 35 32C35 38 30 42 30 42C30 42 38 36 38 26C38 16 30 6 25 2C25 2 40 12 40 28C40 40 32 48 25 48Z;M25 48C25 48 8 38 8 26C8 18 14 10 20 6C20 6 16 14 21 19C25 23 31 16 31 16C31 16 37 22 37 31C37 37 31 43 31 43C31 43 40 35 40 25C40 15 31 5 25 1C25 1 42 11 42 27C42 39 33 48 25 48Z;M25 48C25 48 10 38 10 26C10 18 15 12 20 8C20 8 18 16 22 20C26 24 30 18 30 18C30 18 35 24 35 32C35 38 30 42 30 42C30 42 38 36 38 26C38 16 30 6 25 2C25 2 40 12 40 28C40 40 32 48 25 48Z"
+                    dur="1.5s" repeatCount="indefinite" />
+                </path>
+                <path
+                  d="M25 46C25 46 16 40 16 32C16 26 20 22 24 20C24 20 22 26 25 28C28 30 30 26 30 26C30 26 34 30 34 36C34 42 28 46 25 46Z"
+                  fill="#FFD54F" opacity="0.9">
+                  <animate attributeName="opacity" values="0.9;0.7;0.9" dur="1s" repeatCount="indefinite" />
+                </path>
+              </g>
+              <text x="70" y="46" font-family="Poppins, Inter, Manrope, Arial, sans-serif" font-size="36"
+                font-weight="700" fill="url(#shineGradient)">Latiao</text>
+              <text x="198" y="46" font-family="Poppins, Inter, Manrope, Arial, sans-serif" font-size="36"
+                font-weight="700" fill="#333333">Snack</text>
+              <circle cx="320" cy="20" r="4" fill="#FF4D4F">
+                <animate attributeName="opacity" values="1;0.5;1" dur="1.2s" repeatCount="indefinite" />
+              </circle>
+              <circle cx="332" cy="28" r="3" fill="#FFD54F">
+                <animate attributeName="opacity" values="0.7;1;0.7" dur="1s" repeatCount="indefinite" begin="0.3s" />
+              </circle>
+              <circle cx="340" cy="18" r="2.5" fill="#FF4D4F">
+                <animate attributeName="opacity" values="0.8;0.4;0.8" dur="1.4s" repeatCount="indefinite"
+                  begin="0.6s" />
+              </circle>
+            </g>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Page Title -->
+  <div class="max-w-6xl mx-auto px-4 pt-4 pb-4 lg:pt-8 lg:pb-6">
+    <!-- Back to Cart Button -->
+    <a href="index.html"
+      class="inline-flex items-center gap-2 text-gray-500 hover:text-orange-500 transition-colors mb-4 lg:mb-6 group">
+      <i data-lucide="arrow-left" class="w-5 h-5"></i>
+      <span class="text-sm lg:text-base font-medium">Повернутися в магазин</span>
+    </a>
+
+    <h1 class="text-2xl md:text-4xl font-extrabold text-gray-900 mb-1 lg:mb-2">Оформлення замовлення</h1>
+    <p class="text-gray-500 text-sm md:text-base lg:text-lg">Залишилось кілька кроків до гострого задоволення 🌶️</p>
+  </div>
+
+  <!-- Main Content -->
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="flex flex-col lg:grid lg:grid-cols-3 gap-4 lg:gap-6">
+      <!-- Checkout Form -->
+      <div class="lg:col-span-2 space-y-4 lg:space-y-6">
+
+        <!-- Customer Info -->
+        <div class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm fade-in">
+          <h2 class="text-base lg:text-lg font-bold text-gray-900 mb-4 lg:mb-5 flex items-center gap-2">
+            <span
+              class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 text-sm font-bold">1</span>
+            Контактні дані
+          </h2>
+
+          <div class="space-y-3 lg:space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5 lg:mb-2">ПІБ клієнта <span
+                  class="text-orange-500">*</span></label>
+              <input type="text" id="fullName" placeholder="Іван Іванов"
+                class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5 lg:mb-2">Номер телефону <span
+                  class="text-orange-500">*</span></label>
+              <input type="tel" id="phone" placeholder="+380..."
+                class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5 lg:mb-2">Нікнейм Telegram <span
+                  class="text-red-500">*</span></label>
+              <input type="text" id="telegram" placeholder="@latiao_snack"
+                class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300"
+                required>
+              <p id="telegramError" class="mt-1.5 text-xs text-red-500 hidden">Будь ласка, вкажіть нікнейм для зв'язку
+              </p>
+              <p class="mt-1.5 lg:mt-2 text-xs lg:text-sm text-gray-400">Це потрібно, щоб ми могли написати вам у разі
+                уточнень 🤝</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- No Call Policy Notice -->
+        <div class="mt-6 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4">
+          <div class="flex-shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+              class="h-6 w-6 text-blue-600">
+              <path fill-rule="evenodd"
+                d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 01-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z"
+                clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="text-sm text-blue-900">
+            <p class="font-bold">Ми цінуємо ваш спокій! 🤫</p>
+            <p class="mt-1 text-blue-800">
+              Ми <span class="font-semibold underline">ніколи не дзвонимо</span> для підтвердження замовлення.
+            </p>
+          </div>
+        </div>
+
+        <!-- Delivery Method -->
+        <div class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm fade-in">
+          <h2 class="text-base lg:text-lg font-bold text-gray-900 mb-4 lg:mb-5 flex items-center gap-2">
+            <span
+              class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 text-sm font-bold">2</span>
+            Спосіб доставки
+          </h2>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
+            <div
+              class="card-select border-2 border-gray-200 rounded-xl lg:rounded-2xl p-4 lg:p-5 cursor-pointer relative selected"
+              data-delivery="nova">
+              <div
+                class="checkmark absolute top-3 right-3 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+              <div class="flex items-center gap-4">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRz2w7BxtR4oDjLouwXrZ_nemt0R6PUZR8qcw&s"
+                  alt="Nova Poshta" class="h-10 w-auto rounded-md object-contain" />
+                <div>
+                  <p class="font-semibold text-gray-900">Нова Пошта</p>
+                  <p class="text-sm text-gray-500">1-3 дні</p>
+                  <span id="dispatch-nova"
+                    class="bg-orange-50 border border-orange-200 rounded-md text-orange-800 text-xs font-medium px-2 py-1 mt-2 inline-block"></span>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="card-select border-2 border-gray-200 rounded-xl lg:rounded-2xl p-4 lg:p-5 cursor-pointer relative"
+              data-delivery="ukr">
+              <div
+                class="checkmark absolute top-3 right-3 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+              <div class="flex items-center gap-4">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR19Fzy1r4-i6x9ytwyP3p-I0E4Df7UJKQqnQ&s"
+                  alt="Ukrposhta" class="h-10 w-auto rounded-md object-contain" />
+                <div>
+                  <p class="font-semibold text-gray-900">Укрпошта</p>
+                  <p class="text-sm text-gray-500">3-7 днів</p>
+                  <span id="dispatch-ukr"
+                    class="bg-orange-50 border border-orange-200 rounded-md text-orange-800 text-xs font-medium px-2 py-1 mt-2 inline-block"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nova Poshta Details (shown only when Nova Poshta is selected) -->
+          <div id="nova-poshta-details" class="mt-4 lg:mt-5 space-y-4 fade-in">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5 lg:mb-2">Місто <span
+                  class="text-orange-500">*</span></label>
+              <div class="relative">
+                <input type="text" id="np-city-input" placeholder="Почніть вводити назву міста..."
+                  class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300 focus:border-orange-400 focus:ring-2 focus:ring-orange-200"
+                  autocomplete="off">
+                <!-- City autocomplete dropdown (Dynamic suggestions) -->
+                <ul id="np-city-list"
+                  class="hidden absolute z-50 w-full mt-1 bg-white border-2 border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                </ul>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5 lg:mb-2">Відділення / Поштомат <span
+                  class="text-orange-500">*</span></label>
+              <select id="np-warehouse-select"
+                class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 transition-all duration-300 focus:border-orange-400 focus:ring-2 focus:ring-orange-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled>
+                <option value="">Спочатку оберіть місто</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Ukrposhta Details (shown only when Ukrposhta is selected) -->
+          <div id="ukrposhta-details" class="mt-4 lg:mt-5 space-y-4 fade-in" style="display: none;">
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-3">
+              <p class="text-sm text-blue-800">
+                <strong>Зверніть увагу:</strong> Будь ласка, вкажіть вашу повну адресу для доставки Укрпоштою.
+              </p>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5 lg:mb-2">Область <span
+                  class="text-red-500">*</span></label>
+              <input type="text" id="up-region-input" placeholder="Наприклад: Київська"
+                class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5 lg:mb-2">Район <span
+                  class="text-red-500">*</span></label>
+              <input type="text" id="up-district-input" placeholder="Наприклад: Броварський"
+                class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5 lg:mb-2">Місто / Населений пункт <span
+                  class="text-red-500">*</span></label>
+              <input type="text" id="up-city-input" placeholder="Наприклад: Бровари"
+                class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5 lg:mb-2">Поштовий індекс <span
+                  class="text-red-500">*</span></label>
+              <input type="text" id="up-postcode-input" placeholder="Наприклад: 07400" maxlength="5"
+                class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300">
+              <p class="mt-1.5 text-xs text-gray-500">5-значний індекс відділення Укрпошти</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Method -->
+        <div class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm fade-in">
+          <h2 class="text-base lg:text-lg font-bold text-gray-900 mb-4 lg:mb-5 flex items-center gap-2">
+            <span
+              class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 text-sm font-bold">3</span>
+            Спосіб оплати
+          </h2>
+
+          <div class="space-y-3 lg:space-y-4">
+            <div
+              class="card-select border-2 border-gray-200 rounded-xl lg:rounded-2xl p-4 lg:p-5 cursor-pointer relative selected"
+              data-payment="online">
+              <div
+                class="checkmark absolute top-3 right-3 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+              <div class="flex items-center gap-4">
+                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="w-6 h-6 text-blue-600">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <p class="font-semibold text-gray-900">Онлайн оплата</p>
+                  <div class="flex items-center flex-wrap gap-2 md:gap-3 mt-2">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa"
+                      class="h-6 md:h-8 w-auto bg-white px-1.5 py-0.5 rounded" />
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard"
+                      class="h-6 md:h-8 w-auto" />
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/b/b0/Apple_Pay_logo.svg" alt="Apple Pay"
+                      class="h-6 md:h-8 w-auto" />
+                    <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="h-6 md:h-8 w-auto">
+                      <title>Google Pay</title>
+                      <path
+                        d="M3.963 7.235A3.963 3.963 0 00.422 9.419a3.963 3.963 0 000 3.559 3.963 3.963 0 003.541 2.184c1.07 0 1.97-.352 2.627-.957.748-.69 1.18-1.71 1.18-2.916a4.722 4.722 0 00-.07-.806H3.964v1.526h2.14a1.835 1.835 0 01-.79 1.205c-.356.241-.814.379-1.35.379-1.034 0-1.911-.697-2.225-1.636a2.375 2.375 0 010-1.517c.314-.94 1.191-1.636 2.225-1.636a2.152 2.152 0 011.52.594l1.132-1.13a3.808 3.808 0 00-2.652-1.033zm6.501.55v6.9h.886V11.89h1.465c.603 0 1.11-.196 1.522-.588a1.911 1.911 0 00.635-1.464 1.92 1.92 0 00-.635-1.456 2.125 2.125 0 00-1.522-.598zm2.427.85a1.156 1.156 0 01.823.365 1.176 1.176 0 010 1.686 1.171 1.171 0 01-.877.357H11.35V8.635h1.487a1.156 1.156 0 01.054 0zm4.124 1.175c-.842 0-1.477.308-1.907.925l.781.491c.288-.417.68-.626 1.175-.626a1.255 1.255 0 01.856.323 1.009 1.009 0 01.366.785v.202c-.34-.193-.774-.289-1.3-.289-.617 0-1.11.145-1.479.434-.37.288-.554.677-.554 1.165a1.476 1.476 0 00.525 1.156c.35.308.785.463 1.305.463.61 0 1.098-.27 1.465-.81h.038v.655h.848v-2.909c0-.61-.19-1.09-.568-1.44-.38-.35-.896-.525-1.551-.525zm2.263.154l1.946 4.422-1.098 2.38h.915L24 9.963h-.965l-1.368 3.391h-.02l-1.406-3.39zm-2.146 2.368c.494 0 .88.11 1.156.33 0 .372-.147.696-.44.973a1.413 1.413 0 01-.997.414 1.081 1.081 0 01-.69-.232.708.708 0 01-.293-.578c0-.257.12-.47.363-.647.24-.173.54-.26.9-.26Z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="card-select border-2 border-gray-200 rounded-xl lg:rounded-2xl p-4 lg:p-5 cursor-pointer relative"
+              data-payment="cod">
+              <div
+                class="checkmark absolute top-3 right-3 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+              <div class="flex items-center gap-4">
+                <div
+                  class="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600 flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M2.25 18.75a60.07 60.07 0 0015.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                  </svg>
+                </div>
+                <div>
+                  <p class="font-semibold text-gray-900">Оплата при отриманні</p>
+                  <p class="text-sm text-gray-500 mt-1">Мінімальна передоплата — 100 грн</p>
+                  <p id="codRestriction" class="text-xs text-orange-600 font-medium mt-1 hidden">⚠️ Тільки для Нової
+                    Пошти</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comment -->
+        <div class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm fade-in">
+          <h2 class="text-base lg:text-lg font-bold text-gray-900 mb-4 lg:mb-5 flex items-center gap-2">
+            <span
+              class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 text-sm font-bold">4</span>
+            Коментар до замовлення
+          </h2>
+
+          <textarea id="comment" rows="3" placeholder="Наприклад: не дзвоніть, напишіть у Telegram…"
+            class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300 resize-none"></textarea>
+        </div>
+      </div>
+
+      <!-- Order Summary -->
+      <div class="lg:col-span-1 order-last lg:order-none">
+        <div class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm lg:sticky lg:top-24 fade-in">
+          <h2 class="text-base lg:text-lg font-bold text-gray-900 mb-4 lg:mb-5">Ваше замовлення</h2>
+
+          <!-- Products List -->
+          <div class="space-y-4 mb-6" id="productsList">
+            <!-- Products will be injected here -->
+          </div>
+
+          <!-- Divider -->
+          <div class="border-t border-gray-100 my-5"></div>
+
+          <!-- Order Stats -->
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between text-gray-600">
+              <span>Кількість товарів</span>
+              <span id="itemCount" class="font-medium text-gray-900">0</span>
+            </div>
+            <div class="flex justify-between text-gray-600">
+              <span>Кількість пачок</span>
+              <span id="packCount" class="font-medium text-gray-900">0</span>
+            </div>
+            <div class="flex justify-between text-gray-600">
+              <span>Сума товарів</span>
+              <span id="subtotal" class="font-medium text-gray-900">0 грн</span>
+            </div>
+          </div>
+
+          <!-- Divider -->
+          <div class="border-t border-gray-100 my-5"></div>
+
+          <!-- Promo Code -->
+          <div class="mb-4 lg:mb-5">
+            <label class="block text-sm font-medium text-gray-700 mb-1.5 lg:mb-2">Промокод</label>
+            <div class="flex flex-col md:flex-row gap-2 md:gap-3">
+              <input type="text" id="promoCode" placeholder="Введіть код"
+                class="w-full md:flex-1 px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300">
+              <button id="applyPromoBtn"
+                class="w-full md:w-auto px-4 lg:px-5 py-2.5 lg:py-3 bg-gray-900 text-white text-sm lg:text-base font-medium rounded-xl hover:bg-gray-800 transition-all duration-300 active:scale-95">
+                Застосувати
+              </button>
+            </div>
+            <p id="promoMessage" class="mt-2 text-sm hidden"></p>
+          </div>
+
+          <!-- Delivery Progress -->
+          <div class="bg-orange-50 rounded-2xl p-4 mb-5">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium text-gray-700">Доставка</span>
+              <span id="deliveryCost" class="text-sm font-semibold text-gray-900">від 70 грн</span>
+            </div>
+            <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div id="deliveryProgress" class="progress-bar h-full rounded-full" style="width: 0%"></div>
+            </div>
+            <p id="deliveryMessage" class="text-xs text-gray-500 mt-2">До безкоштовної доставки: 1100 грн</p>
+          </div>
+
+          <!-- Divider -->
+          <div class="border-t border-gray-100 my-5"></div>
+
+          <!-- Total - Standard View (Online Payment) -->
+          <div id="summary-standard" class="mb-2">
+            <!-- Subtotal (before discount) -->
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm text-gray-600">Підсумок:</span>
+              <span class="text-sm font-semibold text-gray-900" id="subtotalPrice">0 грн</span>
+            </div>
+
+            <!-- Discount (if promo applied) -->
+            <div id="discount-row" class="hidden flex items-center justify-between mb-2">
+              <span class="text-sm text-green-700 flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z">
+                  </path>
+                </svg>
+                Знижка:
+              </span>
+              <span class="text-sm font-bold text-green-600" id="discountAmount">- 0 грн</span>
+            </div>
+
+            <!-- Divider (if discount applied) -->
+            <div id="discount-divider" class="hidden border-t border-gray-200 my-2"></div>
+
+            <!-- Final Total -->
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-lg font-bold text-gray-900">До сплати:</span>
+              <div class="text-right">
+                <span id="totalPrice" class="text-2xl font-extrabold text-orange-500">0 грн</span>
+                <p id="savingsMessage" class="text-sm text-green-500 font-medium hidden">Ви економите на доставці!</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Total - COD Breakdown View (Cash on Delivery) -->
+          <div id="summary-deposit" class="hidden mb-2">
+            <div class="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-xl p-4 border-2 border-orange-200">
+              <div class="space-y-2.5">
+                <!-- Total Amount -->
+                <div class="flex justify-between items-center">
+                  <span class="text-sm text-gray-600">Вартість замовлення:</span>
+                  <span class="text-base font-semibold text-gray-900" id="deposit-total">0 грн</span>
+                </div>
+
+                <!-- Prepayment -->
+                <div class="flex justify-between items-center">
+                  <span class="text-sm text-green-700 flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Передоплата зараз:
+                  </span>
+                  <span class="text-base font-bold text-green-600">100 грн</span>
+                </div>
+
+                <!-- Divider -->
+                <div class="border-t-2 border-dashed border-orange-300"></div>
+
+                <!-- Amount Due on Delivery -->
+                <div class="flex justify-between items-center bg-red-50 -mx-2 px-2 py-2.5 rounded-lg">
+                  <span class="text-sm font-bold text-red-900 flex items-center gap-1">
+                    📦 До сплати при отриманні:
+                  </span>
+                  <span class="text-xl font-black text-red-600" id="deposit-due">0 грн</span>
+                </div>
+              </div>
+            </div>
+            <p class="text-xs text-gray-500 mt-2 italic">💡 Онлайн оплачуєте тільки 100 грн, решту - при отриманні</p>
+          </div>
+
+          <p class="text-xs text-gray-500 mb-6">🚚 Доставка оплачується окремо при отриманні</p>
+
+          <!-- CTA Button (Desktop) -->
+          <button id="submitBtnDesktop" disabled
+            class="hidden lg:block w-full btn-primary text-white font-bold py-4 px-6 rounded-2xl text-lg">
+            Підтвердити замовлення
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Testimonials Section -->
+  <div class="max-w-6xl mx-auto px-4 py-8 lg:py-12 mb-8 lg:mb-0">
+    <h2 class="text-2xl lg:text-3xl font-extrabold text-gray-900 text-center mb-2">Що кажуть наші клієнти</h2>
+    <p class="text-gray-500 text-center mb-8 lg:mb-12">Тисячі задоволених любителів гострого по всій Україні 🌶️</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+      <!-- Testimonial 1 - Alina -->
+      <div class="testimonial-card float-card bg-white rounded-3xl p-4 md:p-6 shadow-xl fade-in">
+        <div class="flex items-center gap-3 mb-4">
+          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=AlinaSmiling&mouth=smile&eyebrows=defaultNatural"
+            alt="Аліна" class="h-12 w-12 rounded-full bg-gray-100 p-1" />
+          <div>
+            <p class="font-bold text-gray-900">Аліна</p>
+            <p class="text-sm text-gray-500">Київ</p>
+          </div>
+        </div>
+        <div class="flex gap-0.5 mb-4">
+          <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
+            <path
+              d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
+            <path
+              d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
+            <path
+              d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
+            <path
+              d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
+            <path
+              d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+          </svg>
+        </div>
+        <p class="text-sm md:text-base text-gray-700 italic leading-relaxed">
+          "Латяо — це моя нова залежність! Наскільки це смачно, просто не передати словами. Особливо люблю латяо з
+          м'ясом та медом. Дякую!"
+        </p>
+      </div>
+
+      <!-- Testimonial 2 - Andriy -->
+      <div class="testimonial-card float-card-delay-1 bg-white rounded-3xl p-4 md:p-6 shadow-xl fade-in">
+        <div class="flex items-center gap-3 mb-4">
+          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="Андрій"
+            class="h-12 w-12 rounded-full bg-gray-100 p-1" />
+          <div>
+            <p class="font-bold text-gray-900">Андрій</p>
+            <p class="text-sm text-gray-500">Суми</p>
+          </div>
+        </div>
+        <div class="flex gap-0.5 mb-4">
+          <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
+            <path
+              d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
+            <path
+              d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
+            <path
+              d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
+            <path
+              d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
+            <path
+              d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+          </svg>
+        </div>
+        <p class="text-sm md:text-base text-gray-700 italic leading-relaxed">
+          "Замовляв латяо на день народження, дегустували всією родиною. Всі були в захваті від незвичного смаку!
+          Вдячний за такі круті емоції."
+        </p>
+      </div>
+
+      <!-- Testimonial 3 - Maryna -->
+      <div class="testimonial-card float-card-delay-2 bg-white rounded-3xl p-4 md:p-6 shadow-xl fade-in">
+        <div class="flex items-center gap-3 mb-4">
+          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=MarynaCute&mouth=smile" alt="Марина"
+            class="h-12 w-12 rounded-full bg-gray-100 p-1" />
+          <div>
+            <p class="font-bold text-gray-900">Марина</p>
+            <p class="text-sm text-gray-500">Харків</p>
+          </div>
+        </div>
+        <div class="flex gap-0.5 mb-4">
+          <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
+            <path
+              d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
+            <path
+              d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
+            <path
+              d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
+            <path
+              d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
+            <path
+              d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+          </svg>
+        </div>
+        <p class="text-sm md:text-base text-gray-700 italic leading-relaxed">
+          "Мій найулюбленіший магазин азіатських смаколиків. Все завжди свіже та оригінальне. А швидкість відправки — це
+          просто щось неймовірне, наче швидкість світла!"
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Sticky Bar -->
+  <div class="fixed bottom-0 left-0 right-0 bg-white sticky-bar p-4 lg:hidden z-50">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-sm text-gray-600">Разом:</span>
+      <span id="totalPriceMobile" class="text-xl font-extrabold text-orange-500">0 грн</span>
+    </div>
+    <button id="submitBtnMobile" disabled
+      class="w-full btn-primary text-white font-bold py-3.5 px-6 rounded-xl text-base active:scale-95">
+      Оформити замовлення
+    </button>
+  </div>
+
+  <script type="module">
+    // ============================================
+    // FIREBASE IMPORTS - UPDATED WITH CLOUD FUNCTIONS
+    // ============================================
+    import { db, collection, addDoc, serverTimestamp, getDocs, query, where, getDoc, doc } from './js/firebase-init.js'
+    // NEW: Import Cloud Functions
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'
+    import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js'
+
+    // Initialize Functions (make sure your Firebase config is available)
+    // If you already have firebase app initialized in firebase-init.js, you can import it
+    // Otherwise, you'll need to initialize it here with your config
+    const functions = getFunctions()
+
+    // ============================================
+    // NOVA POSHTA API CONFIGURATION
+    // ============================================
+    const NP_API_KEY = 'ca63f7a56b807b0e882e567c7041abf3' // Replace with your actual API key
+    const NP_URL = 'https://api.novaposhta.ua/v2.0/json/'
+    const NP_API_URL = NP_URL // Alias for backward compatibility
+
+    // Ukrposhta API Configuration
+    const UP_API_BASE_URL = 'https://www.ukrposhta.ua/address-classifier-ws/get_'
+
+    // CRITICAL: Load Cart Data from LocalStorage and validate IMMEDIATELY
+    let cartItems = JSON.parse(localStorage.getItem('latiao_cart') || '[]')
+
+    // BOUNCER: Redirect if cart is empty (NO fake data allowed)
+    if (!cartItems || cartItems.length === 0) {
+      // Immediate redirect - no alerts, no delays
+      window.location.replace('index.html')
+      // Halt all script execution
+      throw new Error('Cart empty - redirected to store')
+    }
+
+    let promoApplied = false
+    let promoDiscount = 0
+    let appliedPromoCode = null // Store full promo details
+    const FREE_DELIVERY_THRESHOLD = 1100
+    const DELIVERY_COST = 70
+
+    // Initialize Lucide icons
+    lucide.createIcons()
+
+    // ============================================
+    // TOAST NOTIFICATION FOR CART RECOVERY
+    // ============================================
+    function showRecoveryToast() {
+      const toast = document.createElement('div')
+      toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3 animate-fade-in'
+      toast.innerHTML = `
+        <i data-lucide="check-circle" class="w-6 h-6"></i>
+        <div>
+          <div class="font-bold text-lg">Ваш кошик відновлено! 🎉</div>
+          <div class="text-sm opacity-90">Можете продовжити оформлення замовлення</div>
+        </div>
+      `
+      document.body.appendChild(toast)
+      lucide.createIcons()
+
+      // Auto-remove after 5 seconds
+      setTimeout(() => {
+        toast.style.opacity = '0'
+        toast.style.transform = 'translateY(-20px)'
+        toast.style.transition = 'all 0.3s ease-out'
+        setTimeout(() => toast.remove(), 300)
+      }, 5000)
+    }
+
+    // ============================================
+    // INITIALIZATION ON PAGE LOAD
+    // ============================================
+
+    document.addEventListener('DOMContentLoaded', async function () {
+      // ============================================
+      // PART 1: MAGIC LINK - Recovery from SMS
+      // ============================================
+      const urlParams = new URLSearchParams(window.location.search)
+      const recoveryId = urlParams.get('recovery_id')
+
+      if (recoveryId) {
+        console.log('🔗 Recovery link detected:', recoveryId)
+
+        try {
+          // Fetch abandoned cart from Firestore
+          const cartDocRef = doc(db, 'abandoned_carts', recoveryId)
+          const cartSnapshot = await getDoc(cartDocRef)
+
+          if (cartSnapshot.exists()) {
+            const cartData = cartSnapshot.data()
+            console.log('✅ Abandoned cart found:', cartData)
+
+            // Step 1: Restore cart items to localStorage
+            if (cartData.items && cartData.items.length > 0) {
+              localStorage.setItem('latiao_cart', JSON.stringify(cartData.items))
+              cartItems = cartData.items
+              console.log('✅ Cart restored with', cartData.items.length, 'items')
+            }
+
+            // Step 2: Pre-fill customer data
+            if (cartData.customer) {
+              const customer = cartData.customer
+              if (customer.fullName) {
+                document.getElementById('fullName').value = customer.fullName
+              }
+              if (customer.phone) {
+                document.getElementById('phone').value = customer.phone
+              }
+              if (customer.telegram) {
+                document.getElementById('telegram').value = customer.telegram
+              }
+              console.log('✅ Customer data pre-filled')
+            }
+
+            // Step 3: Pre-fill delivery data if available
+            if (cartData.delivery) {
+              const delivery = cartData.delivery
+              if (delivery.city) {
+                document.getElementById('np-city-input').value = delivery.city
+              }
+              // Note: Warehouse would need additional logic to set dropdown
+            }
+
+            // Step 4: Pre-fill comment if available
+            if (cartData.comment) {
+              document.getElementById('comment').value = cartData.comment
+            }
+
+            // Step 5: Show success toast notification
+            showRecoveryToast()
+
+          } else {
+            console.warn('⚠️ No abandoned cart found with ID:', recoveryId)
+          }
+
+        } catch (error) {
+          console.error('❌ Error restoring cart:', error)
+        }
+      }
+
+      // Double-check cart still has items (in case localStorage was cleared during page load)
+      if (!cartItems || cartItems.length === 0) {
+        window.location.replace('index.html')
+        return
+      }
+
+      // Render cart products
+      renderProducts()
+      calculateTotals()
+      validateForm()
+      updateDispatchTimes()
+
+      // ⭐ Initialize delivery and payment methods (set correct initial state)
+      initializeDeliveryMethod()
+      initializePaymentMethod()
+      updatePaymentAvailability()
+
+      // ============================================
+      // ⭐ ATTACH EVENT LISTENERS PROGRAMMATICALLY
+      // ============================================
+      // (Replaces inline onclick/oninput attributes for module scope compatibility)
+
+      // 1. VALIDATION INPUTS - Trigger validateForm() on input
+      const validationInputs = ['fullName', 'phone', 'telegram']
+      validationInputs.forEach(id => {
+        const element = document.getElementById(id)
+        if (element) {
+          element.addEventListener('input', validateForm)
+        }
+      })
+
+      // 2. DELIVERY CARDS - Trigger selectDelivery() on click
+      const deliveryCards = document.querySelectorAll('[data-delivery]')
+      deliveryCards.forEach(card => {
+        card.addEventListener('click', function () {
+          const method = this.getAttribute('data-delivery')
+          selectDelivery(this, method)
+        })
+      })
+
+      // 3. PAYMENT CARDS - Trigger selectPayment() on click
+      const paymentCards = document.querySelectorAll('[data-payment]')
+      paymentCards.forEach(card => {
+        card.addEventListener('click', function () {
+          const method = this.getAttribute('data-payment')
+          selectPayment(this, method)
+        })
+      })
+
+      // 4. PROMO BUTTON - Trigger applyPromo() on click
+      const promoBtn = document.getElementById('applyPromoBtn')
+      if (promoBtn) {
+        promoBtn.addEventListener('click', applyPromo)
+      }
+
+      // 5. SUBMIT BUTTONS - Trigger submitOrder() on click
+      const submitBtnDesktop = document.getElementById('submitBtnDesktop')
+      const submitBtnMobile = document.getElementById('submitBtnMobile')
+      if (submitBtnDesktop) {
+        submitBtnDesktop.addEventListener('click', submitOrder)
+      }
+      if (submitBtnMobile) {
+        submitBtnMobile.addEventListener('click', submitOrder)
+      }
+
+      // 6. ALL FORM INPUTS - Auto-save abandoned cart when any field changes
+      const formInputs = [
+        'fullName',
+        'phone',
+        'telegram',
+        'np-city-input',
+        'np-warehouse-select',
+        'comment'
+      ]
+
+      const debouncedSave = debounce(saveAbandonedCart, 1500)
+
+      formInputs.forEach(inputId => {
+        const element = document.getElementById(inputId)
+        if (element) {
+          element.addEventListener('input', debouncedSave)
+          element.addEventListener('change', debouncedSave) // For select dropdowns
+        }
+      })
+
+      // 7. AGGRESSIVE BLUR LISTENERS - Immediate save for critical fields
+      // Save IMMEDIATELY when user leaves Name or Phone field (even if they close tab)
+      const nameInput = document.getElementById('fullName')
+      const phoneInput = document.getElementById('phone')
+
+      if (nameInput) {
+        nameInput.addEventListener('blur', function () {
+          const name = this.value.trim()
+          const phone = document.getElementById('phone')?.value.trim() || ''
+
+          // Save if either name or phone has content
+          if (name !== '' || phone !== '') {
+            console.log('🔥 AGGRESSIVE SAVE: Name blur triggered')
+            saveAbandonedCart()
+          }
+        })
+      }
+
+      if (phoneInput) {
+        phoneInput.addEventListener('blur', function () {
+          const phone = this.value.trim()
+
+          // Save immediately if phone has at least 10 digits
+          if (phone.length >= 10) {
+            console.log('🔥 AGGRESSIVE SAVE: Phone blur triggered')
+            saveAbandonedCart()
+          }
+        })
+      }
+
+      console.log('✅ All event listeners attached successfully')
+      console.log('✅ Checkout page initialized successfully')
+    })
+
+    // ============================================
+    // RENDER PRODUCTS FUNCTION
+    // ============================================
+
+    function renderProducts() {
+      // Safety check: ensure cartItems exists and has items
+      if (!cartItems || cartItems.length === 0) {
+        window.location.replace('index.html')
+        return
+      }
+
+      const container = document.getElementById('productsList')
+      container.innerHTML = cartItems.map((item, index) => {
+        const isGift = item.isGift === true
+
+        return `
+        <div class="flex items-start gap-3 pb-4 border-b border-gray-100 last:border-0 last:pb-0 ${isGift ? 'bg-green-50/30 -mx-2 px-2 py-2 rounded-lg' : ''}">
+          ${isGift ? '<div class="absolute top-1 right-1 bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">🎁 Подарунок</div>' : ''}
+          <div class="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 ${isGift ? 'bg-green-100 ring-2 ring-green-400' : 'bg-gray-100'}">
+            <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover">
+          </div>
+          <div class="flex-1 min-w-0">
+            <h3 class="font-semibold text-gray-900 text-sm truncate">${item.name}</h3>
+            ${isGift ? '<p class="text-xs text-green-600 font-semibold mt-0.5">🎁 Подарунок від Latiao Snack</p>' : `
+            <div class="flex items-center gap-1 mt-1">
+              ${'🌶️'.repeat(item.spiciness || 0)}
+            </div>
+            <p class="text-xs text-gray-500 mt-1">${item.price} грн/шт</p>
+            `}
+            
+            <!-- Quantity Controls -->
+            ${!isGift ? `
+            <div class="flex items-center gap-2 mt-2">
+              <button 
+                onclick="decreaseQty(${index})"
+                class="w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 active:bg-gray-300 flex items-center justify-center text-gray-700 font-bold transition-all duration-200 text-sm"
+              >
+                −
+              </button>
+              <span class="w-8 text-center font-semibold text-gray-900 text-sm">${item.quantity}</span>
+              <button 
+                onclick="increaseQty(${index})"
+                class="w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 active:bg-gray-300 flex items-center justify-center text-gray-700 font-bold transition-all duration-200 text-sm"
+              >
+                +
+              </button>
+              <button 
+                onclick="removeItem(${index})"
+                class="ml-2 w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 active:bg-red-200 flex items-center justify-center text-red-500 transition-all duration-200"
+                title="Видалити товар"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+              </button>
+            </div>
+            ` : `
+            <div class="text-xs text-green-600 font-semibold mt-2">Безкоштовно</div>
+            `}
+          </div>
+          <div class="text-right flex-shrink-0">
+            <span class="font-bold ${isGift ? 'text-green-600' : 'text-gray-900'} text-sm">${isGift ? '0 грн' : (item.quantity * item.price) + ' грн'}</span>
+          </div>
+        </div>
+      `
+      }).join('')
+
+      // Reinitialize Lucide icons for newly rendered content
+      lucide.createIcons()
+    }
+
+    // GLOBAL CART FUNCTIONS - Accessible from onclick handlers
+
+    // Increase quantity of item at given index
+    window.increaseQty = function (index) {
+      // Step 1: Get current cart from localStorage
+      let cart = JSON.parse(localStorage.getItem('latiao_cart') || '[]')
+
+      // Step 2: Validate index
+      if (index < 0 || index >= cart.length) return
+
+      // Заборонити зміну кількості подарунків
+      if (cart[index].isGift === true) {
+        alert('Кількість подарунків не можна змінити')
+        return
+      }
+
+      // Step 3: Modify data - increment quantity
+      cart[index].quantity = (cart[index].quantity || 1) + 1
+
+      // Step 4: Save back to localStorage
+      localStorage.setItem('latiao_cart', JSON.stringify(cart))
+
+      // Step 5: Update global variable and re-render
+      cartItems = cart
+      renderProducts()
+      calculateTotals()
+      validateForm()
+    }
+
+    // Decrease quantity of item at given index
+    window.decreaseQty = function (index) {
+      // Step 1: Get current cart from localStorage
+      let cart = JSON.parse(localStorage.getItem('latiao_cart') || '[]')
+
+      // Step 2: Validate index
+      if (index < 0 || index >= cart.length) return
+
+      const item = cart[index]
+
+      // Заборонити зміну кількості подарунків
+      if (item.isGift === true) {
+        alert('Кількість подарунків не можна змінити')
+        return
+      }
+
+      const currentQty = item.quantity || 1
+
+      // Step 3: Modify data - handle quantity logic
+      if (currentQty <= 1) {
+        // If quantity is 1, ask to remove instead of going to 0
+        if (confirm(`Видалити "${item.name}" з кошика?`)) {
+          removeItem(index)
+        }
+        return
+      }
+
+      // Decrement quantity
+      cart[index].quantity = currentQty - 1
+
+      // Step 4: Save back to localStorage
+      localStorage.setItem('latiao_cart', JSON.stringify(cart))
+
+      // Step 5: Update global variable and re-render
+      cartItems = cart
+      renderProducts()
+      calculateTotals()
+      validateForm()
+    }
+
+    // Remove item at given index
+    window.removeItem = function (index) {
+      // Step 1: Get current cart from localStorage
+      let cart = JSON.parse(localStorage.getItem('latiao_cart') || '[]')
+
+      // Step 2: Validate index
+      if (index < 0 || index >= cart.length) return
+
+      const item = cart[index]
+
+      // Step 3: Confirm removal
+      if (!confirm(`Видалити "${item.name}" з кошика?`)) {
+        return // User cancelled
+      }
+
+      // Step 4: Remove item from array
+      cart.splice(index, 1)
+
+      // Step 5: Save back to localStorage
+      localStorage.setItem('latiao_cart', JSON.stringify(cart))
+
+      // Step 6: CRITICAL - Check if cart is empty
+      if (cart.length === 0) {
+        // Empty cart guard - redirect immediately
+        window.location.replace('index.html')
+        return
+      }
+
+      // Step 7: Update global variable and re-render
+      cartItems = cart
+      renderProducts()
+      calculateTotals()
+      validateForm()
+    }
+
+    function calculateTotals() {
+      const itemCount = cartItems.length
+      const packCount = cartItems.reduce((sum, item) => sum + item.quantity, 0)
+      const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+
+      const discount = promoApplied ? promoDiscount : 0
+      const subtotalWithDiscount = subtotal - discount
+
+      const isFreeDelivery = subtotalWithDiscount >= FREE_DELIVERY_THRESHOLD
+      const deliveryCost = isFreeDelivery ? 0 : DELIVERY_COST
+
+      // IMPORTANT: Total shows ONLY product sum (delivery paid separately on delivery)
+      const productTotal = subtotalWithDiscount
+
+      // Update UI with null checks
+      const itemCountEl = document.getElementById('itemCount')
+      const packCountEl = document.getElementById('packCount')
+      const subtotalEl = document.getElementById('subtotal')
+      const deliveryProgressEl = document.getElementById('deliveryProgress')
+
+      if (itemCountEl) itemCountEl.textContent = itemCount
+      if (packCountEl) packCountEl.textContent = packCount
+      if (subtotalEl) subtotalEl.textContent = `${subtotal} грн`
+
+      // Delivery progress
+      if (deliveryProgressEl) {
+        const progress = Math.min((subtotalWithDiscount / FREE_DELIVERY_THRESHOLD) * 100, 100)
+        deliveryProgressEl.style.width = `${progress}%`
+      }
+
+      const deliveryCostEl = document.getElementById('deliveryCost')
+      const deliveryMessageEl = document.getElementById('deliveryMessage')
+      const savingsMessageEl = document.getElementById('savingsMessage')
+
+      if (isFreeDelivery) {
+        if (deliveryCostEl) deliveryCostEl.innerHTML = '<span class="text-green-500">🎉 Безкоштовно</span>'
+        if (deliveryMessageEl) deliveryMessageEl.textContent = 'Вітаємо! Доставка безкоштовна!'
+        if (savingsMessageEl) savingsMessageEl.classList.remove('hidden')
+      } else {
+        if (deliveryCostEl) deliveryCostEl.textContent = `від ${DELIVERY_COST} грн`
+        if (deliveryMessageEl) deliveryMessageEl.textContent = `До безкоштовної доставки: ${FREE_DELIVERY_THRESHOLD - subtotalWithDiscount} грн`
+        if (savingsMessageEl) savingsMessageEl.classList.add('hidden')
+      }
+
+      // Total (Products Only - Delivery Paid on Delivery)
+      const totalPriceEl = document.getElementById('totalPrice')
+      const totalPriceMobileEl = document.getElementById('totalPriceMobile')
+      const subtotalPriceEl = document.getElementById('subtotalPrice')
+      const discountRow = document.getElementById('discount-row')
+      const discountDivider = document.getElementById('discount-divider')
+      const discountAmountEl = document.getElementById('discountAmount')
+
+      // Update subtotal (before discount)
+      if (subtotalPriceEl) subtotalPriceEl.textContent = `${subtotal} грн`
+
+      // Show/hide discount row
+      if (promoApplied && promoDiscount > 0) {
+        if (discountRow) discountRow.classList.remove('hidden')
+        if (discountDivider) discountDivider.classList.remove('hidden')
+        if (discountAmountEl) discountAmountEl.textContent = `- ${promoDiscount} грн`
+      } else {
+        if (discountRow) discountRow.classList.add('hidden')
+        if (discountDivider) discountDivider.classList.add('hidden')
+      }
+
+      // Update final total
+      if (totalPriceEl) totalPriceEl.textContent = `${productTotal} грн`
+      if (totalPriceMobileEl) totalPriceMobileEl.textContent = `${productTotal} грн`
+
+      // Update payment summary based on current payment method
+      const selectedPaymentCard = document.querySelector('[data-payment].selected')
+      if (selectedPaymentCard) {
+        const paymentMethod = selectedPaymentCard.getAttribute('data-payment')
+        updatePaymentSummary(paymentMethod)
+      }
+
+      return { total: productTotal, subtotal }
+    }
+
+    // ============================================
+    // DELIVERY METHOD SELECTION
+    // ============================================
+
+    function selectDelivery(element, method) {
+      // Remove 'selected' class from all delivery cards
+      document.querySelectorAll('[data-delivery]').forEach(card => {
+        card.classList.remove('selected')
+      })
+
+      // Add 'selected' class to clicked card
+      element.classList.add('selected')
+
+      // Toggle visibility of delivery details containers
+      toggleDeliveryDetails(method)
+
+      // Update payment availability based on selected delivery method
+      updatePaymentAvailability()
+    }
+
+    // Toggle visibility of delivery details based on selected method
+    function toggleDeliveryDetails(method) {
+      const novaPoshtaDetails = document.getElementById('nova-poshta-details')
+      const ukrposhtaDetails = document.getElementById('ukrposhta-details')
+
+      if (!novaPoshtaDetails || !ukrposhtaDetails) {
+        console.error('Delivery details containers not found!')
+        return
+      }
+
+      if (method === 'nova') {
+        // Show Nova Poshta, hide Ukrposhta
+        novaPoshtaDetails.style.display = 'block'
+        ukrposhtaDetails.style.display = 'none'
+      } else if (method === 'ukr') {
+        // Show Ukrposhta, hide Nova Poshta
+        novaPoshtaDetails.style.display = 'none'
+        ukrposhtaDetails.style.display = 'block'
+      }
+    }
+
+    // Initialize delivery method on page load
+    function initializeDeliveryMethod() {
+      const selectedDeliveryCard = document.querySelector('[data-delivery].selected')
+
+      if (selectedDeliveryCard) {
+        const method = selectedDeliveryCard.getAttribute('data-delivery')
+        toggleDeliveryDetails(method)
+        console.log('✅ Initialized delivery method:', method)
+      } else {
+        // Default to Nova Poshta if no selection
+        const novaCard = document.querySelector('[data-delivery="nova"]')
+        if (novaCard) {
+          novaCard.classList.add('selected')
+          toggleDeliveryDetails('nova')
+          console.log('✅ Initialized delivery method: nova (default)')
+        }
+      }
+    }
+
+    // Update payment method availability based on selected delivery carrier
+    function updatePaymentAvailability() {
+      // Get selected delivery method
+      const selectedDelivery = document.querySelector('[data-delivery].selected')
+      const deliveryMethod = selectedDelivery ? selectedDelivery.getAttribute('data-delivery') : 'nova'
+
+      // Get COD payment option elements
+      const codCard = document.querySelector('[data-payment="cod"]')
+      const codRestriction = document.getElementById('codRestriction')
+
+      if (!codCard) return
+
+      // Business Rule: COD is only available for Nova Poshta
+      const isCodAvailable = deliveryMethod === 'nova'
+
+      if (!isCodAvailable) {
+        // Disable COD for Ukrposhta
+        codCard.style.pointerEvents = 'none'
+        codCard.style.opacity = '0.5'
+        codCard.style.filter = 'grayscale(100%)'
+        codCard.style.cursor = 'not-allowed'
+
+        // Show restriction message
+        if (codRestriction) {
+          codRestriction.classList.remove('hidden')
+        }
+
+        // Auto-switch to online payment if COD was selected
+        if (codCard.classList.contains('selected')) {
+          codCard.classList.remove('selected')
+
+          // Select online payment instead
+          const onlineCard = document.querySelector('[data-payment="online"]')
+          if (onlineCard) {
+            onlineCard.classList.add('selected')
+          }
+        }
+      } else {
+        // Enable COD for Nova Poshta
+        codCard.style.pointerEvents = ''
+        codCard.style.opacity = ''
+        codCard.style.filter = ''
+        codCard.style.cursor = ''
+
+        // Hide restriction message
+        if (codRestriction) {
+          codRestriction.classList.add('hidden')
+        }
+      }
+    }
+
+    // Get dispatch time based on carrier and current time
+    function getDispatchTime(carrier) {
+      const now = new Date()
+      const currentHour = now.getHours()
+      const currentDay = now.getDay() // 0 = Sunday, 1 = Monday, etc.
+
+      if (carrier === 'novaposhta') {
+        // Nova Poshta: Dispatches at 11:00 and 17:00
+        if (currentHour < 10) {
+          return '🕒 Відправка сьогодні до 11:00'
+        } else if (currentHour >= 10 && currentHour < 15) {
+          return '🕒 Відправка сьогодні до 17:00'
+        } else {
+          return '🕒 Відправка завтра до 12:00';;
+        }
+      } else if (carrier === 'ukrposhta') {
+        // Ukrposhta: Dispatch at 12:00, no dispatch on Sunday (0) and Monday (1)
+        let dispatchDate = new Date(now)
+
+        // Determine tentative dispatch date
+        if (currentHour >= 11) {
+          // After 11:00, dispatch is tomorrow
+          dispatchDate.setDate(dispatchDate.getDate() + 1)
+        }
+
+        // Skip Sunday (0) and Monday (1)
+        while (dispatchDate.getDay() === 0 || dispatchDate.getDay() === 1) {
+          dispatchDate.setDate(dispatchDate.getDate() + 1)
+        }
+
+        // Format date in Ukrainian
+        const dayName = dispatchDate.toLocaleDateString('uk-UA', { weekday: 'long' })
+        const day = dispatchDate.getDate()
+        const month = dispatchDate.toLocaleDateString('uk-UA', { month: 'long' })
+
+        // Check if dispatch is today or future
+        const isToday = dispatchDate.toDateString() === now.toDateString()
+        const isTomorrow = dispatchDate.toDateString() === new Date(now.getTime() + 24 * 60 * 60 * 1000).toDateString()
+
+        if (isToday) {
+          return `🕒 Відправка сьогодні до 12:00`
+        } else if (isTomorrow) {
+          return `🕒 Відправка завтра до 12:00`
+        } else {
+          return `🕒 Відправка у ${dayName} (${day} ${month}) до 12:00`
+        }
+      }
+
+      return ''
+    }
+
+    // Update dispatch times on page load
+    function updateDispatchTimes() {
+      const novaDispatch = document.getElementById('dispatch-nova')
+      const ukrDispatch = document.getElementById('dispatch-ukr')
+
+      if (novaDispatch) {
+        novaDispatch.textContent = getDispatchTime('novaposhta')
+      }
+
+      if (ukrDispatch) {
+        ukrDispatch.textContent = getDispatchTime('ukrposhta')
+      }
+    }
+
+    // ============================================
+    // PAYMENT METHOD SELECTION
+    // ============================================
+
+    function selectPayment(element, method) {
+      // Remove 'selected' class from all payment cards
+      document.querySelectorAll('[data-payment]').forEach(card => {
+        card.classList.remove('selected')
+      })
+
+      // Add 'selected' class to clicked card
+      element.classList.add('selected')
+
+      // Update payment summary based on selected method
+      updatePaymentSummary(method)
+
+      console.log('✅ Payment method selected:', method)
+    }
+
+    // ============================================
+    // UPDATE PAYMENT SUMMARY (COD BREAKDOWN)
+    // ============================================
+
+    function updatePaymentSummary(paymentMethod) {
+      const standardSummary = document.getElementById('summary-standard')
+      const depositSummary = document.getElementById('summary-deposit')
+      const totalPriceEl = document.getElementById('totalPrice')
+      const depositTotalEl = document.getElementById('deposit-total')
+      const depositDueEl = document.getElementById('deposit-due')
+
+      if (!standardSummary || !depositSummary) {
+        console.error('Summary elements not found!')
+        return
+      }
+
+      // Get current cart total
+      const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+      const discount = promoApplied ? promoDiscount : 0
+      const total = cartTotal - discount
+
+      const DEPOSIT_AMOUNT = 100
+
+      if (paymentMethod === 'cod') {
+        // ============================================
+        // SHOW COD BREAKDOWN
+        // ============================================
+
+        // Check if cart total is less than deposit
+        if (total < DEPOSIT_AMOUNT) {
+          // Cart too small for deposit - show warning and switch to online
+          alert(`⚠️ Мінімальна сума замовлення для накладеного платежу: ${DEPOSIT_AMOUNT} грн\nВаше замовлення: ${total} грн\n\nБудь ласка, оберіть онлайн оплату.`)
+
+          const onlineCard = document.querySelector('[data-payment="online"]')
+          if (onlineCard) {
+            document.querySelectorAll('[data-payment]').forEach(card => {
+              card.classList.remove('selected')
+            })
+            onlineCard.classList.add('selected')
+
+            // Show standard view
+            standardSummary.classList.remove('hidden')
+            depositSummary.classList.add('hidden')
+          }
+          return
+        }
+
+        // Calculate amounts
+        const amountDue = total - DEPOSIT_AMOUNT
+
+        // Update deposit breakdown values
+        if (depositTotalEl) depositTotalEl.textContent = `${total} грн`
+        if (depositDueEl) depositDueEl.textContent = `${amountDue} грн`
+
+        // Show deposit breakdown, hide standard
+        standardSummary.classList.add('hidden')
+        depositSummary.classList.remove('hidden')
+
+        console.log(`💰 COD Breakdown: Total ${total} грн, Deposit 100 грн, Due ${amountDue} грн`)
+      } else {
+        // ============================================
+        // SHOW STANDARD ONLINE PAYMENT
+        // ============================================
+
+        // Show standard view, hide deposit breakdown
+        standardSummary.classList.remove('hidden')
+        depositSummary.classList.add('hidden')
+
+        console.log(`💳 Online Payment: Total ${total} грн`)
+      }
+    }
+
+    // Initialize payment method on page load
+    function initializePaymentMethod() {
+      const selectedPaymentCard = document.querySelector('[data-payment].selected')
+
+      if (!selectedPaymentCard) {
+        // Default to online payment if no selection
+        const onlineCard = document.querySelector('[data-payment="online"]')
+        if (onlineCard) {
+          onlineCard.classList.add('selected')
+          updatePaymentSummary('online')
+          console.log('✅ Initialized payment method: online (default)')
+        }
+      } else {
+        const method = selectedPaymentCard.getAttribute('data-payment')
+        updatePaymentSummary(method)
+        console.log('✅ Initialized payment method:', method)
+      }
+    }
+
+    // ============================================
+    // PROMO CODE APPLICATION (FIRESTORE INTEGRATION)
+    // ============================================
+
+    async function applyPromo() {
+      const code = document.getElementById('promoCode').value.trim().toUpperCase()
+      const messageEl = document.getElementById('promoMessage')
+      const applyBtn = document.getElementById('applyPromoBtn')
+
+      // Clear if empty
+      if (code === '') {
+        promoApplied = false
+        promoDiscount = 0
+        appliedPromoCode = null
+        messageEl.classList.add('hidden')
+        calculateTotals()
+        return
+      }
+
+      // Disable button during validation
+      applyBtn.disabled = true
+      applyBtn.textContent = 'Перевірка...'
+
+      try {
+        // ============================================
+        // 1. QUERY FIRESTORE
+        // ============================================
+        const promosRef = collection(db, 'promocodes')
+        const q = query(promosRef, where('code', '==', code))
+        const snapshot = await getDocs(q)
+
+        if (snapshot.empty) {
+          throw new Error('Промокод не знайдено')
+        }
+
+        const promoDoc = snapshot.docs[0]
+        const promo = promoDoc.data()
+
+        // ============================================
+        // 2. VALIDATION
+        // ============================================
+
+        // Check if active
+        if (!promo.isActive) {
+          throw new Error('Промокод неактивний')
+        }
+
+        // Check usage limits
+        const usedCount = promo.stats?.usedCount || 0
+        const totalLimit = promo.limits?.total || 0
+        if (totalLimit > 0 && usedCount >= totalLimit) {
+          throw new Error('Промокод вичерпано')
+        }
+
+        // ============================================
+        // 3. CHECK MINIMUM ORDER AMOUNT
+        // ============================================
+        const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+        const minOrderAmount = promo.minOrderAmount || 0
+
+        if (minOrderAmount > 0 && cartTotal < minOrderAmount) {
+          const shortage = minOrderAmount - cartTotal
+          throw new Error(`Цей код діє для замовлень від ${minOrderAmount} грн. Додайте товарів ще на ${shortage} грн`)
+        }
+
+        // ============================================
+        // 4. CALCULATE DISCOUNT
+        // ============================================
+        let discount = 0
+
+        if (promo.type === 'percent') {
+          discount = Math.round(cartTotal * (promo.value / 100))
+        } else if (promo.type === 'fixed') {
+          discount = promo.value
+        }
+
+        // Ensure discount doesn't exceed total
+        discount = Math.min(discount, cartTotal)
+
+        // ============================================
+        // 4. APPLY DISCOUNT
+        // ============================================
+        promoApplied = true
+        promoDiscount = discount
+        appliedPromoCode = {
+          id: promoDoc.id,
+          code: promo.code,
+          type: promo.type,
+          value: promo.value,
+          discount: discount
+        }
+
+        // Success message
+        const discountText = promo.type === 'percent'
+          ? `${promo.value}%`
+          : `${promo.value} грн`
+        messageEl.textContent = `✅ Промокод застосовано! Знижка ${discountText} = ${discount} грн`
+        messageEl.className = 'mt-2 text-sm text-green-500 font-medium fade-in'
+        messageEl.classList.remove('hidden')
+
+        // Recalculate totals
+        calculateTotals()
+
+      } catch (error) {
+        console.error('Promo code error:', error)
+
+        promoApplied = false
+        promoDiscount = 0
+        appliedPromoCode = null
+
+        messageEl.textContent = '❌ ' + error.message
+        messageEl.className = 'mt-2 text-sm text-red-500 font-medium fade-in'
+        messageEl.classList.remove('hidden')
+
+        calculateTotals()
+      } finally {
+        // Re-enable button
+        applyBtn.disabled = false
+        applyBtn.textContent = 'Застосувати'
+      }
+    }
+
+    // ============================================
+    // NOVA POSHTA API FUNCTIONS
+    // ============================================
+
+    let selectedCityRef = null // Store selected city reference for warehouse loading
+    let citySearchTimeout = null // Debounce timer for city search
+
+    /**
+     * Function 1: City Autocomplete Search
+     * Searches for cities using Nova Poshta API (searchSettlements method)
+     * @param {string} searchQuery - User's input value
+     */
+    async function searchNovaPoshtaCities(searchQuery) {
+      // Clear previous timeout to debounce rapid typing
+      clearTimeout(citySearchTimeout)
+
+      // Target the city suggestions list
+      const cityList = document.getElementById('np-city-list')
+
+      // Validation: Require at least 2 characters before searching
+      if (!searchQuery || searchQuery.length < 2) {
+        cityList.classList.add('hidden')
+        cityList.innerHTML = ''
+        return
+      }
+
+      // Debounce: Wait 300ms after user stops typing before making API call
+      citySearchTimeout = setTimeout(async () => {
+        try {
+          // Show loading indicator
+          cityList.innerHTML = '<li class="px-4 py-2 text-sm text-gray-500 animate-pulse">🔍 Пошук...</li>'
+          cityList.classList.remove('hidden')
+
+          // API Request: Search settlements by city name
+          const response = await fetch(NP_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              apiKey: NP_API_KEY,
+              modelName: 'Address',
+              calledMethod: 'searchSettlements',
+              methodProperties: {
+                CityName: searchQuery,
+                Limit: 50, // Maximum number of results
+                Page: 1
+              }
+            })
+          })
+
+          const data = await response.json()
+
+          // Response Handling: Check if cities were found
+          if (data.success && data.data && data.data[0] && data.data[0].Addresses) {
+            const cities = data.data[0].Addresses
+            renderCityAutocomplete(cities)
+          } else {
+            cityList.innerHTML = '<li class="px-4 py-2 text-sm text-gray-500">❌ Міст не знайдено</li>'
+            cityList.classList.remove('hidden')
+          }
+        } catch (error) {
+          console.error('❌ Error fetching cities:', error)
+          cityList.innerHTML = '<li class="px-4 py-2 text-sm text-red-500">⚠️ Помилка завантаження</li>'
+          cityList.classList.remove('hidden')
+        }
+      }, 300) // 300ms debounce delay
+    }
+
+    /**
+     * Render City Autocomplete Suggestions
+     * Creates clickable list items for each city found
+     * @param {Array} cities - Array of city objects from API response
+     */
+    function renderCityAutocomplete(cities) {
+      const cityList = document.getElementById('np-city-list')
+      cityList.innerHTML = '' // Clear previous results
+
+      // Loop through each city and create a list item
+      cities.forEach(city => {
+        const li = document.createElement('li')
+        li.className = 'px-4 py-2.5 hover:bg-orange-50 cursor-pointer text-sm text-gray-900 border-b border-gray-100 last:border-b-0 transition-colors'
+        li.textContent = city.Present // Display city name (e.g., "Київ")
+
+        // Click Action: Select this city
+        li.onclick = () => {
+          // Set input value to selected city name
+          document.getElementById('np-city-input').value = city.Present
+
+          // Save city reference (Ref) for warehouse loading
+          selectedCityRef = city.DeliveryCity
+
+          // Hide suggestion list
+          cityList.classList.add('hidden')
+          cityList.innerHTML = ''
+
+          // Trigger warehouse loading for selected city
+          loadNovaPoshtaWarehouses(selectedCityRef)
+        }
+
+        cityList.appendChild(li)
+      })
+
+      // Show the populated list
+      cityList.classList.remove('hidden')
+    }
+
+    /**
+     * Function 2: Load Warehouses for Selected City
+     * Fetches all Nova Poshta warehouses/branches in the selected city
+     * @param {string} cityRef - City reference ID from selected city
+     */
+    async function loadNovaPoshtaWarehouses(cityRef) {
+      const warehouseSelect = document.getElementById('np-warehouse-select')
+
+      // Show loading state
+      warehouseSelect.disabled = true
+      warehouseSelect.innerHTML = '<option>⏳ Завантаження відділень...</option>'
+
+      try {
+        // API Request: Get warehouses by city reference
+        const response = await fetch(NP_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            apiKey: NP_API_KEY,
+            modelName: 'Address',
+            calledMethod: 'getWarehouses',
+            methodProperties: {
+              CityRef: cityRef, // Use the city reference from selected city
+              Limit: 99999 // Get all warehouses in the city
+            }
+          })
+        })
+
+        const data = await response.json()
+
+        // Response Handling: Check if warehouses were found
+        if (data.success && data.data && data.data.length > 0) {
+          const warehouses = data.data
+          renderWarehouses(warehouses)
+        } else {
+          warehouseSelect.innerHTML = '<option>❌ Відділення не знайдено</option>'
+          warehouseSelect.disabled = false
+        }
+      } catch (error) {
+        console.error('❌ Error fetching warehouses:', error)
+        warehouseSelect.innerHTML = '<option>⚠️ Помилка завантаження</option>'
+        warehouseSelect.disabled = false
+      }
+    }
+
+    /**
+     * Render Warehouses in Select Dropdown
+     * Populates the warehouse select with options
+     * @param {Array} warehouses - Array of warehouse objects from API response
+     */
+    function renderWarehouses(warehouses) {
+      const warehouseSelect = document.getElementById('np-warehouse-select')
+      warehouseSelect.innerHTML = '<option value="">Оберіть відділення...</option>'
+
+      // Loop through warehouses and create options
+      warehouses.forEach(warehouse => {
+        const option = document.createElement('option')
+        option.value = warehouse.Ref // Warehouse reference ID
+        option.textContent = warehouse.Description // Warehouse full name/address
+        warehouseSelect.appendChild(option)
+      })
+
+      // Enable the select field
+      warehouseSelect.disabled = false
+    }
+
+    // ============================================
+    // EVENT LISTENERS FOR NOVA POSHTA
+    // ============================================
+
+    // Listen for input events on city input field
+    document.getElementById('np-city-input').addEventListener('input', function (event) {
+      searchNovaPoshtaCities(event.target.value)
+    })
+
+    // Close autocomplete when clicking outside
+    document.addEventListener('click', function (event) {
+      const cityInput = document.getElementById('np-city-input')
+      const cityList = document.getElementById('np-city-list')
+
+      // Check if click was outside both the input and the list
+      if (cityInput && cityList && !cityInput.contains(event.target) && !cityList.contains(event.target)) {
+        cityList.classList.add('hidden')
+      }
+    })
+
+    // Ukrposhta - Manual Input (No API calls)
+    // All Ukrposhta data is collected from text inputs
+
+    function validateForm() {
+      const fullName = document.getElementById('fullName').value.trim()
+      const phone = document.getElementById('phone').value.trim()
+      const telegram = document.getElementById('telegram').value.trim()
+      const { total } = calculateTotals()
+
+      const isValid = fullName !== '' && phone !== '' && telegram !== '' && total >= 100
+
+      const desktopBtn = document.getElementById('submitBtnDesktop')
+      const mobileBtn = document.getElementById('submitBtnMobile')
+
+      if (isValid) {
+        desktopBtn.disabled = false
+        mobileBtn.disabled = false
+        desktopBtn.classList.add('pulse-animation')
+        mobileBtn.classList.add('pulse-animation')
+      } else {
+        desktopBtn.disabled = true
+        mobileBtn.disabled = true
+        desktopBtn.classList.remove('pulse-animation')
+        mobileBtn.classList.remove('pulse-animation')
+      }
+    }
+
+    // ============================================
+    // STRICT FORM VALIDATION (THE GATEKEEPER)
+    // ============================================
+
+    function strictValidateForm() {
+      // Get inputs
+      const nameInput = document.getElementById('fullName')
+      const phoneInput = document.getElementById('phone')
+      const telegramInput = document.getElementById('telegram')
+
+      const name = nameInput?.value.trim() || ''
+      const phone = phoneInput?.value.trim() || ''
+      const telegram = telegramInput?.value.trim() || ''
+
+      let firstError = null
+      let isValid = true;
+
+      // Clear all previous error states
+      [nameInput, phoneInput, telegramInput].forEach(input => {
+        if (input) {
+          input.classList.remove('border-red-500')
+          input.classList.add('border-gray-200')
+        }
+      })
+
+      // Hide all error messages
+      const telegramError = document.getElementById('telegramError')
+      if (telegramError) telegramError.classList.add('hidden')
+
+      // Validate Name
+      if (name === '') {
+        isValid = false
+        nameInput.classList.remove('border-gray-200')
+        nameInput.classList.add('border-red-500')
+        if (!firstError) firstError = { input: nameInput, message: 'Будь ласка, введіть ваше ім\'я' }
+      }
+
+      // Validate Phone (strict regex)
+      const phoneRegex = /^\+380\d{9}$/ // Exactly +380 followed by 9 digits
+      const phoneLooseRegex = /^\d{10,12}$/ // Or 10-12 digits without +
+
+      if (phone === '') {
+        isValid = false
+        phoneInput.classList.remove('border-gray-200')
+        phoneInput.classList.add('border-red-500')
+        if (!firstError) firstError = { input: phoneInput, message: 'Будь ласка, введіть номер телефону' }
+      } else if (!phoneRegex.test(phone) && !phoneLooseRegex.test(phone)) {
+        isValid = false
+        phoneInput.classList.remove('border-gray-200')
+        phoneInput.classList.add('border-red-500')
+        if (!firstError) firstError = { input: phoneInput, message: 'Будь ласка, введіть коректний номер телефону (наприклад, +380501234567)' }
+      }
+
+      // Validate Telegram
+      if (telegram === '') {
+        isValid = false
+        telegramInput.classList.remove('border-gray-200')
+        telegramInput.classList.add('border-red-500')
+        if (telegramError) telegramError.classList.remove('hidden')
+        if (!firstError) firstError = { input: telegramInput, message: 'Будь ласка, вкажіть нікнейм Telegram' }
+      }
+
+      // If validation failed, scroll to first error and show alert
+      if (!isValid && firstError) {
+        firstError.input.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        setTimeout(() => firstError.input.focus(), 500)
+        alert(`❌ Помилка заповнення форми\n\n${firstError.message}`)
+      }
+
+      return isValid
+    }
+
+    // ============================================
+    // ABANDONED CART AUTO-SAVE LOGIC
+    // ============================================
+
+    // Debounce helper function to limit frequent saves
+    function debounce(func, wait) {
+      let timeout
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout)
+          func(...args)
+        }
+        clearTimeout(timeout)
+        timeout = setTimeout(later, wait)
+      }
+    }
+
+    // Auto-save abandoned cart when phone is valid
+    async function saveAbandonedCart() {
+      try {
+        // Get raw form values (even if some are empty)
+        const fullName = document.getElementById('fullName')?.value.trim() || ''
+        const phone = document.getElementById('phone')?.value.trim() || ''
+        const telegram = document.getElementById('telegram')?.value.trim() || ''
+        const comment = document.getElementById('comment')?.value.trim() || ''
+
+        // PRIORITY CHECK: Phone must be at least 10 characters
+        // Even if name is empty, we save it (phone is the retargeting key)
+        if (phone.length < 10) {
+          console.log('⏭️ Phone too short (<10 chars), skipping abandoned cart save')
+          return
+        }
+
+        // Get current cart items
+        const cart = JSON.parse(localStorage.getItem('latiao_cart') || '[]')
+        if (cart.length === 0) {
+          console.log('⏭️ Cart is empty, skipping abandoned cart save')
+          return
+        }
+
+        // Calculate total
+        const { total } = calculateTotals()
+
+        // Get delivery information
+        const selectedDelivery = document.querySelector('[data-delivery].selected')
+        const deliveryMethod = selectedDelivery ? selectedDelivery.getAttribute('data-delivery') : 'nova'
+
+        let deliveryInfo = {
+          method: deliveryMethod === 'nova' ? 'Нова Пошта' : 'Укрпошта',
+          city: '',
+          branch: '',
+          address: ''
+        }
+
+        if (deliveryMethod === 'nova') {
+          const npCity = document.getElementById('np-city-input')?.value.trim() || ''
+          const npWarehouseSelect = document.getElementById('np-warehouse-select')
+          const npWarehouse = npWarehouseSelect?.options[npWarehouseSelect.selectedIndex]?.text || ''
+
+          deliveryInfo.city = npCity
+          deliveryInfo.branch = npWarehouse
+          deliveryInfo.address = npCity && npWarehouse ? `${npCity}, ${npWarehouse}` : npCity || 'Не вказано'
+        } else if (deliveryMethod === 'ukr') {
+          const upCity = document.getElementById('up-city-input')?.value.trim() || ''
+          const upPostcode = document.getElementById('up-postcode-input')?.value.trim() || ''
+
+          deliveryInfo.city = upCity
+          deliveryInfo.branch = upPostcode ? `Індекс: ${upPostcode}` : ''
+          deliveryInfo.address = upCity && upPostcode ? `${upCity}, Індекс: ${upPostcode}` : upCity || 'Не вказано'
+        }
+
+        // Prepare abandoned cart data
+        // IMPORTANT: Save raw values, even if name is empty
+        // Phone is mandatory (checked above), but name can be empty
+        const abandonedCartData = {
+          customer: {
+            fullName: fullName || 'Не вказано',
+            phone: phone, // Always present (validated above)
+            telegram: telegram || 'Не вказано'
+          },
+          delivery: deliveryInfo,
+          comment: comment || '',
+          items: cart.map(item => ({
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            subtotal: item.price * item.quantity,
+            image: item.image || '',
+            isGift: item.isGift === true
+          })),
+          total: total,
+          updatedAt: serverTimestamp(),
+          status: 'browsing',
+          // Initialize history array with creation event
+          history: [{
+            action: 'created',
+            timestamp: new Date().toISOString(),
+            details: 'Кошик покинуто (клієнт заповнив контактні дані)'
+          }]
+        }
+
+        // Use phone as document ID to avoid duplicates (upsert)
+        const { doc: firestoreDoc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')
+        const cartRef = firestoreDoc(db, 'abandoned_carts', phone)
+
+        await setDoc(cartRef, abandonedCartData)
+        console.log('✅ Abandoned cart auto-saved for phone:', phone)
+
+      } catch (error) {
+        console.error('⚠️ Error saving abandoned cart (non-critical):', error)
+      }
+    }
+
+    // ============================================
+    // SMART CLEANUP MECHANISM
+    // ============================================
+
+    /**
+     * Comprehensive cleanup of old entries for a customer
+     * Deletes abandoned carts AND old pending orders to keep admin panel clean
+     * @param {string} customerPhone - The customer's phone number
+     * @param {string} currentOrderId - The newly created order ID (to exclude from deletion)
+     */
+    async function cleanUpOldEntries(customerPhone, currentOrderId) {
+      try {
+        if (!customerPhone || customerPhone.length < 10) {
+          console.log('⏭️ Invalid phone number, skipping cleanup')
+          return
+        }
+
+        console.log('🧹 Starting smart cleanup for phone:', customerPhone)
+
+        // Import necessary Firestore methods
+        const {
+          doc: firestoreDoc,
+          deleteDoc,
+          collection,
+          query,
+          where,
+          getDocs
+        } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')
+
+        // Create array of cleanup promises for parallel execution
+        const cleanupPromises = []
+
+        // ============================================
+        // 1. CLEAN ABANDONED CARTS
+        // ============================================
+        const abandonedCartCleanup = async () => {
+          try {
+            const cartRef = firestoreDoc(db, 'abandoned_carts', customerPhone)
+            await deleteDoc(cartRef)
+            console.log('✅ Abandoned cart deleted')
+          } catch (error) {
+            if (error.code !== 'not-found') {
+              console.error('⚠️ Failed to delete abandoned cart:', error)
+            }
+          }
+        }
+
+        cleanupPromises.push(abandonedCartCleanup())
+
+        // ============================================
+        // 2. CLEAN OLD PENDING ORDERS (ABANDONED PAYMENTS)
+        // ============================================
+        const oldOrdersCleanup = async () => {
+          try {
+            // Query orders with matching phone and pending payment status
+            const ordersQuery = query(
+              collection(db, 'orders'),
+              where('customer.phone', '==', customerPhone),
+              where('payment.status', 'in', ['pending', 'created'])
+            )
+
+            const snapshot = await getDocs(ordersQuery)
+
+            if (snapshot.empty) {
+              console.log('ℹ️ No old pending orders found')
+              return
+            }
+
+            // Delete old pending orders (except the current one)
+            const deletePromises = []
+            let deletedCount = 0
+
+            snapshot.forEach((docSnap) => {
+              const orderId = docSnap.id
+
+              // CRITICAL: Don't delete the order we just created!
+              if (orderId !== currentOrderId) {
+                const orderRef = firestoreDoc(db, 'orders', orderId)
+                deletePromises.push(
+                  deleteDoc(orderRef).then(() => {
+                    deletedCount++
+                    console.log(`✅ Deleted old pending order: ${orderId}`)
+                  })
+                )
+              }
+            })
+
+            await Promise.all(deletePromises)
+
+            if (deletedCount > 0) {
+              console.log(`✅ Cleaned up ${deletedCount} old pending order(s)`)
+            }
+
+          } catch (error) {
+            console.error('⚠️ Failed to clean old pending orders:', error)
+          }
+        }
+
+        cleanupPromises.push(oldOrdersCleanup())
+
+        // ============================================
+        // 3. EXECUTE ALL CLEANUPS IN PARALLEL
+        // ============================================
+        await Promise.all(cleanupPromises)
+        console.log('✅ Smart cleanup completed')
+
+      } catch (error) {
+        console.error('⚠️ Smart cleanup error (non-critical):', error)
+      }
+    }
+
+    // ============================================
+    // ⭐ UPDATED SUBMIT ORDER FUNCTION WITH MONOBANK INTEGRATION
+    // ============================================
+    async function submitOrder() {
+      console.log('🚀 Starting Order Submission with Monobank Integration')
+
+      const btn = event.target
+      const originalText = btn.textContent
+
+      // ============================================
+      // STEP 0: STRICT VALIDATION (THE GATEKEEPER)
+      // ============================================
+      if (!strictValidateForm()) {
+        console.log('❌ Form validation failed - stopping submission')
+        return // STOP EXECUTION - DO NOT PROCEED
+      }
+
+      console.log('✅ Form validation passed - proceeding with order')
+
+      // Get validated values
+      const fullName = document.getElementById('fullName').value.trim()
+      const phone = document.getElementById('phone').value.trim()
+      const telegram = document.getElementById('telegram').value.trim()
+
+      // Validate Ukrposhta address if Ukrposhta is selected
+      const selectedDelivery = document.querySelector('[data-delivery].selected')
+      const deliveryMethod = selectedDelivery ? selectedDelivery.getAttribute('data-delivery') : 'nova'
+
+      if (deliveryMethod === 'ukr') {
+        const upRegion = document.getElementById('up-region-input').value.trim()
+        const upDistrict = document.getElementById('up-district-input').value.trim()
+        const upCity = document.getElementById('up-city-input').value.trim()
+        const upPostcode = document.getElementById('up-postcode-input').value.trim()
+
+        if (!upRegion || !upDistrict || !upCity || !upPostcode) {
+          alert('⚠️ Будь ласка, заповніть повну адресу для Укрпошти (область, район, місто, індекс)')
+
+          // Scroll to Ukrposhta section
+          const ukrposhtaDetails = document.getElementById('ukrposhta-details')
+          if (ukrposhtaDetails) {
+            ukrposhtaDetails.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+
+          return // Prevent submission
+        }
+
+        // Optional: Validate postcode format (5 digits)
+        if (!/^\d{5}$/.test(upPostcode)) {
+          alert('⚠️ Поштовий індекс повинен складатися з 5 цифр')
+          document.getElementById('up-postcode-input').focus()
+          return
+        }
+      }
+
+      btn.textContent = 'Обробка...'
+      btn.disabled = true
+
+      try {
+        // ============================================
+        // STEP 1: Collect Customer Information
+        // ============================================
+        // (Already retrieved above after validation)
+        const telegramViber = telegram
+
+        // ============================================
+        // STEP 2: Collect Delivery Information
+        // ============================================
+        let deliveryInfo = {
+          method: deliveryMethod === 'nova' ? 'Нова Пошта' : 'Укрпошта'
+        }
+
+        if (deliveryMethod === 'nova') {
+          // Nova Poshta delivery details
+          const npCity = document.getElementById('np-city-input').value.trim()
+          const npWarehouseSelect = document.getElementById('np-warehouse-select')
+          const npWarehouse = npWarehouseSelect.options[npWarehouseSelect.selectedIndex]?.text || ''
+
+          deliveryInfo.city = npCity
+          deliveryInfo.warehouse = npWarehouse
+          deliveryInfo.address = `${npCity}, ${npWarehouse}`
+        } else if (deliveryMethod === 'ukr') {
+          // Ukrposhta delivery details
+          const upRegion = document.getElementById('up-region-input').value.trim()
+          const upDistrict = document.getElementById('up-district-input').value.trim()
+          const upCity = document.getElementById('up-city-input').value.trim()
+          const upPostcode = document.getElementById('up-postcode-input').value.trim()
+
+          deliveryInfo.region = upRegion
+          deliveryInfo.district = upDistrict
+          deliveryInfo.city = upCity
+          deliveryInfo.postcode = upPostcode
+          deliveryInfo.address = `${upRegion}, ${upDistrict}, ${upCity}, Індекс: ${upPostcode}`
+        }
+
+        // ============================================
+        // STEP 3: Collect Payment Information
+        // ============================================
+        const selectedPayment = document.querySelector('[data-payment].selected')
+        const paymentMethod = selectedPayment ? selectedPayment.getAttribute('data-payment') : 'online'
+
+        const paymentInfo = {
+          method: paymentMethod === 'online' ? 'online' : 'Накладений платіж',
+          status: paymentMethod === 'online' ? 'pending' : 'new',
+          provider: paymentMethod === 'online' ? 'monobank' : null,
+          createdAt: new Date()
+        }
+
+        // ============================================
+        // STEP 4: Collect Cart Items
+        // ============================================
+        const orderItems = cartItems.map(item => ({
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          subtotal: item.price * item.quantity,
+          image: item.image || '',
+          spiciness: item.spiciness || 0,
+          sku: item.sku || item.id,
+          isGift: item.isGift === true // Mark gift items
+        }))
+
+        // ============================================
+        // STEP 5: Calculate Totals
+        // ============================================
+        const { total, subtotal } = calculateTotals()
+
+        const itemCount = cartItems.length
+        const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0)
+
+        // Calculate original total (before discount) for analytics
+        const originalTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+
+        // ============================================
+        // STEP 6: Collect Additional Info (including Promo Code)
+        // ============================================
+        const comment = document.getElementById('comment')?.value.trim() || ''
+
+        // Promo code info (if applied)
+        const promoCodeData = appliedPromoCode ? {
+          code: appliedPromoCode.code,
+          type: appliedPromoCode.type,
+          value: appliedPromoCode.value,
+          discountAmount: appliedPromoCode.discount
+        } : null
+
+        // ============================================
+        // STEP 7: Construct Order Object
+        // ============================================
+        const orderData = {
+          // Customer Information
+          customer: {
+            fullName: fullName,
+            phone: phone,
+            telegram: telegramViber
+          },
+
+          // Delivery Information
+          delivery: deliveryInfo,
+
+          // Payment Information
+          payment: paymentInfo,
+
+          // Order Items
+          items: orderItems,
+
+          // Order Totals
+          summary: {
+            itemCount: itemCount,
+            totalQuantity: totalQuantity,
+            subtotal: subtotal,
+            originalTotal: originalTotal,  // Price before discount
+            discountAmount: promoDiscount,  // Discount applied
+            total: total  // Final price after discount
+          },
+
+          // Promo Code (if applied)
+          promoCode: promoCodeData,
+
+          // Additional Information
+          comment: comment,
+
+          // Order Metadata
+          status: 'pending', // pending, confirmed, shipped, delivered, cancelled
+          createdAt: serverTimestamp(),
+
+          // Optional: Store promo code if applied
+          promo: promoCodeData
+        }
+
+        // ============================================
+        // STEP 8: Save to Firebase Firestore
+        // ============================================
+        console.log('💾 Saving order to Firestore...', orderData)
+
+        const docRef = await addDoc(collection(db, 'orders'), orderData)
+
+        console.log('✅ Order saved successfully! Document ID:', docRef.id)
+
+        // ============================================
+        // STEP 8.25: Smart Cleanup (Abandoned Carts + Old Pending Orders)
+        // ============================================
+        // Clean up ALL old entries for this customer to prevent duplicates
+        // This runs in the background and won't block the user flow
+        cleanUpOldEntries(phone, docRef.id).catch(err => {
+          console.error('⚠️ Cleanup error (non-blocking):', err)
+        })
+
+        // ============================================
+        // STEP 8.5: Update Promo Code Usage (if applied)
+        // ============================================
+        if (appliedPromoCode && appliedPromoCode.id) {
+          try {
+            const { doc: firestoreDoc, updateDoc, increment } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')
+            const promoRef = firestoreDoc(db, 'promocodes', appliedPromoCode.id)
+            await updateDoc(promoRef, {
+              'stats.usedCount': increment(1)
+            })
+            console.log('✅ Promo code usage updated:', appliedPromoCode.code)
+          } catch (promoError) {
+            console.error('⚠️ Failed to update promo usage (non-critical):', promoError)
+          }
+        }
+
+        // ============================================
+        // ⭐ STEP 9: PAYMENT METHOD ROUTING
+        // ============================================
+
+        if (paymentMethod === 'online') {
+          // ============================================
+          // ONLINE PAYMENT FLOW - CREATE MONOBANK INVOICE
+          // ============================================
+          console.log('💳 Online payment selected - creating Monobank invoice...')
+
+          // CRITICAL: Validate orderId exists
+          if (!docRef || !docRef.id) {
+            throw new Error('Order ID is missing - cannot create payment invoice')
+          }
+
+          console.log('🔍 Order ID:', docRef.id)
+
+          btn.textContent = 'Створення рахунку...'
+
+          try {
+            // Initialize Cloud Function
+            const createMonoInvoice = httpsCallable(functions, 'createMonoInvoice')
+
+            // CRITICAL: Wrap orderId in an object (backend expects data.orderId)
+            const payload = {
+              orderId: docRef.id
+            }
+
+            console.log('📤 Calling Cloud Function with payload:', payload)
+
+            // Call the function with the payload object
+            const result = await createMonoInvoice(payload)
+
+            console.log('📥 Cloud Function response:', result)
+            console.log('✅ Invoice created:', result.data)
+
+            // Validate response structure
+            if (!result.data) {
+              throw new Error('Cloud Function returned no data')
+            }
+
+            if (!result.data.success) {
+              throw new Error(result.data.error || 'Invoice creation failed')
+            }
+
+            if (!result.data.pageUrl) {
+              throw new Error('Payment URL not received from Monobank')
+            }
+
+            // Success - clear cart and redirect
+            localStorage.removeItem('latiao_cart')
+
+            console.log('🔄 Redirecting to Monobank payment page...')
+            window.location.href = result.data.pageUrl
+
+          } catch (paymentError) {
+            console.error('❌ Monobank payment error:', paymentError)
+            console.error('Error code:', paymentError.code)
+            console.error('Error message:', paymentError.message)
+            console.error('Error details:', paymentError.details)
+
+            // User-friendly error message
+            let errorMsg = '⚠️ Помилка створення рахунку для оплати.\n\n'
+            errorMsg += 'Ваше замовлення збережено (№' + docRef.id + '),\n'
+            errorMsg += 'але сталася помилка при створенні платіжного рахунку.\n\n'
+
+            // Add specific error details if available
+            if (paymentError.code === 'functions/invalid-argument') {
+              errorMsg += 'Технічна помилка: Неправильні дані замовлення.\n\n'
+            } else if (paymentError.code === 'functions/not-found') {
+              errorMsg += 'Технічна помилка: Замовлення не знайдено.\n\n'
+            } else if (paymentError.message) {
+              errorMsg += 'Деталі: ' + paymentError.message + '\n\n'
+            }
+
+            errorMsg += 'Будь ласка, зв\'яжіться з нами для оплати:\n'
+            errorMsg += '📞 Телефон: +380...\n'
+            errorMsg += '💬 Telegram: @latiao_snack'
+
+            alert(errorMsg)
+
+            // Don't clear cart - let user try again or contact support
+            btn.textContent = originalText
+            btn.disabled = false
+            return
+          }
+
+        } else {
+          // ============================================
+          // CASH ON DELIVERY - 100 UAH PREPAYMENT
+          // ============================================
+          console.log('💵 COD payment selected - creating 100 UAH deposit invoice...')
+
+          // CRITICAL: Validate orderId exists
+          if (!docRef || !docRef.id) {
+            throw new Error('Order ID is missing - cannot create payment invoice')
+          }
+
+          console.log('🔍 Order ID:', docRef.id)
+
+          btn.textContent = 'Створення рахунку на передоплату...'
+
+          try {
+            // Initialize Cloud Function
+            const createMonoInvoice = httpsCallable(functions, 'createMonoInvoice')
+
+            // CRITICAL: Pass paymentType = 'deposit' for COD orders
+            const payload = {
+              orderId: docRef.id,
+              paymentType: 'deposit' // This triggers 100 UAH invoice
+            }
+
+            console.log('📤 Calling Cloud Function with payload:', payload)
+
+            // Call the function with the payload object
+            const result = await createMonoInvoice(payload)
+
+            console.log('📥 Cloud Function response:', result)
+            console.log('✅ Deposit invoice created:', result.data)
+
+            // Validate response structure
+            if (!result.data) {
+              throw new Error('Cloud Function returned no data')
+            }
+
+            if (!result.data.success) {
+              throw new Error(result.data.error || 'Invoice creation failed')
+            }
+
+            if (!result.data.pageUrl) {
+              throw new Error('Payment URL not received from Monobank')
+            }
+
+            // Success - clear cart and redirect to payment
+            localStorage.removeItem('latiao_cart')
+
+            console.log('🔄 Redirecting to Monobank payment page for 100 UAH deposit...')
+            window.location.href = result.data.pageUrl
+
+          } catch (paymentError) {
+            console.error('❌ Deposit payment error:', paymentError)
+            console.error('Error code:', paymentError.code)
+            console.error('Error message:', paymentError.message)
+            console.error('Error details:', paymentError.details)
+
+            // User-friendly error message
+            let errorMsg = '⚠️ Помилка створення рахунку для передоплати.\n\n'
+            errorMsg += 'Ваше замовлення збережено (№' + docRef.id + '),\n'
+            errorMsg += 'але сталася помилка при створенні платіжного рахунку.\n\n'
+
+            // Add specific error details if available
+            if (paymentError.code === 'functions/invalid-argument') {
+              errorMsg += 'Технічна помилка: Неправильні дані замовлення.\n\n'
+            } else if (paymentError.code === 'functions/not-found') {
+              errorMsg += 'Технічна помилка: Замовлення не знайдено.\n\n'
+            } else if (paymentError.message) {
+              errorMsg += 'Деталі: ' + paymentError.message + '\n\n'
+            }
+
+            errorMsg += 'Будь ласка, зв\'яжіться з нами для оплати:\n'
+            errorMsg += '📞 Телефон: +380...\n'
+            errorMsg += '💬 Telegram: @latiao_snack'
+
+            alert(errorMsg)
+
+            // Don't clear cart - let user try again or contact support
+            btn.textContent = originalText
+            btn.disabled = false
+            return
+          }
+        }
+
+      } catch (error) {
+        // ============================================
+        // STEP 10: Error Handling
+        // ============================================
+        console.error('❌ Error during order submission:', error)
+
+        alert('⚠️ Виникла помилка при оформленні замовлення.\n\nБудь ласка, спробуйте ще раз або зв\'яжіться з нами:\n📞 Телефон\n💬 Telegram/Viber\n\nПомилка: ' + error.message)
+
+        // Restore button state
+        btn.textContent = originalText
+        btn.disabled = false
+      }
+    }
+  </script>
+
+  <!-- Load Pop-up Manager -->
+  <script type="module" src="./js/popup-manager.js"></script>
+</body>
+
+</html>

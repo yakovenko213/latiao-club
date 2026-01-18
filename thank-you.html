@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Дякуємо за замовлення! | LATIAO SNACK</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwindcss.config = {
+      theme: {
+        extend: {
+          colors: {
+            orange: {
+              500: '#ff6b00',
+              600: '#e55f00',
+              100: '#fff3eb'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ff6b00 0%, #ff8533 100%);
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px -5px rgba(255, 107, 0, 0.5);
+    }
+    
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .success-checkmark {
+      animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes scaleIn {
+      from { transform: scale(0); }
+      to { transform: scale(1); }
+    }
+
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: #ff6b00;
+      animation: confettiFall 3s ease-out infinite;
+    }
+
+    @keyframes confettiFall {
+      0% {
+        transform: translateY(-100vh) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+      }
+    }
+
+    .confetti:nth-child(2n) { background: #FFD54F; animation-delay: 0.3s; }
+    .confetti:nth-child(3n) { background: #FF4D4F; animation-delay: 0.6s; }
+    .confetti:nth-child(4n) { background: #ff8533; animation-delay: 0.9s; }
+
+    .timeline-step {
+      position: relative;
+      padding-left: 2.5rem;
+      padding-bottom: 2rem;
+    }
+
+    .timeline-step:last-child {
+      padding-bottom: 0;
+    }
+
+    .timeline-step::before {
+      content: '';
+      position: absolute;
+      left: 0.875rem;
+      top: 2.5rem;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(180deg, #ff6b00 0%, #fde68a 100%);
+    }
+
+    .timeline-step:last-child::before {
+      display: none;
+    }
+
+    .timeline-icon {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
+    }
+
+    .timeline-icon.completed {
+      background: linear-gradient(135deg, #ff6b00 0%, #ff8533 100%);
+      color: white;
+    }
+
+    .timeline-icon.pending {
+      background: white;
+      color: #ff6b00;
+      border: 3px solid #ff6b00;
+    }
+
+    .timeline-icon.future {
+      background: #f3f4f6;
+      color: #9ca3af;
+      border: 2px solid #d1d5db;
+    }
+
+    .pulse-glow {
+      animation: pulseGlow 2s ease-in-out infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% {
+        box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.4);
+      }
+      50% {
+        box-shadow: 0 0 0 15px rgba(255, 107, 0, 0);
+      }
+    }
+
+    .social-card {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .social-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.2);
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .float-animation {
+      animation: float 3s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  
+  <!-- Confetti Container -->
+  <div id="confettiContainer" class="fixed inset-0 pointer-events-none z-0 overflow-hidden"></div>
+
+  <!-- Header -->
+  <header class="bg-white shadow-sm relative z-10">
+    <div class="max-w-6xl mx-auto px-4 py-3 lg:py-4">
+      <div class="flex justify-center items-center">
+        <a href="index.html" class="flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 70" class="h-10 md:h-16 w-auto object-contain" preserveAspectRatio="xMinYMid meet">
+            <defs>
+              <linearGradient id="flameGradient" x1="0%" y1="100%" x2="0%" y2="0%">
+                <stop offset="0%" stop-color="#FF4D4F"/>
+                <stop offset="50%" stop-color="#FF6B4F"/>
+                <stop offset="100%" stop-color="#FFD54F"/>
+              </linearGradient>
+              <linearGradient id="shineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#FF4D4F" stop-opacity="1"/>
+                <stop offset="45%" stop-color="#FF4D4F" stop-opacity="1"/>
+                <stop offset="50%" stop-color="#FFD54F" stop-opacity="1"/>
+                <stop offset="55%" stop-color="#FF4D4F" stop-opacity="1"/>
+                <stop offset="100%" stop-color="#FF4D4F" stop-opacity="1"/>
+                <animate attributeName="x1" values="-100%;100%" dur="2s" repeatCount="indefinite"/>
+                <animate attributeName="x2" values="0%;200%" dur="2s" repeatCount="indefinite"/>
+              </linearGradient>
+            </defs>
+            <g opacity="0">
+              <animate attributeName="opacity" from="0" to="1" dur="0.6s" fill="freeze"/>
+              <g transform="translate(20, 10)">
+                <path d="M25 48C25 48 10 38 10 26C10 18 15 12 20 8C20 8 18 16 22 20C26 24 30 18 30 18C30 18 35 24 35 32C35 38 30 42 30 42C30 42 38 36 38 26C38 16 30 6 25 2C25 2 40 12 40 28C40 40 32 48 25 48Z" fill="url(#flameGradient)">
+                  <animate attributeName="d" values="M25 48C25 48 10 38 10 26C10 18 15 12 20 8C20 8 18 16 22 20C26 24 30 18 30 18C30 18 35 24 35 32C35 38 30 42 30 42C30 42 38 36 38 26C38 16 30 6 25 2C25 2 40 12 40 28C40 40 32 48 25 48Z;M25 48C25 48 8 38 8 26C8 18 14 10 20 6C20 6 16 14 21 19C25 23 31 16 31 16C31 16 37 22 37 31C37 37 31 43 31 43C31 43 40 35 40 25C40 15 31 5 25 1C25 1 42 11 42 27C42 39 33 48 25 48Z;M25 48C25 48 10 38 10 26C10 18 15 12 20 8C20 8 18 16 22 20C26 24 30 18 30 18C30 18 35 24 35 32C35 38 30 42 30 42C30 42 38 36 38 26C38 16 30 6 25 2C25 2 40 12 40 28C40 40 32 48 25 48Z" dur="1.5s" repeatCount="indefinite"/>
+                </path>
+                <path d="M25 46C25 46 16 40 16 32C16 26 20 22 24 20C24 20 22 26 25 28C28 30 30 26 30 26C30 26 34 30 34 36C34 42 28 46 25 46Z" fill="#FFD54F" opacity="0.9">
+                  <animate attributeName="opacity" values="0.9;0.7;0.9" dur="1s" repeatCount="indefinite"/>
+                </path>
+              </g>
+              <text x="70" y="46" font-family="Poppins, Inter, Manrope, Arial, sans-serif" font-size="36" font-weight="700" fill="url(#shineGradient)">Latiao</text>
+              <text x="198" y="46" font-family="Poppins, Inter, Manrope, Arial, sans-serif" font-size="36" font-weight="700" fill="#333333">Snack</text>
+              <circle cx="320" cy="20" r="4" fill="#FF4D4F">
+                <animate attributeName="opacity" values="1;0.5;1" dur="1.2s" repeatCount="indefinite"/>
+              </circle>
+              <circle cx="332" cy="28" r="3" fill="#FFD54F">
+                <animate attributeName="opacity" values="0.7;1;0.7" dur="1s" repeatCount="indefinite" begin="0.3s"/>
+              </circle>
+              <circle cx="340" cy="18" r="2.5" fill="#FF4D4F">
+                <animate attributeName="opacity" values="0.8;0.4;0.8" dur="1.4s" repeatCount="indefinite" begin="0.6s"/>
+              </circle>
+            </g>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="max-w-4xl mx-auto px-4 py-8 lg:py-12 relative z-10">
+    
+    <!-- Hero Success Card -->
+    <div class="bg-white rounded-3xl p-8 lg:p-12 shadow-xl text-center mb-8 fade-in float-animation">
+      <div class="flex justify-center mb-6">
+        <div class="w-24 h-24 lg:w-32 lg:h-32 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center success-checkmark pulse-glow">
+          <i data-lucide="check" class="w-12 h-12 lg:w-16 lg:h-16 text-white stroke-[3]"></i>
+        </div>
+      </div>
+      
+      <h1 class="text-3xl lg:text-5xl font-extrabold text-gray-900 mb-3 lg:mb-4">
+        Замовлення оформлено! 🎉
+      </h1>
+      <p class="text-lg lg:text-xl text-gray-600 mb-6">
+        Дякуємо за довіру! Ваше замовлення вже в обробці.
+      </p>
+      
+      <!-- Order ID Section -->
+      <div id="orderIdSection" class="hidden">
+        <div class="bg-orange-50 border-2 border-orange-200 rounded-2xl p-4 lg:p-6 inline-block">
+          <p class="text-sm text-gray-600 mb-1">Номер замовлення</p>
+          <p id="orderId" class="text-2xl lg:text-3xl font-bold text-orange-600">#12345</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- What's Next Timeline -->
+    <div class="bg-white rounded-3xl p-6 lg:p-10 shadow-lg mb-8 fade-in" style="animation-delay: 0.2s;">
+      <h2 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-8 text-center">
+        Що далі? 🚀
+      </h2>
+      
+      <div class="max-w-2xl mx-auto">
+        <!-- Step 1: Order Placed -->
+        <div class="timeline-step">
+          <div class="timeline-icon completed">
+            <i data-lucide="check" class="w-5 h-5"></i>
+          </div>
+          <div class="pl-2">
+            <h3 class="text-lg lg:text-xl font-bold text-gray-900 mb-2">Замовлення прийнято</h3>
+            <p class="text-gray-600 text-sm lg:text-base">
+              Ваше замовлення успішно оформлено та передано в обробку. Ми отримали всі необхідні дані.
+            </p>
+            <div class="mt-2 inline-flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-medium">
+              <i data-lucide="check-circle" class="w-4 h-4"></i>
+              Виконано
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Manager Confirmation -->
+        <div class="timeline-step">
+          <div class="timeline-icon pending pulse-glow">
+            <i data-lucide="message-circle" class="w-5 h-5"></i>
+          </div>
+          <div class="pl-2">
+            <h3 class="text-lg lg:text-xl font-bold text-gray-900 mb-2">Підтвердження менеджера</h3>
+            <p class="text-gray-600 text-sm lg:text-base mb-2">
+              Наш менеджер зв'яжеться з вами в <strong>Telegram</strong> для підтвердження деталей замовлення.
+            </p>
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 lg:p-4">
+              <div class="flex items-start gap-3">
+                <i data-lucide="info" class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"></i>
+                <div class="text-sm text-blue-800">
+                  <p class="font-semibold mb-1">Очікуйте повідомлення</p>
+                  <p class="text-xs lg:text-sm">Зазвичай ми відповідаємо протягом 1-3 годин в робочий час (9:00-18:00).</p>
+                </div>
+              </div>
+            </div>
+            <div class="mt-2 inline-flex items-center gap-2 bg-orange-50 text-orange-700 px-3 py-1 rounded-full text-xs font-medium">
+              <div class="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+              В обробці
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Shipping -->
+        <div class="timeline-step">
+          <div class="timeline-icon future">
+            <i data-lucide="truck" class="w-5 h-5"></i>
+          </div>
+          <div class="pl-2">
+            <h3 class="text-lg lg:text-xl font-bold text-gray-900 mb-2">Відправка замовлення</h3>
+            <p class="text-gray-600 text-sm lg:text-base">
+              Після підтвердження ми відправимо ваше замовлення через <strong>Нову Пошту</strong> або <strong>Укрпошту</strong>.
+            </p>
+            <p class="text-gray-500 text-xs lg:text-sm mt-2">
+              Ви отримаєте трек-номер для відстеження посилки.
+            </p>
+            <div class="mt-2 inline-flex items-center gap-2 bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-medium">
+              <i data-lucide="clock" class="w-4 h-4"></i>
+              Очікується
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Social Media CTA -->
+    <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-3xl p-6 lg:p-10 mb-8 fade-in" style="animation-delay: 0.4s;">
+      <div class="text-center mb-6">
+        <h2 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
+          Приєднуйтесь до нас! 💬
+        </h2>
+        <p class="text-gray-600 text-sm lg:text-base">
+          Підпишіться на наші соціальні мережі, щоб не пропустити акції та новинки
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+        <!-- Telegram Card -->
+        <a href="https://t.me/latiao_snack" target="_blank" class="social-card bg-white rounded-2xl p-6 flex flex-col items-center text-center shadow-md hover:shadow-xl">
+          <div class="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center mb-4">
+            <i data-lucide="send" class="w-8 h-8 text-white"></i>
+          </div>
+          <h3 class="text-lg font-bold text-gray-900 mb-2">Telegram канал</h3>
+          <p class="text-sm text-gray-600 mb-3">Новинки, акції та ексклюзивні пропозиції</p>
+          <div class="text-blue-600 font-semibold text-sm flex items-center gap-2">
+            Підписатися
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </div>
+        </a>
+
+        <!-- Instagram Card -->
+        <a href="https://instagram.com/latiao_snack" target="_blank" class="social-card bg-white rounded-2xl p-6 flex flex-col items-center text-center shadow-md hover:shadow-xl">
+          <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mb-4">
+            <i data-lucide="instagram" class="w-8 h-8 text-white"></i>
+          </div>
+          <h3 class="text-lg font-bold text-gray-900 mb-2">Instagram</h3>
+          <p class="text-sm text-gray-600 mb-3">Фото продуктів та відгуки покупців</p>
+          <div class="text-purple-600 font-semibold text-sm flex items-center gap-2">
+            Підписатися
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Return to Shop Button -->
+    <div class="text-center fade-in" style="animation-delay: 0.6s;">
+      <a href="index.html" class="btn-primary inline-flex items-center gap-3 px-8 lg:px-12 py-4 lg:py-5 rounded-2xl text-white font-bold text-base lg:text-lg shadow-lg">
+        <i data-lucide="shopping-bag" class="w-6 h-6"></i>
+        Повернутися в магазин
+      </a>
+      <p class="text-gray-500 text-sm mt-4">
+        Або продовжте шопінг — у нас ще багато смачного! 🌶️
+      </p>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-gray-200 mt-12 py-8">
+    <div class="max-w-6xl mx-auto px-4 text-center">
+      <p class="text-gray-600 text-sm lg:text-base mb-2">
+        Дякуємо, що обрали <strong class="text-orange-600">LATIAO SNACK</strong> 🔥
+      </p>
+      <p class="text-gray-500 text-xs lg:text-sm">
+        Якщо у вас виникли питання, пишіть нам в Telegram
+      </p>
+    </div>
+  </footer>
+
+  <!-- Initialize Lucide Icons -->
+  <script>
+    lucide.createIcons();
+  </script>
+
+  <!-- Main JavaScript -->
+  <script>
+    // ============================================
+    // PARSE URL PARAMETERS AND DISPLAY ORDER ID
+    // ============================================
+    function getOrderIdFromURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('orderId');
+    }
+
+    function displayOrderId() {
+      const orderId = getOrderIdFromURL();
+      const orderIdSection = document.getElementById('orderIdSection');
+      const orderIdElement = document.getElementById('orderId');
+
+      if (orderId) {
+        orderIdElement.textContent = `#${orderId}`;
+        orderIdSection.classList.remove('hidden');
+      }
+    }
+
+    // ============================================
+    // CONFETTI ANIMATION
+    // ============================================
+    function createConfetti() {
+      const container = document.getElementById('confettiContainer');
+      const confettiCount = 50;
+
+      for (let i = 0; i < confettiCount; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.animationDelay = Math.random() * 3 + 's';
+        confetti.style.animationDuration = (Math.random() * 2 + 3) + 's';
+        container.appendChild(confetti);
+      }
+
+      // Remove confetti after animation completes
+      setTimeout(() => {
+        container.innerHTML = '';
+      }, 6000);
+    }
+
+    // ============================================
+    // INITIALIZE ON PAGE LOAD
+    // ============================================
+    document.addEventListener('DOMContentLoaded', function() {
+      displayOrderId();
+      createConfetti();
+      lucide.createIcons();
+    });
+  </script>
+
+</body>
+</html>
