@@ -21,7 +21,8 @@ import {
   doc,
   getDoc,
   updateDoc,
-  serverTimestamp
+  serverTimestamp,
+  arrayUnion
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 import { 
   getAuth, 
@@ -261,6 +262,14 @@ document.addEventListener('DOMContentLoaded', () => {
 async function initDashboardAfterAuth() {
   console.log('🚀 Dashboard: Initializing after auth confirmation...');
   
+  // 0. Log user activity (async, non-blocking)
+  const userId = currentUser.id || currentUser.phone?.replace(/\+/g, '');
+  if (userId) {
+    logUserActivity(userId, 'dashboard_view').catch(err => 
+      console.warn('⚠️ Activity log failed:', err)
+    );
+  }
+  
   // 1. Handle Avatar (Self-Healing)
   await handleAvatarSelfHealing();
   
@@ -307,6 +316,53 @@ async function handleAvatarSelfHealing() {
     updateAvatarInFirestore(newAvatarUrl);
   }
 }
+
+// ============================================
+// USER ACTIVITY TRACKING
+// ============================================
+
+/**
+ * Log user activity to Firestore for analytics
+ * @param {string} userId - Customer document ID (phone without +)
+ * @param {string} action - Action type: 'login' | 'dashboard_view'
+ */
+async function logUserActivity(userId, action = 'dashboard_view') {
+  if (!userId) {
+    console.warn('⚠️ logUserActivity: No userId provided');
+    return;
+  }
+  
+  try {
+    const customerRef = doc(db, 'customers', userId);
+    
+    // Detect device type from userAgent
+    const userAgent = navigator.userAgent || '';
+    const isMobile = /Mobile|Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+    
+    // Create activity entry
+    const activityEntry = {
+      timestamp: new Date().toISOString(),
+      userAgent: userAgent.substring(0, 200), // Limit to 200 chars
+      device: isMobile ? 'mobile' : 'desktop',
+      action: action
+    };
+    
+    // Update customer document
+    await updateDoc(customerRef, {
+      lastActiveAt: serverTimestamp(),
+      accessLog: arrayUnion(activityEntry)
+    });
+    
+    console.log(`📊 Activity logged: ${action} for ${userId}`);
+    
+  } catch (error) {
+    // Don't throw - this is non-critical
+    console.warn('⚠️ Failed to log activity:', error.message);
+  }
+}
+
+// Expose globally for login.js
+window.logUserActivity = logUserActivity;
 
 /**
  * Update avatar in Firestore (async, non-blocking)

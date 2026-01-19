@@ -148,6 +148,54 @@ function closeNotFoundModal() {
 // Make closeNotFoundModal globally accessible
 window.closeNotFoundModal = closeNotFoundModal;
 
+// ============================================
+// USER ACTIVITY TRACKING (for login)
+// ============================================
+
+/**
+ * Log user activity from login page
+ * Uses Firebase directly since dashboard.js is not loaded here
+ * @param {string} userId - Customer document ID (phone without +)
+ * @param {string} action - Action type: 'login'
+ */
+async function logUserActivityFromLogin(userId, action = 'login') {
+  if (!userId) {
+    console.warn('⚠️ logUserActivity: No userId provided');
+    return;
+  }
+  
+  try {
+    const firebase = await waitForFirebase();
+    const { db, doc, updateDoc, serverTimestamp, arrayUnion } = firebase;
+    
+    const customerRef = doc(db, 'customers', userId);
+    
+    // Detect device type from userAgent
+    const userAgent = navigator.userAgent || '';
+    const isMobile = /Mobile|Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+    
+    // Create activity entry
+    const activityEntry = {
+      timestamp: new Date().toISOString(),
+      userAgent: userAgent.substring(0, 200), // Limit to 200 chars
+      device: isMobile ? 'mobile' : 'desktop',
+      action: action
+    };
+    
+    // Update customer document
+    await updateDoc(customerRef, {
+      lastActiveAt: serverTimestamp(),
+      accessLog: arrayUnion(activityEntry)
+    });
+    
+    console.log(`📊 Activity logged: ${action} for ${userId}`);
+    
+  } catch (error) {
+    // Don't throw - this is non-critical
+    console.warn('⚠️ Failed to log activity:', error.message);
+  }
+}
+
 /**
  * Start countdown timer
  */
@@ -591,6 +639,10 @@ async function handleVerifyCode() {
     localStorage.setItem('userPhone', fullPhoneNumber);
     
     showToast('Ви успішно увійшли! 🎉', 'success');
+    
+    // Log user activity (async, non-blocking)
+    const userId = fullPhoneNumber.replace(/\+/g, '');
+    logUserActivityFromLogin(userId, 'login');
     
     // Clear the generated code for security
     generatedCode = null;

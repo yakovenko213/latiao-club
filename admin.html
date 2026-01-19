@@ -2550,7 +2550,7 @@
         </div>
         
         <!-- Order History Section -->
-        <div class="p-6">
+        <div class="p-6 border-b">
           <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">📦 Історія замовлень</h4>
           
           <div id="customer-modal-orders-list" class="space-y-3">
@@ -2558,6 +2558,19 @@
             <div class="text-center py-8 text-gray-400">
               <i data-lucide="loader" class="w-8 h-8 mx-auto animate-spin"></i>
               <p class="mt-2">Завантаження замовлень...</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Activity History Section -->
+        <div class="p-6">
+          <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">📊 Історія активності</h4>
+          
+          <div id="customer-modal-activity-list" class="space-y-2 max-h-60 overflow-y-auto">
+            <!-- Activity log will be injected here -->
+            <div class="text-center py-6 text-gray-400">
+              <i data-lucide="activity" class="w-6 h-6 mx-auto opacity-50"></i>
+              <p class="mt-2 text-sm">Історія відсутня</p>
             </div>
           </div>
         </div>
@@ -4738,6 +4751,11 @@
         }
         
         const customer = customerSnap.data()
+        
+        // DEBUG: Log customer data to verify accessLog exists
+        console.log('🔍 Customer Data for Modal:', customer)
+        console.log('📊 accessLog:', customer.accessLog)
+        
         const phone = customer.phone || customerId
         const fullName = customer.fullName || 'Невідомий клієнт'
         const email = customer.email || ''
@@ -4777,6 +4795,9 @@
         document.getElementById('customer-modal-orders').textContent = ordersCount
         document.getElementById('customer-modal-ltv').textContent = totalSpent.toLocaleString('uk-UA') + ' ₴'
         document.getElementById('customer-modal-avg').textContent = avgOrder.toLocaleString('uk-UA') + ' ₴'
+        
+        // Render activity log
+        renderActivityLog(customer.accessLog || [])
         
         // Fetch customer orders
         await loadCustomerOrders(phone)
@@ -4895,6 +4916,120 @@
         `
         lucide.createIcons()
       }
+    }
+    
+    // ============================================
+    // RENDER ACTIVITY LOG
+    // ============================================
+    
+    // Parse userAgent to extract browser and OS info
+    function parseUserAgent(ua) {
+      if (!ua) return { browser: 'Невідомий', os: 'Невідома' }
+      
+      // Detect browser
+      let browser = 'Браузер'
+      if (ua.includes('Firefox/')) {
+        browser = 'Firefox'
+      } else if (ua.includes('Edg/')) {
+        browser = 'Edge'
+      } else if (ua.includes('OPR/') || ua.includes('Opera')) {
+        browser = 'Opera'
+      } else if (ua.includes('Chrome/') && !ua.includes('Edg/')) {
+        browser = 'Chrome'
+      } else if (ua.includes('Safari/') && !ua.includes('Chrome')) {
+        browser = 'Safari'
+      } else if (ua.includes('MSIE') || ua.includes('Trident/')) {
+        browser = 'IE'
+      }
+      
+      // Detect OS
+      let os = 'ОС'
+      if (ua.includes('iPhone') || ua.includes('iPad')) {
+        os = 'iOS'
+      } else if (ua.includes('Android')) {
+        os = 'Android'
+      } else if (ua.includes('Windows')) {
+        os = 'Windows'
+      } else if (ua.includes('Mac OS')) {
+        os = 'macOS'
+      } else if (ua.includes('Linux')) {
+        os = 'Linux'
+      }
+      
+      return { browser, os }
+    }
+    
+    function renderActivityLog(accessLog) {
+      const container = document.getElementById('customer-modal-activity-list')
+      if (!container) return
+      
+      if (!accessLog || accessLog.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-6 text-gray-400">
+            <i data-lucide="activity" class="w-6 h-6 mx-auto opacity-50"></i>
+            <p class="mt-2 text-sm">Історія відсутня</p>
+          </div>
+        `
+        lucide.createIcons()
+        return
+      }
+      
+      // Sort by timestamp descending (newest first) and limit to 10
+      const sortedLog = [...accessLog]
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .slice(0, 10)
+      
+      let html = ''
+      
+      sortedLog.forEach(entry => {
+        // Format date
+        const date = new Date(entry.timestamp)
+        const dateStr = date.toLocaleDateString('uk-UA', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+        
+        // Device icon
+        const deviceIcon = entry.device === 'mobile' ? '📱' : '💻'
+        const deviceLabel = entry.device === 'mobile' ? 'Мобільний' : 'Десктоп'
+        
+        // Parse userAgent
+        const { browser, os } = parseUserAgent(entry.userAgent)
+        
+        // Action label
+        const actionConfig = {
+          'login': { label: 'Авторизація', color: 'bg-green-100 text-green-700' },
+          'dashboard_view': { label: 'Перегляд кабінету', color: 'bg-blue-100 text-blue-700' }
+        }
+        const actionInfo = actionConfig[entry.action] || { label: entry.action, color: 'bg-gray-100 text-gray-700' }
+        
+        html += `
+          <div class="flex items-center gap-3 px-3 py-2 bg-gray-50 rounded-lg border border-gray-100 text-sm">
+            <span class="text-lg" title="${deviceLabel}">${deviceIcon}</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="px-2 py-0.5 rounded text-xs font-medium ${actionInfo.color}">${actionInfo.label}</span>
+                <span class="text-xs text-gray-500">${browser} / ${os}</span>
+              </div>
+            </div>
+            <span class="text-gray-500 text-xs whitespace-nowrap">${dateStr}</span>
+          </div>
+        `
+      })
+      
+      // Add counter if there are more entries
+      if (accessLog.length > 10) {
+        html += `
+          <div class="text-center py-2 text-xs text-gray-400">
+            Показано 10 з ${accessLog.length} записів
+          </div>
+        `
+      }
+      
+      container.innerHTML = html
     }
     
     // Close customer modal
