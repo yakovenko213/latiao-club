@@ -2007,6 +2007,72 @@ if (typeof lucide !== 'undefined') {
 }
 
 // ============================================
+// CART BADGE SYNC (uses layout.js cart)
+// ============================================
+
+const CART_KEY = 'latiao_cart';
+
+/**
+ * Update cart badge in header (rendered by layout.js)
+ * This ensures badge shows correct count after dashboard.js loads
+ */
+function updateAllCartBadges() {
+  const cartData = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+  const totalItems = cartData.reduce((sum, item) => sum + (item.quantity || 1), 0);
+  
+  // Update header badge (from layout.js)
+  const headerBadge = document.getElementById('cart-badge');
+  if (headerBadge) {
+    headerBadge.textContent = totalItems;
+    if (totalItems === 0) {
+      headerBadge.classList.add('hidden');
+    } else {
+      headerBadge.classList.remove('hidden');
+    }
+  }
+  
+  console.log('🛒 Cart badge updated:', totalItems, 'items');
+}
+
+/**
+ * Initialize cart badge sync
+ */
+function initCartBadgeSync() {
+  // Initial update
+  updateAllCartBadges();
+  
+  // Retry after layout.js renders
+  setTimeout(updateAllCartBadges, 100);
+  setTimeout(updateAllCartBadges, 500);
+  setTimeout(updateAllCartBadges, 1000);
+  
+  // Listen for cart updates
+  window.addEventListener('storage', (e) => {
+    if (e.key === CART_KEY) {
+      updateAllCartBadges();
+    }
+  });
+  
+  window.addEventListener('cartUpdated', updateAllCartBadges);
+  
+  // MutationObserver for header badge
+  const observer = new MutationObserver(() => {
+    if (document.getElementById('cart-badge')) {
+      updateAllCartBadges();
+      observer.disconnect();
+    }
+  });
+  
+  if (!document.getElementById('cart-badge')) {
+    observer.observe(document.body, { childList: true, subtree: true });
+    setTimeout(() => observer.disconnect(), 5000);
+  }
+}
+
+// Initialize on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', initCartBadgeSync);
+
+// ============================================
 // EXPORTS (for global access)
 // ============================================
 window.openOrderModal = openOrderModal;
@@ -2015,3 +2081,4 @@ window.switchTab = switchTab;
 window.copyCode = copyCode;
 window.handleLogout = handleLogout;
 window.loadPersonalPromoCodes = loadPersonalPromoCodes;
+window.updateAllCartBadges = updateAllCartBadges;

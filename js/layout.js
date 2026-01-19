@@ -819,11 +819,18 @@ window.removeItemByIndex = function(cartIndex) {
 window.openCart = function() {
   const sidebar = document.getElementById('cart-sidebar');
   const overlay = document.getElementById('cart-overlay');
+  const supportWidget = document.getElementById('support-widget');
   
   if (sidebar && overlay) {
     sidebar.classList.remove('translate-x-full');
     overlay.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
+    
+    // Hide support widget with smooth transition
+    if (supportWidget) {
+      supportWidget.classList.add('opacity-0', 'pointer-events-none', 'scale-90');
+      setTimeout(() => supportWidget.classList.add('hidden'), 200);
+    }
   }
 };
 
@@ -831,11 +838,20 @@ window.openCart = function() {
 window.closeCart = function() {
   const sidebar = document.getElementById('cart-sidebar');
   const overlay = document.getElementById('cart-overlay');
+  const supportWidget = document.getElementById('support-widget');
   
   if (sidebar && overlay) {
     sidebar.classList.add('translate-x-full');
     overlay.classList.add('hidden');
     document.body.style.overflow = '';
+    
+    // Show support widget with smooth transition
+    if (supportWidget) {
+      supportWidget.classList.remove('hidden');
+      setTimeout(() => {
+        supportWidget.classList.remove('opacity-0', 'pointer-events-none', 'scale-90');
+      }, 10);
+    }
   }
 };
 
