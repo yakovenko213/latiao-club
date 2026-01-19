@@ -115,6 +115,40 @@ function showToast(message, type = 'error') {
 }
 
 /**
+ * Show "Not Found" modal for users without orders
+ */
+function showNotFoundModal() {
+  const modal = document.getElementById('notFoundModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex'); // Add flex for centering
+    document.body.style.overflow = 'hidden';
+    console.log('💬 Not Found modal shown');
+  } else {
+    console.error('❌ notFoundModal element not found!');
+    // Fallback: show alert if modal not found
+    alert('Номер не знайдено. Зробіть перше замовлення на головній сторінці.');
+    window.location.href = './index.html';
+  }
+}
+
+/**
+ * Close "Not Found" modal
+ */
+function closeNotFoundModal() {
+  const modal = document.getElementById('notFoundModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex'); // Remove flex when hiding
+    document.body.style.overflow = '';
+    console.log('💬 Not Found modal closed');
+  }
+}
+
+// Make closeNotFoundModal globally accessible
+window.closeNotFoundModal = closeNotFoundModal;
+
+/**
  * Start countdown timer
  */
 function startTimer(seconds = 60) {
@@ -253,65 +287,69 @@ async function handleSendCode() {
         </div>
       `;
       
-      const ordersRef = collection(db, 'orders');
-      let orderFound = null;
-      let allUserOrders = [];
-      
-      // Search orders by customer.phone (main format)
-      const ordersQuery = query(
-        ordersRef, 
-        where('customer.phone', '==', fullPhoneNumber),
-        orderBy('createdAt', 'desc'),
-        limit(50)
-      );
-      const ordersSnapshot = await getDocs(ordersQuery);
-      
-      if (!ordersSnapshot.empty) {
-        orderFound = ordersSnapshot.docs[0];
-        allUserOrders = ordersSnapshot.docs;
-      }
-      
-      // Try alternative phone formats in orders
-      if (!orderFound) {
-        const altPhone = fullPhoneNumber.replace('+38', '');
-        const altOrdersQuery = query(
-          ordersRef,
-          where('customer.phone', '==', altPhone),
+      // Wrap orders search in try-catch to handle permission errors
+      try {
+        const ordersRef = collection(db, 'orders');
+        let orderFound = null;
+        let allUserOrders = [];
+        
+        // Search orders by customer.phone (main format)
+        const ordersQuery = query(
+          ordersRef, 
+          where('customer.phone', '==', fullPhoneNumber),
           orderBy('createdAt', 'desc'),
           limit(50)
         );
-        const altOrdersSnapshot = await getDocs(altOrdersQuery);
+        const ordersSnapshot = await getDocs(ordersQuery);
         
-        if (!altOrdersSnapshot.empty) {
-          orderFound = altOrdersSnapshot.docs[0];
-          allUserOrders = altOrdersSnapshot.docs;
+        if (!ordersSnapshot.empty) {
+          orderFound = ordersSnapshot.docs[0];
+          allUserOrders = ordersSnapshot.docs;
         }
-      }
-      
-      // Try with 0 prefix
-      if (!orderFound) {
-        const zeroPhone = '0' + fullPhoneNumber.replace('+380', '');
-        const zeroOrdersQuery = query(
-          ordersRef,
-          where('customer.phone', '==', zeroPhone),
-          orderBy('createdAt', 'desc'),
-          limit(50)
-        );
-        const zeroOrdersSnapshot = await getDocs(zeroOrdersQuery);
         
-        if (!zeroOrdersSnapshot.empty) {
-          orderFound = zeroOrdersSnapshot.docs[0];
-          allUserOrders = zeroOrdersSnapshot.docs;
+        // Try alternative phone formats in orders
+        if (!orderFound) {
+          const altPhone = fullPhoneNumber.replace('+38', '');
+          const altOrdersQuery = query(
+            ordersRef,
+            where('customer.phone', '==', altPhone),
+            orderBy('createdAt', 'desc'),
+            limit(50)
+          );
+          const altOrdersSnapshot = await getDocs(altOrdersQuery);
+          
+          if (!altOrdersSnapshot.empty) {
+            orderFound = altOrdersSnapshot.docs[0];
+            allUserOrders = altOrdersSnapshot.docs;
+          }
         }
-      }
-      
-      if (!orderFound) {
-        // NO orders found - user truly doesn't exist
-        showToast('Номер не знайдено. Зробіть перше замовлення.');
-        getCodeBtn.innerHTML = originalText;
-        getCodeBtn.disabled = false;
-        return;
-      }
+        
+        // Try with 0 prefix
+        if (!orderFound) {
+          const zeroPhone = '0' + fullPhoneNumber.replace('+380', '');
+          const zeroOrdersQuery = query(
+            ordersRef,
+            where('customer.phone', '==', zeroPhone),
+            orderBy('createdAt', 'desc'),
+            limit(50)
+          );
+          const zeroOrdersSnapshot = await getDocs(zeroOrdersQuery);
+          
+          if (!zeroOrdersSnapshot.empty) {
+            orderFound = zeroOrdersSnapshot.docs[0];
+            allUserOrders = zeroOrdersSnapshot.docs;
+          }
+        }
+        
+        if (!orderFound) {
+          // NO orders found - user truly doesn't exist
+          // Show friendly "Not Found" modal instead of error
+          console.log('❌ User not found - showing first order modal');
+          showNotFoundModal();
+          getCodeBtn.innerHTML = originalText;
+          getCodeBtn.disabled = false;
+          return;
+        }
       
       // ========================================
       // AUTO-CREATE CUSTOMER PROFILE
@@ -360,6 +398,26 @@ async function handleSendCode() {
       customerFound = true;
       
       showToast('Профіль відновлено! 🔄', 'success');
+      
+      } catch (ordersSearchError) {
+        // Handle permission errors gracefully - treat as "new user"
+        const errorMessage = ordersSearchError.message || '';
+        const errorCode = ordersSearchError.code || '';
+        
+        if (errorCode === 'permission-denied' || 
+            errorMessage.includes('Missing or insufficient permissions') ||
+            errorMessage.includes('permission-denied')) {
+          console.log('🔐 Permission denied on orders search - Assuming new user, showing Modal.');
+          showNotFoundModal();
+          getCodeBtn.innerHTML = originalText;
+          getCodeBtn.disabled = false;
+          return;
+        }
+        
+        // For other errors, re-throw to be handled by main catch
+        console.error('❌ Orders search error:', ordersSearchError);
+        throw ordersSearchError;
+      }
     }
     
     console.log('✅ Customer found:', customerData.id);

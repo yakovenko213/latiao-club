@@ -13,9 +13,9 @@
       theme: {
         extend: {
           colors: {
-            spicy: '#ff6b00',
-            'spicy-light': '#fff4ed',
-            'spicy-dark': '#e55d00',
+            spicy: '#dc2626',
+            'spicy-light': '#fef2f2',
+            'spicy-dark': '#b91c1c',
           },
           fontFamily: {
             sans: ['Inter', 'sans-serif'],
@@ -33,13 +33,8 @@
     }
     
     @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
+      from { opacity: 0; transform: translateY(30px); }
       to { opacity: 1; transform: translateY(0); }
-    }
-    
-    @keyframes pulse-soft {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.02); }
     }
     
     @keyframes shake {
@@ -48,19 +43,17 @@
       40%, 80% { transform: translateX(5px); }
     }
     
-    @keyframes bounce-in {
-      0% { transform: scale(0.8); opacity: 0; }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); opacity: 1; }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+      50% { box-shadow: 0 0 20px 5px rgba(220, 38, 38, 0.2); }
     }
     
-    .fade-in { animation: fadeIn 0.5s ease-out forwards; }
-    .slide-up { animation: slideUp 0.6s ease-out forwards; }
-    .pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
+    .fade-in { animation: fadeIn 0.6s ease-out forwards; }
+    .slide-up { animation: slideUp 0.7s ease-out forwards; }
     .shake { animation: shake 0.4s ease-in-out; }
-    .bounce-in { animation: bounce-in 0.5s ease-out forwards; }
+    .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
     
-    .btn-press:active { transform: scale(0.96); }
+    .btn-press:active { transform: scale(0.97); }
     
     .step-hidden { display: none; }
     .step-visible { display: block; }
@@ -82,201 +75,271 @@
     }
     input[type=number] { -moz-appearance: textfield; }
     
-    /* Background Animation */
-    #bg-animation {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      overflow: hidden;
-      pointer-events: none;
+    /* Subtle grid pattern */
+    .bg-grid {
+      background-image: 
+        linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px);
+      background-size: 40px 40px;
     }
     
-    .floating-emoji {
-      position: absolute;
-      user-select: none;
-      pointer-events: none;
-    }
-    
-    @keyframes floatUp {
-      0% {
-        transform: translateY(0) translateX(0) rotate(0deg);
-        opacity: 0;
-      }
-      10% {
-        opacity: 1;
-      }
-      90% {
-        opacity: 1;
-      }
-      100% {
-        transform: translateY(-120vh) translateX(50px) rotate(360deg);
-        opacity: 0;
-      }
+    /* Focus ring animation */
+    .focus-ring-animated:focus {
+      animation: pulse-glow 1.5s ease-in-out infinite;
     }
   </style>
 </head>
-<body class="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex flex-col">
-  
-  <!-- Back to Home Button -->
-  <a href="index.html" class="fixed top-6 left-6 z-50 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-sm flex items-center justify-center text-gray-500 hover:text-[#ff6b00] hover:shadow-md transition-all duration-300 group" title="Повернутися на головну">
-    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 transition-transform duration-300 group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-    </svg>
-  </a>
-  
-  <!-- Animated Background -->
-  <div id="bg-animation"></div>
+<body class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50/30 bg-grid flex flex-col">
   
   <!-- Toast Notification -->
   <div id="toast" class="toast bg-green-500 text-white px-6 py-3 rounded-2xl shadow-lg font-semibold flex items-center gap-2">
     <span id="toast-message">Успішний вхід 🎉</span>
   </div>
 
-  <!-- Header -->
-  <header class="w-full py-6 px-4 fade-in relative z-10">
-    <div class="max-w-md mx-auto text-center">
-      <div class="flex items-center justify-center gap-2 mb-2">
-        <span class="text-3xl">🌶️</span>
-        <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">LATIAO SNACK</h1>
-        <span class="text-3xl">🌶️</span>
-      </div>
-      <p class="text-gray-500 text-sm">Швидкий доступ до особистого кабінету</p>
-    </div>
-  </header>
-
-  <!-- Main Content -->
-  <main class="flex-1 flex items-center justify-center px-4 py-8 relative z-10">
+  <!-- Main Content - Centered -->
+  <main class="flex-1 flex items-center justify-center px-4 py-8 md:py-12">
     <div class="w-full max-w-md">
       
-      <!-- Main Card -->
-      <div class="bg-white rounded-3xl shadow-xl shadow-gray-200/50 p-6 md:p-8 slide-up" style="animation-delay: 0.1s;">
+      <!-- ===== MAIN CARD ===== -->
+      <div class="bg-white rounded-3xl shadow-2xl shadow-gray-200/60 overflow-hidden slide-up">
         
-        <!-- ========================================== -->
-        <!-- STATE A: Phone Input -->
-        <!-- ========================================== -->
-        <div id="step1" class="step-visible">
-          <div class="text-center mb-6">
-            <div class="w-16 h-16 mx-auto mb-4 bg-spicy-light rounded-2xl flex items-center justify-center">
-              <span class="text-3xl">📱</span>
-            </div>
-            <h2 class="text-xl md:text-2xl font-bold text-gray-900 mb-2">Вхід в кабінет</h2>
-            <p class="text-gray-500 text-sm">Введіть номер телефону, щоб отримати код доступу</p>
-          </div>
+        <!-- Header with Logo -->
+        <div class="bg-gradient-to-r from-red-600 to-red-500 px-6 py-8 text-center relative overflow-hidden">
+          <!-- Decorative circles -->
+          <div class="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full"></div>
+          <div class="absolute -bottom-8 -left-8 w-24 h-24 bg-white/5 rounded-full"></div>
           
-          <div class="space-y-4">
-            <!-- Phone Input -->
-            <div class="flex gap-2">
-              <div class="flex items-center justify-center bg-gray-100 rounded-xl px-4 py-3 text-gray-700 font-medium border border-gray-200">
-                <span class="mr-1">🇺🇦</span> +380
+          <!-- Logo -->
+          <div class="relative z-10">
+            <div class="inline-flex items-center justify-center gap-2 mb-3">
+              <span class="text-4xl">🌶️</span>
+              <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">LATIAO SNACK</h1>
+              <span class="text-4xl">🌶️</span>
+            </div>
+            <p class="text-red-100 text-sm font-medium">Особистий кабінет клієнта</p>
+          </div>
+        </div>
+        
+        <!-- Form Section -->
+        <div class="p-6 md:p-8">
+          
+          <!-- ========================================== -->
+          <!-- STATE A: Phone Input -->
+          <!-- ========================================== -->
+          <div id="step1" class="step-visible">
+            <div class="text-center mb-8">
+              <h2 class="text-2xl font-bold text-gray-900 mb-2">Вхід у особистий кабінет</h2>
+              <p class="text-gray-500 text-sm">Тільки для клієнтів, які вже зробили замовлення</p>
+            </div>
+            
+            <div class="space-y-5">
+              <!-- Phone Input -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Номер телефону</label>
+                <div class="flex gap-2">
+                  <div class="flex items-center justify-center bg-gray-100 rounded-xl px-4 py-4 text-gray-700 font-semibold border-2 border-gray-200">
+                    <span class="mr-1.5 text-lg">🇺🇦</span> +380
+                  </div>
+                  <input 
+                    type="tel" 
+                    id="phoneInput" 
+                    placeholder="XX XXX XX XX" 
+                    maxlength="12"
+                    autocomplete="tel"
+                    class="flex-1 bg-gray-50 rounded-xl px-5 py-4 text-gray-900 text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all placeholder:text-gray-400 border-2 border-gray-200 focus:border-red-500 focus-ring-animated"
+                  >
+                </div>
               </div>
-              <input 
-                type="tel" 
-                id="phoneInput" 
-                placeholder="XX XXX XX XX" 
-                maxlength="12"
-                autocomplete="tel"
-                class="flex-1 bg-gray-100 rounded-xl px-4 py-3 text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-spicy focus:bg-white transition-all placeholder:text-gray-400 border border-transparent focus:border-spicy"
+              
+              <!-- Get Code Button -->
+              <button 
+                id="getCodeBtn" 
+                disabled
+                class="w-full bg-gray-300 text-white font-bold text-lg py-4 rounded-xl transition-all duration-300 btn-press disabled:cursor-not-allowed disabled:opacity-60 shadow-lg"
               >
+                Отримати код
+              </button>
+              
+              <!-- SMS Info -->
+              <p class="text-center text-gray-400 text-sm flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                </svg>
+                Код прийде у SMS-повідомленні
+              </p>
+            </div>
+          </div>
+          
+          <!-- ========================================== -->
+          <!-- STATE B: OTP Verification -->
+          <!-- ========================================== -->
+          <div id="step2" class="step-hidden">
+            <div class="text-center mb-6 relative">
+              <!-- Back Button -->
+              <button id="backBtn" class="absolute left-0 top-0 w-10 h-10 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              
+              <div class="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-2xl flex items-center justify-center">
+                <span class="text-3xl">🔐</span>
+              </div>
+              <h2 class="text-xl md:text-2xl font-bold text-gray-900 mb-2">Підтвердження</h2>
+              <p class="text-gray-500 text-sm">Введіть 4-значний код з SMS</p>
+              <p id="phoneDisplay" class="text-red-600 font-semibold text-sm mt-1"></p>
             </div>
             
-            <!-- Get Code Button -->
+            <!-- OTP Inputs -->
+            <div class="flex justify-center gap-3 mb-6">
+              <input type="number" maxlength="1" class="otp-input w-14 h-14 md:w-16 md:h-16 bg-gray-100 rounded-xl text-center text-2xl font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all border-2 border-gray-200 focus:border-red-500" data-index="0">
+              <input type="number" maxlength="1" class="otp-input w-14 h-14 md:w-16 md:h-16 bg-gray-100 rounded-xl text-center text-2xl font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all border-2 border-gray-200 focus:border-red-500" data-index="1">
+              <input type="number" maxlength="1" class="otp-input w-14 h-14 md:w-16 md:h-16 bg-gray-100 rounded-xl text-center text-2xl font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all border-2 border-gray-200 focus:border-red-500" data-index="2">
+              <input type="number" maxlength="1" class="otp-input w-14 h-14 md:w-16 md:h-16 bg-gray-100 rounded-xl text-center text-2xl font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all border-2 border-gray-200 focus:border-red-500" data-index="3">
+            </div>
+            
+            <!-- Timer -->
+            <div class="text-center mb-6">
+              <div class="inline-flex items-center gap-2 text-red-600 font-semibold bg-red-50 px-5 py-2.5 rounded-full">
+                <span>⏳</span>
+                <span id="timer">01:00</span>
+              </div>
+            </div>
+            
+            <!-- Login Button -->
             <button 
-              id="getCodeBtn" 
+              id="loginBtn" 
               disabled
-              class="w-full bg-gray-300 text-white font-semibold py-4 rounded-xl transition-all duration-300 btn-press disabled:cursor-not-allowed disabled:opacity-70"
+              class="w-full bg-gray-300 text-white font-bold text-lg py-4 rounded-xl transition-all duration-300 btn-press disabled:cursor-not-allowed disabled:opacity-60 shadow-lg"
             >
-              Отримати код
+              Увійти
             </button>
             
-            <!-- Info text -->
-            <p class="text-center text-gray-400 text-xs">
-              Код прийде у SMS-повідомленні
-            </p>
-          </div>
-        </div>
-        
-        <!-- ========================================== -->
-        <!-- STATE B: OTP Verification -->
-        <!-- ========================================== -->
-        <div id="step2" class="step-hidden">
-          <div class="text-center mb-6 relative">
-            <!-- Back Button -->
-            <button id="backBtn" class="absolute left-0 top-0 w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-              </svg>
+            <!-- Resend Button -->
+            <button id="resendBtn" class="w-full mt-3 text-gray-400 text-sm hover:text-red-600 transition-colors hidden py-2 font-medium">
+              🔄 Надіслати код повторно
             </button>
-            
-            <div class="w-16 h-16 mx-auto mb-4 bg-spicy-light rounded-2xl flex items-center justify-center">
-              <span class="text-3xl">🔐</span>
-            </div>
-            <h2 class="text-xl md:text-2xl font-bold text-gray-900 mb-2">Підтвердження</h2>
-            <p class="text-gray-500 text-sm">Введіть 4-значний код з SMS</p>
-            <p id="phoneDisplay" class="text-spicy font-semibold text-sm mt-1"></p>
           </div>
           
-          <!-- OTP Inputs -->
-          <div class="flex justify-center gap-3 mb-6">
-            <input type="number" maxlength="1" class="otp-input w-14 h-14 md:w-16 md:h-16 bg-gray-100 rounded-xl text-center text-2xl font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-spicy focus:bg-white transition-all border border-transparent focus:border-spicy" data-index="0">
-            <input type="number" maxlength="1" class="otp-input w-14 h-14 md:w-16 md:h-16 bg-gray-100 rounded-xl text-center text-2xl font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-spicy focus:bg-white transition-all border border-transparent focus:border-spicy" data-index="1">
-            <input type="number" maxlength="1" class="otp-input w-14 h-14 md:w-16 md:h-16 bg-gray-100 rounded-xl text-center text-2xl font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-spicy focus:bg-white transition-all border border-transparent focus:border-spicy" data-index="2">
-            <input type="number" maxlength="1" class="otp-input w-14 h-14 md:w-16 md:h-16 bg-gray-100 rounded-xl text-center text-2xl font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-spicy focus:bg-white transition-all border border-transparent focus:border-spicy" data-index="3">
-          </div>
-          
-          <!-- Timer -->
-          <div class="text-center mb-6">
-            <div class="inline-flex items-center gap-2 text-spicy font-medium bg-spicy-light px-4 py-2 rounded-full">
-              <span>⏳</span>
-              <span id="timer">01:00</span>
-            </div>
-          </div>
-          
-          <!-- Login Button -->
-          <button 
-            id="loginBtn" 
-            disabled
-            class="w-full bg-gray-300 text-white font-semibold py-4 rounded-xl transition-all duration-300 btn-press disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            Увійти
-          </button>
-          
-          <!-- Resend Button -->
-          <button id="resendBtn" class="w-full mt-3 text-gray-400 text-sm hover:text-spicy transition-colors hidden py-2">
-            🔄 Надіслати код повторно
-          </button>
-        </div>
-        
-      </div>
-      
-      <!-- Trust & Marketing Block -->
-      <div class="mt-6 bg-white rounded-2xl p-5 shadow-lg shadow-gray-100/50 slide-up" style="animation-delay: 0.3s;">
-        <div class="grid grid-cols-1 gap-3">
-          <div class="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors">
-            <span class="text-xl w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">✅</span>
-            <span class="text-gray-700 text-sm">Ми не просимо електронну пошту</span>
-          </div>
-          <div class="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors">
-            <span class="text-xl w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">🔒</span>
-            <span class="text-gray-700 text-sm">Ваш номер телефону захищено</span>
-          </div>
-          <div class="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors">
-            <span class="text-xl w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">⚡</span>
-            <span class="text-gray-700 text-sm">Швидкий доступ без паролів</span>
-          </div>
-          <div class="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors">
-            <span class="text-xl w-8 h-8 bg-pink-100 rounded-lg flex items-center justify-center">🎁</span>
-            <span class="text-gray-700 text-sm">Бонуси та історія замовлень</span>
-          </div>
         </div>
       </div>
       
-      <!-- Footer -->
-      <p class="text-center text-gray-400 text-xs mt-6 px-4 slide-up" style="animation-delay: 0.5s;">
-        Натискаючи кнопку, ви погоджуєтесь з <a href="#" class="text-spicy hover:underline">умовами користування</a>
-      </p>
+      <!-- ===== BENEFITS SECTION ===== -->
+      <div class="mt-6 bg-white rounded-2xl p-6 shadow-xl shadow-gray-100/50 slide-up" style="animation-delay: 0.2s;">
+        <h3 class="text-lg font-bold text-gray-900 mb-4 text-center">Що дає кабінет?</h3>
+        
+        <div class="space-y-4">
+          <!-- Benefit 1 -->
+          <div class="flex items-start gap-4 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-transparent hover:from-blue-100 transition-colors">
+            <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <span class="text-2xl">🚀</span>
+            </div>
+            <div>
+              <h4 class="font-bold text-gray-900">Швидке оформлення</h4>
+              <p class="text-gray-500 text-sm">Не треба вводити дані доставки щоразу</p>
+            </div>
+          </div>
+          
+          <!-- Benefit 2 -->
+          <div class="flex items-start gap-4 p-3 rounded-xl bg-gradient-to-r from-green-50 to-transparent hover:from-green-100 transition-colors">
+            <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <span class="text-2xl">📦</span>
+            </div>
+            <div>
+              <h4 class="font-bold text-gray-900">Історія замовлень</h4>
+              <p class="text-gray-500 text-sm">Дивись, де твоя посилка, в реальному часі</p>
+            </div>
+          </div>
+          
+          <!-- Benefit 3 -->
+          <div class="flex items-start gap-4 p-3 rounded-xl bg-gradient-to-r from-red-50 to-transparent hover:from-red-100 transition-colors">
+            <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <span class="text-2xl">🔥</span>
+            </div>
+            <div>
+              <h4 class="font-bold text-gray-900">Персональні бонуси</h4>
+              <p class="text-gray-500 text-sm">Доступ до закритих знижок та промокодів</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Footer Note -->
+        <div class="mt-5 pt-4 border-t border-gray-100 text-center">
+          <p class="text-gray-500 text-sm">
+            <span class="text-lg mr-1">💡</span>
+            Немає кабінету? 
+            <a href="./index.html" class="text-red-600 font-semibold hover:underline">Зроби замовлення</a>, і ми створимо його автоматично!
+          </p>
+        </div>
+      </div>
+      
+      <!-- Back to Home Link -->
+      <div class="mt-6 text-center slide-up" style="animation-delay: 0.4s;">
+        <a href="./index.html" class="inline-flex items-center gap-2 text-gray-500 hover:text-red-600 transition-colors font-medium">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+          </svg>
+          Повернутися на головну
+        </a>
+      </div>
       
     </div>
   </main>
+
+  <!-- =========================================== -->
+  <!-- "Not Found" Modal - First Order Encouragement -->
+  <!-- =========================================== -->
+  <div id="notFoundModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+    <!-- Modal Container -->
+    <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 text-center relative shadow-2xl">
+      
+      <!-- Close button -->
+      <button onclick="closeNotFoundModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 transition-colors z-10">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+      
+      <!-- Image -->
+      <img 
+        src="./oops.png" 
+        alt="Упс, немає замовлень" 
+        class="w-48 mx-auto mb-6 object-contain"
+      >
+      
+      <!-- Headline -->
+      <h2 class="text-2xl font-bold text-gray-800 mb-2">
+        Упс! 🙈 Схоже, ми ще не знайомі
+      </h2>
+      
+      <!-- Body Text -->
+      <p class="text-gray-600 mb-6 leading-relaxed">
+        Кабінет з бонусами відкривається тільки після твого першого замовлення. 
+        Залітай на головну, хапай смаколики (мінімум на 100 грн) — і ми одразу відкриємо тобі доступ до всіх плюшок! 🚀
+        <br><br>
+        <span class="text-sm text-blue-500 font-medium">
+          P.S. А якщо набереш на 1100 грн — доставка за наш рахунок. 😎
+        </span>
+      </p>
+      
+      <!-- Action Button -->
+      <a 
+        href="./index.html" 
+        class="block w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition-transform active:scale-95 shadow-lg shadow-red-500/40"
+      >
+        Перейти на головну
+      </a>
+      
+      <!-- Secondary action -->
+      <button 
+        onclick="closeNotFoundModal()" 
+        class="mt-3 w-full text-gray-500 hover:text-gray-700 text-sm py-2 transition-colors"
+      >
+        Спробувати інший номер
+      </button>
+      
+    </div>
+  </div>
 
   <!-- Firebase Initialization -->
   <script type="module" src="./js/firebase-init.js"></script>
