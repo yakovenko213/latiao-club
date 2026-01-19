@@ -18,7 +18,10 @@ import {
     orderBy, 
     limit, 
     serverTimestamp,
-    onSnapshot 
+    onSnapshot,
+    writeBatch,
+    increment,
+    arrayUnion 
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 import { 
     getAuth, 
@@ -54,6 +57,242 @@ const auth = getAuth(app);
 const storage = getStorage(app);
 
 console.log('🔥 Firebase initialized successfully (admin.js)');
+
+// ============================================
+// MINI-CRM: SYNC CUSTOMER FROM ORDER
+// ============================================
+/**
+ * Automatically creates or updates a Customer profile when an Order is saved.
+ * Uses PHONE NUMBER as the Document ID (normalized).
+ * Uses setDoc with merge:true for atomic upsert operations.
+ * 
+ * @param {Object} orderData - The order data object
+ * @param {Object} orderData.customer - Customer info { phone, fullName, email }
+ * @param {Object} orderData.summary - Order summary { total }
+ * @param {string} [orderId] - Optional: The Firestore document ID of the order
+ */
+window.syncCustomerFromOrder = async function(orderData, orderId = null) {
+    try {
+        // Extract customer data
+        const customer = orderData.customer || {};
+        const rawPhone = customer.phone || '';
+        
+        // Normalize phone number - use as Document ID
+        // Remove all non-digit characters except leading +
+        const phone = rawPhone.replace(/[^\d]/g, '').trim();
+        
+        if (!phone || phone.length < 9) {
+            console.warn('⚠️ syncCustomerFromOrder: Invalid phone number, skipping.');
+            return null;
+        }
+        
+        const fullName = (customer.fullName || customer.name || '').trim();
+        const email = (customer.email || customer.telegram || '').trim();
+        const orderTotal = parseFloat(orderData.summary?.total) || 0;
+        
+        console.log(`👤 Mini-CRM: Syncing customer [${phone}] - ${fullName}`);
+        
+        // Use phone as document ID
+        const customerRef = doc(db, 'customers', phone);
+        
+        // Check if customer exists to determine if this is create or update
+        const customerSnap = await getDoc(customerRef);
+        
+        if (!customerSnap.exists()) {
+            // ============================================
+            // NEW CUSTOMER - Create with initial values
+            // ============================================
+            console.log('🆕 Creating new customer...');
+            
+            const newCustomerData = {
+                phone: phone,
+                fullName: fullName,
+                email: email,
+                ordersCount: 1,
+                totalSpent: orderTotal,
+                orderIds: orderId ? [orderId] : [],
+                firstOrderDate: serverTimestamp(),
+                lastOrderDate: serverTimestamp(),
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            };
+            
+            await setDoc(customerRef, newCustomerData);
+            console.log(`✅ New customer created: ${phone}`);
+            
+            return { action: 'created', customerId: phone };
+            
+        } else {
+            // ============================================
+            // EXISTING CUSTOMER - Update with merge
+            // ============================================
+            console.log('🔄 Updating existing customer...');
+            
+            const updateData = {
+                // Increment counters
+                ordersCount: increment(1),
+                totalSpent: increment(orderTotal),
+                // Update timestamps
+                lastOrderDate: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            };
+            
+            // Add order ID to array (arrayUnion prevents duplicates)
+            if (orderId) {
+                updateData.orderIds = arrayUnion(orderId);
+            }
+            
+            // Only update name/email if they were empty before
+            const existingData = customerSnap.data();
+            if (!existingData.fullName && fullName) {
+                updateData.fullName = fullName;
+            }
+            if (!existingData.email && email) {
+                updateData.email = email;
+            }
+            
+            await setDoc(customerRef, updateData, { merge: true });
+            
+            const newCount = (existingData.ordersCount || 0) + 1;
+            console.log(`✅ Customer updated: ${phone} (Orders: ${newCount})`);
+            
+            return { action: 'updated', customerId: phone, ordersCount: newCount };
+        }
+        
+    } catch (error) {
+        console.error('❌ Mini-CRM syncCustomerFromOrder error:', error);
+        return { action: 'error', error: error.message };
+    }
+};
+
+// ============================================
+// ORDERS IMPORT WITH MINI-CRM INTEGRATION
+// ============================================
+/**
+ * Import orders from Excel/CSV and automatically sync customers
+ * Expected columns: Name, Phone, Email, Total, Date, Items, etc.
+ */
+window.handleOrdersImport = async function(input) {
+    console.log('📦 Starting Orders Import with Mini-CRM...');
+    
+    if (!input.files || input.files.length === 0) {
+        console.log('No file selected');
+        return;
+    }
+    
+    const file = input.files[0];
+    console.log(`📁 File: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
+    
+    // Show loading toast
+    const loadingToast = document.createElement('div');
+    loadingToast.id = 'orders-loading-toast';
+    loadingToast.className = 'fixed top-4 right-4 bg-blue-600 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3';
+    loadingToast.innerHTML = `
+        <div class="animate-spin w-6 h-6 border-3 border-white border-t-transparent rounded-full"></div>
+        <span class="font-semibold">Імпортую замовлення...</span>
+    `;
+    document.body.appendChild(loadingToast);
+    
+    try {
+        if (typeof XLSX === 'undefined') {
+            throw new Error('Бібліотека XLSX не завантажена! Оновіть сторінку.');
+        }
+        
+        // Read file
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+        
+        if (jsonData.length === 0) {
+            throw new Error('Файл порожній!');
+        }
+        
+        console.log(`📊 Parsed ${jsonData.length} orders from file`);
+        
+        let importedOrders = 0;
+        let syncedCustomers = 0;
+        let errorCount = 0;
+        
+        // Process each row
+        for (let i = 0; i < jsonData.length; i++) {
+            const row = jsonData[i];
+            
+            try {
+                // Map columns to order structure
+                // Flexible column mapping (supports Ukrainian and English)
+                const orderData = {
+                    customer: {
+                        fullName: row['Name'] || row['Ім\'я'] || row['ПІБ'] || row['Клієнт'] || '',
+                        phone: String(row['Phone'] || row['Телефон'] || row['Tel'] || '').trim(),
+                        email: row['Email'] || row['Пошта'] || row['Telegram'] || ''
+                    },
+                    summary: {
+                        total: parseFloat(row['Total'] || row['Сума'] || row['Amount'] || 0) || 0
+                    },
+                    items: [], // Can be extended to parse items
+                    status: row['Status'] || row['Статус'] || 'completed',
+                    createdAt: serverTimestamp(),
+                    importedAt: serverTimestamp(),
+                    importSource: file.name
+                };
+                
+                // Skip rows without phone
+                if (!orderData.customer.phone) {
+                    console.warn(`⏭️ Row ${i + 2}: No phone, skipping`);
+                    continue;
+                }
+                
+                // Save order to Firestore
+                const orderRef = await addDoc(collection(db, 'orders'), orderData);
+                importedOrders++;
+                
+                // ⭐ CRITICAL: Sync customer via Mini-CRM
+                const crmResult = await window.syncCustomerFromOrder(orderData, orderRef.id);
+                if (crmResult && crmResult.action !== 'error') {
+                    syncedCustomers++;
+                }
+                
+                // Progress update every 10 orders
+                if (importedOrders % 10 === 0) {
+                    loadingToast.querySelector('span').textContent = 
+                        `Оброблено ${importedOrders} замовлень...`;
+                }
+                
+            } catch (rowError) {
+                console.error(`❌ Row ${i + 2} error:`, rowError);
+                errorCount++;
+            }
+        }
+        
+        // Remove loading toast
+        loadingToast.remove();
+        
+        // Show success
+        const message = `✅ Імпорт завершено!\n` +
+            `📦 Замовлень: ${importedOrders}\n` +
+            `👤 Клієнтів оновлено: ${syncedCustomers}\n` +
+            (errorCount > 0 ? `❌ Помилок: ${errorCount}` : '');
+        
+        alert(message);
+        showImportToast(`✅ Імпортовано ${importedOrders} замовлень, оновлено ${syncedCustomers} клієнтів`);
+        
+        // Reset input
+        input.value = '';
+        
+        console.log(`🎉 Orders import completed: ${importedOrders} orders, ${syncedCustomers} customers synced`);
+        
+    } catch (error) {
+        console.error('❌ Orders import error:', error);
+        
+        const toast = document.getElementById('orders-loading-toast');
+        if (toast) toast.remove();
+        
+        alert(`❌ Помилка імпорту: ${error.message}`);
+        input.value = '';
+    }
+};
 
 // ============================================
 // GLOBAL STATE
@@ -604,4 +843,939 @@ window.deleteAbandonedCart = async function(phone) {
     }
 };
 
-console.log('✅ admin.js loaded successfully');
+// ============================================
+// EXCEL IMPORT FUNCTIONALITY
+// ============================================
+
+// Global state for import
+let importParsedData = [];
+let importFileName = '';
+
+// Field mapping options (supports Shopify export)
+const FIELD_MAPPINGS = [
+    { value: 'skip', label: '⏭️ Пропустити' },
+    { value: 'name', label: '📝 Назва товару (Title)' },
+    { value: 'price', label: '💰 Ціна (Variant Price)' },
+    { value: 'sku', label: '🏷️ Артикул (Variant SKU)' },
+    { value: 'handle', label: '🔗 Handle (резервний SKU)' },
+    { value: 'category', label: '📁 Категорія (Type)' },
+    { value: 'description', label: '📄 Опис (Body HTML)' },
+    { value: 'spiciness', label: '🌶️ Гострота (1-5)' },
+    { value: 'image', label: '🖼️ Зображення (Image Src)' },
+    { value: 'stock', label: '📦 Залишок (Inventory Qty)' },
+    { value: 'tags', label: '🏷️ Теги (Tags)' },
+    { value: 'vendor', label: '🏪 Постачальник (Vendor)' },
+    { value: 'status', label: '✅ Статус (Status)' }
+];
+
+// Open Import Modal
+window.openImportModal = function() {
+    console.log('📊 Opening import modal...');
+    const modal = document.getElementById('import-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        resetImportState();
+        // Initialize dropzone if not already done
+        initImportDropzone();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    } else {
+        console.error('❌ Import modal not found!');
+        alert('Помилка: модальне вікно імпорту не знайдено!');
+    }
+};
+
+// Close Import Modal
+window.closeImportModal = function() {
+    console.log('📊 Closing import modal...');
+    const modal = document.getElementById('import-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        resetImportState();
+    }
+};
+
+// Reset import state
+function resetImportState() {
+    importParsedData = [];
+    importFileName = '';
+    
+    // Reset file input
+    const fileInput = document.getElementById('import-file-input');
+    if (fileInput) fileInput.value = '';
+    
+    // Show upload step, hide others
+    showImportStep('upload');
+    
+    // Reset file info
+    const fileInfo = document.getElementById('import-file-info');
+    if (fileInfo) fileInfo.classList.add('hidden');
+}
+
+window.resetImportFile = function() {
+    resetImportState();
+};
+
+// Show specific import step
+function showImportStep(step) {
+    const steps = ['upload', 'mapping', 'progress', 'success'];
+    steps.forEach(s => {
+        const el = document.getElementById(`import-step-${s}`);
+        if (el) {
+            el.classList.toggle('hidden', s !== step);
+        }
+    });
+}
+
+// Go back to upload step
+window.goToUploadStep = function() {
+    showImportStep('upload');
+};
+
+// Initialize drag & drop and file input
+function initImportDropzone() {
+    const dropzone = document.getElementById('import-dropzone');
+    const fileInput = document.getElementById('import-file-input');
+    
+    if (dropzone) {
+        // Drag & drop events
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('border-green-500', 'bg-green-50');
+        });
+        
+        dropzone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('border-green-500', 'bg-green-50');
+        });
+        
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('border-green-500', 'bg-green-50');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileUpload(files[0]);
+            }
+        });
+    }
+    
+    if (fileInput) {
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+    }
+}
+
+// Initialize on DOM ready or immediately if already loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initImportDropzone);
+} else {
+    initImportDropzone();
+}
+
+// Handle file upload
+function handleFileUpload(file) {
+    console.log('📁 Handling file upload:', file.name);
+    
+    // Validate file type
+    const validTypes = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-excel',
+        'text/csv'
+    ];
+    const validExtensions = ['.xlsx', '.xls', '.csv'];
+    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+    
+    if (!validExtensions.includes(fileExtension)) {
+        alert('❌ Непідтримуваний формат файлу!\nПідтримуються: .xlsx, .xls, .csv');
+        return;
+    }
+    
+    importFileName = file.name;
+    
+    // Show file info
+    const fileInfo = document.getElementById('import-file-info');
+    const fileName = document.getElementById('import-file-name');
+    const fileSize = document.getElementById('import-file-size');
+    
+    if (fileInfo && fileName && fileSize) {
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        fileInfo.classList.remove('hidden');
+    }
+    
+    // Read file with SheetJS
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            
+            // Get first sheet
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            
+            // Convert to JSON (with headers)
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            
+            if (jsonData.length < 2) {
+                alert('❌ Файл порожній або містить тільки заголовки!');
+                return;
+            }
+            
+            console.log(`✅ Parsed ${jsonData.length} rows from Excel`);
+            importParsedData = jsonData;
+            
+            // Render mapping table
+            renderMappingTable(jsonData);
+            
+            // Show mapping step
+            showImportStep('mapping');
+            
+        } catch (error) {
+            console.error('❌ Error parsing Excel file:', error);
+            alert(`❌ Помилка читання файлу: ${error.message}`);
+        }
+    };
+    
+    reader.readAsArrayBuffer(file);
+}
+
+// Format file size
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+// Render mapping table
+function renderMappingTable(jsonData) {
+    const header = document.getElementById('import-mapping-header');
+    const body = document.getElementById('import-mapping-body');
+    
+    if (!header || !body) return;
+    
+    const columns = jsonData[0] || [];
+    const previewRows = jsonData.slice(1, 6); // First 5 data rows
+    
+    // Build header with dropdowns
+    let headerHtml = '<tr>';
+    columns.forEach((col, idx) => {
+        const selectOptions = FIELD_MAPPINGS.map(f => 
+            `<option value="${f.value}"${guessFieldMapping(col) === f.value ? ' selected' : ''}>${f.label}</option>`
+        ).join('');
+        
+        headerHtml += `
+            <th class="px-4 py-3 text-left">
+                <select id="map-col-${idx}" class="w-full border rounded-lg px-2 py-1 text-sm bg-white mb-2">
+                    ${selectOptions}
+                </select>
+                <div class="text-xs font-medium text-gray-500 truncate" title="${col}">${col || `Колонка ${idx + 1}`}</div>
+            </th>
+        `;
+    });
+    headerHtml += '</tr>';
+    header.innerHTML = headerHtml;
+    
+    // Build preview rows
+    let bodyHtml = '';
+    previewRows.forEach((row, rowIdx) => {
+        bodyHtml += '<tr class="hover:bg-gray-50">';
+        columns.forEach((_, colIdx) => {
+            const cellValue = row[colIdx] !== undefined ? row[colIdx] : '';
+            const displayValue = String(cellValue).substring(0, 50);
+            bodyHtml += `<td class="px-4 py-2 text-sm text-gray-700 truncate" title="${cellValue}">${displayValue}</td>`;
+        });
+        bodyHtml += '</tr>';
+    });
+    
+    // Add row count info
+    const totalRows = jsonData.length - 1;
+    bodyHtml += `
+        <tr class="bg-blue-50">
+            <td colspan="${columns.length}" class="px-4 py-3 text-center text-sm text-blue-700 font-medium">
+                📊 Всього рядків для імпорту: <strong>${totalRows}</strong>
+            </td>
+        </tr>
+    `;
+    
+    body.innerHTML = bodyHtml;
+    
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+// Guess field mapping based on column name (supports Shopify export format)
+function guessFieldMapping(columnName) {
+    if (!columnName) return 'skip';
+    const col = String(columnName).toLowerCase().trim();
+    
+    // === SHOPIFY SPECIFIC MAPPINGS ===
+    // Title -> name
+    if (col === 'title' || col === 'product title') return 'name';
+    // Variant Price -> price
+    if (col === 'variant price' || col === 'price') return 'price';
+    // Variant SKU -> sku
+    if (col === 'variant sku' || col === 'sku') return 'sku';
+    // Handle -> sku (fallback if no SKU)
+    if (col === 'handle') return 'handle'; // Special: will be used as SKU fallback
+    // Body (HTML) -> description
+    if (col === 'body (html)' || col === 'body html' || col === 'description') return 'description';
+    // Image Src -> image
+    if (col === 'image src' || col === 'image url' || col === 'variant image') return 'image';
+    // Variant Inventory Qty -> stock
+    if (col === 'variant inventory qty' || col === 'inventory' || col === 'quantity') return 'stock';
+    // Type or Product Category -> category
+    if (col === 'type' || col === 'product type' || col === 'product category' || col === 'category') return 'category';
+    // Tags -> tags (for spiciness parsing)
+    if (col === 'tags') return 'tags';
+    // Vendor -> vendor (optional)
+    if (col === 'vendor') return 'vendor';
+    // Status -> status
+    if (col === 'status') return 'status';
+    
+    // === GENERIC MAPPINGS (Ukrainian & English) ===
+    if (col.includes('назва') || col.includes('name') || col.includes('товар') || col.includes('product')) return 'name';
+    if (col.includes('ціна') || col.includes('price') || col.includes('вартість') || col.includes('cost')) return 'price';
+    if (col.includes('артикул') || col.includes('sku') || col.includes('код') || col.includes('code')) return 'sku';
+    if (col.includes('категор') || col.includes('category') || col.includes('тип')) return 'category';
+    if (col.includes('опис') || col.includes('description') || col.includes('desc') || col.includes('body')) return 'description';
+    if (col.includes('гостр') || col.includes('spic') || col.includes('level')) return 'spiciness';
+    if (col.includes('фото') || col.includes('image') || col.includes('зображ') || col.includes('url') || col.includes('img') || col.includes('src')) return 'image';
+    if (col.includes('залиш') || col.includes('stock') || col.includes('кількість') || col.includes('qty') || col.includes('inventory')) return 'stock';
+    
+    return 'skip';
+}
+
+// Parse spiciness from tags (e.g., "Level:3" or "Spicy:2")
+function parseSpicinessFromTags(tags) {
+    if (!tags) return 0;
+    const tagStr = String(tags).toLowerCase();
+    
+    // Look for patterns like "level:3", "spicy:2", "гострота:1"
+    const patterns = [
+        /level[:\s]*(\d)/i,
+        /spicy[:\s]*(\d)/i,
+        /spiciness[:\s]*(\d)/i,
+        /гострота[:\s]*(\d)/i,
+        /рівень[:\s]*(\d)/i
+    ];
+    
+    for (const pattern of patterns) {
+        const match = tagStr.match(pattern);
+        if (match) {
+            return Math.min(5, Math.max(0, parseInt(match[1]) || 0));
+        }
+    }
+    
+    // Check for keyword-based spiciness
+    if (tagStr.includes('extra hot') || tagStr.includes('дуже гостр')) return 5;
+    if (tagStr.includes('very hot') || tagStr.includes('супер гостр')) return 4;
+    if (tagStr.includes('hot') || tagStr.includes('гостр')) return 3;
+    if (tagStr.includes('medium') || tagStr.includes('середн')) return 2;
+    if (tagStr.includes('mild') || tagStr.includes('легк') || tagStr.includes('не гостр')) return 1;
+    
+    return 0;
+}
+
+// Clean HTML from description (optional - keep basic formatting)
+function cleanDescription(html) {
+    if (!html) return '';
+    // Remove script tags and their content
+    let clean = String(html).replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+    // Remove style tags
+    clean = clean.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+    // Keep basic HTML but decode entities
+    return clean.trim();
+}
+
+// Validate image URL
+function isValidImageUrl(url) {
+    if (!url) return false;
+    const urlStr = String(url).trim().toLowerCase();
+    return urlStr.startsWith('http://') || urlStr.startsWith('https://') || urlStr.startsWith('//');
+}
+
+// Execute import (Shopify-optimized)
+window.executeImport = async function() {
+    console.log('🚀 Starting Shopify-optimized import...');
+    
+    if (importParsedData.length < 2) {
+        alert('❌ Немає даних для імпорту!');
+        return;
+    }
+    
+    // Get column mappings
+    const columns = importParsedData[0] || [];
+    const mappings = {};
+    let hasNameField = false;
+    let handleColIdx = -1;
+    let tagsColIdx = -1;
+    let statusColIdx = -1;
+    
+    columns.forEach((_, idx) => {
+        const select = document.getElementById(`map-col-${idx}`);
+        if (select) {
+            const fieldValue = select.value;
+            if (fieldValue !== 'skip') {
+                mappings[idx] = fieldValue;
+                if (fieldValue === 'name') hasNameField = true;
+                if (fieldValue === 'handle') handleColIdx = idx;
+                if (fieldValue === 'tags') tagsColIdx = idx;
+                if (fieldValue === 'status') statusColIdx = idx;
+            }
+        }
+    });
+    
+    // Validate - at least name field is required
+    if (!hasNameField) {
+        alert('❌ Оберіть колонку для поля "Назва товару"!\nЦе обов\'язкове поле.');
+        return;
+    }
+    
+    // Show progress
+    showImportStep('progress');
+    
+    const dataRows = importParsedData.slice(1);
+    const totalRows = dataRows.length;
+    let importedCount = 0;
+    let skippedCount = 0;
+    let errorCount = 0;
+    
+    // Track imported handles to avoid duplicates (Shopify exports have multiple rows per product)
+    const importedHandles = new Set();
+    
+    const progressBar = document.getElementById('import-progress-bar');
+    const progressText = document.getElementById('import-progress-text');
+    const progressCount = document.getElementById('import-progress-count');
+    
+    try {
+        // First pass: collect unique products (Shopify has multiple rows for variants)
+        const uniqueProducts = [];
+        
+        dataRows.forEach((row, idx) => {
+            // Get the handle or name to check for duplicates
+            const handle = handleColIdx >= 0 ? String(row[handleColIdx] || '').trim() : '';
+            const nameColIdx = Object.keys(mappings).find(k => mappings[k] === 'name');
+            const name = nameColIdx !== undefined ? String(row[parseInt(nameColIdx)] || '').trim() : '';
+            
+            // Skip if no name (variant rows in Shopify often have empty Title)
+            if (!name) {
+                console.log(`⏭️ Skipping row ${idx + 2}: empty name (likely variant row)`);
+                skippedCount++;
+                return;
+            }
+            
+            // Skip duplicates based on handle
+            if (handle && importedHandles.has(handle)) {
+                console.log(`⏭️ Skipping row ${idx + 2}: duplicate handle "${handle}"`);
+                skippedCount++;
+                return;
+            }
+            
+            // Check status - skip archived/draft if present
+            if (statusColIdx >= 0) {
+                const status = String(row[statusColIdx] || '').toLowerCase().trim();
+                if (status === 'archived' || status === 'draft') {
+                    console.log(`⏭️ Skipping row ${idx + 2}: status is ${status}`);
+                    skippedCount++;
+                    return;
+                }
+            }
+            
+            if (handle) importedHandles.add(handle);
+            uniqueProducts.push({ row, idx });
+        });
+        
+        console.log(`📊 Found ${uniqueProducts.length} unique products to import`);
+        
+        // Process in batches of 500 (Firestore limit)
+        const BATCH_SIZE = 500;
+        const totalToImport = uniqueProducts.length;
+        
+        for (let batchStart = 0; batchStart < totalToImport; batchStart += BATCH_SIZE) {
+            const batchEnd = Math.min(batchStart + BATCH_SIZE, totalToImport);
+            const batchItems = uniqueProducts.slice(batchStart, batchEnd);
+            
+            const batch = writeBatch(db);
+            let batchCount = 0;
+            
+            batchItems.forEach(({ row, idx }) => {
+                try {
+                    // Build product object from mappings
+                    const product = {
+                        createdAt: serverTimestamp(),
+                        updatedAt: serverTimestamp()
+                    };
+                    
+                    let handle = '';
+                    let tags = '';
+                    
+                    Object.entries(mappings).forEach(([colIdx, fieldName]) => {
+                        const cellValue = row[parseInt(colIdx)];
+                        
+                        if (cellValue !== undefined && cellValue !== null && cellValue !== '') {
+                            switch (fieldName) {
+                                case 'price':
+                                    // Parse price: remove currency symbols, handle comma decimals
+                                    product.price = parseFloat(String(cellValue).replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+                                    break;
+                                case 'spiciness':
+                                    product.spiciness = Math.min(5, Math.max(0, parseInt(cellValue) || 0));
+                                    break;
+                                case 'stock':
+                                    product.stock = Math.max(0, parseInt(cellValue) || 0);
+                                    break;
+                                case 'image':
+                                    const imgUrl = String(cellValue).trim();
+                                    if (isValidImageUrl(imgUrl)) {
+                                        product.images = [imgUrl];
+                                        product.image = imgUrl;
+                                    }
+                                    break;
+                                case 'description':
+                                    product.description = cleanDescription(cellValue);
+                                    break;
+                                case 'handle':
+                                    handle = String(cellValue).trim();
+                                    break;
+                                case 'tags':
+                                    tags = String(cellValue).trim();
+                                    product.tags = tags;
+                                    break;
+                                case 'status':
+                                    // Don't store status, just use for filtering
+                                    break;
+                                case 'vendor':
+                                    product.vendor = String(cellValue).trim();
+                                    break;
+                                default:
+                                    product[fieldName] = String(cellValue).trim();
+                            }
+                        }
+                    });
+                    
+                    // Skip if still no name
+                    if (!product.name || product.name.trim() === '') {
+                        return;
+                    }
+                    
+                    // Use handle as SKU fallback
+                    if (!product.sku && handle) {
+                        product.sku = handle.toUpperCase().replace(/-/g, '_');
+                    }
+                    
+                    // Try to parse spiciness from tags if not set
+                    if (!product.spiciness && tags) {
+                        product.spiciness = parseSpicinessFromTags(tags);
+                    }
+                    
+                    // Set defaults
+                    if (product.price === undefined) product.price = 0;
+                    if (!product.spiciness) product.spiciness = 0;
+                    if (product.stock === undefined) product.stock = 0;
+                    if (!product.sku) product.sku = `IMPORT-${Date.now()}-${idx}`;
+                    
+                    // Add to batch
+                    const newDocRef = doc(collection(db, 'products'));
+                    batch.set(newDocRef, product);
+                    batchCount++;
+                    importedCount++;
+                    
+                } catch (rowError) {
+                    console.error(`❌ Error processing row ${idx + 2}:`, rowError);
+                    errorCount++;
+                }
+            });
+            
+            // Only commit if batch has items
+            if (batchCount > 0) {
+                await batch.commit();
+                console.log(`✅ Batch committed: ${batchStart + 1} - ${batchEnd} (${batchCount} items)`);
+            }
+            
+            // Update progress
+            const progress = Math.round((batchEnd / totalToImport) * 100);
+            if (progressBar) progressBar.style.width = `${progress}%`;
+            if (progressText) progressText.textContent = `Обробка партії ${Math.ceil(batchEnd / BATCH_SIZE)} з ${Math.ceil(totalToImport / BATCH_SIZE)}...`;
+            if (progressCount) progressCount.textContent = `${importedCount} з ${totalToImport} товарів`;
+        }
+        
+        // Show success
+        showImportStep('success');
+        const successText = document.getElementById('import-success-text');
+        if (successText) {
+            let resultHtml = `✅ Успішно імпортовано: <strong class="text-green-600">${importedCount}</strong> товарів`;
+            if (skippedCount > 0) {
+                resultHtml += `<br>⏭️ Пропущено (дублікати/варіанти): <span class="text-gray-500">${skippedCount}</span>`;
+            }
+            if (errorCount > 0) {
+                resultHtml += `<br>❌ Помилок: <span class="text-red-500">${errorCount}</span>`;
+            }
+            successText.innerHTML = resultHtml;
+        }
+        
+        // Show toast notification
+        showImportToast(`✅ Імпорт завершено! Додано ${importedCount} товарів.`);
+        
+        // Reload products list
+        if (typeof window.loadProducts === 'function') {
+            window.loadProducts();
+        }
+        
+        console.log(`✅ Import completed: ${importedCount} imported, ${skippedCount} skipped, ${errorCount} errors`);
+        
+    } catch (error) {
+        console.error('❌ Import error:', error);
+        alert(`❌ Помилка імпорту: ${error.message}`);
+        showImportStep('upload');
+    }
+};
+
+// Show toast notification for import
+function showImportToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3 animate-pulse';
+    toast.innerHTML = `
+        <span class="text-2xl">🎉</span>
+        <span class="font-semibold">${message}</span>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.5s';
+        setTimeout(() => toast.remove(), 500);
+    }, 4000);
+}
+
+// ============================================
+// QUICK SHOPIFY CSV IMPORT (ONE-CLICK)
+// ============================================
+
+/**
+ * Quick Shopify CSV Import - Auto-maps columns and imports directly
+ * Columns: Handle, Title, Body (HTML), Vendor, Type, Tags, Variant SKU, Variant Price, Variant Inventory Qty, Image Src
+ */
+window.handleShopifyImport = async function(input) {
+    console.log('🛒 Starting Shopify CSV import...');
+    
+    if (!input.files || input.files.length === 0) {
+        console.log('No file selected');
+        return;
+    }
+    
+    const file = input.files[0];
+    console.log(`📁 File: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
+    
+    // Show loading toast
+    const loadingToast = document.createElement('div');
+    loadingToast.id = 'shopify-loading-toast';
+    loadingToast.className = 'fixed top-4 right-4 bg-blue-600 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3';
+    loadingToast.innerHTML = `
+        <div class="animate-spin w-6 h-6 border-3 border-white border-t-transparent rounded-full"></div>
+        <span class="font-semibold">Імпортую товари з Shopify...</span>
+    `;
+    document.body.appendChild(loadingToast);
+    
+    try {
+        // Check if XLSX is available
+        if (typeof XLSX === 'undefined') {
+            throw new Error('Бібліотека XLSX не завантажена! Оновіть сторінку.');
+        }
+        
+        // Read file
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, { type: 'array' });
+        
+        // Get first sheet
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        
+        // Convert to JSON with headers
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+        
+        if (jsonData.length === 0) {
+            throw new Error('Файл порожній або не містить даних!');
+        }
+        
+        console.log(`📊 Parsed ${jsonData.length} rows from Shopify export`);
+        
+        // Track imported handles to avoid duplicates
+        const importedHandles = new Set();
+        const productsToImport = [];
+        let skippedCount = 0;
+        
+        // Process rows - filter and map
+        jsonData.forEach((row, idx) => {
+            // Get Title - skip if empty (variant rows)
+            const title = String(row['Title'] || '').trim();
+            if (!title) {
+                skippedCount++;
+                return;
+            }
+            
+            // Get Handle for duplicate detection
+            const handle = String(row['Handle'] || '').trim();
+            if (handle && importedHandles.has(handle)) {
+                skippedCount++;
+                return;
+            }
+            if (handle) importedHandles.add(handle);
+            
+            // Map Shopify columns to Firestore fields
+            const product = {
+                name: title,
+                price: parseShopifyPrice(row['Variant Price']),
+                sku: String(row['Variant SKU'] || row['Handle'] || '').trim() || `SHOPIFY-${Date.now()}-${idx}`,
+                category: String(row['Type'] || row['Product Category'] || 'General').trim(),
+                description: stripHtmlTags(row['Body (HTML)'] || ''),
+                image: String(row['Image Src'] || '').trim(),
+                images: row['Image Src'] ? [String(row['Image Src']).trim()] : [],
+                stock: parseInt(row['Variant Inventory Qty']) || 0,
+                spiciness: parseSpicyFromTags(row['Tags'] || ''),
+                vendor: String(row['Vendor'] || '').trim(),
+                tags: String(row['Tags'] || '').trim(),
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            };
+            
+            // Validate image URL
+            if (product.image && !product.image.startsWith('http')) {
+                product.image = '';
+                product.images = [];
+            }
+            
+            productsToImport.push(product);
+        });
+        
+        console.log(`✅ ${productsToImport.length} products ready to import (${skippedCount} skipped)`);
+        
+        if (productsToImport.length === 0) {
+            throw new Error('Немає товарів для імпорту! Перевірте, чи файл містить колонку "Title".');
+        }
+        
+        // Update loading toast
+        loadingToast.innerHTML = `
+            <div class="animate-spin w-6 h-6 border-3 border-white border-t-transparent rounded-full"></div>
+            <span class="font-semibold">Зберігаю ${productsToImport.length} товарів...</span>
+        `;
+        
+        // Batch write to Firestore (max 500 per batch)
+        const BATCH_SIZE = 500;
+        let importedCount = 0;
+        let errorCount = 0;
+        
+        for (let i = 0; i < productsToImport.length; i += BATCH_SIZE) {
+            const batch = writeBatch(db);
+            const batchProducts = productsToImport.slice(i, i + BATCH_SIZE);
+            
+            batchProducts.forEach(product => {
+                try {
+                    const docRef = doc(collection(db, 'products'));
+                    batch.set(docRef, product);
+                    importedCount++;
+                } catch (e) {
+                    console.error('Error adding to batch:', e);
+                    errorCount++;
+                }
+            });
+            
+            await batch.commit();
+            console.log(`✅ Batch ${Math.ceil((i + 1) / BATCH_SIZE)} committed`);
+        }
+        
+        // Remove loading toast
+        loadingToast.remove();
+        
+        // Show success toast
+        showImportToast(`✅ Shopify імпорт завершено! Додано ${importedCount} товарів.`);
+        
+        // Reset file input
+        input.value = '';
+        
+        // Reload products list
+        if (typeof window.loadProducts === 'function') {
+            window.loadProducts();
+        }
+        
+        console.log(`🎉 Shopify import completed: ${importedCount} imported, ${skippedCount} skipped, ${errorCount} errors`);
+        
+    } catch (error) {
+        console.error('❌ Shopify import error:', error);
+        
+        // Remove loading toast
+        const toast = document.getElementById('shopify-loading-toast');
+        if (toast) toast.remove();
+        
+        alert(`❌ Помилка імпорту Shopify: ${error.message}`);
+        
+        // Reset file input
+        input.value = '';
+    }
+};
+
+// Helper: Parse Shopify price (handle various formats)
+function parseShopifyPrice(priceStr) {
+    if (!priceStr) return 0;
+    // Remove currency symbols, spaces, and handle comma as decimal
+    const cleaned = String(priceStr)
+        .replace(/[^\d.,]/g, '')
+        .replace(',', '.');
+    return parseFloat(cleaned) || 0;
+}
+
+// Helper: Strip HTML tags from description
+function stripHtmlTags(html) {
+    if (!html) return '';
+    // Create a temporary element to parse HTML
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+    return temp.textContent || temp.innerText || '';
+}
+
+// Helper: Try to parse spiciness level from Shopify tags
+function parseSpicyFromTags(tags) {
+    if (!tags) return 0;
+    const tagStr = String(tags).toLowerCase();
+    
+    // Look for patterns like "level:3", "spicy:2", "spiciness:1"
+    const match = tagStr.match(/(?:level|spicy|spiciness|гострота)[:\s]*(\d)/i);
+    if (match) {
+        return Math.min(5, Math.max(0, parseInt(match[1]) || 0));
+    }
+    
+    // Keyword-based detection
+    if (tagStr.includes('extra hot') || tagStr.includes('дуже гостр')) return 5;
+    if (tagStr.includes('very hot') || tagStr.includes('супер гостр')) return 4;
+    if (tagStr.includes('hot') || tagStr.includes('гостр')) return 3;
+    if (tagStr.includes('medium') || tagStr.includes('середн')) return 2;
+    if (tagStr.includes('mild') || tagStr.includes('легк')) return 1;
+    
+    return 0;
+}
+
+// ============================================
+// AVATAR MIGRATION TOOL - Fix Missing Avatars
+// ============================================
+const AVATAR_POOL = [
+    "https://www.meme-arsenal.com/memes/cdcfda78a84cf35ca09a109439642ea6.jpg",
+    "https://i1.sndcdn.com/artworks-Pm21pVGyLISZPmA8-mt4UhQ-t500x500.jpg",
+    "https://www.meme-arsenal.com/memes/463e01e32c4ea517425162d27481d7b2.jpg",
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQEN4_2MD_SBd-1dE0tr6BIF581wULKjW29Cw&s",
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQEPijZKwJWqno9DLrxEsCOJ-e9w9I5l3lfSg&s"
+];
+
+function getRandomAvatar() {
+    return AVATAR_POOL[Math.floor(Math.random() * AVATAR_POOL.length)];
+}
+
+/**
+ * Batch migration tool to fix missing avatars for all customers
+ * Scans ALL customers and assigns random avatars to those without one
+ */
+window.fixMissingAvatars = async function() {
+    console.log('🎨 Starting avatar migration...');
+    
+    // Confirm action
+    if (!confirm('⚠️ Ця операція призначить випадкові аватарки всім клієнтам без аватарки.\n\nПродовжити?')) {
+        return;
+    }
+    
+    // Show loading indicator
+    const loadingToast = document.createElement('div');
+    loadingToast.id = 'avatar-migration-toast';
+    loadingToast.className = 'fixed top-4 right-4 bg-purple-600 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3';
+    loadingToast.innerHTML = `
+        <div class="animate-spin w-6 h-6 border-3 border-white border-t-transparent rounded-full"></div>
+        <span class="font-semibold">Оновлюю аватарки...</span>
+    `;
+    document.body.appendChild(loadingToast);
+    
+    try {
+        // Fetch all customers
+        const customersRef = collection(db, 'customers');
+        const snapshot = await getDocs(customersRef);
+        
+        if (snapshot.empty) {
+            alert('❌ Клієнтів не знайдено в базі даних');
+            loadingToast.remove();
+            return;
+        }
+        
+        let updatedCount = 0;
+        let skippedCount = 0;
+        let errorCount = 0;
+        const totalCount = snapshot.docs.length;
+        
+        console.log(`📊 Found ${totalCount} customers`);
+        
+        // Process each customer
+        for (const customerDoc of snapshot.docs) {
+            const customerData = customerDoc.data();
+            const customerId = customerDoc.id;
+            
+            // Check if avatar is missing
+            if (!customerData.avatarUrl) {
+                try {
+                    const newAvatarUrl = getRandomAvatar();
+                    const customerRef = doc(db, 'customers', customerId);
+                    
+                    await updateDoc(customerRef, { 
+                        avatarUrl: newAvatarUrl,
+                        updatedAt: serverTimestamp()
+                    });
+                    
+                    updatedCount++;
+                    console.log(`✅ Avatar assigned to ${customerData.phone || customerId}: ${newAvatarUrl}`);
+                    
+                    // Update progress
+                    loadingToast.innerHTML = `
+                        <div class="animate-spin w-6 h-6 border-3 border-white border-t-transparent rounded-full"></div>
+                        <span class="font-semibold">Оновлено: ${updatedCount} / ${totalCount}</span>
+                    `;
+                    
+                } catch (updateError) {
+                    console.error(`❌ Error updating ${customerId}:`, updateError);
+                    errorCount++;
+                }
+            } else {
+                skippedCount++;
+            }
+        }
+        
+        // Remove loading toast
+        loadingToast.remove();
+        
+        // Show results
+        const resultMessage = `🎨 Міграція аватарок завершена!\n\n` +
+            `✅ Оновлено: ${updatedCount} клієнтів\n` +
+            `⏭️ Пропущено (вже мали аватарку): ${skippedCount}\n` +
+            `❌ Помилок: ${errorCount}\n` +
+            `📊 Всього клієнтів: ${totalCount}`;
+        
+        console.log(resultMessage);
+        alert(resultMessage);
+        
+        // Show success toast
+        const successToast = document.createElement('div');
+        successToast.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3';
+        successToast.innerHTML = `
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span class="font-semibold">Оновлено ${updatedCount} клієнтів!</span>
+        `;
+        document.body.appendChild(successToast);
+        setTimeout(() => successToast.remove(), 4000);
+        
+    } catch (error) {
+        console.error('❌ Avatar migration error:', error);
+        
+        const toast = document.getElementById('avatar-migration-toast');
+        if (toast) toast.remove();
+        
+        alert(`❌ Помилка міграції: ${error.message}`);
+    }
+};
+
+console.log('✅ admin.js loaded successfully (with Shopify import support)');

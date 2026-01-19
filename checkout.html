@@ -777,6 +777,8 @@
     // FIREBASE IMPORTS - UPDATED WITH CLOUD FUNCTIONS
     // ============================================
     import { db, collection, addDoc, serverTimestamp, getDocs, query, where, getDoc, doc } from './js/firebase-init.js'
+    // Import additional Firestore methods for Mini-CRM
+    import { updateDoc, increment, arrayUnion, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
     // NEW: Import Cloud Functions
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'
     import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js'
@@ -785,6 +787,89 @@
     // If you already have firebase app initialized in firebase-init.js, you can import it
     // Otherwise, you'll need to initialize it here with your config
     const functions = getFunctions()
+
+    // ============================================
+    // MINI-CRM: INLINE FALLBACK FUNCTION
+    // ============================================
+    /**
+     * Inline Mini-CRM function for checkout (fallback if admin.js not loaded)
+     * Creates or updates customer profile based on order data
+     */
+    async function syncCustomerInline(orderData, orderId) {
+      try {
+        const customer = orderData.customer || {}
+        const rawPhone = customer.phone || ''
+        const phone = rawPhone.replace(/[\s\-\(\)\+]/g, '').trim()
+        
+        if (!phone) {
+          console.warn('⚠️ syncCustomerInline: No phone, skipping.')
+          return null
+        }
+        
+        const fullName = customer.fullName?.trim() || ''
+        const email = customer.email?.trim() || customer.telegram?.trim() || ''
+        const orderTotal = orderData.summary?.total || 0
+        
+        console.log(`👤 Mini-CRM: Syncing customer: ${phone}`)
+        
+        // Query for existing customer
+        const customersRef = collection(db, 'customers')
+        const q = query(customersRef, where('phone', '==', phone), limit(1))
+        const querySnapshot = await getDocs(q)
+        
+        if (querySnapshot.empty) {
+          // NEW CUSTOMER
+          const newCustomer = {
+            fullName: fullName,
+            phone: phone,
+            email: email,
+            firstOrderDate: serverTimestamp(),
+            lastOrderDate: serverTimestamp(),
+            ordersCount: 1,
+            totalSpent: orderTotal,
+            orderIds: orderId ? [orderId] : [],
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          }
+          
+          const docRef = await addDoc(customersRef, newCustomer)
+          console.log(`✅ New customer created: ${docRef.id}`)
+          return { action: 'created', customerId: docRef.id }
+          
+        } else {
+          // EXISTING CUSTOMER - Update
+          const existingDoc = querySnapshot.docs[0]
+          const existingData = existingDoc.data()
+          
+          const updateData = {
+            ordersCount: increment(1),
+            totalSpent: increment(orderTotal),
+            lastOrderDate: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          }
+          
+          if (orderId) {
+            updateData.orderIds = arrayUnion(orderId)
+          }
+          
+          if (!existingData.fullName && fullName) {
+            updateData.fullName = fullName
+          }
+          
+          if (!existingData.email && email) {
+            updateData.email = email
+          }
+          
+          await updateDoc(doc(db, 'customers', existingDoc.id), updateData)
+          console.log(`✅ Customer updated: ${existingDoc.id}`)
+          return { action: 'updated', customerId: existingDoc.id }
+        }
+        
+      } catch (error) {
+        console.error('❌ Mini-CRM inline error:', error)
+        return { action: 'error', error: error.message }
+      }
+    }
 
     // ============================================
     // NOVA POSHTA API CONFIGURATION
@@ -2406,6 +2491,23 @@
         const docRef = await addDoc(collection(db, 'orders'), orderData)
 
         console.log('✅ Order saved successfully! Document ID:', docRef.id)
+
+        // ============================================
+        // STEP 8.1: Mini-CRM - Sync Customer Profile
+        // ============================================
+        // Automatically create or update customer in 'customers' collection
+        try {
+          if (typeof window.syncCustomerFromOrder === 'function') {
+            const crmResult = await window.syncCustomerFromOrder(orderData, docRef.id)
+            console.log('👤 Mini-CRM result:', crmResult)
+          } else {
+            // Fallback: inline Mini-CRM logic if admin.js not loaded
+            console.log('⚠️ syncCustomerFromOrder not available, using inline fallback...')
+            await syncCustomerInline(orderData, docRef.id)
+          }
+        } catch (crmError) {
+          console.error('⚠️ Mini-CRM error (non-blocking):', crmError)
+        }
 
         // ============================================
         // STEP 8.25: Smart Cleanup (Abandoned Carts + Old Pending Orders)

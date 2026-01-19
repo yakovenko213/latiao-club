@@ -154,12 +154,11 @@ const headerTemplate = `
           </div>
         </nav>
         <div class="flex items-center gap-1 sm:gap-2">
-          <button disabled class="relative p-2 rounded-full text-gray-700 transition-colors cursor-not-allowed opacity-70 pointer-events-none" aria-label="User profile">
+          <a href="./login.html" id="user-profile-btn" class="relative p-2 hover:bg-orange-50 rounded-full text-gray-700 hover:text-orange-500 transition-colors cursor-pointer" aria-label="User profile">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
-            <span class="absolute -top-1 -right-1 bg-yellow-100 text-yellow-800 text-xs font-medium px-1.5 py-0.5 rounded-full border border-yellow-200">Скоро</span>
-          </button>
+          </a>
           <button onclick="window.openCart()" class="relative p-2 hover:bg-orange-50 rounded-full text-gray-700 hover:text-orange-500 transition-colors" aria-label="Open cart">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
@@ -940,7 +939,7 @@ async function loadNavigation() {
       return;
     }
 
-    const { db, collection, getDocs, query, where } = window.firebaseInit;
+    const { db, collection, getDocs, query, where, orderBy } = window.firebaseInit;
     
     // Паралельне завантаження категорій та сторінок
     const [categoriesSnap, pagesSnap] = await Promise.all([
@@ -949,7 +948,10 @@ async function loadNavigation() {
     ]);
     
     const categories = categoriesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const pages = pagesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Сортування сторінок на клієнті за sortOrder (працює без складних індексів)
+    const pages = pagesSnap.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
     
     // Зберігаємо в кеш з timestamp
     navigationCache = { 
@@ -1035,6 +1037,90 @@ function renderNavigationFallback() {
 }
 
 // ============================================
+// USER SESSION CHECK (Firebase Auth + localStorage)
+// ============================================
+
+/**
+ * Check if user is logged in via Firebase Auth OR localStorage session
+ * Updates the profile button link accordingly
+ */
+async function checkUserSession() {
+  const profileBtn = document.getElementById('user-profile-btn');
+  if (!profileBtn) return;
+
+  // First, check localStorage session (custom SMS login)
+  const localSession = localStorage.getItem('user_session');
+  if (localSession) {
+    try {
+      const session = JSON.parse(localSession);
+      if (session && (session.phone || session.id)) {
+        console.log('👤 User logged in via SMS (localStorage)');
+        profileBtn.href = './dashboard.html';
+        profileBtn.title = 'Мій кабінет';
+        // Add logged-in indicator
+        profileBtn.classList.add('text-spicy');
+        profileBtn.classList.remove('text-gray-700');
+        return true;
+      }
+    } catch (e) {
+      console.warn('⚠️ Invalid localStorage session, clearing...');
+      localStorage.removeItem('user_session');
+    }
+  }
+
+  // Then, check Firebase Auth
+  try {
+    // Wait for Firebase to be available
+    let attempts = 0;
+    while (!window.firebaseInit && attempts < 30) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
+    }
+
+    if (window.firebaseInit && window.firebaseInit.auth) {
+      const { auth } = window.firebaseInit;
+      
+      // Check current user synchronously first
+      if (auth.currentUser) {
+        console.log('👤 User logged in via Firebase Auth');
+        profileBtn.href = './dashboard.html';
+        profileBtn.title = 'Мій кабінет';
+        profileBtn.classList.add('text-spicy');
+        profileBtn.classList.remove('text-gray-700');
+        return true;
+      }
+
+      // Also listen for auth state changes (async)
+      auth.onAuthStateChanged((user) => {
+        if (user) {
+          console.log('👤 Firebase Auth state changed: logged in');
+          profileBtn.href = './dashboard.html';
+          profileBtn.title = 'Мій кабінет';
+          profileBtn.classList.add('text-spicy');
+          profileBtn.classList.remove('text-gray-700');
+        } else if (!localStorage.getItem('user_session')) {
+          // Only reset if no localStorage session either
+          profileBtn.href = './login.html';
+          profileBtn.title = 'Увійти';
+          profileBtn.classList.remove('text-spicy');
+          profileBtn.classList.add('text-gray-700');
+        }
+      });
+    }
+  } catch (error) {
+    console.warn('⚠️ Error checking Firebase Auth:', error);
+  }
+
+  // Default: not logged in
+  profileBtn.href = './login.html';
+  profileBtn.title = 'Увійти';
+  return false;
+}
+
+// Expose function globally for use in other scripts
+window.checkUserSession = checkUserSession;
+
+// ============================================
 // MAIN EXPORT FUNCTION
 // ============================================
 
@@ -1094,6 +1180,9 @@ export function loadLayout() {
   
   // Load navigation (async, non-blocking)
   loadNavigation();
+  
+  // Check user session and update profile button (async)
+  checkUserSession();
   
   // Fetch and inject gifts into cart (async)
   fetchAndInjectGifts();

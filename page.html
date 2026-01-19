@@ -104,8 +104,404 @@
           Спробувати знову
         </button>
       </div>
+
+      <!-- STATIC STATISTIKA PAGE (Hidden by default) -->
+      <div id="static-statistika" class="hidden">
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+          
+          #static-statistika * {
+            font-family: 'Nunito', sans-serif;
+          }
+          
+          :root {
+            --stat-orange: #ff6b00;
+            --stat-orange-light: #fff4ed;
+            --stat-orange-hover: #e85d00;
+          }
+          
+          .stat-fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+          }
+          
+          .stat-fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+          }
+          
+          .stat-card {
+            background: white;
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(255, 107, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+          }
+          
+          .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(255, 107, 0, 0.2);
+          }
+          
+          .customer-row {
+            transition: all 0.3s ease;
+            border-radius: 12px;
+          }
+          
+          .customer-row:hover {
+            background: var(--stat-orange-light);
+            transform: scale(1.02);
+          }
+          
+          .customer-row:hover .hover-text {
+            opacity: 1;
+          }
+          
+          .hover-text {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+          }
+          
+          .city-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+          }
+          
+          .city-card:hover {
+            background: var(--stat-orange-light);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(255, 107, 0, 0.15);
+          }
+          
+          .delivery-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+          }
+          
+          .delivery-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 32px rgba(255, 107, 0, 0.15);
+          }
+          
+          .stat-progress-bar {
+            height: 12px;
+            border-radius: 6px;
+            background: #f0f0f0;
+            overflow: hidden;
+          }
+          
+          .stat-progress-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 1.5s ease-out;
+          }
+          
+          .stat-counter {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--stat-orange);
+          }
+          
+          @media (max-width: 768px) {
+            .stat-counter {
+              font-size: 2rem;
+            }
+          }
+          
+          .stat-bounce {
+            animation: statBounce 2s infinite;
+          }
+          
+          @keyframes statBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+          }
+        </style>
+
+        <!-- Hero Section -->
+        <section class="py-8 md:py-12 px-4">
+          <div class="max-w-4xl mx-auto text-center stat-fade-in">
+            <h1 class="text-3xl md:text-5xl font-extrabold text-gray-800 mb-4">
+              Latiao Snack у цифрах <span class="inline-block stat-bounce">🌶️</span>
+            </h1>
+            <p class="text-lg md:text-xl text-gray-600">
+              Хто замовляє, звідки замовляють і скільки латяо вже з'їли 😈
+            </p>
+          </div>
+        </section>
+
+        <!-- Main Stats -->
+        <section class="px-4 pb-16">
+          <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="stat-card text-center stat-fade-in" style="transition-delay: 0.1s;">
+              <div class="text-4xl md:text-5xl font-extrabold mb-2" style="color: #ff6b00;">≈ 6 100</div>
+              <div class="text-gray-600 font-medium">замовлень відправлено</div>
+              <div class="mt-3 text-3xl">📦</div>
+            </div>
+            <div class="stat-card text-center stat-fade-in" style="transition-delay: 0.2s;">
+              <div class="text-4xl md:text-5xl font-extrabold mb-2" style="color: #ff6b00;">≈ 30 000</div>
+              <div class="text-gray-600 font-medium">пачок латяо продано</div>
+              <div class="mt-3 text-3xl">🔥</div>
+            </div>
+            <div class="stat-card text-center stat-fade-in" style="transition-delay: 0.3s;">
+              <div class="text-4xl md:text-5xl font-extrabold mb-2" style="color: #ff6b00;">≈ 6 500</div>
+              <div class="text-gray-600 font-medium">людей не змогли зупинитись 😄</div>
+              <div class="mt-3 text-3xl">🤤</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- How Much Eaten -->
+        <section class="px-4 pb-16">
+          <div class="max-w-3xl mx-auto">
+            <div class="stat-card text-center stat-fade-in" style="background: linear-gradient(135deg, #fff4ed 0%, #ffffff 100%);">
+              <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">
+                Скільки латяо з'їли? 🤔
+              </h2>
+              <div class="stat-counter mb-6" id="tonnage-counter">0</div>
+              <p class="text-xl md:text-2xl font-semibold text-gray-700 mb-6">тонн латяо</p>
+              
+              <div class="space-y-3 text-gray-600 text-base md:text-lg">
+                <p>🌶️ можна було б засипати цілу вантажівку</p>
+                <p>🌶️ або нагодувати маленьке місто</p>
+                <p>🌶️ або просто сказати — <span class="font-bold" style="color: #ff6b00;">БУЛО ГОСТРО</span> 😅</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Who Orders -->
+        <section class="px-4 pb-16">
+          <div class="max-w-4xl mx-auto stat-fade-in">
+            <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-8 text-center">
+              Хто не боїться гострого 🔥
+            </h2>
+            
+            <div class="stat-card overflow-hidden">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-2" id="stat-customers-list">
+                <!-- Filled by JS -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Geography -->
+        <section class="px-4 pb-16">
+          <div class="max-w-5xl mx-auto stat-fade-in">
+            <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-8 text-center">
+              Географія гострості 🌍
+            </h2>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4" id="stat-cities-list">
+              <!-- Filled by JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- Delivery -->
+        <section class="px-4 pb-12">
+          <div class="max-w-3xl mx-auto stat-fade-in">
+            <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-8 text-center">
+              Як їде латяо 🚚
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Nova Poshta -->
+              <div class="delivery-card">
+                <div class="flex items-center mb-4">
+                  <span class="text-3xl mr-3">📦</span>
+                  <span class="text-xl font-bold text-gray-800">Нова пошта</span>
+                </div>
+                <p class="text-gray-600 mb-4">Основна частина замовлень</p>
+                <div class="stat-progress-bar">
+                  <div class="stat-progress-fill" style="width: 0%; background: linear-gradient(90deg, #ff6b00, #ff8533);" id="nova-progress"></div>
+                </div>
+                <p class="text-sm text-gray-500 mt-2">~87% замовлень</p>
+              </div>
+              
+              <!-- Ukr Poshta -->
+              <div class="delivery-card">
+                <div class="flex items-center mb-4">
+                  <span class="text-3xl mr-3">📮</span>
+                  <span class="text-xl font-bold text-gray-800">Укрпошта</span>
+                </div>
+                <p class="text-gray-600 mb-4">Для тих, хто чекає довше 😅</p>
+                <div class="stat-progress-bar">
+                  <div class="stat-progress-fill" style="width: 0%; background: linear-gradient(90deg, #ffc107, #ffca28);" id="ukr-progress"></div>
+                </div>
+                <p class="text-sm text-gray-500 mt-2">~13% замовлень</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Footer Note -->
+        <div class="text-center pb-8">
+          <p class="text-gray-400 text-sm">Дані оновлюються періодично</p>
+        </div>
+      </div>
+      <!-- END STATIC STATISTIKA PAGE -->
+
     </div>
   </main>
+
+  <!-- Statistika Page JavaScript (global scope for onclick handlers) -->
+  <script>
+    // Customer data for statistika
+    const statCustomers = [
+      { name: "Софія", orders: 38, joke: "🔥 справжня королева гострого" },
+      { name: "Анастасія", orders: 34, joke: "🌶️ вже знає, що бере" },
+      { name: "Марія", orders: 31, joke: "😅 явно було гостро" },
+      { name: "Дарина", orders: 28, joke: "🔥 тримається впевнено" },
+      { name: "Вікторія", orders: 26, joke: "🌶️ латяо-експерт" },
+      { name: "Соломія", orders: 24, joke: "😈 не зупиняється" },
+      { name: "Поліна", orders: 22, joke: "🔥 гострий характер" },
+      { name: "Артем", orders: 21, joke: "💪 справжній боєць" },
+      { name: "Єва", orders: 19, joke: "🌶️ смакує кожну пачку" },
+      { name: "Катя", orders: 18, joke: "😋 вже не може без латяо" },
+      { name: "Максим", orders: 17, joke: "🔥 чоловік знає толк" },
+      { name: "Вероніка", orders: 16, joke: "🌶️ постійна клієнтка" },
+      { name: "Мілана", orders: 15, joke: "✨ знає смак" },
+      { name: "Оля", orders: 14, joke: "🔥 завжди повертається" },
+      { name: "Данило", orders: 13, joke: "💪 тримає рівень" },
+      { name: "Юля", orders: 12, joke: "🌶️ любить погостріше" },
+      { name: "Кіра", orders: 11, joke: "😅 було гостро, але ще" },
+      { name: "Ліза", orders: 10, joke: "🔥 десятка замовлень!" },
+      { name: "Влад", orders: 9, joke: "💪 справжній фанат" },
+      { name: "Ніка", orders: 8, joke: "🌶️ росте апетит" },
+      { name: "Яна", orders: 7, joke: "😋 входить у смак" },
+      { name: "Злата", orders: 6, joke: "✨ нова зірочка" },
+      { name: "Назар", orders: 5, joke: "🔥 початок шляху" },
+      { name: "Аліна", orders: 4, joke: "🌶️ пробує далі" },
+    ];
+
+    // Cities data for statistika
+    const statCities = [
+      { name: "Київ", orders: 1847 },
+      { name: "Львів", orders: 623 },
+      { name: "Харків", orders: 412 },
+      { name: "Одеса", orders: 387 },
+      { name: "Дніпро", orders: 298 },
+      { name: "Вінниця", orders: 187 },
+      { name: "Івано-Франківськ", orders: 156 },
+      { name: "Тернопіль", orders: 134 },
+      { name: "Луцьк", orders: 121 },
+      { name: "Рівне", orders: 98 },
+      { name: "Ірпінь", orders: 234 },
+      { name: "Буча", orders: 189 },
+      { name: "Бровари", orders: 167 },
+      { name: "Бориспіль", orders: 89 },
+      { name: "Вишневе", orders: 76 },
+      { name: "Софіївська Борщагівка", orders: 54 },
+      { name: "Чернівці", orders: 87 },
+      { name: "Ужгород", orders: 65 },
+      { name: "Полтава", orders: 78 },
+      { name: "Трускавець", orders: 34 },
+      { name: "Яремче", orders: 23 },
+      { name: "Славське", orders: 18 },
+    ];
+
+    // Render customers
+    function renderStatCustomers() {
+      const container = document.getElementById('stat-customers-list');
+      if (!container) return;
+      container.innerHTML = statCustomers.map(c => 
+        '<div class="customer-row flex items-center justify-between p-3 cursor-default">' +
+          '<div class="flex items-center gap-3">' +
+            '<span class="text-lg">' + c.name + '</span>' +
+            '<span class="hover-text text-sm text-gray-500">' + c.joke + '</span>' +
+          '</div>' +
+          '<span class="font-bold px-3 py-1 rounded-full text-sm" style="background: #fff4ed; color: #ff6b00;">' +
+            c.orders + ' ' + (c.orders === 1 ? 'замовлення' : 'замовлень') +
+          '</span>' +
+        '</div>'
+      ).join('');
+    }
+
+    // Render cities
+    function renderStatCities() {
+      const container = document.getElementById('stat-cities-list');
+      if (!container) return;
+      container.innerHTML = statCities.map(c => 
+        '<div class="city-card text-center">' +
+          '<div class="font-semibold text-gray-800 text-sm md:text-base">' + c.name + '</div>' +
+          '<div class="font-bold mt-1" style="color: #ff6b00;">' + c.orders + '</div>' +
+        '</div>'
+      ).join('');
+    }
+
+    // Animate counter
+    function animateStatCounter(elementId, target, suffix) {
+      const element = document.getElementById(elementId);
+      if (!element) return;
+      let current = 0;
+      const increment = target / 60;
+      const timer = setInterval(function() {
+        current += increment;
+        if (current >= target) {
+          current = target;
+          clearInterval(timer);
+        }
+        element.textContent = current.toFixed(1).replace('.', ',') + (suffix || '');
+      }, 30);
+    }
+
+    // Animate progress bars
+    function animateStatProgress() {
+      setTimeout(function() {
+        const novaProgress = document.getElementById('nova-progress');
+        const ukrProgress = document.getElementById('ukr-progress');
+        if (novaProgress) novaProgress.style.width = '87%';
+        if (ukrProgress) ukrProgress.style.width = '13%';
+      }, 500);
+    }
+
+    // Fade in on scroll for statistika
+    function handleStatScroll() {
+      const elements = document.querySelectorAll('.stat-fade-in');
+      elements.forEach(function(el) {
+        const rect = el.getBoundingClientRect();
+        const isVisible = rect.top < window.innerHeight - 100;
+        if (isVisible) {
+          el.classList.add('visible');
+        }
+      });
+    }
+
+    // Global function to initialize statistika page
+    function initStatistikaTables() {
+      renderStatCustomers();
+      renderStatCities();
+      handleStatScroll();
+      
+      // Start counter animation when section is visible
+      const counterEl = document.getElementById('tonnage-counter');
+      if (counterEl) {
+        const counterObserver = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              animateStatCounter('tonnage-counter', 4.2, ' тонн');
+              counterObserver.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.5 });
+        
+        counterObserver.observe(counterEl);
+      }
+      
+      animateStatProgress();
+      
+      // Add scroll listener
+      window.addEventListener('scroll', handleStatScroll);
+    }
+  </script>
 
   <!-- Footer Placeholder - динамічно рендериться через layout.js -->
   <div id="footer-placeholder"></div>
@@ -148,11 +544,13 @@
 
     // Show/hide sections
     function showSection(sectionId) {
-      const sections = ['loading-state', 'page-container', 'error-404', 'error-state'];
+      const sections = ['loading-state', 'page-container', 'error-404', 'error-state', 'static-statistika'];
       sections.forEach(id => {
-        document.getElementById(id).classList.add('hidden');
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
       });
-      document.getElementById(sectionId).classList.remove('hidden');
+      const targetEl = document.getElementById(sectionId);
+      if (targetEl) targetEl.classList.remove('hidden');
     }
 
     // Load page content
@@ -785,6 +1183,17 @@
         document.getElementById('content-body').innerHTML = customHTML;
         document.getElementById('page-title').textContent = 'Про нас — Latiao Snack';
         showSection('page-container');
+        return;
+      }
+
+      // Static Statistika page - just toggle visibility (HTML is already in the DOM)
+      if (slug === 'statistika') {
+        document.getElementById('page-title').textContent = 'Статистика — Latiao Snack';
+        showSection('static-statistika');
+        // Initialize statistika tables after showing the section
+        if (typeof initStatistikaTables === 'function') {
+          initStatistikaTables();
+        }
         return;
       }
 

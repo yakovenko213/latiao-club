@@ -1,0 +1,310 @@
+<!-- ============================================
+     PHONE AUTHENTICATION MODAL
+     2-Step: Phone → SMS Code
+     ============================================ -->
+
+<!-- Modal Overlay -->
+<div id="auth-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity duration-300">
+  
+  <!-- Modal Card -->
+  <div class="relative w-full max-w-md bg-white rounded-2xl shadow-xl p-6 md:p-8 transform transition-all duration-300 scale-95 opacity-0" id="auth-modal-card">
+    
+    <!-- Close Button -->
+    <button id="auth-close-btn" 
+            class="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+            aria-label="Закрити">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </button>
+
+    <!-- Logo/Icon -->
+    <div class="flex justify-center mb-6">
+      <div class="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl flex items-center justify-center shadow-lg">
+        <span class="text-3xl">🌶️</span>
+      </div>
+    </div>
+
+    <!-- ========================================
+         STEP 1: PHONE INPUT
+         ======================================== -->
+    <div id="auth-step-phone" class="space-y-6">
+      <!-- Title -->
+      <div class="text-center">
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Вхід у кабінет</h2>
+        <p class="text-gray-500 text-sm">Введіть номер телефону, щоб увійти або зареєструватися</p>
+      </div>
+
+      <!-- Phone Input -->
+      <div class="space-y-2">
+        <label for="auth-phone-input" class="block text-sm font-medium text-gray-700">
+          Номер телефону
+        </label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <span class="text-gray-500">🇺🇦</span>
+          </div>
+          <input type="tel" 
+                 id="auth-phone-input" 
+                 placeholder="+380 XX XXX XX XX"
+                 autocomplete="tel"
+                 class="w-full pl-12 pr-4 py-3.5 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400
+                        focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent
+                        transition-all duration-200"
+          />
+        </div>
+      </div>
+
+      <!-- Send Code Button -->
+      <button id="auth-send-btn"
+              class="w-full py-3.5 px-6 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-xl
+                     hover:from-orange-600 hover:to-red-600 hover:shadow-lg hover:shadow-orange-500/30
+                     focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2
+                     disabled:opacity-50 disabled:cursor-not-allowed
+                     transform active:scale-[0.98] transition-all duration-200
+                     flex items-center justify-center gap-2">
+        <span>Надіслати код</span>
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+        </svg>
+      </button>
+
+      <!-- Terms -->
+      <p class="text-xs text-gray-400 text-center">
+        Продовжуючи, ви погоджуєтесь з 
+        <a href="#" class="text-orange-500 hover:underline">Умовами використання</a>
+      </p>
+    </div>
+
+    <!-- ========================================
+         STEP 2: SMS CODE INPUT
+         ======================================== -->
+    <div id="auth-step-otp" class="hidden space-y-6">
+      <!-- Back Button -->
+      <button id="auth-back-btn" 
+              class="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        <span>Назад</span>
+      </button>
+
+      <!-- Title -->
+      <div class="text-center">
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Підтвердження</h2>
+        <p class="text-gray-500 text-sm">
+          Введіть 4 цифри із СМС, надісланого на<br>
+          <span id="auth-phone-display" class="font-semibold text-gray-700">+380 XX XXX XX XX</span>
+        </p>
+      </div>
+
+      <!-- OTP Code Input -->
+      <div class="space-y-2">
+        <label for="auth-code-input" class="block text-sm font-medium text-gray-700 text-center">
+          Код підтвердження
+        </label>
+        <input type="text" 
+               id="auth-code-input" 
+               maxlength="4"
+               inputmode="numeric"
+               pattern="[0-9]*"
+               autocomplete="one-time-code"
+               placeholder="• • • •"
+               class="w-full py-4 px-6 border border-gray-300 rounded-xl 
+                      text-center text-3xl font-bold tracking-[0.5em] text-gray-900
+                      placeholder-gray-300
+                      focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent
+                      transition-all duration-200"
+        />
+      </div>
+
+      <!-- Timer / Resend -->
+      <div class="text-center">
+        <p id="auth-timer" class="text-sm text-gray-500">
+          Надіслати повторно через <span id="auth-countdown" class="font-semibold text-orange-500">60</span> сек
+        </p>
+        <button id="auth-resend-link" 
+                class="hidden text-sm text-orange-500 hover:text-orange-600 hover:underline font-medium transition-colors">
+          Надіслати код повторно
+        </button>
+      </div>
+
+      <!-- Verify Button -->
+      <button id="auth-verify-btn"
+              class="w-full py-3.5 px-6 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-xl
+                     hover:from-orange-600 hover:to-red-600 hover:shadow-lg hover:shadow-orange-500/30
+                     focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2
+                     disabled:opacity-50 disabled:cursor-not-allowed
+                     transform active:scale-[0.98] transition-all duration-200
+                     flex items-center justify-center gap-2">
+        <span>Увійти</span>
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- ========================================
+         LOADING STATE (Optional)
+         ======================================== -->
+    <div id="auth-loading" class="hidden absolute inset-0 bg-white/90 rounded-2xl flex flex-col items-center justify-center">
+      <div class="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+      <p class="text-gray-600 font-medium">Перевіряємо...</p>
+    </div>
+
+    <!-- ========================================
+         ERROR MESSAGE (Optional)
+         ======================================== -->
+    <div id="auth-error" class="hidden mt-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+      <p class="text-sm text-red-600 text-center" id="auth-error-text">
+        Невірний код. Спробуйте ще раз.
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================
+     MODAL JAVASCRIPT (Basic Toggle Logic)
+     ============================================ -->
+<script>
+  // Modal Elements
+  const authModal = document.getElementById('auth-modal');
+  const authModalCard = document.getElementById('auth-modal-card');
+  const authCloseBtn = document.getElementById('auth-close-btn');
+  const authStepPhone = document.getElementById('auth-step-phone');
+  const authStepOtp = document.getElementById('auth-step-otp');
+  const authSendBtn = document.getElementById('auth-send-btn');
+  const authBackBtn = document.getElementById('auth-back-btn');
+  const authPhoneInput = document.getElementById('auth-phone-input');
+  const authCodeInput = document.getElementById('auth-code-input');
+  const authPhoneDisplay = document.getElementById('auth-phone-display');
+  const authTimer = document.getElementById('auth-timer');
+  const authResendLink = document.getElementById('auth-resend-link');
+  const authCountdown = document.getElementById('auth-countdown');
+
+  let countdownInterval = null;
+
+  // Open Modal
+  function openAuthModal() {
+    authModal.classList.remove('hidden');
+    setTimeout(() => {
+      authModalCard.classList.remove('scale-95', 'opacity-0');
+      authModalCard.classList.add('scale-100', 'opacity-100');
+    }, 10);
+    authPhoneInput.focus();
+  }
+
+  // Close Modal
+  function closeAuthModal() {
+    authModalCard.classList.remove('scale-100', 'opacity-100');
+    authModalCard.classList.add('scale-95', 'opacity-0');
+    setTimeout(() => {
+      authModal.classList.add('hidden');
+      resetAuthModal();
+    }, 300);
+  }
+
+  // Reset Modal to Step 1
+  function resetAuthModal() {
+    authStepPhone.classList.remove('hidden');
+    authStepOtp.classList.add('hidden');
+    authPhoneInput.value = '';
+    authCodeInput.value = '';
+    if (countdownInterval) clearInterval(countdownInterval);
+  }
+
+  // Go to Step 2 (OTP)
+  function goToOtpStep() {
+    const phone = authPhoneInput.value.trim();
+    if (!phone || phone.length < 10) {
+      authPhoneInput.classList.add('border-red-500', 'ring-2', 'ring-red-500');
+      return;
+    }
+    
+    authPhoneInput.classList.remove('border-red-500', 'ring-2', 'ring-red-500');
+    authPhoneDisplay.textContent = phone;
+    authStepPhone.classList.add('hidden');
+    authStepOtp.classList.remove('hidden');
+    authCodeInput.focus();
+    startCountdown(60);
+  }
+
+  // Go back to Step 1
+  function goToPhoneStep() {
+    authStepOtp.classList.add('hidden');
+    authStepPhone.classList.remove('hidden');
+    authPhoneInput.focus();
+    if (countdownInterval) clearInterval(countdownInterval);
+  }
+
+  // Countdown Timer
+  function startCountdown(seconds) {
+    authTimer.classList.remove('hidden');
+    authResendLink.classList.add('hidden');
+    authCountdown.textContent = seconds;
+    
+    countdownInterval = setInterval(() => {
+      seconds--;
+      authCountdown.textContent = seconds;
+      
+      if (seconds <= 0) {
+        clearInterval(countdownInterval);
+        authTimer.classList.add('hidden');
+        authResendLink.classList.remove('hidden');
+      }
+    }, 1000);
+  }
+
+  // Event Listeners
+  if (authCloseBtn) authCloseBtn.addEventListener('click', closeAuthModal);
+  if (authSendBtn) authSendBtn.addEventListener('click', goToOtpStep);
+  if (authBackBtn) authBackBtn.addEventListener('click', goToPhoneStep);
+  if (authResendLink) authResendLink.addEventListener('click', () => startCountdown(60));
+
+  // Close on overlay click
+  if (authModal) {
+    authModal.addEventListener('click', (e) => {
+      if (e.target === authModal) closeAuthModal();
+    });
+  }
+
+  // Close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !authModal.classList.contains('hidden')) {
+      closeAuthModal();
+    }
+  });
+
+  // Auto-format phone input
+  if (authPhoneInput) {
+    authPhoneInput.addEventListener('input', (e) => {
+      let value = e.target.value.replace(/\D/g, '');
+      if (value.startsWith('380')) {
+        value = '+' + value;
+      } else if (value.startsWith('80')) {
+        value = '+3' + value;
+      } else if (value.startsWith('0')) {
+        value = '+38' + value;
+      } else if (!value.startsWith('+')) {
+        value = '+380' + value;
+      }
+      e.target.value = value.substring(0, 13);
+    });
+  }
+
+  // Auto-submit OTP when 4 digits entered
+  if (authCodeInput) {
+    authCodeInput.addEventListener('input', (e) => {
+      e.target.value = e.target.value.replace(/\D/g, '').substring(0, 4);
+      if (e.target.value.length === 4) {
+        // Auto-submit or enable verify button
+        console.log('OTP entered:', e.target.value);
+      }
+    });
+  }
+
+  // Expose functions globally
+  window.openAuthModal = openAuthModal;
+  window.closeAuthModal = closeAuthModal;
+</script>

@@ -13,6 +13,9 @@
 
   <script src="https://unpkg.com/lucide@latest"></script>
 
+  <!-- SheetJS for Excel Import -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
   <script>
     tailwind.config = {
       theme: { extend: { colors: { spicy: '#ff6b00' } } }
@@ -439,6 +442,26 @@
           <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
 
             <h3 class="text-lg font-bold text-gray-900">Всі замовлення</h3>
+            <div class="flex items-center gap-3">
+              <!-- Search Orders -->
+              <div class="relative">
+                <input 
+                  type="text" 
+                  id="orders-search" 
+                  placeholder="🔍 Пошук за ID, ім'ям, телефоном..." 
+                  oninput="searchOrders(this.value)"
+                  class="w-72 px-4 py-2 pl-10 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
+                >
+                <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+              </div>
+              <!-- Orders Import (with Mini-CRM) -->
+              <input type="file" id="orders-import-file" class="hidden" accept=".csv,.xlsx,.xls" onchange="window.handleOrdersImport(this)">
+              <button onclick="document.getElementById('orders-import-file').click()"
+                class="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition">
+                <i data-lucide="users" class="w-4 h-4"></i>
+                <span>Імпорт замовлень + CRM</span>
+              </button>
+            </div>
             <!-- <button
               class="flex items-center gap-2 px-4 py-2 bg-spicy text-white rounded-lg font-semibold hover:bg-orange-700 transition">
               <i data-lucide="plus" class="w-4 h-4"></i>
@@ -565,11 +588,26 @@
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
           <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
             <h3 class="text-lg font-bold text-gray-900">Товари</h3>
-            <button onclick="openProductModal()"
-              class="flex items-center gap-2 px-4 py-2 bg-spicy text-white rounded-lg font-semibold hover:bg-orange-700 transition">
-              <i data-lucide="plus" class="w-4 h-4"></i>
-              <span>Додати товар</span>
-            </button>
+            <div class="flex items-center gap-3">
+              <!-- Quick Shopify Import -->
+              <input type="file" id="shopify-import-file" class="hidden" accept=".csv,.xlsx,.xls" onchange="window.handleShopifyImport(this)">
+              <button onclick="document.getElementById('shopify-import-file').click()"
+                class="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition">
+                <i data-lucide="upload" class="w-4 h-4"></i>
+                <span>Shopify CSV</span>
+              </button>
+              <!-- Advanced Import Modal -->
+              <button onclick="window.openImportModal()"
+                class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                <span>Імпорт Excel</span>
+              </button>
+              <button onclick="openProductModal()"
+                class="flex items-center gap-2 px-4 py-2 bg-spicy text-white rounded-lg font-semibold hover:bg-orange-700 transition">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Додати товар</span>
+              </button>
+            </div>
           </div>
           <div id="products-list" class="p-6">
             <div class="text-center py-10">
@@ -617,11 +655,73 @@
 
       <div id="view-customers" class="view p-8">
 
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
 
-          <h3 class="text-lg font-bold text-gray-900 mb-4">База клієнтів</h3>
+          <!-- Header -->
+          <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <div>
+              <h3 class="text-lg font-bold text-gray-900">👥 База клієнтів (Mini-CRM)</h3>
+              <p class="text-sm text-gray-500 mt-1">Автоматично оновлюється при кожному замовленні</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <button onclick="loadCustomers()" class="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                <span>Оновити</span>
+              </button>
+              <select id="customers-sort" onchange="loadCustomers()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                <option value="totalSpent">За сумою витрат</option>
+                <option value="ordersCount">За кількістю замовлень</option>
+                <option value="lastOrderDate">За останнім замовленням</option>
+                <option value="fullName">За ім'ям</option>
+              </select>
+            </div>
+          </div>
 
-          <p class="text-gray-600">Тут буде список клієнтів з історією замовлень</p>
+          <!-- Stats Summary -->
+          <div class="px-6 py-4 bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-gray-200">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div class="text-center">
+                <p class="text-2xl font-bold text-purple-600" id="customers-total-count">0</p>
+                <p class="text-xs text-gray-600">Всього клієнтів</p>
+              </div>
+              <div class="text-center">
+                <p class="text-2xl font-bold text-green-600" id="customers-total-revenue">0 ₴</p>
+                <p class="text-xs text-gray-600">Загальний дохід</p>
+              </div>
+              <div class="text-center">
+                <p class="text-2xl font-bold text-blue-600" id="customers-avg-order">0 ₴</p>
+                <p class="text-xs text-gray-600">Середній чек</p>
+              </div>
+              <div class="text-center">
+                <p class="text-2xl font-bold text-orange-600" id="customers-repeat-rate">0%</p>
+                <p class="text-xs text-gray-600">Повторні покупки</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Клієнт</th>
+                  <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Телефон</th>
+                  <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Замовлень</th>
+                  <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">LTV (Сума)</th>
+                  <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Останнє замовлення</th>
+                  <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Дії</th>
+                </tr>
+              </thead>
+              <tbody id="customers-list" class="divide-y divide-gray-200">
+                <tr>
+                  <td colspan="6" class="text-center py-10">
+                    <div class="animate-spin w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                    <p class="text-gray-600">Завантаження клієнтів...</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
         </div>
 
@@ -1651,6 +1751,111 @@
     </div>
 
   </div>
+
+  <!-- Import Excel Modal -->
+  <div id="import-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div class="p-6 border-b flex justify-between items-center flex-shrink-0">
+        <h3 class="text-xl font-bold">📊 Імпорт товарів з Excel / CSV</h3>
+        <button onclick="window.closeImportModal()" class="p-2 hover:bg-gray-100 rounded-full">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      
+      <div class="p-6 overflow-y-auto flex-1">
+        <!-- State 1: Upload -->
+        <div id="import-step-upload" class="import-step">
+          <!-- Shopify format info -->
+          <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+            <div class="flex items-start gap-3">
+              <span class="text-2xl">💡</span>
+              <div>
+                <p class="font-semibold text-blue-800 mb-1">Підтримка Shopify Export</p>
+                <p class="text-sm text-blue-700">Система автоматично розпізнає колонки Shopify: Title, Variant Price, Variant SKU, Body (HTML), Image Src, Type, Tags та інші.</p>
+              </div>
+            </div>
+          </div>
+          
+          <div id="import-dropzone" 
+               class="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center hover:border-green-500 hover:bg-green-50 transition-all cursor-pointer">
+            <div class="text-6xl mb-4">📁</div>
+            <p class="text-lg font-semibold text-gray-700 mb-2">Перетягніть файл сюди</p>
+            <p class="text-sm text-gray-500 mb-4">або натисніть для вибору</p>
+            <input type="file" id="import-file-input" accept=".xlsx,.xls,.csv" class="hidden">
+            <button type="button" onclick="document.getElementById('import-file-input').click()" 
+                    class="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">
+              Вибрати файл
+            </button>
+            <p class="text-xs text-gray-400 mt-4">Підтримувані формати: .xlsx, .xls, .csv</p>
+          </div>
+          <div id="import-file-info" class="hidden mt-4 p-4 bg-green-50 rounded-lg flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">📄</span>
+              <div>
+                <p id="import-file-name" class="font-semibold text-gray-900"></p>
+                <p id="import-file-size" class="text-sm text-gray-500"></p>
+              </div>
+            </div>
+            <button onclick="window.resetImportFile()" class="p-2 hover:bg-red-100 rounded-lg text-red-600">
+              <i data-lucide="trash-2" class="w-5 h-5"></i>
+            </button>
+          </div>
+        </div>
+        
+        <!-- State 2: Mapping -->
+        <div id="import-step-mapping" class="import-step hidden">
+          <div class="mb-4">
+            <div class="flex items-center justify-between mb-2">
+              <h4 class="font-bold text-gray-900">🔗 Зіставлення колонок</h4>
+              <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Shopify-сумісний</span>
+            </div>
+            <p class="text-sm text-gray-600">Перевірте автоматичне зіставлення. Рядки без назви (Title) будуть пропущені.</p>
+          </div>
+          <div class="overflow-x-auto border rounded-xl">
+            <table id="import-mapping-table" class="w-full text-sm">
+              <thead class="bg-gray-100" id="import-mapping-header"></thead>
+              <tbody id="import-mapping-body" class="divide-y divide-gray-200"></tbody>
+            </table>
+          </div>
+          <div class="mt-4 flex items-center justify-between">
+            <button onclick="window.goToUploadStep()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition">
+              ← Назад
+            </button>
+            <button onclick="window.executeImport()" class="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition flex items-center gap-2">
+              <i data-lucide="upload" class="w-5 h-5"></i>
+              <span>Імпортувати товари</span>
+            </button>
+          </div>
+        </div>
+        
+        <!-- State 3: Progress -->
+        <div id="import-step-progress" class="import-step hidden">
+          <div class="text-center py-8">
+            <div class="text-6xl mb-4 animate-bounce">⏳</div>
+            <h4 class="text-xl font-bold text-gray-900 mb-2">Імпорт в процесі...</h4>
+            <p id="import-progress-text" class="text-gray-600 mb-6">Підготовка...</p>
+            <div class="w-full bg-gray-200 rounded-full h-4 mb-4 overflow-hidden">
+              <div id="import-progress-bar" class="bg-gradient-to-r from-green-500 to-green-600 h-4 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+            <p id="import-progress-count" class="text-sm text-gray-500">0 з 0 товарів</p>
+          </div>
+        </div>
+        
+        <!-- State 4: Success -->
+        <div id="import-step-success" class="import-step hidden">
+          <div class="text-center py-8">
+            <div class="text-6xl mb-4">🎉</div>
+            <h4 class="text-xl font-bold text-green-600 mb-2">Імпорт завершено!</h4>
+            <p id="import-success-text" class="text-gray-600 mb-6"></p>
+            <button onclick="window.closeImportModal()" class="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">
+              Закрити
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Page Modal -->
 
   <div id="page-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
@@ -2024,6 +2229,23 @@
 
         </div>
 
+        <!-- Dev Tools Section -->
+        <div class="pt-4 border-t border-gray-200">
+          <h4 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+            <span>🛠️</span> Dev Tools
+          </h4>
+          
+          <button 
+            type="button" 
+            onclick="fixMissingAvatars()" 
+            class="w-full py-3 px-4 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl"
+          >
+            <span>🎨</span>
+            <span>Видати аватарки всім клієнтам</span>
+          </button>
+          <p class="text-xs text-gray-500 mt-2 text-center">Призначає випадкову мем-аватарку всім клієнтам без аватарки</p>
+        </div>
+
 
         <div class="pt-4 flex gap-3">
           <button type="button" onclick="closeSettingsModal()"
@@ -2037,6 +2259,103 @@
 
     </div>
 
+  </div>
+
+  <!-- Customer Details Modal -->
+  <div id="customer-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4" onclick="if(event.target === this) closeCustomerModal()">
+    <div class="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+      
+      <!-- Header -->
+      <div class="px-6 py-4 border-b bg-gradient-to-r from-purple-600 to-indigo-600 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+          <div id="customer-modal-avatar" class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white text-xl font-bold">
+            ?
+          </div>
+          <div>
+            <h3 id="customer-modal-name" class="text-xl font-bold text-white">Завантаження...</h3>
+            <p id="customer-modal-since" class="text-sm text-white/70">Клієнт з ...</p>
+          </div>
+        </div>
+        <button onclick="closeCustomerModal()" class="p-2 hover:bg-white/20 rounded-full text-white transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      
+      <!-- Content (Scrollable) -->
+      <div class="flex-1 overflow-y-auto">
+        
+        <!-- Contact & Metrics Row -->
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 border-b bg-gray-50">
+          
+          <!-- Contact Info -->
+          <div class="space-y-3">
+            <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Контактна інформація</h4>
+            
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                <i data-lucide="phone" class="w-5 h-5 text-blue-600"></i>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500">Телефон</p>
+                <a id="customer-modal-phone" href="#" class="font-semibold text-blue-600 hover:underline">+380...</a>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg bg-sky-100 flex items-center justify-center">
+                <svg class="w-5 h-5 text-sky-600" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 11.944 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500">Telegram</p>
+                <a id="customer-modal-telegram" href="#" target="_blank" class="font-semibold text-sky-600 hover:underline">Написати</a>
+              </div>
+            </div>
+            
+            <div id="customer-modal-email-row" class="flex items-center gap-3 hidden">
+              <div class="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+                <i data-lucide="mail" class="w-5 h-5 text-orange-600"></i>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500">Email</p>
+                <span id="customer-modal-email" class="font-semibold text-gray-900">—</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Metrics Cards -->
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+              <p id="customer-modal-orders" class="text-3xl font-bold text-purple-600">0</p>
+              <p class="text-xs text-gray-500 mt-1">Замовлень</p>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+              <p id="customer-modal-ltv" class="text-3xl font-bold text-green-600">0 ₴</p>
+              <p class="text-xs text-gray-500 mt-1">LTV (Всього витрачено)</p>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 p-4 text-center col-span-2">
+              <p id="customer-modal-avg" class="text-2xl font-bold text-blue-600">0 ₴</p>
+              <p class="text-xs text-gray-500 mt-1">Середній чек</p>
+            </div>
+          </div>
+          
+        </div>
+        
+        <!-- Order History Section -->
+        <div class="p-6">
+          <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">📦 Історія замовлень</h4>
+          
+          <div id="customer-modal-orders-list" class="space-y-3">
+            <!-- Orders will be injected here -->
+            <div class="text-center py-8 text-gray-400">
+              <i data-lucide="loader" class="w-8 h-8 mx-auto animate-spin"></i>
+              <p class="mt-2">Завантаження замовлень...</p>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+      
+    </div>
   </div>
 
   <script type="module">
@@ -2192,6 +2511,8 @@
           loadPopups()
         } else if (target === 'gifts') {
           loadGiftsView()
+        } else if (target === 'customers') {
+          loadCustomers()
         }
 
         // Reinit icons
@@ -2237,6 +2558,9 @@
 
     // Track selected order IDs
     let selectedOrderIds = new Set()
+
+    // Cache for orders (for search/filter)
+    let allOrdersCache = []
 
     // Toggle individual order selection
     window.toggleSelection = function (orderId, checkbox) {
@@ -4004,6 +4328,379 @@
     // END ABANDONED CARTS SECTION
     // ============================================
 
+    // ============================================
+    // CUSTOMERS / MINI-CRM SECTION
+    // ============================================
+    async function loadCustomers() {
+      console.log('👥 Loading customers from Mini-CRM...')
+      
+      const list = document.getElementById('customers-list')
+      const sortSelect = document.getElementById('customers-sort')
+      const sortBy = sortSelect ? sortSelect.value : 'totalSpent'
+      
+      list.innerHTML = '<tr><td colspan="6" class="text-center py-10"><div class="animate-spin w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full mx-auto"></div></td></tr>'
+      
+      try {
+        // Fetch all customers
+        const customersRef = collection(db, 'customers')
+        const snap = await getDocs(customersRef)
+        
+        if (snap.empty) {
+          list.innerHTML = `
+            <tr>
+              <td colspan="6" class="text-center py-10">
+                <div class="text-gray-400 mb-2">
+                  <i data-lucide="users" class="w-12 h-12 mx-auto"></i>
+                </div>
+                <p class="text-gray-500 font-medium">Клієнтів поки немає</p>
+                <p class="text-gray-400 text-sm">Вони з'являться автоматично після першого замовлення</p>
+              </td>
+            </tr>`
+          lucide.createIcons()
+          updateCustomerStats([])
+          return
+        }
+        
+        // Convert to array and sort
+        let customers = snap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        
+        // Sort customers
+        customers.sort((a, b) => {
+          switch (sortBy) {
+            case 'totalSpent':
+              return (b.totalSpent || 0) - (a.totalSpent || 0)
+            case 'ordersCount':
+              return (b.ordersCount || 0) - (a.ordersCount || 0)
+            case 'lastOrderDate':
+              const dateA = a.lastOrderDate?.toDate?.() || new Date(0)
+              const dateB = b.lastOrderDate?.toDate?.() || new Date(0)
+              return dateB - dateA
+            case 'fullName':
+              return (a.fullName || '').localeCompare(b.fullName || '', 'uk')
+            default:
+              return (b.totalSpent || 0) - (a.totalSpent || 0)
+          }
+        })
+        
+        // Update stats
+        updateCustomerStats(customers)
+        
+        // Render table
+        let html = ''
+        
+        customers.forEach((customer, index) => {
+          const name = customer.fullName || 'Невідомий'
+          const phone = customer.phone || customer.id || '-'
+          const ordersCount = customer.ordersCount || 0
+          const totalSpent = customer.totalSpent || 0
+          const email = customer.email || ''
+          
+          // Format last order date
+          let lastOrderStr = 'Невідомо'
+          if (customer.lastOrderDate) {
+            const date = customer.lastOrderDate.toDate ? customer.lastOrderDate.toDate() : new Date(customer.lastOrderDate)
+            const day = String(date.getDate()).padStart(2, '0')
+            const month = String(date.getMonth() + 1).padStart(2, '0')
+            const year = date.getFullYear()
+            lastOrderStr = `${day}.${month}.${year}`
+          }
+          
+          // LTV badge color
+          let ltvBadge = 'bg-gray-100 text-gray-600'
+          if (totalSpent >= 5000) ltvBadge = 'bg-yellow-100 text-yellow-800' // Gold customer
+          else if (totalSpent >= 2000) ltvBadge = 'bg-purple-100 text-purple-800' // VIP
+          else if (totalSpent >= 500) ltvBadge = 'bg-green-100 text-green-800' // Good
+          
+          // Orders badge
+          let ordersBadge = 'bg-gray-100 text-gray-600'
+          if (ordersCount >= 5) ordersBadge = 'bg-orange-100 text-orange-800'
+          else if (ordersCount >= 2) ordersBadge = 'bg-blue-100 text-blue-800'
+          
+          html += `
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-bold">
+                    ${name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p class="font-semibold text-gray-900">${name}</p>
+                    ${email ? `<p class="text-xs text-gray-500">${email}</p>` : ''}
+                  </div>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <a href="tel:+${phone}" class="text-blue-600 hover:underline font-mono text-sm">
+                  +${phone}
+                </a>
+              </td>
+              <td class="px-6 py-4 text-center">
+                <span class="px-3 py-1 rounded-full text-sm font-semibold ${ordersBadge}">
+                  ${ordersCount}
+                </span>
+              </td>
+              <td class="px-6 py-4 text-right">
+                <span class="px-3 py-1 rounded-full text-sm font-bold ${ltvBadge}">
+                  ${totalSpent.toLocaleString('uk-UA')} ₴
+                </span>
+              </td>
+              <td class="px-6 py-4 text-gray-600 text-sm">
+                ${lastOrderStr}
+              </td>
+              <td class="px-6 py-4 text-right">
+                <button onclick="viewCustomerDetails('${customer.id}')" 
+                        class="p-2 hover:bg-purple-100 rounded-lg text-purple-600 transition-colors"
+                        title="Деталі клієнта">
+                  <i data-lucide="eye" class="w-4 h-4"></i>
+                </button>
+              </td>
+            </tr>
+          `
+        })
+        
+        list.innerHTML = html
+        lucide.createIcons()
+        
+        console.log(`✅ Loaded ${customers.length} customers`)
+        
+      } catch (error) {
+        console.error('❌ Error loading customers:', error)
+        list.innerHTML = `
+          <tr>
+            <td colspan="6" class="text-center py-10 text-red-500">
+              <i data-lucide="alert-circle" class="w-8 h-8 mx-auto mb-2"></i>
+              <p>Помилка завантаження: ${error.message}</p>
+            </td>
+          </tr>`
+        lucide.createIcons()
+      }
+    }
+    
+    // Update customer statistics
+    function updateCustomerStats(customers) {
+      const totalCount = customers.length
+      const totalRevenue = customers.reduce((sum, c) => sum + (c.totalSpent || 0), 0)
+      const totalOrders = customers.reduce((sum, c) => sum + (c.ordersCount || 0), 0)
+      const avgOrder = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0
+      const repeatCustomers = customers.filter(c => (c.ordersCount || 0) >= 2).length
+      const repeatRate = totalCount > 0 ? Math.round((repeatCustomers / totalCount) * 100) : 0
+      
+      document.getElementById('customers-total-count').textContent = totalCount.toLocaleString('uk-UA')
+      document.getElementById('customers-total-revenue').textContent = totalRevenue.toLocaleString('uk-UA') + ' ₴'
+      document.getElementById('customers-avg-order').textContent = avgOrder.toLocaleString('uk-UA') + ' ₴'
+      document.getElementById('customers-repeat-rate').textContent = repeatRate + '%'
+    }
+    
+    // ============================================
+    // CUSTOMER DETAILS MODAL
+    // ============================================
+    async function viewCustomerDetails(customerId) {
+      console.log('📋 Opening customer details:', customerId)
+      
+      const modal = document.getElementById('customer-modal')
+      if (!modal) return
+      
+      // Show modal with loading state
+      modal.classList.remove('hidden')
+      
+      // Reset modal content
+      document.getElementById('customer-modal-avatar').textContent = '?'
+      document.getElementById('customer-modal-name').textContent = 'Завантаження...'
+      document.getElementById('customer-modal-since').textContent = ''
+      document.getElementById('customer-modal-orders-list').innerHTML = `
+        <div class="text-center py-8 text-gray-400">
+          <i data-lucide="loader" class="w-8 h-8 mx-auto animate-spin"></i>
+          <p class="mt-2">Завантаження...</p>
+        </div>
+      `
+      lucide.createIcons()
+      
+      try {
+        // Fetch customer data
+        const customerRef = doc(db, 'customers', customerId)
+        const customerSnap = await getDoc(customerRef)
+        
+        if (!customerSnap.exists()) {
+          throw new Error('Клієнта не знайдено')
+        }
+        
+        const customer = customerSnap.data()
+        const phone = customer.phone || customerId
+        const fullName = customer.fullName || 'Невідомий клієнт'
+        const email = customer.email || ''
+        const ordersCount = customer.ordersCount || 0
+        const totalSpent = customer.totalSpent || 0
+        const avgOrder = ordersCount > 0 ? Math.round(totalSpent / ordersCount) : 0
+        
+        // Format first order date
+        let sinceStr = ''
+        if (customer.firstOrderDate) {
+          const date = customer.firstOrderDate.toDate ? customer.firstOrderDate.toDate() : new Date(customer.firstOrderDate)
+          sinceStr = `Клієнт з ${date.toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' })}`
+        }
+        
+        // Update modal header
+        document.getElementById('customer-modal-avatar').textContent = fullName.charAt(0).toUpperCase()
+        document.getElementById('customer-modal-name').textContent = fullName
+        document.getElementById('customer-modal-since').textContent = sinceStr
+        
+        // Update contact info
+        const phoneLink = document.getElementById('customer-modal-phone')
+        phoneLink.textContent = '+' + phone
+        phoneLink.href = 'tel:+' + phone
+        
+        const telegramLink = document.getElementById('customer-modal-telegram')
+        telegramLink.href = 'https://t.me/+' + phone
+        
+        const emailRow = document.getElementById('customer-modal-email-row')
+        if (email) {
+          emailRow.classList.remove('hidden')
+          document.getElementById('customer-modal-email').textContent = email
+        } else {
+          emailRow.classList.add('hidden')
+        }
+        
+        // Update metrics
+        document.getElementById('customer-modal-orders').textContent = ordersCount
+        document.getElementById('customer-modal-ltv').textContent = totalSpent.toLocaleString('uk-UA') + ' ₴'
+        document.getElementById('customer-modal-avg').textContent = avgOrder.toLocaleString('uk-UA') + ' ₴'
+        
+        // Fetch customer orders
+        await loadCustomerOrders(phone)
+        
+      } catch (error) {
+        console.error('❌ Error loading customer:', error)
+        document.getElementById('customer-modal-name').textContent = 'Помилка'
+        document.getElementById('customer-modal-orders-list').innerHTML = `
+          <div class="text-center py-8 text-red-500">
+            <i data-lucide="alert-circle" class="w-8 h-8 mx-auto"></i>
+            <p class="mt-2">${error.message}</p>
+          </div>
+        `
+        lucide.createIcons()
+      }
+    }
+    
+    // Load customer's order history
+    async function loadCustomerOrders(phone) {
+      const container = document.getElementById('customer-modal-orders-list')
+      
+      try {
+        // Query orders by customer phone
+        const ordersRef = collection(db, 'orders')
+        const ordersQuery = query(ordersRef, orderBy('createdAt', 'desc'))
+        const snap = await getDocs(ordersQuery)
+        
+        // Filter by phone (since Firestore can't query nested fields efficiently)
+        const customerOrders = snap.docs.filter(doc => {
+          const order = doc.data()
+          const orderPhone = (order.customer?.phone || '').replace(/[\s\-\(\)\+]/g, '')
+          return orderPhone === phone || orderPhone === phone.replace(/^380/, '') || '380' + orderPhone === phone
+        })
+        
+        if (customerOrders.length === 0) {
+          container.innerHTML = `
+            <div class="text-center py-8 text-gray-400">
+              <i data-lucide="package" class="w-8 h-8 mx-auto"></i>
+              <p class="mt-2">Замовлень не знайдено</p>
+            </div>
+          `
+          lucide.createIcons()
+          return
+        }
+        
+        let html = ''
+        
+        customerOrders.forEach(docSnap => {
+          const order = docSnap.data()
+          const orderId = docSnap.id
+          
+          // Format date
+          let dateStr = '—'
+          if (order.createdAt?.toDate) {
+            const date = order.createdAt.toDate()
+            dateStr = date.toLocaleDateString('uk-UA', { 
+              day: '2-digit', 
+              month: '2-digit', 
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          }
+          
+          // Items summary
+          const items = order.items || []
+          const itemsSummary = items.length > 0 
+            ? items.slice(0, 2).map(i => `${i.name} x${i.quantity}`).join(', ') + (items.length > 2 ? ` +${items.length - 2}` : '')
+            : 'Немає товарів'
+          
+          // Total
+          const total = order.summary?.total || 0
+          
+          // Status badge
+          const status = order.status || 'pending'
+          const statusConfig = {
+            'pending': { label: 'Очікує', bg: 'bg-yellow-100', text: 'text-yellow-800' },
+            'confirmed': { label: 'Підтверджено', bg: 'bg-blue-100', text: 'text-blue-800' },
+            'shipped': { label: 'Відправлено', bg: 'bg-purple-100', text: 'text-purple-800' },
+            'delivered': { label: 'Доставлено', bg: 'bg-green-100', text: 'text-green-800' },
+            'completed': { label: 'Виконано', bg: 'bg-green-100', text: 'text-green-800' },
+            'cancelled': { label: 'Скасовано', bg: 'bg-red-100', text: 'text-red-800' }
+          }
+          const statusInfo = statusConfig[status] || statusConfig['pending']
+          
+          html += `
+            <div class="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-purple-300 transition-colors">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="text-xs font-mono text-gray-400">#${orderId.slice(-6).toUpperCase()}</span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold ${statusInfo.bg} ${statusInfo.text}">
+                      ${statusInfo.label}
+                    </span>
+                  </div>
+                  <p class="text-sm text-gray-600 truncate">${itemsSummary}</p>
+                  <p class="text-xs text-gray-400 mt-1">${dateStr}</p>
+                </div>
+                <div class="text-right flex-shrink-0">
+                  <p class="text-lg font-bold text-gray-900">${total.toLocaleString('uk-UA')} ₴</p>
+                </div>
+              </div>
+            </div>
+          `
+        })
+        
+        container.innerHTML = html
+        
+      } catch (error) {
+        console.error('❌ Error loading orders:', error)
+        container.innerHTML = `
+          <div class="text-center py-8 text-red-500">
+            <i data-lucide="alert-circle" class="w-8 h-8 mx-auto"></i>
+            <p class="mt-2">Помилка: ${error.message}</p>
+          </div>
+        `
+        lucide.createIcons()
+      }
+    }
+    
+    // Close customer modal
+    function closeCustomerModal() {
+      const modal = document.getElementById('customer-modal')
+      if (modal) modal.classList.add('hidden')
+    }
+    
+    // Expose function globally
+    window.viewCustomerDetails = viewCustomerDetails
+    window.closeCustomerModal = closeCustomerModal
+
+    // ============================================
+    // END CUSTOMERS SECTION
+    // ============================================
+
     async function loadOrders() {
       const list = document.getElementById('orders-list')
       list.innerHTML = '<tr><td colspan="7" class="text-center py-10"><div class="animate-spin w-8 h-8 border-4 border-spicy border-t-transparent rounded-full mx-auto"></div></td></tr>'
@@ -4018,213 +4715,18 @@
 
         if (snap.empty) {
           list.innerHTML = '<tr><td colspan="7" class="text-center py-10 text-gray-500">Замовлень немає. Оформіть перше замовлення на сайті!</td></tr>'
+          allOrdersCache = []
           return
         }
 
-        let html = ''
+        // Cache orders for search/filter
+        allOrdersCache = snap.docs.map(docSnap => ({
+          id: docSnap.id,
+          ...docSnap.data()
+        }))
 
-        snap.docs.forEach(docSnap => {
-          const order = docSnap.data()
-          const orderId = docSnap.id
-
-          // ============================================
-          // 1. FORMAT DATE (DD.MM HH:mm)
-          // ============================================
-          let dateStr = 'Невідома дата'
-          if (order.createdAt && order.createdAt.toDate) {
-            const date = order.createdAt.toDate()
-            const day = String(date.getDate()).padStart(2, '0')
-            const month = String(date.getMonth() + 1).padStart(2, '0')
-            const hours = String(date.getHours()).padStart(2, '0')
-            const minutes = String(date.getMinutes()).padStart(2, '0')
-            dateStr = `${day}.${month} ${hours}:${minutes}`
-          }
-
-          // ============================================
-          // 2. FORMAT ITEMS
-          // ============================================
-          const itemsList = order.items ? order.items.map(item =>
-            `${item.name} x${item.quantity}`
-          ).join(', ') : 'Немає товарів'
-
-          const itemsShort = itemsList.length > 40
-            ? itemsList.substring(0, 40) + '...'
-            : itemsList
-
-          const itemCount = order.items ? order.items.length : 0
-
-          // ============================================
-          // 3. CUSTOMER INFO
-          // ============================================
-          const customerName = order.customer?.fullName || 'Невідомий клієнт'
-          const customerPhone = order.customer?.phone || ''
-          const customerTelegram = order.customer?.telegram || ''
-
-          // ============================================
-          // 4. PRICE
-          // ============================================
-          const total = order.summary?.total || 0
-
-          // ============================================
-          // 5. ORDER STATUS LOGIC & DROPDOWN
-          // ============================================
-
-          // Define comprehensive status map
-          const orderStatusMap = {
-            'new': {
-              text: '🆕 Нове',
-              class: 'bg-blue-100 text-blue-800 border border-blue-300',
-              selectClass: 'bg-blue-100 text-blue-800'
-            },
-            'paid': {
-              text: '✅ Оплачено',
-              class: 'bg-green-100 text-green-800 border border-green-300',
-              selectClass: 'bg-green-100 text-green-800'
-            },
-            'shipped': {
-              text: '📦 Передано в доставку',
-              class: 'bg-indigo-100 text-indigo-800 border border-indigo-300',
-              selectClass: 'bg-indigo-100 text-indigo-800'
-            },
-            'delivering': {
-              text: '🚚 Доставляється',
-              class: 'bg-orange-100 text-orange-800 border border-orange-300',
-              selectClass: 'bg-orange-100 text-orange-800'
-            },
-            'completed': {
-              text: '✔️ Виконано',
-              class: 'bg-gray-100 text-gray-800 border border-gray-300',
-              selectClass: 'bg-gray-100 text-gray-800'
-            },
-            'canceled': {
-              text: '❌ Скасовано',
-              class: 'bg-red-100 text-red-800 border border-red-300',
-              selectClass: 'bg-red-100 text-red-800'
-            },
-            // Legacy/Backward Compatibility
-            'pending': {
-              text: '🆕 Нове',
-              class: 'bg-blue-100 text-blue-800 border border-blue-300',
-              selectClass: 'bg-blue-100 text-blue-800'
-            },
-            'confirmed': {
-              text: '✅ Оплачено',
-              class: 'bg-green-100 text-green-800 border border-green-300',
-              selectClass: 'bg-green-100 text-green-800'
-            },
-            'Підтверджено': {
-              text: '✅ Оплачено',
-              class: 'bg-green-100 text-green-800 border border-green-300',
-              selectClass: 'bg-green-100 text-green-800'
-            },
-            'delivered': {
-              text: '✔️ Виконано',
-              class: 'bg-gray-100 text-gray-800 border border-gray-300',
-              selectClass: 'bg-gray-100 text-gray-800'
-            },
-            'cancelled': {
-              text: '❌ Скасовано',
-              class: 'bg-red-100 text-red-800 border border-red-300',
-              selectClass: 'bg-red-100 text-red-800'
-            }
-          }
-
-          // Get current order status
-          let currentStatus = order.status || 'new'
-
-          // Normalize legacy statuses to new ones
-          const statusNormalization = {
-            'pending': 'new',
-            'confirmed': 'paid',
-            'Підтверджено': 'paid',
-            'delivered': 'completed',
-            'cancelled': 'canceled'
-          }
-
-          if (statusNormalization[currentStatus]) {
-            currentStatus = statusNormalization[currentStatus]
-          }
-
-          // Override with payment status if paid (auto-detection)
-          const paymentStatus = order.payment?.status
-          if (paymentStatus === 'paid' || paymentStatus === 'success') {
-            currentStatus = 'paid'
-          }
-
-          const currentStatusInfo = orderStatusMap[currentStatus] || orderStatusMap['new']
-
-          // Determine row visual styling based on status
-          let rowBorderClass = ''
-          let rowHoverClass = 'hover:bg-gray-50'
-
-          if (currentStatus === 'paid') {
-            rowBorderClass = 'border-l-4 border-green-500'
-            rowHoverClass = 'hover:bg-green-50'
-          } else if (currentStatus === 'canceled') {
-            rowBorderClass = 'border-l-4 border-red-400'
-            rowHoverClass = 'hover:bg-red-50'
-          } else if (currentStatus === 'delivering') {
-            rowBorderClass = 'border-l-4 border-orange-400'
-            rowHoverClass = 'hover:bg-orange-50'
-          } else if (currentStatus === 'completed') {
-            rowBorderClass = 'border-l-4 border-gray-400'
-            rowHoverClass = 'hover:bg-gray-50'
-          }
-
-          // ============================================
-          // 6. RENDER TABLE ROW
-          // ============================================
-          html += `
-                              <tr class="${rowHoverClass} transition-all duration-200 ${rowBorderClass}">
-                                  <td class="px-4 py-4 w-12">
-                                      <input 
-                                          type="checkbox" 
-                                          class="order-checkbox w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 focus:ring-2 cursor-pointer" 
-                                          value="${orderId}"
-                                          onchange="toggleSelection('${orderId}', this)"
-                                      >
-                                  </td>
-                                  <td class="px-4 py-4">
-                                      <div class="text-xs text-gray-500 mb-1">${dateStr}</div>
-                                      <div class="text-sm font-bold text-gray-900">#${orderId.substring(0, 8).toUpperCase()}</div>
-                                  </td>
-                                  <td class="px-6 py-4">
-                                      <div class="text-sm font-semibold text-gray-900">${customerName}</div>
-                                      ${customerPhone ? `<div class="text-xs text-gray-500 mt-0.5">📞 ${customerPhone}</div>` : ''}
-                                      ${customerTelegram ? `<div class="text-xs text-gray-500 mt-0.5">💬 ${customerTelegram}</div>` : ''}
-                                  </td>
-                                  <td class="px-6 py-4">
-                                      <div class="text-sm text-gray-700" title="${itemsList}">${itemsShort}</div>
-                                      <div class="text-xs text-gray-400 mt-1">${itemCount} ${itemCount === 1 ? 'товар' : 'товари'}</div>
-                                  </td>
-                                  <td class="px-6 py-4">
-                                      <div class="text-base font-extrabold text-orange-600">₴${total}</div>
-                                  </td>
-                                  <td class="px-6 py-4">
-                                      <select 
-                                          onchange="updateOrderStatus('${orderId}', this.value, this)"
-                                          data-order-id="${orderId}"
-                                          class="order-status-select px-3 py-2 ${currentStatusInfo.selectClass} rounded-full text-xs font-bold border-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all shadow-sm hover:shadow-md"
-                                      >
-                                          <option value="new" ${currentStatus === 'new' ? 'selected' : ''}>🆕 Нове</option>
-                                          <option value="paid" ${currentStatus === 'paid' ? 'selected' : ''}>✅ Оплачено</option>
-                                          <option value="shipped" ${currentStatus === 'shipped' ? 'selected' : ''}>📦 Передано в доставку</option>
-                                          <option value="delivering" ${currentStatus === 'delivering' ? 'selected' : ''}>🚚 Доставляється</option>
-                                          <option value="completed" ${currentStatus === 'completed' ? 'selected' : ''}>✔️ Виконано</option>
-                                          <option value="canceled" ${currentStatus === 'canceled' ? 'selected' : ''}>❌ Скасовано</option>
-                                      </select>
-                                  </td>
-                                  <td class="px-6 py-4 text-right">
-                                      <button onclick="viewOrderDetails('${orderId}')" class="p-2 hover:bg-white rounded-lg transition-colors shadow-sm" title="Деталі замовлення">
-                                          <i data-lucide="eye" class="w-5 h-5 text-gray-600"></i>
-                                      </button>
-                                  </td>
-                              </tr>
-                          `
-        })
-
-        list.innerHTML = html
-        lucide.createIcons()
+        // Render all orders
+        renderOrdersTable(allOrdersCache)
 
         // Clear selections after reload
         selectedOrderIds.clear()
@@ -4234,6 +4736,247 @@
         list.innerHTML = `<tr><td colspan="7" class="text-red-500 text-center py-10">Помилка: ${e.message}</td></tr>`
         console.error('❌ Error loading orders:', e)
       }
+    }
+
+    // ============================================
+    // ORDERS SEARCH/FILTER
+    // ============================================
+    window.searchOrders = function(searchTerm) {
+      const term = searchTerm.toLowerCase().trim()
+      
+      if (!term) {
+        // Show all orders if search is empty
+        renderOrdersTable(allOrdersCache)
+        return
+      }
+
+      const filtered = allOrdersCache.filter(order => {
+        const orderId = order.id?.toLowerCase() || ''
+        const customerName = order.customer?.fullName?.toLowerCase() || ''
+        const customerPhone = order.customer?.phone?.toLowerCase() || ''
+        
+        return orderId.includes(term) || 
+               customerName.includes(term) || 
+               customerPhone.includes(term)
+      })
+
+      renderOrdersTable(filtered)
+    }
+
+    // ============================================
+    // RENDER ORDERS TABLE
+    // ============================================
+    function renderOrdersTable(orders) {
+      const list = document.getElementById('orders-list')
+      
+      if (!orders || orders.length === 0) {
+        list.innerHTML = '<tr><td colspan="7" class="text-center py-10 text-gray-500">Замовлень не знайдено</td></tr>'
+        return
+      }
+
+      let html = ''
+
+      orders.forEach(order => {
+        const orderId = order.id
+
+        // ============================================
+        // 1. FORMAT DATE (DD.MM HH:mm)
+        // ============================================
+        let dateStr = 'Невідома дата'
+        if (order.createdAt && order.createdAt.toDate) {
+          const date = order.createdAt.toDate()
+          const day = String(date.getDate()).padStart(2, '0')
+          const month = String(date.getMonth() + 1).padStart(2, '0')
+          const hours = String(date.getHours()).padStart(2, '0')
+          const minutes = String(date.getMinutes()).padStart(2, '0')
+          dateStr = `${day}.${month} ${hours}:${minutes}`
+        }
+
+        // ============================================
+        // 2. FORMAT ITEMS
+        // ============================================
+        const itemsList = order.items ? order.items.map(item =>
+          `${item.name} x${item.quantity}`
+        ).join(', ') : 'Немає товарів'
+
+        const itemsShort = itemsList.length > 40
+          ? itemsList.substring(0, 40) + '...'
+          : itemsList
+
+        const itemCount = order.items ? order.items.length : 0
+
+        // ============================================
+        // 3. CUSTOMER INFO
+        // ============================================
+        const customerName = order.customer?.fullName || 'Невідомий клієнт'
+        const customerPhone = order.customer?.phone || ''
+        const customerTelegram = order.customer?.telegram || ''
+
+        // ============================================
+        // 4. PRICE
+        // ============================================
+        const total = order.summary?.total || 0
+
+        // ============================================
+        // 5. ORDER STATUS LOGIC & DROPDOWN
+        // ============================================
+
+        // Define comprehensive status map
+        const orderStatusMap = {
+          'new': {
+            text: '🆕 Нове',
+            class: 'bg-blue-100 text-blue-800 border border-blue-300',
+            selectClass: 'bg-blue-100 text-blue-800'
+          },
+          'paid': {
+            text: '✅ Оплачено',
+            class: 'bg-green-100 text-green-800 border border-green-300',
+            selectClass: 'bg-green-100 text-green-800'
+          },
+          'shipped': {
+            text: '📦 Передано в доставку',
+            class: 'bg-indigo-100 text-indigo-800 border border-indigo-300',
+            selectClass: 'bg-indigo-100 text-indigo-800'
+          },
+          'delivering': {
+            text: '🚚 Доставляється',
+            class: 'bg-orange-100 text-orange-800 border border-orange-300',
+            selectClass: 'bg-orange-100 text-orange-800'
+          },
+          'completed': {
+            text: '✔️ Виконано',
+            class: 'bg-gray-100 text-gray-800 border border-gray-300',
+            selectClass: 'bg-gray-100 text-gray-800'
+          },
+          'canceled': {
+            text: '❌ Скасовано',
+            class: 'bg-red-100 text-red-800 border border-red-300',
+            selectClass: 'bg-red-100 text-red-800'
+          },
+          // Legacy/Backward Compatibility
+          'pending': {
+            text: '🆕 Нове',
+            class: 'bg-blue-100 text-blue-800 border border-blue-300',
+            selectClass: 'bg-blue-100 text-blue-800'
+          },
+          'confirmed': {
+            text: '✅ Оплачено',
+            class: 'bg-green-100 text-green-800 border border-green-300',
+            selectClass: 'bg-green-100 text-green-800'
+          },
+          'Підтверджено': {
+            text: '✅ Оплачено',
+            class: 'bg-green-100 text-green-800 border border-green-300',
+            selectClass: 'bg-green-100 text-green-800'
+          },
+          'delivered': {
+            text: '✔️ Виконано',
+            class: 'bg-gray-100 text-gray-800 border border-gray-300',
+            selectClass: 'bg-gray-100 text-gray-800'
+          },
+          'cancelled': {
+            text: '❌ Скасовано',
+            class: 'bg-red-100 text-red-800 border border-red-300',
+            selectClass: 'bg-red-100 text-red-800'
+          }
+        }
+
+        // Get current order status
+        let currentStatus = order.status || 'new'
+
+        // Normalize legacy statuses to new ones
+        const statusNormalization = {
+          'pending': 'new',
+          'confirmed': 'paid',
+          'Підтверджено': 'paid',
+          'delivered': 'completed',
+          'cancelled': 'canceled'
+        }
+
+        if (statusNormalization[currentStatus]) {
+          currentStatus = statusNormalization[currentStatus]
+        }
+
+        // Override with payment status if paid (auto-detection)
+        const paymentStatus = order.payment?.status
+        if (paymentStatus === 'paid' || paymentStatus === 'success') {
+          currentStatus = 'paid'
+        }
+
+        const currentStatusInfo = orderStatusMap[currentStatus] || orderStatusMap['new']
+
+        // Determine row visual styling based on status
+        let rowBorderClass = ''
+        let rowHoverClass = 'hover:bg-gray-50'
+
+        if (currentStatus === 'paid') {
+          rowBorderClass = 'border-l-4 border-green-500'
+          rowHoverClass = 'hover:bg-green-50'
+        } else if (currentStatus === 'canceled') {
+          rowBorderClass = 'border-l-4 border-red-400'
+          rowHoverClass = 'hover:bg-red-50'
+        } else if (currentStatus === 'delivering') {
+          rowBorderClass = 'border-l-4 border-orange-400'
+          rowHoverClass = 'hover:bg-orange-50'
+        } else if (currentStatus === 'completed') {
+          rowBorderClass = 'border-l-4 border-gray-400'
+          rowHoverClass = 'hover:bg-gray-50'
+        }
+
+        // ============================================
+        // 6. RENDER TABLE ROW
+        // ============================================
+        html += `
+                            <tr class="${rowHoverClass} transition-all duration-200 ${rowBorderClass}">
+                                <td class="px-4 py-4 w-12">
+                                    <input 
+                                        type="checkbox" 
+                                        class="order-checkbox w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 focus:ring-2 cursor-pointer" 
+                                        value="${orderId}"
+                                        onchange="toggleSelection('${orderId}', this)"
+                                    >
+                                </td>
+                                <td class="px-4 py-4">
+                                    <div class="text-xs text-gray-500 mb-1">${dateStr}</div>
+                                    <div class="text-sm font-bold text-gray-900">#${orderId.substring(0, 8).toUpperCase()}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm font-semibold text-gray-900">${customerName}</div>
+                                    ${customerPhone ? `<div class="text-xs text-gray-500 mt-0.5">📞 ${customerPhone}</div>` : ''}
+                                    ${customerTelegram ? `<div class="text-xs text-gray-500 mt-0.5">💬 ${customerTelegram}</div>` : ''}
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-700" title="${itemsList}">${itemsShort}</div>
+                                    <div class="text-xs text-gray-400 mt-1">${itemCount} ${itemCount === 1 ? 'товар' : 'товари'}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-base font-extrabold text-orange-600">₴${total}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <select 
+                                        onchange="updateOrderStatus('${orderId}', this.value, this)"
+                                        data-order-id="${orderId}"
+                                        class="order-status-select px-3 py-2 ${currentStatusInfo.selectClass} rounded-full text-xs font-bold border-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all shadow-sm hover:shadow-md"
+                                    >
+                                        <option value="new" ${currentStatus === 'new' ? 'selected' : ''}>🆕 Нове</option>
+                                        <option value="paid" ${currentStatus === 'paid' ? 'selected' : ''}>✅ Оплачено</option>
+                                        <option value="shipped" ${currentStatus === 'shipped' ? 'selected' : ''}>📦 Передано в доставку</option>
+                                        <option value="delivering" ${currentStatus === 'delivering' ? 'selected' : ''}>🚚 Доставляється</option>
+                                        <option value="completed" ${currentStatus === 'completed' ? 'selected' : ''}>✔️ Виконано</option>
+                                        <option value="canceled" ${currentStatus === 'canceled' ? 'selected' : ''}>❌ Скасовано</option>
+                                    </select>
+                                </td>
+                                <td class="px-6 py-4 text-right">
+                                    <button onclick="viewOrderDetails('${orderId}')" class="p-2 hover:bg-white rounded-lg transition-colors shadow-sm" title="Деталі замовлення">
+                                        <i data-lucide="eye" class="w-5 h-5 text-gray-600"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `
+      })
+
+      list.innerHTML = html
+      lucide.createIcons()
     }
 
     window.updateOrderStatus = async function (orderId, newStatus, selectElement) {
@@ -5466,13 +6209,42 @@
       list.innerHTML = '<div class="text-center py-10"><div class="animate-spin w-8 h-8 border-4 border-spicy border-t-transparent rounded-full mx-auto"></div></div>'
 
       try {
+        // Fetch all pages (без складних індексів)
         const snap = await getDocs(collection(db, 'pages'))
+        
         if (snap.empty) {
           list.innerHTML = '<div class="text-center py-10 text-gray-500">Сторінок немає. Додайте першу!</div>'
           return
         }
 
+        // Sort pages by sortOrder on client side
+        const sortedDocs = snap.docs.sort((a, b) => {
+          const orderA = a.data().sortOrder ?? 999
+          const orderB = b.data().sortOrder ?? 999
+          return orderA - orderB
+        })
+
+        // Auto-migrate pages without sortOrder
+        const needsMigration = sortedDocs.filter(d => d.data().sortOrder === undefined)
+        if (needsMigration.length > 0) {
+          console.log(`🔄 Migrating ${needsMigration.length} pages to add sortOrder...`)
+          const batch = writeBatch(db)
+          sortedDocs.forEach((d, index) => {
+            if (d.data().sortOrder === undefined) {
+              batch.update(doc(db, 'pages', d.id), { sortOrder: index })
+            }
+          })
+          await batch.commit()
+          console.log('✅ Migration complete! Reloading...')
+          loadPages()
+          return
+        }
+
+        // Store pages for move operations
+        window._pagesData = sortedDocs.map(d => ({ id: d.id, ...d.data() }))
+
         let html = '<div class="overflow-x-auto"><table class="w-full"><thead class="bg-gray-50"><tr>'
+        html += '<th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase w-16">Порядок</th>'
         html += '<th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Назва</th>'
         html += '<th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Посилання</th>'
         html += '<th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Розміщення</th>'
@@ -5480,7 +6252,7 @@
         html += '<th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Дії</th>'
         html += '</tr></thead><tbody class="divide-y divide-gray-200">'
 
-        snap.docs.forEach(d => {
+        sortedDocs.forEach((d, index) => {
           const p = d.data()
           const locationMap = {
             'header': 'В шапці',
@@ -5491,8 +6263,27 @@
           const locationText = locationMap[p.location] || p.location
           const statusClass = p.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
           const statusText = p.isActive ? 'Активна' : 'Неактивна'
+          
+          const isFirst = index === 0
+          const isLast = index === sortedDocs.length - 1
 
           html += `<tr class="hover:bg-gray-50">
+                              <td class="px-4 py-3">
+                                  <div class="flex items-center gap-1">
+                                      <button onclick="window.movePage('${d.id}', 'up')" 
+                                              class="p-1.5 rounded hover:bg-blue-100 text-blue-600 transition-colors ${isFirst ? 'opacity-30 cursor-not-allowed' : ''}"
+                                              ${isFirst ? 'disabled' : ''}
+                                              title="Вгору">
+                                          <i data-lucide="chevron-up" class="w-4 h-4"></i>
+                                      </button>
+                                      <button onclick="window.movePage('${d.id}', 'down')" 
+                                              class="p-1.5 rounded hover:bg-blue-100 text-blue-600 transition-colors ${isLast ? 'opacity-30 cursor-not-allowed' : ''}"
+                                              ${isLast ? 'disabled' : ''}
+                                              title="Вниз">
+                                          <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                                      </button>
+                                  </div>
+                              </td>
                               <td class="px-4 py-3 text-sm font-medium text-gray-900">${p.title}</td>
                               <td class="px-4 py-3 text-sm text-gray-700">${p.slug}</td>
                               <td class="px-4 py-3 text-sm text-gray-700">${locationText}</td>
@@ -5512,7 +6303,48 @@
         list.innerHTML = html
         lucide.createIcons()
       } catch (e) {
+        console.error('Error loading pages:', e)
         list.innerHTML = `<div class="text-red-500 text-center py-10">Помилка: ${e.message}</div>`
+      }
+    }
+
+    // Move page up or down
+    window.movePage = async (pageId, direction) => {
+      if (!window._pagesData || window._pagesData.length < 2) return
+      
+      const pages = window._pagesData
+      const currentIndex = pages.findIndex(p => p.id === pageId)
+      
+      if (currentIndex === -1) return
+      if (direction === 'up' && currentIndex === 0) return
+      if (direction === 'down' && currentIndex === pages.length - 1) return
+      
+      const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
+      const currentPage = pages[currentIndex]
+      const targetPage = pages[targetIndex]
+      
+      // Swap sortOrder values
+      const currentOrder = currentPage.sortOrder ?? currentIndex
+      const targetOrder = targetPage.sortOrder ?? targetIndex
+      
+      try {
+        // Use batch write for atomic update
+        const batch = writeBatch(db)
+        batch.update(doc(db, 'pages', currentPage.id), { sortOrder: targetOrder })
+        batch.update(doc(db, 'pages', targetPage.id), { sortOrder: currentOrder })
+        await batch.commit()
+        
+        // Invalidate cache and reload
+        localStorage.setItem('latiao_nav_timestamp', Date.now().toString())
+        if (typeof window.clearNavigationCache === 'function') {
+          window.clearNavigationCache()
+        }
+        
+        loadPages()
+        console.log(`✅ Page moved ${direction}: ${currentPage.title}`)
+      } catch (e) {
+        console.error('Error moving page:', e)
+        alert('Помилка переміщення: ' + e.message)
       }
     }
 
@@ -5632,6 +6464,14 @@
           await updateDoc(doc(db, 'pages', pageId), pageData)
           alert('Сторінку оновлено! ✅')
         } else {
+          // Calculate sortOrder for new page (max + 1)
+          const pagesSnap = await getDocs(collection(db, 'pages'))
+          let maxSortOrder = 0
+          pagesSnap.docs.forEach(d => {
+            const order = d.data().sortOrder || 0
+            if (order > maxSortOrder) maxSortOrder = order
+          })
+          pageData.sortOrder = maxSortOrder + 1
           pageData.createdAt = new Date().toISOString()
           await addDoc(collection(db, 'pages'), pageData)
           alert('Сторінку додано! 🎉')
@@ -7687,7 +8527,7 @@
 
   <!-- Admin Panel Logic -->
 
-  <script type="module" src="admin.js"></script>
+  <script type="module" src="./js/admin.js"></script>
 </body>
 
 </html>

@@ -129,11 +129,28 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
+    
+    /* Stats Modal Animation */
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.95) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes modalOut {
+      from { opacity: 1; transform: scale(1) translateY(0); }
+      to { opacity: 0; transform: scale(0.95) translateY(20px); }
+    }
+    .modal-closing {
+      animation: modalOut 0.2s ease-out forwards;
+    }
   </style>
 </head>
 <body class="bg-white text-gray-900 overflow-x-hidden">
 
   <main>
+  <!-- ============================================
+       VIEW: HOME (Main Storefront Content)
+       ============================================ -->
+  <div id="view-home">
   <section class="relative min-h-screen flex items-center pt-20 lg:pt-0 overflow-hidden">
     <div class="absolute top-20 left-10 text-8xl opacity-10 fire-accent">🌶️</div>
     <div class="absolute bottom-20 right-10 text-7xl opacity-10 fire-accent" style="animation-delay: 0.5s;">🔥</div>
@@ -157,22 +174,6 @@
     </div>
   </section>
 
-  <!-- ============================================ -->
-  <!-- SHOP / CATEGORIES SECTION -->
-  <!-- ============================================ -->
-  <section id="shop" class="py-10 lg:py-20 bg-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center mb-10 lg:mb-16">
-        <h2 class="text-3xl lg:text-5xl font-bold text-gray-900 mb-4">🛒 Наш <span class="text-spicy">асортимент</span></h2>
-        <p class="text-lg text-gray-600">Обирай улюблене Латяо та замовляй з доставкою по всій Україні</p>
-      </div>
-      
-      <!-- Categories Container (dynamically loaded) -->
-      <div id="categories-container" class="space-y-12 lg:space-y-16">
-        <!-- Categories with products will be loaded here by storefront.js -->
-      </div>
-    </div>
-  </section>
 
   <section class="py-10 lg:py-24 bg-gray-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -190,8 +191,186 @@
           <p class="text-gray-600 text-base font-medium">Задоволених клієнтів</p>
         </div>
       </div>
+      
+      <!-- Deep Stats Button -->
+      <div class="text-center mt-10 fade-in" style="transition-delay: 0.3s;">
+        <a href="./page.html?slug=statistika" 
+           class="group relative inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-bold text-lg
+                  bg-transparent border-2 border-spicy text-spicy
+                  hover:bg-gradient-to-r hover:from-spicy hover:to-fire hover:text-white hover:border-transparent
+                  hover:scale-105 hover:shadow-xl hover:shadow-spicy/30
+                  transition-all duration-300 ease-out">
+          <span class="text-2xl group-hover:animate-bounce">📊</span>
+          <span>Детальна статистика магазину</span>
+          <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+          </svg>
+        </a>
+      </div>
     </div>
   </section>
+
+  <!-- Statistics Modal -->
+  <div id="stats-modal" class="fixed inset-0 z-50 hidden">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeStatsModal()"></div>
+    
+    <!-- Modal Content -->
+    <div class="relative flex items-center justify-center min-h-screen p-4">
+      <div class="relative bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto
+                  border border-white/20 animate-[modalIn_0.3s_ease-out]">
+        
+        <!-- Header -->
+        <div class="sticky top-0 bg-gradient-to-r from-spicy to-fire p-6 rounded-t-3xl">
+          <div class="flex items-center justify-between">
+            <h3 class="text-2xl font-bold text-white flex items-center gap-3">
+              <span class="text-3xl">🌶️</span>
+              Прозорі цифри Latiao Snack
+            </h3>
+            <button onclick="closeStatsModal()" 
+                    class="p-2 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <p class="text-white/80 mt-2 text-sm">Ми пишаємося нашими результатами і ділимося ними з вами</p>
+        </div>
+        
+        <!-- Stats Content -->
+        <div class="p-6 space-y-6">
+          
+          <!-- Stat 1: Average Delivery Time -->
+          <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-5 border border-green-100">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 bg-green-500 rounded-xl flex items-center justify-center text-2xl shadow-lg">
+                🚀
+              </div>
+              <div class="flex-1">
+                <p class="text-sm text-gray-500 font-medium">Середній час доставки</p>
+                <p class="text-2xl font-bold text-gray-900">1.4 дні</p>
+              </div>
+              <div class="text-right">
+                <span class="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full">ШВИДКО</span>
+              </div>
+            </div>
+            <div class="mt-4">
+              <div class="h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-green-400 to-green-600 rounded-full" style="width: 95%"></div>
+              </div>
+              <p class="text-xs text-gray-500 mt-1">95% замовлень доставлено за 1-2 дні</p>
+            </div>
+          </div>
+          
+          <!-- Stat 2: Most Popular Product -->
+          <div class="bg-gradient-to-r from-orange-50 to-red-50 rounded-2xl p-5 border border-orange-100">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 bg-spicy rounded-xl flex items-center justify-center text-2xl shadow-lg">
+                🏆
+              </div>
+              <div class="flex-1">
+                <p class="text-sm text-gray-500 font-medium">Найпопулярніший смак</p>
+                <p class="text-2xl font-bold text-gray-900">Соковиті палички</p>
+              </div>
+              <div class="text-4xl">🌶️</div>
+            </div>
+            <p class="text-sm text-gray-600 mt-3 bg-white/50 rounded-lg p-2">
+              Цей смак обирають <span class="font-bold text-spicy">42%</span> наших покупців!
+            </p>
+          </div>
+          
+          <!-- Stat 3: Total Weight Sold -->
+          <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-5 border border-blue-100">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 bg-blue-500 rounded-xl flex items-center justify-center text-2xl shadow-lg">
+                ⚖️
+              </div>
+              <div class="flex-1">
+                <p class="text-sm text-gray-500 font-medium">Загальна вага проданих снеків</p>
+                <p class="text-2xl font-bold text-gray-900">5 000+ кг</p>
+              </div>
+              <div class="text-4xl">📦</div>
+            </div>
+            <p class="text-sm text-gray-600 mt-3">
+              Це як <span class="font-bold text-blue-600">5 легкових автомобілів</span> смачного Латяо! 🚗
+            </p>
+          </div>
+          
+          <!-- Stat 4: Repeat Orders (Circular Progress) -->
+          <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-5 border border-purple-100">
+            <div class="flex items-center gap-4">
+              <div class="relative w-20 h-20">
+                <!-- Circular Progress -->
+                <svg class="w-20 h-20 transform -rotate-90">
+                  <circle cx="40" cy="40" r="35" stroke="#e5e7eb" stroke-width="8" fill="none"/>
+                  <circle cx="40" cy="40" r="35" stroke="url(#gradient)" stroke-width="8" fill="none"
+                          stroke-linecap="round" stroke-dasharray="220" stroke-dashoffset="48"/>
+                  <defs>
+                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" style="stop-color:#ff6b00"/>
+                      <stop offset="100%" style="stop-color:#ff4444"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <span class="text-xl font-bold text-spicy">78%</span>
+                </div>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm text-gray-500 font-medium">Повторних замовлень</p>
+                <p class="text-2xl font-bold text-gray-900">78% клієнтів</p>
+                <p class="text-sm text-gray-600 mt-1">повертаються за добавкою 🔄</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Stat 5: Rating -->
+          <div class="bg-gradient-to-r from-yellow-50 to-amber-50 rounded-2xl p-5 border border-yellow-100">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 bg-yellow-500 rounded-xl flex items-center justify-center text-2xl shadow-lg">
+                ⭐
+              </div>
+              <div class="flex-1">
+                <p class="text-sm text-gray-500 font-medium">Середня оцінка від клієнтів</p>
+                <div class="flex items-center gap-2">
+                  <p class="text-2xl font-bold text-gray-900">4.9</p>
+                  <div class="flex text-yellow-500">
+                    <span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span>
+                  </div>
+                </div>
+              </div>
+              <div class="text-right">
+                <p class="text-sm text-gray-500">з 5.0</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Fun Fact -->
+          <div class="bg-gray-900 rounded-2xl p-5 text-white">
+            <div class="flex items-start gap-4">
+              <span class="text-3xl">💡</span>
+              <div>
+                <p class="font-bold mb-1">Цікавий факт</p>
+                <p class="text-gray-300 text-sm">
+                  Якби ми вибудували всі продані пачки Латяо в ряд, вони б розтяглися на 
+                  <span class="text-spicy font-bold">15 кілометрів</span> — це як від Хрещатика до Борисполя! ✈️
+                </p>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+        
+        <!-- Footer -->
+        <div class="p-6 bg-gray-50 rounded-b-3xl border-t">
+          <p class="text-center text-sm text-gray-500">
+            Дякуємо, що обираєте <span class="text-spicy font-bold">Latiao Snack</span>! 🌶️❤️
+          </p>
+        </div>
+        
+      </div>
+    </div>
+  </div>
 
   <section id="about" class="py-10 lg:py-24">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -577,6 +756,67 @@
 
   <!-- Footer Placeholder - динамічно рендериться через layout.js -->
   <div id="footer-placeholder"></div>
+  </div><!-- End view-home -->
+
+  <!-- ============================================
+       VIEW: LOGIN (Authentication Page)
+       ============================================ -->
+  <section id="view-login" class="hidden min-h-screen pt-20 lg:pt-24 pb-12 bg-gradient-to-br from-orange-50 via-white to-red-50">
+    <div class="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
+      <!-- Logo -->
+      <div class="flex justify-center mb-6">
+        <div class="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl flex items-center justify-center shadow-lg">
+          <span class="text-3xl">🌶️</span>
+        </div>
+      </div>
+
+      <!-- Header -->
+      <div class="text-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">Вхід / Реєстрація</h1>
+        <p class="text-gray-500 text-sm">Введіть номер телефону для входу в особистий кабінет</p>
+      </div>
+
+      <!-- Login Form -->
+      <form id="login-form" class="space-y-5">
+        <div>
+          <label for="login-phone" class="block text-sm font-medium text-gray-700 mb-1.5">Номер телефону</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500">🇺🇦</span>
+            <input type="tel" 
+                   id="login-phone" 
+                   placeholder="+380 XX XXX XX XX"
+                   autocomplete="tel"
+                   class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+            />
+          </div>
+        </div>
+
+        <button type="submit" 
+                id="login-btn"
+                class="w-full py-3.5 px-6 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-red-600 hover:shadow-lg hover:shadow-orange-500/25 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transform active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2">
+          <span>Отримати код</span>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+          </svg>
+        </button>
+
+        <p class="text-xs text-gray-400 text-center">
+          Продовжуючи, ви погоджуєтесь з <a href="/page.html?slug=privacy-policy" class="text-orange-500 hover:underline">умовами використання</a>
+        </p>
+      </form>
+
+      <!-- Back to Home Link -->
+      <div class="mt-6 pt-6 border-t border-gray-100 text-center">
+        <button id="login-back-btn" class="inline-flex items-center gap-2 text-gray-500 hover:text-orange-500 transition-colors text-sm font-medium">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+          </svg>
+          <span>Повернутися на головну</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
   </main>
 
   <script>
@@ -646,6 +886,42 @@
       
       lineObserver.observe(firstStep);
     }
+    
+    // ============================================
+    // STATS MODAL FUNCTIONS
+    // ============================================
+    function openStatsModal() {
+      const modal = document.getElementById('stats-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      }
+    }
+    
+    function closeStatsModal() {
+      const modal = document.getElementById('stats-modal');
+      if (modal) {
+        const content = modal.querySelector('.relative.bg-white\\/95');
+        if (content) {
+          content.classList.add('modal-closing');
+          setTimeout(() => {
+            modal.classList.add('hidden');
+            content.classList.remove('modal-closing');
+            document.body.style.overflow = '';
+          }, 200);
+        } else {
+          modal.classList.add('hidden');
+          document.body.style.overflow = '';
+        }
+      }
+    }
+    
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeStatsModal();
+      }
+    });
   </script>
 
   <!-- Load Firebase Initialization (Must be first!) -->
@@ -659,5 +935,593 @@
 
   <!-- Load Pop-up Manager -->
   <script type="module" src="./js/popup-manager.js"></script>
+
+  <!-- ============================================
+       PHONE AUTHENTICATION MODAL
+       ============================================ -->
+  <div id="auth-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity duration-300">
+    <div id="auth-modal-card" class="relative w-full max-w-md bg-white rounded-2xl shadow-xl p-6 md:p-8 transform transition-all duration-300">
+      
+      <!-- Close Button -->
+      <button id="auth-close-btn" class="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors" aria-label="Закрити">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+
+      <!-- Logo -->
+      <div class="flex justify-center mb-6">
+        <div class="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl flex items-center justify-center shadow-lg">
+          <span class="text-3xl">🌶️</span>
+        </div>
+      </div>
+
+      <!-- Step 1: Phone Input -->
+      <div id="auth-step-phone" class="space-y-5">
+        <div class="text-center">
+          <h2 class="text-xl font-bold text-gray-900 mb-2">Вхід або Реєстрація</h2>
+          <p class="text-gray-500 text-sm">Введіть номер телефону, щоб увійти</p>
+        </div>
+        
+        <div>
+          <label for="auth-phone-input" class="block text-sm font-medium text-gray-700 mb-1.5">Номер телефону</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500">🇺🇦</span>
+            <input type="tel" 
+                   id="auth-phone-input" 
+                   placeholder="+380 XX XXX XX XX"
+                   autocomplete="tel"
+                   class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+            />
+          </div>
+        </div>
+
+        <button id="auth-send-code-btn"
+                class="w-full py-3.5 px-6 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-red-600 hover:shadow-lg hover:shadow-orange-500/25 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transform active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2">
+          <span>Отримати код</span>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+          </svg>
+        </button>
+
+        <p class="text-xs text-gray-400 text-center">
+          Продовжуючи, ви погоджуєтесь з умовами використання
+        </p>
+      </div>
+
+      <!-- Step 2: SMS Verification -->
+      <div id="auth-step-verify" class="hidden space-y-5">
+        <button id="auth-back-to-phone" class="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+          <span>Змінити номер</span>
+        </button>
+
+        <div class="text-center">
+          <h2 class="text-xl font-bold text-gray-900 mb-2">Введіть код з SMS</h2>
+          <p class="text-gray-500 text-sm">
+            Ми відправили код на номер<br>
+            <span id="auth-phone-display" class="font-semibold text-gray-700"></span>
+          </p>
+        </div>
+
+        <div>
+          <label for="auth-sms-input" class="block text-sm font-medium text-gray-700 mb-1.5 text-center">Код підтвердження</label>
+          <input type="text" 
+                 id="auth-sms-input" 
+                 maxlength="4"
+                 inputmode="numeric"
+                 pattern="[0-9]*"
+                 autocomplete="one-time-code"
+                 placeholder="• • • •"
+                 class="w-full py-4 px-6 border border-gray-300 rounded-xl text-center text-3xl font-bold tracking-[0.5em] text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+          />
+        </div>
+
+        <!-- Timer -->
+        <div id="auth-timer-container" class="text-center">
+          <p class="text-sm text-gray-500">
+            Надіслати повторно через <span id="auth-timer" class="font-semibold text-orange-500">60</span> сек
+          </p>
+        </div>
+        <button id="auth-resend-btn" class="hidden w-full text-sm text-orange-500 hover:text-orange-600 hover:underline font-medium transition-colors text-center">
+          Надіслати код повторно
+        </button>
+
+        <button id="auth-login-btn"
+                class="w-full py-3.5 px-6 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-red-600 hover:shadow-lg hover:shadow-orange-500/25 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transform active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2">
+          <span>Увійти</span>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Loading State -->
+      <div id="auth-loading" class="hidden absolute inset-0 bg-white/90 rounded-2xl flex flex-col items-center justify-center">
+        <div class="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="text-gray-600 font-medium">Перевіряємо...</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Auth Modal JavaScript -->
+  <script>
+    (function() {
+      // DOM Elements
+      const authModal = document.getElementById('auth-modal');
+      const authModalCard = document.getElementById('auth-modal-card');
+      const authCloseBtn = document.getElementById('auth-close-btn');
+      const userProfileBtn = document.getElementById('user-profile-btn');
+      
+      const authStepPhone = document.getElementById('auth-step-phone');
+      const authStepVerify = document.getElementById('auth-step-verify');
+      
+      const authPhoneInput = document.getElementById('auth-phone-input');
+      const authSmsInput = document.getElementById('auth-sms-input');
+      const authPhoneDisplay = document.getElementById('auth-phone-display');
+      
+      const authSendCodeBtn = document.getElementById('auth-send-code-btn');
+      const authLoginBtn = document.getElementById('auth-login-btn');
+      const authBackToPhone = document.getElementById('auth-back-to-phone');
+      const authResendBtn = document.getElementById('auth-resend-btn');
+      
+      const authTimerContainer = document.getElementById('auth-timer-container');
+      const authTimer = document.getElementById('auth-timer');
+      const authLoading = document.getElementById('auth-loading');
+
+      let countdownInterval = null;
+
+      // ========================================
+      // OPEN MODAL
+      // ========================================
+      function openAuthModal() {
+        if (!authModal) return;
+        authModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden'; // Prevent scroll
+        setTimeout(() => {
+          if (authPhoneInput) authPhoneInput.focus();
+        }, 100);
+      }
+
+      // ========================================
+      // CLOSE MODAL
+      // ========================================
+      function closeAuthModal() {
+        if (!authModal) return;
+        authModal.classList.add('hidden');
+        document.body.style.overflow = ''; // Restore scroll
+        resetModal();
+      }
+
+      // ========================================
+      // RESET MODAL TO INITIAL STATE
+      // ========================================
+      function resetModal() {
+        if (authStepPhone) authStepPhone.classList.remove('hidden');
+        if (authStepVerify) authStepVerify.classList.add('hidden');
+        if (authLoading) authLoading.classList.add('hidden');
+        if (authPhoneInput) {
+          authPhoneInput.value = '';
+          authPhoneInput.classList.remove('border-red-500', 'ring-2', 'ring-red-500');
+        }
+        if (authSmsInput) {
+          authSmsInput.value = '';
+          authSmsInput.classList.remove('border-red-500', 'ring-2', 'ring-red-500');
+        }
+        if (countdownInterval) {
+          clearInterval(countdownInterval);
+          countdownInterval = null;
+        }
+      }
+
+      // ========================================
+      // GO TO VERIFY STEP
+      // ========================================
+      function goToVerifyStep() {
+        const phone = authPhoneInput ? authPhoneInput.value.trim() : '';
+        
+        // Validate phone
+        if (!phone || phone.length < 10) {
+          if (authPhoneInput) {
+            authPhoneInput.classList.add('border-red-500', 'ring-2', 'ring-red-500');
+            authPhoneInput.focus();
+          }
+          return;
+        }
+        
+        // Remove error styles
+        if (authPhoneInput) {
+          authPhoneInput.classList.remove('border-red-500', 'ring-2', 'ring-red-500');
+        }
+        
+        // Display phone number
+        if (authPhoneDisplay) {
+          authPhoneDisplay.textContent = phone;
+        }
+        
+        // Switch steps
+        if (authStepPhone) authStepPhone.classList.add('hidden');
+        if (authStepVerify) authStepVerify.classList.remove('hidden');
+        
+        // Focus on SMS input
+        setTimeout(() => {
+          if (authSmsInput) authSmsInput.focus();
+        }, 100);
+        
+        // Start countdown
+        startCountdown(60);
+        
+        // TODO: Send SMS via Firebase Auth
+        console.log('📱 Sending SMS to:', phone);
+      }
+
+      // ========================================
+      // GO BACK TO PHONE STEP
+      // ========================================
+      function goToPhoneStep() {
+        if (authStepVerify) authStepVerify.classList.add('hidden');
+        if (authStepPhone) authStepPhone.classList.remove('hidden');
+        if (authPhoneInput) authPhoneInput.focus();
+        
+        if (countdownInterval) {
+          clearInterval(countdownInterval);
+          countdownInterval = null;
+        }
+      }
+
+      // ========================================
+      // COUNTDOWN TIMER
+      // ========================================
+      function startCountdown(seconds) {
+        if (authTimerContainer) authTimerContainer.classList.remove('hidden');
+        if (authResendBtn) authResendBtn.classList.add('hidden');
+        if (authTimer) authTimer.textContent = seconds;
+        
+        countdownInterval = setInterval(() => {
+          seconds--;
+          if (authTimer) authTimer.textContent = seconds;
+          
+          if (seconds <= 0) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+            if (authTimerContainer) authTimerContainer.classList.add('hidden');
+            if (authResendBtn) authResendBtn.classList.remove('hidden');
+          }
+        }, 1000);
+      }
+
+      // ========================================
+      // VERIFY CODE
+      // ========================================
+      function verifyCode() {
+        const code = authSmsInput ? authSmsInput.value.trim() : '';
+        
+        if (code.length !== 4) {
+          if (authSmsInput) {
+            authSmsInput.classList.add('border-red-500', 'ring-2', 'ring-red-500');
+          }
+          return;
+        }
+        
+        if (authSmsInput) {
+          authSmsInput.classList.remove('border-red-500', 'ring-2', 'ring-red-500');
+        }
+        
+        // Show loading
+        if (authLoading) authLoading.classList.remove('hidden');
+        
+        // TODO: Verify code with Firebase Auth
+        console.log('🔐 Verifying code:', code);
+        
+        // Mock success (replace with real Firebase logic)
+        setTimeout(() => {
+          if (authLoading) authLoading.classList.add('hidden');
+          alert('✅ Успішний вхід!');
+          closeAuthModal();
+        }, 1500);
+      }
+
+      // ========================================
+      // RESEND CODE
+      // ========================================
+      function resendCode() {
+        const phone = authPhoneDisplay ? authPhoneDisplay.textContent : '';
+        console.log('📱 Resending SMS to:', phone);
+        startCountdown(60);
+        // TODO: Resend SMS
+      }
+
+      // ========================================
+      // EVENT LISTENERS
+      // ========================================
+      
+      // Open modal (kept for backwards compatibility)
+      // Note: Profile button now navigates to login page instead
+      // if (userProfileBtn) {
+      //   userProfileBtn.addEventListener('click', openAuthModal);
+      // }
+      
+      // Close modal
+      if (authCloseBtn) {
+        authCloseBtn.addEventListener('click', closeAuthModal);
+      }
+      
+      // Close on overlay click (outside card)
+      if (authModal) {
+        authModal.addEventListener('click', (e) => {
+          if (e.target === authModal) {
+            closeAuthModal();
+          }
+        });
+      }
+      
+      // Close on Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && authModal && !authModal.classList.contains('hidden')) {
+          closeAuthModal();
+        }
+      });
+      
+      // Send code button
+      if (authSendCodeBtn) {
+        authSendCodeBtn.addEventListener('click', goToVerifyStep);
+      }
+      
+      // Back to phone button
+      if (authBackToPhone) {
+        authBackToPhone.addEventListener('click', goToPhoneStep);
+      }
+      
+      // Login button
+      if (authLoginBtn) {
+        authLoginBtn.addEventListener('click', verifyCode);
+      }
+      
+      // Resend button
+      if (authResendBtn) {
+        authResendBtn.addEventListener('click', resendCode);
+      }
+      
+      // Auto-format phone input
+      if (authPhoneInput) {
+        authPhoneInput.addEventListener('input', (e) => {
+          let value = e.target.value.replace(/\D/g, '');
+          
+          // Auto-add +380 prefix
+          if (value.length > 0 && !value.startsWith('380')) {
+            if (value.startsWith('80')) {
+              value = '3' + value;
+            } else if (value.startsWith('0')) {
+              value = '38' + value;
+            } else {
+              value = '380' + value;
+            }
+          }
+          
+          if (value.length > 0) {
+            value = '+' + value;
+          }
+          
+          e.target.value = value.substring(0, 13);
+          
+          // Remove error on input
+          e.target.classList.remove('border-red-500', 'ring-2', 'ring-red-500');
+        });
+        
+        // Submit on Enter
+        authPhoneInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            goToVerifyStep();
+          }
+        });
+      }
+      
+      // Auto-format and auto-submit SMS code
+      if (authSmsInput) {
+        authSmsInput.addEventListener('input', (e) => {
+          e.target.value = e.target.value.replace(/\D/g, '').substring(0, 4);
+          
+          // Remove error on input
+          e.target.classList.remove('border-red-500', 'ring-2', 'ring-red-500');
+          
+          // Auto-submit when 4 digits entered
+          if (e.target.value.length === 4) {
+            verifyCode();
+          }
+        });
+        
+        // Submit on Enter
+        authSmsInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            verifyCode();
+          }
+        });
+      }
+      
+      // Expose functions globally (optional)
+      window.openAuthModal = openAuthModal;
+      window.closeAuthModal = closeAuthModal;
+      
+    })();
+  </script>
+
+  <!-- ============================================
+       VIEW NAVIGATION (SPA-like behavior)
+       ============================================ -->
+  <script>
+    (function() {
+      // ========================================
+      // DOM ELEMENTS
+      // ========================================
+      const viewHome = document.getElementById('view-home');
+      const viewLogin = document.getElementById('view-login');
+      const userProfileBtn = document.getElementById('user-profile-btn');
+      const loginBackBtn = document.getElementById('login-back-btn');
+      const loginForm = document.getElementById('login-form');
+      const loginPhoneInput = document.getElementById('login-phone');
+
+      // ========================================
+      // SHOW LOGIN VIEW
+      // ========================================
+      function showLoginView() {
+        if (viewHome) viewHome.classList.add('hidden');
+        if (viewLogin) viewLogin.classList.remove('hidden');
+        
+        // Update URL without reload
+        const url = new URL(window.location);
+        url.searchParams.set('page', 'login');
+        window.history.pushState({ view: 'login' }, '', url);
+        
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // Focus phone input after transition
+        setTimeout(() => {
+          if (loginPhoneInput) loginPhoneInput.focus();
+        }, 100);
+        
+        console.log('📱 Navigated to Login view');
+      }
+
+      // ========================================
+      // SHOW HOME VIEW
+      // ========================================
+      function showHomeView() {
+        if (viewLogin) viewLogin.classList.add('hidden');
+        if (viewHome) viewHome.classList.remove('hidden');
+        
+        // Update URL without reload
+        const url = new URL(window.location);
+        url.searchParams.delete('page');
+        window.history.pushState({ view: 'home' }, '', url);
+        
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        console.log('🏠 Navigated to Home view');
+      }
+
+      // ========================================
+      // HANDLE LOGIN FORM SUBMISSION
+      // ========================================
+      function handleLoginSubmit(e) {
+        e.preventDefault();
+        
+        const phone = loginPhoneInput ? loginPhoneInput.value.trim() : '';
+        
+        // Validate phone
+        if (!phone || phone.length < 10) {
+          if (loginPhoneInput) {
+            loginPhoneInput.classList.add('border-red-500', 'ring-2', 'ring-red-500');
+            loginPhoneInput.focus();
+          }
+          return;
+        }
+        
+        console.log('📞 Phone submitted:', phone);
+        
+        // TODO: Implement actual SMS verification
+        // For now, show alert and redirect to modal for full auth flow
+        if (window.openAuthModal) {
+          // Pre-fill phone in modal
+          const authPhoneInput = document.getElementById('auth-phone-input');
+          if (authPhoneInput) {
+            authPhoneInput.value = phone;
+          }
+          window.openAuthModal();
+        }
+      }
+
+      // ========================================
+      // CHECK URL ON PAGE LOAD
+      // ========================================
+      function checkInitialView() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('page') === 'login') {
+          // Show login without animation on initial load
+          if (viewHome) viewHome.classList.add('hidden');
+          if (viewLogin) viewLogin.classList.remove('hidden');
+          console.log('📱 Initial view: Login');
+        }
+      }
+
+      // ========================================
+      // EVENT LISTENERS
+      // ========================================
+      
+      // Profile icon click -> show login page
+      if (userProfileBtn) {
+        userProfileBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          showLoginView();
+        });
+      }
+      
+      // Back button on login page -> show home
+      if (loginBackBtn) {
+        loginBackBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          showHomeView();
+        });
+      }
+      
+      // Login form submission
+      if (loginForm) {
+        loginForm.addEventListener('submit', handleLoginSubmit);
+      }
+      
+      // Auto-format phone input on login page
+      if (loginPhoneInput) {
+        loginPhoneInput.addEventListener('input', (e) => {
+          let value = e.target.value.replace(/\D/g, '');
+          
+          // Auto-add +380 prefix
+          if (value.length > 0 && !value.startsWith('380')) {
+            if (value.startsWith('80')) {
+              value = '3' + value;
+            } else if (value.startsWith('0')) {
+              value = '38' + value;
+            } else {
+              value = '380' + value;
+            }
+          }
+          
+          if (value.length > 0) {
+            value = '+' + value;
+          }
+          
+          e.target.value = value.substring(0, 13);
+          
+          // Remove error styling on input
+          e.target.classList.remove('border-red-500', 'ring-2', 'ring-red-500');
+        });
+      }
+      
+      // Handle browser back/forward buttons
+      window.addEventListener('popstate', (e) => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('page') === 'login') {
+          if (viewHome) viewHome.classList.add('hidden');
+          if (viewLogin) viewLogin.classList.remove('hidden');
+        } else {
+          if (viewLogin) viewLogin.classList.add('hidden');
+          if (viewHome) viewHome.classList.remove('hidden');
+        }
+      });
+
+      // ========================================
+      // INITIALIZE
+      // ========================================
+      checkInitialView();
+      
+      // Expose functions globally
+      window.showLoginView = showLoginView;
+      window.showHomeView = showHomeView;
+      
+    })();
+  </script>
 </body>
 </html>
