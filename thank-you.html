@@ -7,14 +7,19 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script>
-    tailwindcss.config = {
+    tailwind.config = {
       theme: {
         extend: {
           colors: {
             orange: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              200: '#fed7aa',
+              300: '#fdba74',
+              400: '#fb923c',
               500: '#ff6b00',
-              600: '#e55f00',
-              100: '#fff3eb'
+              600: '#ea580c',
+              700: '#c2410c'
             }
           }
         }
@@ -22,165 +27,208 @@
     }
   </script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
     
     * {
       font-family: 'Inter', sans-serif;
     }
 
+    /* ============================================
+       BUTTONS
+    ============================================ */
     .btn-primary {
       background: linear-gradient(135deg, #ff6b00 0%, #ff8533 100%);
-      transition: all 0.3s ease;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px -5px rgba(255, 107, 0, 0.5);
+      transform: translateY(-3px);
+      box-shadow: 0 15px 35px -5px rgba(255, 107, 0, 0.5);
     }
     
     .btn-primary:active {
-      transform: scale(0.98);
+      transform: scale(0.97) translateY(0);
     }
 
-    .fade-in {
-      animation: fadeIn 0.5s ease-out;
+    .btn-secondary {
+      background: white;
+      border: 2px solid #ff6b00;
+      color: #ff6b00;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-secondary:hover {
+      background: #ff6b00;
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    /* ============================================
+       ANIMATIONS
+    ============================================ */
+    .fade-in-up {
+      opacity: 0;
+      animation: fadeInUp 0.6s ease-out forwards;
     }
     
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .success-checkmark {
-      animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    .stagger-1 { animation-delay: 0.1s; }
+    .stagger-2 { animation-delay: 0.2s; }
+    .stagger-3 { animation-delay: 0.3s; }
+    .stagger-4 { animation-delay: 0.4s; }
+
+    .scale-in {
+      animation: scaleIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
 
     @keyframes scaleIn {
-      from { transform: scale(0); }
-      to { transform: scale(1); }
+      from { transform: scale(0); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
     }
 
+    .checkmark-draw {
+      stroke-dasharray: 100;
+      stroke-dashoffset: 100;
+      animation: drawCheck 0.6s ease-out 0.3s forwards;
+    }
+
+    @keyframes drawCheck {
+      to { stroke-dashoffset: 0; }
+    }
+
+    .pulse-ring {
+      animation: pulseRing 2s ease-out infinite;
+    }
+
+    @keyframes pulseRing {
+      0% { transform: scale(1); opacity: 0.6; }
+      100% { transform: scale(1.4); opacity: 0; }
+    }
+
+    /* ============================================
+       CONFETTI
+    ============================================ */
     .confetti {
       position: absolute;
       width: 10px;
       height: 10px;
-      background: #ff6b00;
-      animation: confettiFall 3s ease-out infinite;
+      border-radius: 2px;
+    }
+
+    .confetti-fall {
+      animation: confettiFall var(--fall-duration) cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
     }
 
     @keyframes confettiFall {
       0% {
-        transform: translateY(-100vh) rotate(0deg);
+        transform: translateY(-20vh) rotate(0deg) scale(1);
         opacity: 1;
       }
       100% {
-        transform: translateY(100vh) rotate(720deg);
+        transform: translateY(120vh) rotate(var(--rotation)) scale(0.5);
         opacity: 0;
       }
     }
 
-    .confetti:nth-child(2n) { background: #FFD54F; animation-delay: 0.3s; }
-    .confetti:nth-child(3n) { background: #FF4D4F; animation-delay: 0.6s; }
-    .confetti:nth-child(4n) { background: #ff8533; animation-delay: 0.9s; }
+    /* ============================================
+       SKELETON LOADERS
+    ============================================ */
+    .skeleton {
+      background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 8px;
+    }
 
-    .timeline-step {
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ============================================
+       RECEIPT CARD
+    ============================================ */
+    .receipt-card {
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.12);
       position: relative;
-      padding-left: 2.5rem;
-      padding-bottom: 2rem;
+      overflow: hidden;
     }
 
-    .timeline-step:last-child {
-      padding-bottom: 0;
-    }
-
-    .timeline-step::before {
+    .receipt-card::before {
       content: '';
       position: absolute;
-      left: 0.875rem;
-      top: 2.5rem;
-      bottom: 0;
-      width: 2px;
-      background: linear-gradient(180deg, #ff6b00 0%, #fde68a 100%);
-    }
-
-    .timeline-step:last-child::before {
-      display: none;
-    }
-
-    .timeline-icon {
-      position: absolute;
-      left: 0;
       top: 0;
-      width: 2.5rem;
-      height: 2.5rem;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #FF4D4F 0%, #ff6b00 50%, #FFD54F 100%);
     }
 
-    .timeline-icon.completed {
-      background: linear-gradient(135deg, #ff6b00 0%, #ff8533 100%);
-      color: white;
+    .receipt-divider {
+      border-top: 2px dashed #e5e7eb;
+      margin: 1rem 0;
     }
 
-    .timeline-icon.pending {
-      background: white;
-      color: #ff6b00;
-      border: 3px solid #ff6b00;
+    /* ============================================
+       CUSTOM SCROLLBAR
+    ============================================ */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
     }
 
-    .timeline-icon.future {
+    .custom-scrollbar::-webkit-scrollbar-track {
       background: #f3f4f6;
-      color: #9ca3af;
-      border: 2px solid #d1d5db;
+      border-radius: 3px;
     }
 
-    .pulse-glow {
-      animation: pulseGlow 2s ease-in-out infinite;
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #ff6b00;
+      border-radius: 3px;
     }
 
-    @keyframes pulseGlow {
-      0%, 100% {
-        box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.4);
-      }
-      50% {
-        box-shadow: 0 0 0 15px rgba(255, 107, 0, 0);
-      }
+    /* ============================================
+       COPY BUTTON
+    ============================================ */
+    .copy-btn {
+      transition: all 0.2s ease;
     }
 
-    .social-card {
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    .copy-btn:hover {
+      background: #fff3eb;
     }
 
-    .social-card:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.2);
+    .copy-btn.copied {
+      background: #dcfce7;
     }
 
-    @keyframes float {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-10px); }
-    }
-
-    .float-animation {
-      animation: float 3s ease-in-out infinite;
+    /* ============================================
+       BACKGROUND
+    ============================================ */
+    .bg-pattern {
+      background-color: #fef7f0;
+      background-image: 
+        radial-gradient(circle at 20% 50%, rgba(255, 107, 0, 0.04) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 77, 79, 0.04) 0%, transparent 50%);
     }
   </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-pattern min-h-screen">
   
   <!-- Confetti Container -->
-  <div id="confettiContainer" class="fixed inset-0 pointer-events-none z-0 overflow-hidden"></div>
+  <div id="confettiContainer" class="fixed inset-0 pointer-events-none z-50 overflow-hidden"></div>
 
   <!-- Header -->
-  <header class="bg-white shadow-sm relative z-10">
-    <div class="max-w-6xl mx-auto px-4 py-3 lg:py-4">
-      <div class="flex justify-center items-center">
+  <header class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 py-3">
+      <div class="flex justify-between items-center">
         <a href="index.html" class="flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 70" class="h-10 md:h-16 w-auto object-contain" preserveAspectRatio="xMinYMid meet">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 70" class="h-10 md:h-12 w-auto" preserveAspectRatio="xMinYMid meet">
             <defs>
               <linearGradient id="flameGradient" x1="0%" y1="100%" x2="0%" y2="0%">
                 <stop offset="0%" stop-color="#FF4D4F"/>
@@ -188,230 +236,419 @@
                 <stop offset="100%" stop-color="#FFD54F"/>
               </linearGradient>
               <linearGradient id="shineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#FF4D4F" stop-opacity="1"/>
-                <stop offset="45%" stop-color="#FF4D4F" stop-opacity="1"/>
-                <stop offset="50%" stop-color="#FFD54F" stop-opacity="1"/>
-                <stop offset="55%" stop-color="#FF4D4F" stop-opacity="1"/>
-                <stop offset="100%" stop-color="#FF4D4F" stop-opacity="1"/>
-                <animate attributeName="x1" values="-100%;100%" dur="2s" repeatCount="indefinite"/>
-                <animate attributeName="x2" values="0%;200%" dur="2s" repeatCount="indefinite"/>
+                <stop offset="0%" stop-color="#FF4D4F"/>
+                <stop offset="50%" stop-color="#FFD54F"/>
+                <stop offset="100%" stop-color="#FF4D4F"/>
+                <animate attributeName="x1" values="-100%;100%" dur="3s" repeatCount="indefinite"/>
+                <animate attributeName="x2" values="0%;200%" dur="3s" repeatCount="indefinite"/>
               </linearGradient>
             </defs>
-            <g opacity="0">
-              <animate attributeName="opacity" from="0" to="1" dur="0.6s" fill="freeze"/>
+            <g>
               <g transform="translate(20, 10)">
                 <path d="M25 48C25 48 10 38 10 26C10 18 15 12 20 8C20 8 18 16 22 20C26 24 30 18 30 18C30 18 35 24 35 32C35 38 30 42 30 42C30 42 38 36 38 26C38 16 30 6 25 2C25 2 40 12 40 28C40 40 32 48 25 48Z" fill="url(#flameGradient)">
                   <animate attributeName="d" values="M25 48C25 48 10 38 10 26C10 18 15 12 20 8C20 8 18 16 22 20C26 24 30 18 30 18C30 18 35 24 35 32C35 38 30 42 30 42C30 42 38 36 38 26C38 16 30 6 25 2C25 2 40 12 40 28C40 40 32 48 25 48Z;M25 48C25 48 8 38 8 26C8 18 14 10 20 6C20 6 16 14 21 19C25 23 31 16 31 16C31 16 37 22 37 31C37 37 31 43 31 43C31 43 40 35 40 25C40 15 31 5 25 1C25 1 42 11 42 27C42 39 33 48 25 48Z;M25 48C25 48 10 38 10 26C10 18 15 12 20 8C20 8 18 16 22 20C26 24 30 18 30 18C30 18 35 24 35 32C35 38 30 42 30 42C30 42 38 36 38 26C38 16 30 6 25 2C25 2 40 12 40 28C40 40 32 48 25 48Z" dur="1.5s" repeatCount="indefinite"/>
                 </path>
-                <path d="M25 46C25 46 16 40 16 32C16 26 20 22 24 20C24 20 22 26 25 28C28 30 30 26 30 26C30 26 34 30 34 36C34 42 28 46 25 46Z" fill="#FFD54F" opacity="0.9">
-                  <animate attributeName="opacity" values="0.9;0.7;0.9" dur="1s" repeatCount="indefinite"/>
-                </path>
+                <path d="M25 46C25 46 16 40 16 32C16 26 20 22 24 20C24 20 22 26 25 28C28 30 30 26 30 26C30 26 34 30 34 36C34 42 28 46 25 46Z" fill="#FFD54F" opacity="0.9"/>
               </g>
-              <text x="70" y="46" font-family="Poppins, Inter, Manrope, Arial, sans-serif" font-size="36" font-weight="700" fill="url(#shineGradient)">Latiao</text>
-              <text x="198" y="46" font-family="Poppins, Inter, Manrope, Arial, sans-serif" font-size="36" font-weight="700" fill="#333333">Snack</text>
-              <circle cx="320" cy="20" r="4" fill="#FF4D4F">
-                <animate attributeName="opacity" values="1;0.5;1" dur="1.2s" repeatCount="indefinite"/>
-              </circle>
-              <circle cx="332" cy="28" r="3" fill="#FFD54F">
-                <animate attributeName="opacity" values="0.7;1;0.7" dur="1s" repeatCount="indefinite" begin="0.3s"/>
-              </circle>
-              <circle cx="340" cy="18" r="2.5" fill="#FF4D4F">
-                <animate attributeName="opacity" values="0.8;0.4;0.8" dur="1.4s" repeatCount="indefinite" begin="0.6s"/>
-              </circle>
+              <text x="70" y="46" font-family="Inter, sans-serif" font-size="36" font-weight="700" fill="url(#shineGradient)">Latiao</text>
+              <text x="198" y="46" font-family="Inter, sans-serif" font-size="36" font-weight="700" fill="#333333">Snack</text>
             </g>
           </svg>
+        </a>
+        <a href="https://t.me/latiao_snack" target="_blank" class="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-orange-500 transition-colors">
+          <i data-lucide="message-circle" class="w-5 h-5"></i>
+          <span class="hidden sm:inline">Підтримка</span>
         </a>
       </div>
     </div>
   </header>
 
   <!-- Main Content -->
-  <div class="max-w-4xl mx-auto px-4 py-8 lg:py-12 relative z-10">
-    
-    <!-- Hero Success Card -->
-    <div class="bg-white rounded-3xl p-8 lg:p-12 shadow-xl text-center mb-8 fade-in float-animation">
-      <div class="flex justify-center mb-6">
-        <div class="w-24 h-24 lg:w-32 lg:h-32 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center success-checkmark pulse-glow">
-          <i data-lucide="check" class="w-12 h-12 lg:w-16 lg:h-16 text-white stroke-[3]"></i>
-        </div>
+  <main class="max-w-4xl mx-auto px-4 py-8 lg:py-12">
+
+    <!-- ============================================
+         LOADING STATE
+    ============================================ -->
+    <div id="loadingState">
+      <div class="text-center mb-8">
+        <div class="skeleton w-28 h-28 rounded-full mx-auto mb-6"></div>
+        <div class="skeleton h-10 w-80 mx-auto mb-4"></div>
+        <div class="skeleton h-6 w-48 mx-auto"></div>
       </div>
-      
-      <h1 class="text-3xl lg:text-5xl font-extrabold text-gray-900 mb-3 lg:mb-4">
-        Замовлення оформлено! 🎉
-      </h1>
-      <p class="text-lg lg:text-xl text-gray-600 mb-6">
-        Дякуємо за довіру! Ваше замовлення вже в обробці.
-      </p>
-      
-      <!-- Order ID Section -->
-      <div id="orderIdSection" class="hidden">
-        <div class="bg-orange-50 border-2 border-orange-200 rounded-2xl p-4 lg:p-6 inline-block">
-          <p class="text-sm text-gray-600 mb-1">Номер замовлення</p>
-          <p id="orderId" class="text-2xl lg:text-3xl font-bold text-orange-600">#12345</p>
+      <div class="receipt-card p-6 lg:p-8">
+        <div class="skeleton h-6 w-40 mb-6"></div>
+        <div class="space-y-4">
+          <div class="flex gap-4">
+            <div class="skeleton w-16 h-16 rounded-xl"></div>
+            <div class="flex-1 space-y-2">
+              <div class="skeleton h-5 w-48"></div>
+              <div class="skeleton h-4 w-32"></div>
+            </div>
+          </div>
+          <div class="flex gap-4">
+            <div class="skeleton w-16 h-16 rounded-xl"></div>
+            <div class="flex-1 space-y-2">
+              <div class="skeleton h-5 w-48"></div>
+              <div class="skeleton h-4 w-32"></div>
+            </div>
+          </div>
+        </div>
+        <div class="receipt-divider mt-6"></div>
+        <div class="space-y-3 mt-4">
+          <div class="skeleton h-5 w-full"></div>
+          <div class="skeleton h-5 w-3/4"></div>
+          <div class="skeleton h-8 w-40 ml-auto"></div>
         </div>
       </div>
     </div>
 
-    <!-- What's Next Timeline -->
-    <div class="bg-white rounded-3xl p-6 lg:p-10 shadow-lg mb-8 fade-in" style="animation-delay: 0.2s;">
-      <h2 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-8 text-center">
-        Що далі? 🚀
-      </h2>
-      
-      <div class="max-w-2xl mx-auto">
-        <!-- Step 1: Order Placed -->
-        <div class="timeline-step">
-          <div class="timeline-icon completed">
-            <i data-lucide="check" class="w-5 h-5"></i>
-          </div>
-          <div class="pl-2">
-            <h3 class="text-lg lg:text-xl font-bold text-gray-900 mb-2">Замовлення прийнято</h3>
-            <p class="text-gray-600 text-sm lg:text-base">
-              Ваше замовлення успішно оформлено та передано в обробку. Ми отримали всі необхідні дані.
-            </p>
-            <div class="mt-2 inline-flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-medium">
-              <i data-lucide="check-circle" class="w-4 h-4"></i>
-              Виконано
-            </div>
-          </div>
+    <!-- ============================================
+         ERROR STATE
+    ============================================ -->
+    <div id="errorState" class="hidden">
+      <div class="text-center py-12">
+        <div class="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6 fade-in-up">
+          <i data-lucide="alert-circle" class="w-12 h-12 text-red-500"></i>
         </div>
-
-        <!-- Step 2: Manager Confirmation -->
-        <div class="timeline-step">
-          <div class="timeline-icon pending pulse-glow">
+        <h1 class="text-3xl font-bold text-gray-900 mb-4 fade-in-up stagger-1">Замовлення не знайдено</h1>
+        <p class="text-gray-600 mb-8 max-w-md mx-auto fade-in-up stagger-2">
+          На жаль, ми не змогли знайти інформацію про це замовлення. Можливо, посилання застаріло.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center fade-in-up stagger-3">
+          <a href="index.html" class="btn-primary inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-white font-semibold">
+            <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+            Повернутися до магазину
+          </a>
+          <a href="https://t.me/latiao_snack" target="_blank" class="btn-secondary inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-semibold">
             <i data-lucide="message-circle" class="w-5 h-5"></i>
-          </div>
-          <div class="pl-2">
-            <h3 class="text-lg lg:text-xl font-bold text-gray-900 mb-2">Підтвердження менеджера</h3>
-            <p class="text-gray-600 text-sm lg:text-base mb-2">
-              Наш менеджер зв'яжеться з вами в <strong>Telegram</strong> для підтвердження деталей замовлення.
-            </p>
-            <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 lg:p-4">
-              <div class="flex items-start gap-3">
-                <i data-lucide="info" class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"></i>
-                <div class="text-sm text-blue-800">
-                  <p class="font-semibold mb-1">Очікуйте повідомлення</p>
-                  <p class="text-xs lg:text-sm">Зазвичай ми відповідаємо протягом 1-3 годин в робочий час (9:00-18:00).</p>
-                </div>
-              </div>
-            </div>
-            <div class="mt-2 inline-flex items-center gap-2 bg-orange-50 text-orange-700 px-3 py-1 rounded-full text-xs font-medium">
-              <div class="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
-              В обробці
-            </div>
-          </div>
-        </div>
-
-        <!-- Step 3: Shipping -->
-        <div class="timeline-step">
-          <div class="timeline-icon future">
-            <i data-lucide="truck" class="w-5 h-5"></i>
-          </div>
-          <div class="pl-2">
-            <h3 class="text-lg lg:text-xl font-bold text-gray-900 mb-2">Відправка замовлення</h3>
-            <p class="text-gray-600 text-sm lg:text-base">
-              Після підтвердження ми відправимо ваше замовлення через <strong>Нову Пошту</strong> або <strong>Укрпошту</strong>.
-            </p>
-            <p class="text-gray-500 text-xs lg:text-sm mt-2">
-              Ви отримаєте трек-номер для відстеження посилки.
-            </p>
-            <div class="mt-2 inline-flex items-center gap-2 bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-medium">
-              <i data-lucide="clock" class="w-4 h-4"></i>
-              Очікується
-            </div>
-          </div>
+            Зв'язатись з нами
+          </a>
         </div>
       </div>
     </div>
 
-    <!-- Social Media CTA -->
-    <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-3xl p-6 lg:p-10 mb-8 fade-in" style="animation-delay: 0.4s;">
-      <div class="text-center mb-6">
-        <h2 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
-          Приєднуйтесь до нас! 💬
-        </h2>
-        <p class="text-gray-600 text-sm lg:text-base">
-          Підпишіться на наші соціальні мережі, щоб не пропустити акції та новинки
+    <!-- ============================================
+         SUCCESS STATE
+    ============================================ -->
+    <div id="successState" class="hidden">
+      
+      <!-- Hero Section -->
+      <div class="text-center mb-8 fade-in-up">
+        <!-- Animated Checkmark -->
+        <div class="relative inline-block mb-6">
+          <div class="absolute inset-0 w-28 h-28 bg-green-400/20 rounded-full pulse-ring"></div>
+          <div class="absolute inset-0 w-28 h-28 bg-green-400/10 rounded-full pulse-ring" style="animation-delay: 0.5s;"></div>
+          <div class="relative w-28 h-28 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center scale-in shadow-2xl shadow-green-500/30">
+            <svg class="w-14 h-14 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12" class="checkmark-draw"></polyline>
+            </svg>
+          </div>
+        </div>
+        
+        <!-- Title with Order ID -->
+        <h1 class="text-3xl lg:text-4xl font-extrabold text-gray-900 mb-2">
+          Замовлення <span id="heroOrderId" class="text-orange-500">#—</span> прийнято! 🎉
+        </h1>
+        <p class="text-gray-600 text-lg">
+          Дякуємо за довіру! Очікуйте підтвердження в Telegram.
         </p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
-        <!-- Telegram Card -->
-        <a href="https://t.me/latiao_snack" target="_blank" class="social-card bg-white rounded-2xl p-6 flex flex-col items-center text-center shadow-md hover:shadow-xl">
-          <div class="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center mb-4">
-            <i data-lucide="send" class="w-8 h-8 text-white"></i>
+      <!-- Receipt Card -->
+      <div class="receipt-card p-6 lg:p-8 mb-8 fade-in-up stagger-2">
+        
+        <!-- Header Row: Date & Status -->
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+              <i data-lucide="receipt" class="w-5 h-5 text-orange-600"></i>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500 uppercase tracking-wider">Замовлення</p>
+              <div class="flex items-center gap-2">
+                <span id="displayOrderId" class="font-bold text-gray-900">#—</span>
+                <button id="copyOrderIdBtn" class="copy-btn p-1.5 rounded-lg transition-all" title="Копіювати">
+                  <i data-lucide="copy" class="w-4 h-4 text-gray-400"></i>
+                </button>
+              </div>
+            </div>
           </div>
-          <h3 class="text-lg font-bold text-gray-900 mb-2">Telegram канал</h3>
-          <p class="text-sm text-gray-600 mb-3">Новинки, акції та ексклюзивні пропозиції</p>
-          <div class="text-blue-600 font-semibold text-sm flex items-center gap-2">
-            Підписатися
-            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          <div class="flex items-center gap-3">
+            <span id="orderDate" class="text-sm text-gray-500">—</span>
+            <span id="statusBadge" class="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">
+              Очікує
+            </span>
           </div>
-        </a>
+        </div>
 
-        <!-- Instagram Card -->
-        <a href="https://instagram.com/latiao_snack" target="_blank" class="social-card bg-white rounded-2xl p-6 flex flex-col items-center text-center shadow-md hover:shadow-xl">
-          <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mb-4">
-            <i data-lucide="instagram" class="w-8 h-8 text-white"></i>
+        <div class="receipt-divider"></div>
+
+        <!-- Items List -->
+        <div class="mb-6">
+          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+            Товари
+          </h3>
+          <div id="orderItemsContainer" class="space-y-3 max-h-72 overflow-y-auto custom-scrollbar pr-2">
+            <!-- Items will be rendered here -->
           </div>
-          <h3 class="text-lg font-bold text-gray-900 mb-2">Instagram</h3>
-          <p class="text-sm text-gray-600 mb-3">Фото продуктів та відгуки покупців</p>
-          <div class="text-purple-600 font-semibold text-sm flex items-center gap-2">
-            Підписатися
-            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </div>
+
+        <div class="receipt-divider"></div>
+
+        <!-- Customer & Delivery Info -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <!-- Customer -->
+          <div>
+            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <i data-lucide="user" class="w-4 h-4"></i>
+              Отримувач
+            </h3>
+            <div class="bg-gray-50 rounded-xl p-4 space-y-2">
+              <div class="flex items-center gap-3">
+                <i data-lucide="user-circle" class="w-5 h-5 text-gray-400"></i>
+                <span id="customerName" class="font-medium text-gray-900">—</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <i data-lucide="phone" class="w-5 h-5 text-gray-400"></i>
+                <span id="customerPhone" class="text-gray-700">—</span>
+              </div>
+              <div id="telegramRow" class="hidden flex items-center gap-3">
+                <i data-lucide="send" class="w-5 h-5 text-gray-400"></i>
+                <span id="customerTelegram" class="text-gray-700">—</span>
+              </div>
+            </div>
           </div>
+
+          <!-- Delivery -->
+          <div>
+            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <i data-lucide="truck" class="w-4 h-4"></i>
+              Доставка
+            </h3>
+            <div class="bg-gray-50 rounded-xl p-4 space-y-2">
+              <div class="flex items-center gap-3">
+                <i data-lucide="map-pin" class="w-5 h-5 text-gray-400"></i>
+                <span id="deliveryCity" class="font-medium text-gray-900">—</span>
+              </div>
+              <div class="flex items-center">
+                <img id="deliveryLogo" src="" alt="" class="h-6 w-auto object-contain mr-2 hidden">
+                <span id="deliveryMethod" class="text-orange-600 font-medium">—</span>
+              </div>
+              <div class="flex items-start gap-3">
+                <i data-lucide="home" class="w-5 h-5 text-gray-400 mt-0.5"></i>
+                <span id="deliveryAddress" class="text-gray-700 text-sm">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="receipt-divider"></div>
+
+        <!-- Financial Summary -->
+        <div class="space-y-3">
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600">Підсумок (<span id="itemCount">0</span> шт.)</span>
+            <span id="subtotalAmount" class="font-medium text-gray-900">0 грн</span>
+          </div>
+          
+          <div id="discountRow" class="hidden flex justify-between text-sm">
+            <span class="text-green-600 flex items-center gap-1">
+              <i data-lucide="tag" class="w-4 h-4"></i>
+              Знижка
+            </span>
+            <span id="discountAmount" class="font-medium text-green-600">-0 грн</span>
+          </div>
+          
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600">Доставка</span>
+            <span id="deliveryCost" class="font-medium text-gray-900">Безкоштовно</span>
+          </div>
+          
+          <div class="border-t-2 border-dashed border-gray-200 pt-4 mt-4">
+            <!-- Standard Total (for online payments) -->
+            <div id="standardTotalBlock" class="flex justify-between items-center">
+              <span class="text-lg font-bold text-gray-900">До сплати</span>
+              <span id="totalAmount" class="text-2xl font-extrabold text-orange-600">0 грн</span>
+            </div>
+            
+            <!-- COD Prepayment Breakdown (hidden by default) -->
+            <div id="codBreakdownBlock" class="hidden space-y-3">
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Загальна сума:</span>
+                <span id="codTotalValue" class="font-semibold text-gray-900">0 грн</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-green-600 flex items-center gap-1">
+                  <i data-lucide="check-circle" class="w-4 h-4"></i>
+                  Сплачено (передплата):
+                </span>
+                <span class="font-medium text-green-600">100 грн</span>
+              </div>
+              <div class="flex justify-between items-center pt-2 border-t border-gray-200">
+                <span class="text-lg font-bold text-gray-900">До сплати при отриманні:</span>
+                <span id="codRemainingValue" class="text-xl font-bold text-orange-600">0 грн</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Info -->
+        <div class="mt-6 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-4 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+              <i data-lucide="wallet" class="w-5 h-5 text-orange-500"></i>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500">Спосіб оплати</p>
+              <p id="paymentMethod" class="font-semibold text-gray-900">—</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-stretch sm:items-center max-w-xl mx-auto px-4 fade-in-up stagger-3">
+        
+        <!-- Button 1: Telegram Support (Primary CTA) -->
+        <a href="https://t.me/sales_latiao" 
+           target="_blank"
+           rel="noopener noreferrer"
+           class="group w-full sm:w-auto flex-1 sm:flex-initial inline-flex items-center justify-center gap-3 px-8 py-4 bg-[#229ED9] hover:bg-[#1c88bf] text-white font-bold text-base sm:text-lg rounded-2xl shadow-lg shadow-blue-500/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/40">
+          <svg class="w-6 h-6 text-white fill-current transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.821 2.395a.957.957 0 0 0-1.004-.196L2.29 9.493a.974.974 0 0 0-.099 1.78l5.463 2.254 12.273-7.518c.258-.157.558.144.383.393L10.5 17.73v4.133c0 .472.495.763.884.53l3.75-2.25 4.558 3.368a.96.96 0 0 0 1.522-.63L23.874 3.492a.96.96 0 0 0-.053-1.097z"/></svg>
+          <span>Написати в підтримку</span>
         </a>
+        
+        <!-- Button 2: Continue Shopping -->
+        <a href="/" 
+           class="group w-full sm:w-auto flex-1 sm:flex-initial inline-flex items-center justify-center gap-3 px-8 py-4 bg-orange-500 hover:bg-orange-600 text-white font-bold text-base sm:text-lg rounded-2xl shadow-lg shadow-orange-500/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/40">
+          <i data-lucide="shopping-bag" class="w-5 h-5 transition-transform duration-300 group-hover:scale-110"></i>
+          <span>Повернутися до магазину</span>
+        </a>
+        
+      </div>
+
+      <!-- Social CTA -->
+      <div class="mt-12 bg-gradient-to-r from-orange-500 to-amber-500 rounded-3xl p-8 text-white text-center fade-in-up stagger-4">
+        <h2 class="text-2xl font-bold mb-2">Приєднуйтесь до спільноти! 🔥</h2>
+        <p class="text-white/80 mb-6 max-w-md mx-auto">
+          Підпишіться, щоб першими дізнаватися про новинки та акції
+        </p>
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+          <a href="https://t.me/latiao_snack" target="_blank" 
+             class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-gray-900 rounded-xl font-bold hover:bg-gray-100 transition-all">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+            </svg>
+            Telegram
+          </a>
+          <a href="https://instagram.com/latiao_snack" target="_blank" 
+             class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white/20 text-white border-2 border-white/30 rounded-xl font-bold hover:bg-white/30 transition-all">
+            <i data-lucide="instagram" class="w-5 h-5"></i>
+            Instagram
+          </a>
+        </div>
       </div>
     </div>
 
-    <!-- Return to Shop Button -->
-    <div class="text-center fade-in" style="animation-delay: 0.6s;">
-      <a href="index.html" class="btn-primary inline-flex items-center gap-3 px-8 lg:px-12 py-4 lg:py-5 rounded-2xl text-white font-bold text-base lg:text-lg shadow-lg">
-        <i data-lucide="shopping-bag" class="w-6 h-6"></i>
-        Повернутися в магазин
-      </a>
-      <p class="text-gray-500 text-sm mt-4">
-        Або продовжте шопінг — у нас ще багато смачного! 🌶️
-      </p>
-    </div>
-
-  </div>
+  </main>
 
   <!-- Footer -->
-  <footer class="bg-white border-t border-gray-200 mt-12 py-8">
+  <footer class="bg-white border-t border-gray-200 mt-12 py-6">
     <div class="max-w-6xl mx-auto px-4 text-center">
-      <p class="text-gray-600 text-sm lg:text-base mb-2">
+      <p class="text-gray-600 text-sm mb-1">
         Дякуємо, що обрали <strong class="text-orange-600">LATIAO SNACK</strong> 🔥
       </p>
-      <p class="text-gray-500 text-xs lg:text-sm">
-        Якщо у вас виникли питання, пишіть нам в Telegram
+      <p class="text-gray-400 text-xs">
+        © 2026 Latiao Snack. Всі права захищені.
       </p>
     </div>
   </footer>
 
-  <!-- Initialize Lucide Icons -->
-  <script>
-    lucide.createIcons();
-  </script>
+  <!-- ============================================
+       FIREBASE & MAIN SCRIPT
+  ============================================ -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-  <!-- Main JavaScript -->
-  <script>
     // ============================================
-    // PARSE URL PARAMETERS AND DISPLAY ORDER ID
+    // FIREBASE CONFIG
     // ============================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyQvItRyL4IKl9NmEItswwPOEiKAbWkMw",
+      authDomain: "my-magazin-81c96.firebaseapp.com",
+      projectId: "my-magazin-81c96",
+      storageBucket: "my-magazin-81c96.firebasestorage.app",
+      messagingSenderId: "129061757346",
+      appId: "1:129061757346:web:3e7bc5838cc5f7bda992fb"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // ============================================
+    // DOM ELEMENTS
+    // ============================================
+    const loadingState = document.getElementById('loadingState');
+    const errorState = document.getElementById('errorState');
+    const successState = document.getElementById('successState');
+
+    // ============================================
+    // UTILITY FUNCTIONS
+    // ============================================
+    
     function getOrderIdFromURL() {
       const urlParams = new URLSearchParams(window.location.search);
       return urlParams.get('orderId');
     }
 
-    function displayOrderId() {
-      const orderId = getOrderIdFromURL();
-      const orderIdSection = document.getElementById('orderIdSection');
-      const orderIdElement = document.getElementById('orderId');
+    function formatPrice(price) {
+      return Number(price || 0).toLocaleString('uk-UA') + ' грн';
+    }
 
-      if (orderId) {
-        orderIdElement.textContent = `#${orderId}`;
-        orderIdSection.classList.remove('hidden');
+    // Format Firestore Timestamp to "DD.MM.YYYY HH:mm"
+    function formatDate(timestamp) {
+      if (!timestamp) return '—';
+      
+      let date;
+      if (timestamp.toDate) {
+        // Firestore Timestamp
+        date = timestamp.toDate();
+      } else if (timestamp.seconds) {
+        // Timestamp as plain object
+        date = new Date(timestamp.seconds * 1000);
+      } else {
+        date = new Date(timestamp);
+      }
+      
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      
+      return `${day}.${month}.${year} ${hours}:${minutes}`;
+    }
+
+    // Generate spiciness icons 🌶️
+    function renderSpiciness(level) {
+      if (!level || level <= 0) return '';
+      const count = Math.min(level, 5); // Max 5 chilies
+      return '<span class="ml-1 text-sm">' + '🌶️'.repeat(count) + '</span>';
+    }
+
+    function showState(state) {
+      loadingState.classList.add('hidden');
+      errorState.classList.add('hidden');
+      successState.classList.add('hidden');
+
+      if (state === 'loading') {
+        loadingState.classList.remove('hidden');
+      } else if (state === 'error') {
+        errorState.classList.remove('hidden');
+      } else if (state === 'success') {
+        successState.classList.remove('hidden');
       }
     }
 
@@ -420,31 +657,319 @@
     // ============================================
     function createConfetti() {
       const container = document.getElementById('confettiContainer');
-      const confettiCount = 50;
+      const colors = ['#ff6b00', '#FFD54F', '#FF4D4F', '#ff8533', '#22c55e'];
+      const confettiCount = 60;
 
       for (let i = 0; i < confettiCount; i++) {
         const confetti = document.createElement('div');
-        confetti.className = 'confetti';
-        confetti.style.left = Math.random() * 100 + '%';
-        confetti.style.animationDelay = Math.random() * 3 + 's';
-        confetti.style.animationDuration = (Math.random() * 2 + 3) + 's';
+        confetti.className = 'confetti confetti-fall';
+        
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        const size = Math.random() * 8 + 5;
+        const left = Math.random() * 100;
+        const delay = Math.random() * 0.6;
+        const duration = Math.random() * 2 + 2.5;
+        const rotation = Math.random() * 1080 - 540;
+
+        confetti.style.cssText = `
+          left: ${left}%;
+          width: ${size}px;
+          height: ${size}px;
+          background: ${color};
+          border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+          animation-delay: ${delay}s;
+          --fall-duration: ${duration}s;
+          --rotation: ${rotation}deg;
+        `;
+
         container.appendChild(confetti);
       }
 
-      // Remove confetti after animation completes
       setTimeout(() => {
         container.innerHTML = '';
-      }, 6000);
+      }, 4000);
     }
 
     // ============================================
-    // INITIALIZE ON PAGE LOAD
+    // COPY ORDER ID
     // ============================================
-    document.addEventListener('DOMContentLoaded', function() {
-      displayOrderId();
-      createConfetti();
+    function setupCopyButton(orderId) {
+      const copyBtn = document.getElementById('copyOrderIdBtn');
+      if (!copyBtn) return;
+
+      copyBtn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(orderId);
+          copyBtn.classList.add('copied');
+          copyBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4 text-green-600"></i>';
+          lucide.createIcons();
+
+          setTimeout(() => {
+            copyBtn.classList.remove('copied');
+            copyBtn.innerHTML = '<i data-lucide="copy" class="w-4 h-4 text-gray-400"></i>';
+            lucide.createIcons();
+          }, 2000);
+        } catch (err) {
+          console.error('Failed to copy:', err);
+        }
+      });
+    }
+
+    // ============================================
+    // RENDER ORDER DATA (EXACT STRUCTURE MAPPING)
+    // ============================================
+    function renderOrderData(order, orderId) {
+      
+      // ========== ORDER ID ==========
+      document.getElementById('heroOrderId').textContent = `#${orderId}`;
+      document.getElementById('displayOrderId').textContent = `#${orderId}`;
+      setupCopyButton(orderId);
+
+      // ========== DATE ==========
+      document.getElementById('orderDate').textContent = formatDate(order.createdAt);
+
+      // ========== STATUS BADGE (Always show "Confirmed") ==========
+      const statusBadge = document.getElementById('statusBadge');
+      statusBadge.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 flex items-center gap-1.5';
+      statusBadge.innerHTML = `
+        <i data-lucide="check-circle" class="w-4 h-4"></i>
+        <span>Підтверджено</span>
+      `;
       lucide.createIcons();
-    });
+
+      // ========== CUSTOMER (order.customer) ==========
+      const customer = order.customer || {};
+      document.getElementById('customerName').textContent = customer.fullName || customer.name || '—';
+      document.getElementById('customerPhone').textContent = customer.phone || '—';
+      
+      // Telegram (optional)
+      if (customer.telegram) {
+        document.getElementById('telegramRow').classList.remove('hidden');
+        document.getElementById('customerTelegram').textContent = '@' + customer.telegram.replace('@', '');
+      }
+
+      // ========== DELIVERY (order.delivery) ==========
+      const delivery = order.delivery || {};
+      document.getElementById('deliveryCity').textContent = delivery.city || '—';
+      
+      // Delivery method with logo
+      const deliveryMethodText = delivery.method || 'Нова Пошта';
+      document.getElementById('deliveryMethod').textContent = deliveryMethodText;
+      
+      // Show delivery logo based on method
+      const deliveryLogo = document.getElementById('deliveryLogo');
+      if (deliveryMethodText.toLowerCase().includes('нова') || deliveryMethodText.toLowerCase().includes('nova')) {
+        deliveryLogo.src = 'https://poletehnika.com.ua/image/catalog/e-mag/landing/np-logomark-red.png';
+        deliveryLogo.alt = 'Nova Poshta';
+        deliveryLogo.classList.remove('hidden');
+      } else if (deliveryMethodText.toLowerCase().includes('укр') || deliveryMethodText.toLowerCase().includes('ukr')) {
+        deliveryLogo.src = 'https://upload.wikimedia.org/wikipedia/commons/a/a8/Ukrposhta-ua.svg';
+        deliveryLogo.alt = 'Ukrposhta';
+        deliveryLogo.classList.remove('hidden');
+      } else {
+        deliveryLogo.classList.add('hidden');
+      }
+      
+      // Address: prefer 'address', fallback to 'warehouse'
+      const addressText = delivery.address || delivery.warehouse || '—';
+      document.getElementById('deliveryAddress').textContent = addressText;
+
+      // ========== ITEMS (order.items) ==========
+      const itemsContainer = document.getElementById('orderItemsContainer');
+      const items = order.items || [];
+      
+      if (items.length > 0) {
+        itemsContainer.innerHTML = items.map(item => `
+          <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-xl hover:bg-orange-50 transition-colors">
+            <!-- Image -->
+            <div class="w-16 h-16 bg-white rounded-xl overflow-hidden flex-shrink-0 shadow-sm">
+              ${item.image 
+                ? `<img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover">`
+                : `<div class="w-full h-full flex items-center justify-center text-gray-300">
+                    <i data-lucide="package" class="w-6 h-6"></i>
+                   </div>`
+              }
+            </div>
+            <!-- Info -->
+            <div class="flex-1 min-w-0">
+              <h4 class="font-semibold text-gray-900 truncate flex items-center flex-wrap">
+                ${item.name || 'Товар'}
+                ${renderSpiciness(item.spiciness)}
+              </h4>
+              <p class="text-sm text-gray-500">x${item.quantity || 1} · ${formatPrice(item.price)}</p>
+            </div>
+            <!-- Price -->
+            <div class="text-right flex-shrink-0">
+              <p class="font-bold text-gray-900">${formatPrice((item.price || 0) * (item.quantity || 1))}</p>
+            </div>
+          </div>
+        `).join('');
+        lucide.createIcons();
+      } else {
+        itemsContainer.innerHTML = `
+          <div class="text-center py-8 text-gray-400">
+            <i data-lucide="package" class="w-10 h-10 mx-auto mb-2 opacity-50"></i>
+            <p class="text-sm">Інформація про товари недоступна</p>
+          </div>
+        `;
+        lucide.createIcons();
+      }
+
+      // ========== FINANCIAL SUMMARY (order.summary) ==========
+      const summary = order.summary || {};
+      
+      // Item count - use summary.itemCount or calculate from items
+      const itemCount = summary.itemCount || items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+      document.getElementById('itemCount').textContent = itemCount;
+
+      // Subtotal - use summary.subtotal or calculate from items
+      const subtotal = summary.subtotal || items.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 1)), 0);
+      document.getElementById('subtotalAmount').textContent = formatPrice(subtotal);
+
+      // Discount (if exists)
+      const discount = summary.discount || order.discount || 0;
+      if (discount > 0) {
+        document.getElementById('discountRow').classList.remove('hidden');
+        document.getElementById('discountAmount').textContent = `-${formatPrice(discount)}`;
+      }
+
+      // TOTAL - use summary.total (MAIN SOURCE!) - calculate first for delivery cost logic
+      const total = summary.total || order.total || (subtotal - discount);
+      
+      // Delivery cost - FREE if total >= 1100 UAH
+      const deliveryCostEl = document.getElementById('deliveryCost');
+      if (total >= 1100) {
+        deliveryCostEl.textContent = 'Безкоштовно';
+        deliveryCostEl.className = 'font-medium text-green-600';
+      } else {
+        deliveryCostEl.textContent = 'За тарифами перевізника';
+        deliveryCostEl.className = 'font-medium text-gray-500';
+      }
+
+      // Display total
+      document.getElementById('totalAmount').textContent = formatPrice(total);
+
+      // ========== PAYMENT (order.payment) ==========
+      const payment = order.payment || {};
+      const paymentMethodText = payment.method || 'Оплата при отриманні';
+      document.getElementById('paymentMethod').textContent = paymentMethodText;
+      
+      // ========== COD PREPAYMENT BREAKDOWN ==========
+      const isCOD = paymentMethodText.toLowerCase().includes('cod') ||
+                    paymentMethodText.toLowerCase().includes('накладен') ||
+                    paymentMethodText.toLowerCase().includes('отриманні');
+      
+      const standardTotalBlock = document.getElementById('standardTotalBlock');
+      const codBreakdownBlock = document.getElementById('codBreakdownBlock');
+      
+      if (isCOD && total > 100) {
+        // Show COD breakdown
+        standardTotalBlock.classList.add('hidden');
+        codBreakdownBlock.classList.remove('hidden');
+        
+        const prepayment = 100;
+        const remaining = total - prepayment;
+        
+        document.getElementById('codTotalValue').textContent = formatPrice(total);
+        document.getElementById('codRemainingValue').textContent = formatPrice(remaining);
+        
+        lucide.createIcons();
+      } else {
+        // Show standard total (for online payments or edge cases)
+        standardTotalBlock.classList.remove('hidden');
+        codBreakdownBlock.classList.add('hidden');
+      }
+      
+      // Ensure all Lucide icons are rendered (including action buttons)
+      lucide.createIcons();
+    }
+
+    // ============================================
+    // FETCH ORDER FROM FIRESTORE
+    // ============================================
+    async function fetchOrderData(orderId) {
+      // 1. Try Firebase Firestore
+      try {
+        console.log('🔥 Fetching order from Firestore:', orderId);
+        const orderRef = doc(db, 'orders', orderId);
+        const orderSnap = await getDoc(orderRef);
+
+        if (orderSnap.exists()) {
+          console.log('✅ Order found in Firestore');
+          return { ...orderSnap.data(), id: orderId };
+        } else {
+          console.warn('⚠️ Order not found in Firestore');
+        }
+      } catch (error) {
+        console.error('❌ Firebase fetch error:', error);
+      }
+
+      // 2. Fallback: localStorage (for guests/offline)
+      try {
+        const localOrder = localStorage.getItem('last_order_details');
+        if (localOrder) {
+          const parsed = JSON.parse(localOrder);
+          console.log('📦 Using localStorage fallback');
+          return parsed;
+        }
+      } catch (error) {
+        console.warn('localStorage fallback failed:', error);
+      }
+
+      return null;
+    }
+
+    // ============================================
+    // INITIALIZE
+    // ============================================
+    async function init() {
+      lucide.createIcons();
+      showState('loading');
+
+      const orderId = getOrderIdFromURL();
+      console.log('🔍 Order ID from URL:', orderId);
+
+      if (!orderId) {
+        // No ID in URL - try localStorage
+        try {
+          const localOrder = localStorage.getItem('last_order_details');
+          if (localOrder) {
+            const order = JSON.parse(localOrder);
+            const id = order.orderId || order.id || 'LOCAL';
+            renderOrderData(order, id);
+            showState('success');
+            createConfetti();
+            return;
+          }
+        } catch (e) {
+          console.warn('No local order found');
+        }
+        
+        showState('error');
+        return;
+      }
+
+      // Fetch order by ID
+      const order = await fetchOrderData(orderId);
+
+      if (order) {
+        renderOrderData(order, orderId);
+        showState('success');
+        createConfetti();
+      } else {
+        showState('error');
+      }
+    }
+
+    // Run on DOM ready
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+
+  <!-- Lucide Icons Init (fallback) -->
+  <script>
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
   </script>
 
 </body>

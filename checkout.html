@@ -789,6 +789,41 @@
     const functions = getFunctions()
     
     // ============================================
+    // HELPER: Generate Short Order ID (6 characters)
+    // ============================================
+    function generateShortOrderId(length = 6) {
+      // Avoid ambiguous characters: I, 1, 0, O
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let result = '';
+      for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return result;
+    }
+    
+    // Generate unique order ID with collision check
+    async function generateUniqueOrderId(maxAttempts = 5) {
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const shortId = generateShortOrderId();
+        
+        // Check if ID already exists
+        const existingDoc = await getDoc(doc(db, 'orders', shortId));
+        
+        if (!existingDoc.exists()) {
+          console.log(`✅ Generated unique order ID: ${shortId} (attempt ${attempt + 1})`);
+          return shortId;
+        }
+        
+        console.warn(`⚠️ Order ID collision: ${shortId}, retrying...`);
+      }
+      
+      // Fallback: Add timestamp suffix to ensure uniqueness
+      const fallbackId = generateShortOrderId(4) + Date.now().toString(36).slice(-2).toUpperCase();
+      console.log(`🚨 Using fallback order ID: ${fallbackId}`);
+      return fallbackId;
+    }
+    
+    // ============================================
     // ANALYTICS: Track Checkout Visit
     // ============================================
     function getOrGenerateSessionId() {
@@ -2516,13 +2551,25 @@
         }
 
         // ============================================
-        // STEP 8: Save to Firebase Firestore
+        // STEP 8: Save to Firebase Firestore with SHORT ID
         // ============================================
-        console.log('💾 Saving order to Firestore...', orderData)
-
-        const docRef = await addDoc(collection(db, 'orders'), orderData)
-
-        console.log('✅ Order saved successfully! Document ID:', docRef.id)
+        console.log('💾 Generating unique order ID...')
+        
+        // Generate short, user-friendly order ID (e.g., "7X2M9P")
+        const orderId = await generateUniqueOrderId();
+        
+        // CRITICAL: Add orderId to the order data for consistency across the system
+        // This ensures Admin Panel, Client Cabinet, and Thank You Page all show the same ID
+        orderData.id = orderId;
+        orderData.orderId = orderId;
+        
+        console.log('💾 Saving order to Firestore...', { orderId, orderData })
+        
+        // Use setDoc with custom ID instead of addDoc
+        // This forces Firestore to use our short ID as the Document ID
+        await setDoc(doc(db, 'orders', orderId), orderData);
+        
+        console.log('✅ Order saved successfully! Order ID:', orderId)
 
         // ============================================
         // STEP 8.1: Mini-CRM - Sync Customer Profile
@@ -2530,12 +2577,12 @@
         // Automatically create or update customer in 'customers' collection
         try {
           if (typeof window.syncCustomerFromOrder === 'function') {
-            const crmResult = await window.syncCustomerFromOrder(orderData, docRef.id)
+            const crmResult = await window.syncCustomerFromOrder(orderData, orderId)
             console.log('👤 Mini-CRM result:', crmResult)
           } else {
             // Fallback: inline Mini-CRM logic if admin.js not loaded
             console.log('⚠️ syncCustomerFromOrder not available, using inline fallback...')
-            await syncCustomerInline(orderData, docRef.id)
+            await syncCustomerInline(orderData, orderId)
           }
         } catch (crmError) {
           console.error('⚠️ Mini-CRM error (non-blocking):', crmError)
@@ -2546,7 +2593,7 @@
         // ============================================
         // Clean up ALL old entries for this customer to prevent duplicates
         // This runs in the background and won't block the user flow
-        cleanUpOldEntries(phone, docRef.id).catch(err => {
+        cleanUpOldEntries(phone, orderId).catch(err => {
           console.error('⚠️ Cleanup error (non-blocking):', err)
         })
 
@@ -2577,11 +2624,11 @@
           console.log('💳 Online payment selected - creating Monobank invoice...')
 
           // CRITICAL: Validate orderId exists
-          if (!docRef || !docRef.id) {
+          if (!orderId) {
             throw new Error('Order ID is missing - cannot create payment invoice')
           }
 
-          console.log('🔍 Order ID:', docRef.id)
+          console.log('🔍 Order ID:', orderId)
 
           btn.textContent = 'Створення рахунку...'
 
@@ -2591,7 +2638,7 @@
 
             // CRITICAL: Wrap orderId in an object (backend expects data.orderId)
             const payload = {
-              orderId: docRef.id
+              orderId: orderId
             }
 
             console.log('📤 Calling Cloud Function with payload:', payload)
@@ -2629,7 +2676,7 @@
 
             // User-friendly error message
             let errorMsg = '⚠️ Помилка створення рахунку для оплати.\n\n'
-            errorMsg += 'Ваше замовлення збережено (№' + docRef.id + '),\n'
+            errorMsg += 'Ваше замовлення збережено (№' + orderId + '),\n'
             errorMsg += 'але сталася помилка при створенні платіжного рахунку.\n\n'
 
             // Add specific error details if available
@@ -2655,26 +2702,82 @@
 
         } else {
           // ============================================
-          // CASH ON DELIVERY - 100 UAH PREPAYMENT
+          // CASH ON DELIVERY - CHECK PREPAYMENT SETTING
           // ============================================
-          console.log('💵 COD payment selected - creating 100 UAH deposit invoice...')
+          console.log('💵 COD payment selected - checking prepayment setting...')
 
           // CRITICAL: Validate orderId exists
-          if (!docRef || !docRef.id) {
-            throw new Error('Order ID is missing - cannot create payment invoice')
+          if (!orderId) {
+            throw new Error('Order ID is missing - cannot process COD order')
           }
 
-          console.log('🔍 Order ID:', docRef.id)
+          console.log('🔍 Order ID:', orderId)
 
-          btn.textContent = 'Створення рахунку на передоплату...'
+          btn.textContent = 'Перевірка налаштувань...'
 
           try {
+            // ============================================
+            // FETCH PREPAYMENT SETTING FROM FIRESTORE
+            // ============================================
+            let isPrepaymentEnabled = true // Default to true (require prepayment)
+            
+            try {
+              const generalSettingsDoc = await getDoc(doc(db, 'settings', 'general'))
+              if (generalSettingsDoc.exists()) {
+                const generalData = generalSettingsDoc.data()
+                // If isPrepaymentEnabled is explicitly false, disable prepayment
+                isPrepaymentEnabled = generalData.isPrepaymentEnabled !== false
+              }
+              console.log('💳 Prepayment setting:', isPrepaymentEnabled)
+            } catch (settingsError) {
+              console.warn('⚠️ Could not fetch prepayment setting, using default (true):', settingsError)
+            }
+
+            // ============================================
+            // CONDITIONAL: PREPAYMENT DISABLED - SKIP PAYMENT
+            // ============================================
+            if (!isPrepaymentEnabled) {
+              console.log('✅ Prepayment DISABLED - skipping payment, redirecting to thank-you page...')
+              
+              // Update order status to 'new' (confirmed without payment)
+              await updateDoc(doc(db, 'orders', orderId), {
+                status: 'new',
+                'payment.status': 'cod_no_prepayment',
+                'payment.prepaymentSkipped': true,
+                'payment.prepaymentSkippedAt': new Date()
+              })
+              
+              console.log('📝 Order status updated to "new" (no prepayment required)'))
+              
+              // Save order details to localStorage for thank-you page fallback
+              localStorage.setItem('last_order_details', JSON.stringify({
+                ...orderData,
+                orderId: orderId, // Use the same short ID for consistency
+                createdAt: new Date().toISOString()
+              }))
+              
+              // Clear cart
+              localStorage.removeItem('latiao_cart')
+              
+              // Redirect to thank-you page with the SHORT orderId
+              console.log('🔄 Redirecting to thank-you page with orderId:', orderId)
+              window.location.href = 'thank-you.html?orderId=' + orderId
+              return
+            }
+
+            // ============================================
+            // STANDARD FLOW: PREPAYMENT ENABLED - 100 UAH DEPOSIT
+            // ============================================
+            console.log('💰 Prepayment ENABLED - creating 100 UAH deposit invoice...')
+            
+            btn.textContent = 'Створення рахунку на передоплату...'
+
             // Initialize Cloud Function
             const createMonoInvoice = httpsCallable(functions, 'createMonoInvoice')
 
             // CRITICAL: Pass paymentType = 'deposit' for COD orders
             const payload = {
-              orderId: docRef.id,
+              orderId: orderId,
               paymentType: 'deposit' // This triggers 100 UAH invoice
             }
 
@@ -2713,7 +2816,7 @@
 
             // User-friendly error message
             let errorMsg = '⚠️ Помилка створення рахунку для передоплати.\n\n'
-            errorMsg += 'Ваше замовлення збережено (№' + docRef.id + '),\n'
+            errorMsg += 'Ваше замовлення збережено (№' + orderId + '),\n'
             errorMsg += 'але сталася помилка при створенні платіжного рахунку.\n\n'
 
             // Add specific error details if available
@@ -2755,6 +2858,12 @@
 
   <!-- Load Pop-up Manager -->
   <script type="module" src="./js/popup-manager.js"></script>
+
+  <!-- TEMP: Test Button for Thank You Page -->
+  <a href="thank-you.html?orderId=test-123" 
+     class="fixed bottom-4 left-4 z-50 px-3 py-2 bg-gray-500/50 hover:bg-gray-500/70 text-white text-xs rounded-lg backdrop-blur-sm transition-all">
+    🧪 Test Thank You Page
+  </a>
 </body>
 
 </html>
