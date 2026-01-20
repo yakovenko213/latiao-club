@@ -495,6 +495,10 @@
 
         // Process products
         allProducts = prodSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        
+        // Sort by sortOrder (merchandising order) - client-side sorting
+        allProducts.sort((a, b) => (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999))
+        
         console.log(`📦 Знайдено товарів: ${allProducts.length}`)
         console.log('📋 Дані товарів:', allProducts)
 
