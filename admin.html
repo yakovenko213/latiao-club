@@ -217,6 +217,10 @@
           <i data-lucide="warehouse" class="w-5 h-5"></i>
           <span>Склад</span>
         </a>
+        <a href="#stats" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+          <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+          <span>📊 Статистика</span>
+        </a>
 
         <!-- Collapsible: Incomplete Orders Category -->
 
@@ -1544,6 +1548,139 @@
         </div>
 
       </div>
+      <!-- Statistics View -->
+      <div id="view-stats" class="view p-8">
+        <div class="mb-6">
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">📊 Статистика</h1>
+          <p class="text-gray-600">Аналітика замовлень та продажів</p>
+        </div>
+        
+        <!-- Stats Loading Indicator -->
+        <div id="stats-loading" class="text-center py-10">
+          <div class="animate-spin w-8 h-8 border-4 border-spicy border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p class="text-gray-600">Завантаження статистики...</p>
+        </div>
+        
+        <!-- Stats Content -->
+        <div id="stats-content" class="hidden">
+          <!-- Main Stats Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            
+            <!-- Stat Card 1: Успішні замовлення -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 hover:shadow-lg transition-all duration-300">
+              <div class="flex items-center gap-4">
+                <div class="p-3 bg-green-100 rounded-xl">
+                  <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500 font-medium">Успішні замовлення</p>
+                  <p id="stat-successful-orders" class="text-3xl font-bold text-gray-900">0</p>
+                  <p class="text-xs text-green-600 mt-1">completed, delivered, shipped</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Stat Card 2: Загальний товарообіг -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 hover:shadow-lg transition-all duration-300">
+              <div class="flex items-center gap-4">
+                <div class="p-3 bg-yellow-100 rounded-xl">
+                  <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500 font-medium">Загальний товарообіг</p>
+                  <p id="stat-total-revenue" class="text-3xl font-bold text-gray-900">0 грн</p>
+                  <p class="text-xs text-yellow-600 mt-1">сума успішних замовлень</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Stat Card 3: Середній чек -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 hover:shadow-lg transition-all duration-300">
+              <div class="flex items-center gap-4">
+                <div class="p-3 bg-blue-100 rounded-xl">
+                  <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500 font-medium">Середній чек (AOV)</p>
+                  <p id="stat-aov" class="text-3xl font-bold text-gray-900">0 грн</p>
+                  <p class="text-xs text-blue-600 mt-1">обіг ÷ кількість</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Stat Card 4: Безкоштовна доставка -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 hover:shadow-lg transition-all duration-300">
+              <div class="flex items-center gap-4">
+                <div class="p-3 bg-purple-100 rounded-xl">
+                  <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500 font-medium">Безкошт. доставка</p>
+                  <p id="stat-free-shipping" class="text-3xl font-bold text-gray-900">0</p>
+                  <p class="text-xs text-purple-600 mt-1">замовлення ≥ 1100 грн</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Stat Card 5: З категорії -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 hover:shadow-lg transition-all duration-300">
+              <div class="flex items-center gap-4">
+                <div class="p-3 bg-orange-100 rounded-xl">
+                  <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500 font-medium">Додано з категорії</p>
+                  <p id="stat-from-category" class="text-3xl font-bold text-gray-900">0</p>
+                  <p class="text-xs text-orange-600 mt-1">товарів (addedFrom: category)</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Stat Card 6: З картки товару -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 hover:shadow-lg transition-all duration-300">
+              <div class="flex items-center gap-4">
+                <div class="p-3 bg-pink-100 rounded-xl">
+                  <svg class="w-8 h-8 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500 font-medium">Додано з товару</p>
+                  <p id="stat-from-product" class="text-3xl font-bold text-gray-900">0</p>
+                  <p class="text-xs text-pink-600 mt-1">товарів (addedFrom: product)</p>
+                </div>
+              </div>
+            </div>
+            
+          </div>
+          
+          <!-- Additional Info Card -->
+          <div class="bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-2xl p-6">
+            <div class="flex items-start gap-4">
+              <div class="p-3 bg-orange-100 rounded-xl">
+                <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <div>
+                <h3 class="font-bold text-orange-900 mb-1">Про статистику</h3>
+                <p class="text-sm text-orange-800">Дані оновлюються автоматично при завантаженні замовлень. Успішними вважаються замовлення зі статусами: <strong>completed</strong>, <strong>delivered</strong>, <strong>received</strong>, <strong>shipped</strong>.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <!-- Promo Codes View -->
 
       <div id="view-promos" class="view p-8">
@@ -2691,6 +2828,7 @@
       'promos': 'Промокоди',
       'customers': 'Клієнти',
       'inventory': 'Склад',
+      'stats': '📊 Статистика',
       'abandoned': 'Покинуті платежі',
       'abandoned-carts': 'Покинуті кошики',
       'pages': 'Сторінки',
@@ -2736,6 +2874,8 @@
           loadGiftsView()
         } else if (target === 'customers') {
           loadCustomers()
+        } else if (target === 'stats') {
+          loadStatsView()
         }
 
         // Reinit icons
@@ -5044,6 +5184,178 @@
 
     // ============================================
     // END CUSTOMERS SECTION
+    // ============================================
+
+    // ============================================
+    // STATISTICS DASHBOARD
+    // ============================================
+    
+    // Fetch analytics data from analytics_cart_adds collection
+    // Returns UNIQUE SESSIONS count (not total clicks)
+    async function fetchCartAnalytics() {
+      try {
+        const analyticsSnap = await getDocs(collection(db, 'analytics_cart_adds'))
+        
+        // Use Sets to count UNIQUE sessions per source
+        const categorySessions = new Set()
+        const productSessions = new Set()
+        const homepageSessions = new Set()
+        
+        // Also track total clicks for comparison
+        let totalClicks = 0
+        
+        analyticsSnap.docs.forEach(doc => {
+          const data = doc.data()
+          const source = data.source || ''
+          const sessionId = data.userSessionId || 'unknown_' + doc.id
+          
+          totalClicks++
+          
+          if (source === 'category' || source === 'catalog') {
+            categorySessions.add(sessionId)
+          } else if (source === 'product' || source === 'product-page' || source === 'productPage') {
+            productSessions.add(sessionId)
+          } else if (source === 'homepage') {
+            homepageSessions.add(sessionId)
+          }
+        })
+        
+        console.log('📊 Analytics - Unique Sessions:', {
+          category: categorySessions.size,
+          product: productSessions.size,
+          homepage: homepageSessions.size,
+          totalClicks
+        })
+        
+        return { 
+          fromCategory: categorySessions.size, 
+          fromProduct: productSessions.size, 
+          fromHomepage: homepageSessions.size, 
+          totalUniqueUsers: new Set([...categorySessions, ...productSessions, ...homepageSessions]).size,
+          totalClicks 
+        }
+      } catch (e) {
+        console.warn('📊 Could not fetch cart analytics:', e.message)
+        return { fromCategory: 0, fromProduct: 0, fromHomepage: 0, totalUniqueUsers: 0, totalClicks: 0 }
+      }
+    }
+    
+    async function calculateAndRenderStats(orders) {
+      // Define successful statuses
+      const successfulStatuses = ['completed', 'delivered', 'received', 'shipped']
+      
+      // Filter successful orders
+      const successfulOrders = orders.filter(order => 
+        successfulStatuses.includes(order.status?.toLowerCase())
+      )
+      
+      // 1. Count of successful orders
+      const successfulCount = successfulOrders.length
+      
+      // 2. Total Revenue (sum of successful orders)
+      const totalRevenue = successfulOrders.reduce((sum, order) => {
+        const total = parseFloat(order.total) || 0
+        return sum + total
+      }, 0)
+      
+      // 3. Average Order Value (AOV)
+      const aov = successfulCount > 0 ? totalRevenue / successfulCount : 0
+      
+      // 4. Orders with free shipping (total >= 1100)
+      const freeShippingOrders = successfulOrders.filter(order => {
+        const total = parseFloat(order.total) || 0
+        return total >= 1100
+      }).length
+      
+      // 5 & 6. Fetch REAL-TIME analytics from analytics_cart_adds collection
+      const cartAnalytics = await fetchCartAnalytics()
+      const fromCategory = cartAnalytics.fromCategory
+      const fromProduct = cartAnalytics.fromProduct
+      
+      // Update DOM elements
+      const successfulEl = document.getElementById('stat-successful-orders')
+      const revenueEl = document.getElementById('stat-total-revenue')
+      const aovEl = document.getElementById('stat-aov')
+      const freeShipEl = document.getElementById('stat-free-shipping')
+      const fromCatEl = document.getElementById('stat-from-category')
+      const fromProdEl = document.getElementById('stat-from-product')
+      
+      if (successfulEl) successfulEl.textContent = successfulCount.toLocaleString('uk-UA')
+      if (revenueEl) revenueEl.textContent = totalRevenue.toLocaleString('uk-UA') + ' грн'
+      if (aovEl) aovEl.textContent = Math.round(aov).toLocaleString('uk-UA') + ' грн'
+      if (freeShipEl) freeShipEl.textContent = freeShippingOrders.toLocaleString('uk-UA')
+      if (fromCatEl) fromCatEl.textContent = fromCategory.toLocaleString('uk-UA')
+      if (fromProdEl) fromProdEl.textContent = fromProduct.toLocaleString('uk-UA')
+      
+      console.log('📊 Stats calculated:', {
+        successfulOrders: successfulCount,
+        totalRevenue,
+        aov: Math.round(aov),
+        freeShipping: freeShippingOrders,
+        fromCategory,
+        fromProduct,
+        analyticsTotal: cartAnalytics.total
+      })
+      
+      // Hide loading, show content
+      const loadingEl = document.getElementById('stats-loading')
+      const contentEl = document.getElementById('stats-content')
+      if (loadingEl) loadingEl.classList.add('hidden')
+      if (contentEl) contentEl.classList.remove('hidden')
+    }
+    
+    // Load Statistics View
+    async function loadStatsView() {
+      const loadingEl = document.getElementById('stats-loading')
+      const contentEl = document.getElementById('stats-content')
+      
+      // Show loading
+      if (loadingEl) loadingEl.classList.remove('hidden')
+      if (contentEl) contentEl.classList.add('hidden')
+      
+      // If orders are already cached, use them
+      if (allOrdersCache && allOrdersCache.length > 0) {
+        calculateAndRenderStats(allOrdersCache)
+        return
+      }
+      
+      // Otherwise, fetch orders
+      try {
+        const ordersQuery = query(
+          collection(db, 'orders'),
+          orderBy('createdAt', 'desc')
+        )
+        
+        const snap = await getDocs(ordersQuery)
+        
+        if (snap.empty) {
+          calculateAndRenderStats([])
+          return
+        }
+        
+        // Cache orders
+        allOrdersCache = snap.docs.map(docSnap => ({
+          id: docSnap.id,
+          ...docSnap.data()
+        }))
+        
+        calculateAndRenderStats(allOrdersCache)
+        
+      } catch (e) {
+        console.error('❌ Error loading stats:', e)
+        if (loadingEl) loadingEl.classList.add('hidden')
+        if (contentEl) {
+          contentEl.classList.remove('hidden')
+          contentEl.innerHTML = `
+            <div class="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+              <p class="text-red-600">Помилка завантаження статистики: ${e.message}</p>
+            </div>
+          `
+        }
+      }
+    }
+    // ============================================
+    // END STATISTICS DASHBOARD
     // ============================================
 
     async function loadOrders() {

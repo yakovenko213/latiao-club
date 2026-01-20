@@ -1498,9 +1498,9 @@
         quantity: quantity
       }
 
-      // Add to cart with quantity
+      // Add to cart with quantity and track source
       for (let i = 0; i < quantity; i++) {
-        window.addToCart(productData)
+        window.addToCart(productData, 'product')
       }
 
       // Reset quantity

@@ -3,43 +3,61 @@ service cloud.firestore {
   match /databases/{database}/documents {
     
     // =============================================
+    // 📊 ANALYTICS - MUST BE FIRST (Public Write)
+    // =============================================
+    
+    // Real-time Cart Analytics - Track "Add to Cart" events
+    // CRITICAL: Public create for unauthenticated tracking
+    match /analytics_cart_adds/{eventId} {
+      allow create: if true;                  // ✅ ANYONE can track cart add event
+      allow read: if request.auth != null;    // Only admins can view analytics
+      allow update, delete: if request.auth != null;
+    }
+    
+    // Daily Stats
+    match /daily_stats/{dateId} {
+      allow read: if request.auth != null;
+      allow create, update: if true;          // Anyone can increment counters
+    }
+    
+    // =============================================
     // 🌐 PUBLIC COLLECTIONS (Anyone can read)
     // =============================================
     
     // Products - PUBLIC READ for storefront
     match /products/{productId} {
-      allow read: if true;                    // Anyone can browse products
-      allow write: if request.auth != null;   // Only admins can modify
+      allow read: if true;
+      allow write: if request.auth != null;
     }
     
     // Categories - PUBLIC READ for navigation
     match /categories/{categoryId} {
-      allow read: if true;                    // Anyone can see categories
-      allow write: if request.auth != null;   // Only admins can modify
+      allow read: if true;
+      allow write: if request.auth != null;
     }
     
     // Pages/Content - PUBLIC READ for static pages
     match /pages/{pageId} {
-      allow read: if true;                    // Anyone can read pages
-      allow write: if request.auth != null;   // Only admins can modify
+      allow read: if true;
+      allow write: if request.auth != null;
     }
     
     // Settings - PUBLIC READ for site config (gifts, delivery, etc.)
     match /settings/{docId} {
-      allow read: if true;                    // Anyone can read settings
-      allow write: if request.auth != null;   // Only admins can modify
+      allow read: if true;
+      allow write: if request.auth != null;
     }
     
     // Pop-ups - PUBLIC READ for marketing modals
     match /popups/{popupId} {
-      allow read: if true;                    // Anyone can see active popups
-      allow write: if request.auth != null;   // Only admins can modify
+      allow read: if true;
+      allow write: if request.auth != null;
     }
     
     // Promocodes - PUBLIC READ for validation at checkout
     match /promocodes/{promoId} {
-      allow read: if true;                    // Anyone can validate promo codes
-      allow write: if request.auth != null;   // Only admins can create/modify
+      allow read: if true;
+      allow write: if request.auth != null;
     }
     
     // =============================================
@@ -48,8 +66,7 @@ service cloud.firestore {
     
     match /orders/{orderId} {
       allow create: if true;                  // Anyone can place an order
-      allow read: if request.auth != null;    // Only authenticated users can read
-      allow update, delete: if request.auth != null;  // Only admins can modify
+      allow read, update, delete: if request.auth != null;
     }
     
     // =============================================
@@ -57,13 +74,12 @@ service cloud.firestore {
     // =============================================
     
     match /customers/{customerId} {
-      allow read, write: if request.auth != null;  // Only authenticated users
+      allow read, write: if request.auth != null;
     }
     
-    // Personal promo codes - Private
+    // Personal promo codes
     match /personal_promocodes/{promoId} {
-      allow read: if request.auth != null;    // Only authenticated users can read
-      allow write: if request.auth != null;   // Only admins can create
+      allow read, write: if request.auth != null;
     }
     
     // =============================================
@@ -75,21 +91,5 @@ service cloud.firestore {
       allow read: if request.auth != null;    // Only admins can view all carts
     }
     
-    // =============================================
-    // 📊 ANALYTICS (Write: Public, Read: Admin)
-    // =============================================
-    
-    match /daily_stats/{dateId} {
-      allow read: if request.auth != null;    // Only admins can read stats
-      allow create, update: if true;          // Anyone can increment counters
-    }
-    
-    // =============================================
-    // 🔒 CATCH-ALL: Deny everything else
-    // =============================================
-    
-    match /{document=**} {
-      allow read, write: if false;            // Deny access to undefined collections
-    }
   }
 }

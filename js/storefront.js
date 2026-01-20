@@ -13,6 +13,20 @@ import {
 console.log('🛒 Storefront module loaded');
 
 // ============================================
+// ADD TO CART FROM STOREFRONT (with analytics)
+// ============================================
+window.addToCartFromStorefront = function(productId, name, price, image, source) {
+    if (window.addToCart) {
+        window.addToCart({
+            id: productId,
+            name: name,
+            price: price,
+            image: image
+        }, source);
+    }
+};
+
+// ============================================
 // SPICINESS RENDERER
 // ============================================
 function renderSpiciness(level = 0) {
@@ -60,7 +74,7 @@ function createProductCard(product, productId) {
                 <div class="flex items-center justify-between">
                     <div class="text-xl font-bold text-spicy">₴${product.price}</div>
                     <button 
-                        onclick="window.addToCart && window.addToCart('${productId}', '${product.name.replace(/'/g, "\\'")}', ${product.price}, '${img}')"
+                        onclick="window.addToCartFromStorefront('${productId}', '${product.name.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', ${product.price}, '${img}', 'category')"
                         class="btn-primary btn-press fire-gradient text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-md shadow-spicy/20">
                         <i data-lucide="plus" class="w-4 h-4"></i>
                         <span>Додати</span>
@@ -101,7 +115,7 @@ function createHorizontalProductCard(product, productId) {
                     <div class="flex items-center justify-between">
                         <div class="text-xl font-bold text-spicy">₴${product.price}</div>
                         <button 
-                            onclick="window.addToCart && window.addToCart('${productId}', '${product.name.replace(/'/g, "\\'")}', ${product.price}, '${img}')"
+                            onclick="window.addToCartFromStorefront('${productId}', '${product.name.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', ${product.price}, '${img}', 'homepage')"
                             class="btn-primary btn-press fire-gradient text-white px-3 py-2 rounded-xl text-sm font-semibold shadow-md shadow-spicy/20">
                             <i data-lucide="plus" class="w-4 h-4"></i>
                         </button>

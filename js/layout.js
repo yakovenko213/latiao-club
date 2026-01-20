@@ -661,8 +661,85 @@ function updateCartUI() {
   }
 }
 
+// ============================================
+// ANALYTICS: Track Add to Cart Events
+// Fire-and-Forget write to Firestore
+// ============================================
+
+// Get or generate unique session ID for analytics
+function getOrGenerateSessionId() {
+  // Priority 1: User phone (logged-in user)
+  const userPhone = localStorage.getItem('userPhone');
+  if (userPhone) {
+    return `phone_${userPhone}`;
+  }
+  
+  // Priority 2: Existing anonymous session ID
+  let anonId = localStorage.getItem('anon_session_id');
+  if (anonId) {
+    return anonId;
+  }
+  
+  // Priority 3: Generate new anonymous session ID
+  anonId = `anon_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+  localStorage.setItem('anon_session_id', anonId);
+  return anonId;
+}
+
+window.trackAddToCart = async function(product, source) {
+  // source: 'category' | 'product' | 'homepage' | 'repeat_order'
+  console.log('📊 trackAddToCart called:', { product: product?.name, source });
+  
+  try {
+    // Wait for Firebase to be ready
+    let attempts = 0;
+    while (!window.firebaseInit && attempts < 30) {
+      await new Promise(r => setTimeout(r, 100));
+      attempts++;
+    }
+    
+    if (!window.firebaseInit) {
+      console.warn('📊 Analytics: Firebase not ready after 30 attempts');
+      return;
+    }
+    
+    console.log('📊 Firebase ready, preparing to write...');
+    
+    const { db, collection, addDoc, serverTimestamp } = window.firebaseInit;
+    
+    if (!db || !collection || !addDoc) {
+      console.warn('📊 Analytics: Missing Firestore functions', { db: !!db, collection: !!collection, addDoc: !!addDoc });
+      return;
+    }
+    
+    // Get unique session identifier
+    const userSessionId = getOrGenerateSessionId();
+    
+    const docData = {
+      productId: product.id || product.productId || 'unknown',
+      productName: product.name || product.title || 'Unknown',
+      price: product.price || 0,
+      quantity: product.quantity || product.qty || 1,
+      source: source,
+      userSessionId: userSessionId, // UNIQUE SESSION TRACKING
+      timestamp: serverTimestamp(),
+      userAgent: navigator.userAgent.substring(0, 200),
+      device: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
+    };
+    
+    console.log('📊 Writing to analytics_cart_adds:', docData);
+    
+    const docRef = await addDoc(collection(db, 'analytics_cart_adds'), docData);
+    
+    console.log(`📊 Analytics SUCCESS: Item added from "${source}" tracked. DocID: ${docRef.id}`);
+  } catch (e) {
+    // Non-blocking - don't affect user experience
+    console.error('📊 Analytics FAILED:', e.code, e.message, e);
+  }
+};
+
 // Add product to cart
-window.addToCart = function(product) {
+window.addToCart = function(product, source = null) {
   // REFINED LOGIC: Check by ID + isGift status
   // This allows GIFT and PAID versions of the same product to coexist
   const productIsGift = product.isGift === true;
@@ -705,6 +782,11 @@ window.addToCart = function(product) {
   renderCart();
   window.openCart();
   window.showToast(`${product.name} додано в кошик!`);
+  
+  // Track analytics (fire-and-forget, non-blocking)
+  if (source && window.trackAddToCart) {
+    window.trackAddToCart(product, source);
+  }
 };
 
 // Update quantity (LEGACY - kept for backward compatibility)
