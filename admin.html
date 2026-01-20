@@ -1563,6 +1563,45 @@
         
         <!-- Stats Content -->
         <div id="stats-content" class="hidden">
+          <!-- Date Range Filter Bar -->
+          <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 mb-6">
+            <div class="flex flex-wrap items-center gap-4">
+              <div class="flex items-center gap-2">
+                <label class="text-sm font-medium text-gray-600">Період:</label>
+                <input type="date" id="stats-date-start" 
+                  class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-spicy focus:border-spicy outline-none" />
+                <span class="text-gray-400">—</span>
+                <input type="date" id="stats-date-end" 
+                  class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-spicy focus:border-spicy outline-none" />
+              </div>
+              <div class="flex items-center gap-2">
+                <button id="stats-filter-apply" 
+                  class="px-4 py-2 bg-spicy text-white text-sm font-medium rounded-lg hover:bg-orange-600 transition-colors">
+                  Застосувати
+                </button>
+                <button id="stats-filter-today" 
+                  class="px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors">
+                  Сьогодні
+                </button>
+                <button id="stats-filter-week" 
+                  class="px-4 py-2 bg-purple-500 text-white text-sm font-medium rounded-lg hover:bg-purple-600 transition-colors">
+                  7 днів
+                </button>
+                <button id="stats-filter-month" 
+                  class="px-4 py-2 bg-indigo-500 text-white text-sm font-medium rounded-lg hover:bg-indigo-600 transition-colors">
+                  30 днів
+                </button>
+                <button id="stats-filter-all" 
+                  class="px-4 py-2 bg-gray-500 text-white text-sm font-medium rounded-lg hover:bg-gray-600 transition-colors">
+                  Весь час
+                </button>
+              </div>
+              <div id="stats-date-label" class="ml-auto text-sm text-gray-500 font-medium">
+                📅 Весь час
+              </div>
+            </div>
+          </div>
+          
           <!-- Main Stats Grid -->
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             
@@ -1664,6 +1703,66 @@
             
           </div>
           
+          <!-- Visitor Analytics Section -->
+          <h3 class="text-lg font-bold text-gray-700 mb-4 mt-8 flex items-center gap-2">
+            <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            Аналітика відвідувачів
+          </h3>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            
+            <!-- Stat Card 7: Total Visitors -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 hover:shadow-lg transition-all duration-300">
+              <div class="flex items-center gap-4">
+                <div class="p-3 bg-indigo-100 rounded-xl">
+                  <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500 font-medium">Всього відвідувачів</p>
+                  <p id="stat-total-visitors" class="text-3xl font-bold text-gray-900">0</p>
+                  <p class="text-xs text-indigo-600 mt-1">унікальних сесій</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Stat Card 8: Online Now -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 hover:shadow-lg transition-all duration-300">
+              <div class="flex items-center gap-4">
+                <div class="p-3 bg-emerald-100 rounded-xl">
+                  <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728m-9.9-2.829a5 5 0 010-7.07m7.072 0a5 5 0 010 7.07M13 12a1 1 0 11-2 0 1 1 0 012 0z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500 font-medium">Онлайн зараз</p>
+                  <p id="stat-online-now" class="text-3xl font-bold text-gray-900">0</p>
+                  <p class="text-xs text-emerald-600 mt-1">активні за 15 хв</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Stat Card 9: Abandoned Carts -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 hover:shadow-lg transition-all duration-300">
+              <div class="flex items-center gap-4">
+                <div class="p-3 bg-red-100 rounded-xl">
+                  <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500 font-medium">Покинуті кошики</p>
+                  <p id="stat-abandoned-carts" class="text-3xl font-bold text-gray-900">0</p>
+                  <p class="text-xs text-red-600 mt-1">додали, не оформили</p>
+                </div>
+              </div>
+            </div>
+            
+          </div>
+          
           <!-- Additional Info Card -->
           <div class="bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-2xl p-6">
             <div class="flex items-start gap-4">
@@ -1677,6 +1776,101 @@
                 <p class="text-sm text-orange-800">Дані оновлюються автоматично при завантаженні замовлень. Успішними вважаються замовлення зі статусами: <strong>completed</strong>, <strong>delivered</strong>, <strong>received</strong>, <strong>shipped</strong>.</p>
               </div>
             </div>
+          </div>
+          
+          <!-- ============================================ -->
+          <!-- DANGER ZONE: Reset Statistics -->
+          <!-- ============================================ -->
+          <div class="mt-10 border-t-2 border-red-200 pt-6">
+            <h3 class="text-lg font-bold text-red-700 mb-4 flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+              </svg>
+              Небезпечна зона
+            </h3>
+            <div class="bg-red-50 border border-red-200 rounded-xl p-6">
+              <div class="flex items-start gap-4">
+                <div class="p-3 bg-red-100 rounded-xl">
+                  <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <h4 class="font-bold text-red-900 mb-1">Очистити історію аналітики</h4>
+                  <p class="text-sm text-red-700 mb-4">Видалить дані з колекцій: <code class="bg-red-100 px-1 rounded">analytics_cart_adds</code>, <code class="bg-red-100 px-1 rounded">analytics_sessions</code>, <code class="bg-red-100 px-1 rounded">analytics_checkout_events</code>. Замовлення залишаться недоторканими.</p>
+                  <button id="btn-open-reset-stats" 
+                    class="px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    Очистити історію статистики
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+      
+      <!-- ============================================ -->
+      <!-- MODAL: Reset Statistics Confirmation -->
+      <!-- ============================================ -->
+      <div id="modal-reset-stats" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-center justify-center">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden animate-in fade-in zoom-in duration-200">
+          <!-- Header -->
+          <div class="bg-red-600 px-6 py-4">
+            <h2 class="text-xl font-bold text-white flex items-center gap-2">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+              </svg>
+              Підтвердження видалення
+            </h2>
+          </div>
+          
+          <!-- Body -->
+          <div class="p-6">
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <p class="text-red-800 text-sm">
+                <strong>⚠️ Увага!</strong> Ця дія незворотня. Буде видалено всі дані аналітики:
+              </p>
+              <ul class="text-red-700 text-sm mt-2 ml-4 list-disc">
+                <li>Історія додавання в кошик</li>
+                <li>Дані сесій відвідувачів</li>
+                <li>Статистика переходів на checkout</li>
+              </ul>
+              <p class="text-red-800 text-sm mt-2">
+                <strong>✅ Замовлення НЕ будуть видалені.</strong>
+              </p>
+            </div>
+            
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Введіть <span class="font-bold text-red-600">ВИДАЛИТИ</span> для підтвердження:
+            </label>
+            <input type="text" id="input-confirm-reset" 
+              class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-center text-lg font-mono uppercase focus:border-red-500 focus:ring-2 focus:ring-red-200 outline-none transition-all"
+              placeholder="ВИДАЛИТИ"
+              autocomplete="off" />
+            
+            <p id="reset-hint" class="text-xs text-gray-500 mt-2 text-center hidden">
+              ✓ Підтвердження прийнято
+            </p>
+          </div>
+          
+          <!-- Footer -->
+          <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3">
+            <button id="btn-cancel-reset" 
+              class="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors">
+              Скасувати
+            </button>
+            <button id="btn-confirm-reset" 
+              class="px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              disabled>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+              Скинути статистику
+            </button>
           </div>
         </div>
       </div>
@@ -2876,6 +3070,15 @@
           loadCustomers()
         } else if (target === 'stats') {
           loadStatsView()
+          // Initialize date filter and reset listeners after content loads
+          setTimeout(() => {
+            if (typeof window.initStatsFilters === 'function') {
+              window.initStatsFilters()
+            }
+            if (typeof window.initResetStatsListeners === 'function') {
+              window.initResetStatsListeners()
+            }
+          }, 100)
         }
 
         // Reinit icons
@@ -5192,7 +5395,8 @@
     
     // Fetch analytics data from analytics_cart_adds collection
     // Returns UNIQUE SESSIONS count (not total clicks)
-    async function fetchCartAnalytics() {
+    // Supports optional date range filtering
+    async function fetchCartAnalytics(startDate = null, endDate = null) {
       try {
         const analyticsSnap = await getDocs(collection(db, 'analytics_cart_adds'))
         
@@ -5200,16 +5404,32 @@
         const categorySessions = new Set()
         const productSessions = new Set()
         const homepageSessions = new Set()
+        const allCartSessions = new Set() // All users who added something to cart
         
         // Also track total clicks for comparison
         let totalClicks = 0
         
-        analyticsSnap.docs.forEach(doc => {
-          const data = doc.data()
+        analyticsSnap.docs.forEach(docSnap => {
+          const data = docSnap.data()
+          
+          // Date filtering with strict bounds check
+          if (startDate || endDate) {
+            const timestamp = data.timestamp
+            if (!timestamp) return // Skip docs without timestamp when filtering
+            
+            const docDate = timestamp.toDate ? timestamp.toDate() : new Date(timestamp)
+            const docTime = docDate.getTime()
+            
+            // Strict comparison: must be >= start AND <= end
+            if (startDate && docTime < startDate.getTime()) return
+            if (endDate && docTime > endDate.getTime()) return
+          }
+          
           const source = data.source || ''
-          const sessionId = data.userSessionId || 'unknown_' + doc.id
+          const sessionId = data.userSessionId || 'unknown_' + docSnap.id
           
           totalClicks++
+          allCartSessions.add(sessionId) // Track all cart sessions
           
           if (source === 'category' || source === 'catalog') {
             categorySessions.add(sessionId)
@@ -5224,7 +5444,9 @@
           category: categorySessions.size,
           product: productSessions.size,
           homepage: homepageSessions.size,
-          totalClicks
+          allCartSessions: allCartSessions.size,
+          totalClicks,
+          dateRange: startDate ? `${startDate.toLocaleDateString()} - ${endDate?.toLocaleDateString()}` : 'All Time'
         })
         
         return { 
@@ -5232,47 +5454,279 @@
           fromProduct: productSessions.size, 
           fromHomepage: homepageSessions.size, 
           totalUniqueUsers: new Set([...categorySessions, ...productSessions, ...homepageSessions]).size,
+          allCartSessions: allCartSessions, // Return the Set for abandoned cart calculation
           totalClicks 
         }
       } catch (e) {
         console.warn('📊 Could not fetch cart analytics:', e.message)
-        return { fromCategory: 0, fromProduct: 0, fromHomepage: 0, totalUniqueUsers: 0, totalClicks: 0 }
+        return { fromCategory: 0, fromProduct: 0, fromHomepage: 0, totalUniqueUsers: 0, allCartSessions: new Set(), totalClicks: 0 }
       }
     }
     
-    async function calculateAndRenderStats(orders) {
-      // Define successful statuses
+    // Fetch visitor analytics from analytics_sessions collection
+    // Supports optional date range filtering
+    async function fetchVisitorAnalytics(startDate = null, endDate = null) {
+      try {
+        const sessionsSnap = await getDocs(collection(db, 'analytics_sessions'))
+        
+        let totalVisitors = 0
+        let onlineNow = 0
+        
+        // Count sessions active in the last 15 minutes
+        const fifteenMinutesAgo = Date.now() - (15 * 60 * 1000)
+        
+        sessionsSnap.docs.forEach(docSnap => {
+          const data = docSnap.data()
+          
+          // Date filtering based on firstVisit or lastSeen
+          if (startDate || endDate) {
+            const visitTime = data.firstVisit || data.lastSeen
+            if (!visitTime) return // Skip docs without timestamp when filtering
+            
+            const docDate = visitTime.toDate ? visitTime.toDate() : new Date(visitTime)
+            const docTime = docDate.getTime()
+            
+            // Strict comparison: must be >= start AND <= end
+            if (startDate && docTime < startDate.getTime()) return
+            if (endDate && docTime > endDate.getTime()) return
+          }
+          
+          totalVisitors++
+          
+          if (data.lastSeen) {
+            // Convert Firestore Timestamp to milliseconds
+            const lastSeenMs = data.lastSeen.toMillis ? data.lastSeen.toMillis() : data.lastSeen
+            if (lastSeenMs > fifteenMinutesAgo) {
+              onlineNow++
+            }
+          }
+        })
+        
+        console.log('📊 Visitor Analytics:', { totalVisitors, onlineNow })
+        return { totalVisitors, onlineNow }
+      } catch (e) {
+        console.warn('📊 Could not fetch visitor analytics:', e.message)
+        return { totalVisitors: 0, onlineNow: 0 }
+      }
+    }
+    
+    // Fetch checkout events to calculate abandoned carts
+    // Supports optional date range filtering
+    async function fetchCheckoutSessions(startDate = null, endDate = null) {
+      try {
+        const checkoutSnap = await getDocs(collection(db, 'analytics_checkout_events'))
+        
+        // Return Set of all session IDs that reached checkout
+        const checkoutSessions = new Set()
+        checkoutSnap.docs.forEach(docSnap => {
+          const data = docSnap.data()
+          
+          // Date filtering with strict bounds check
+          if (startDate || endDate) {
+            const visitTime = data.lastVisit
+            if (!visitTime) return // Skip docs without timestamp when filtering
+            
+            const docDate = visitTime.toDate ? visitTime.toDate() : new Date(visitTime)
+            const docTime = docDate.getTime()
+            
+            // Strict comparison: must be >= start AND <= end
+            if (startDate && docTime < startDate.getTime()) return
+            if (endDate && docTime > endDate.getTime()) return
+          }
+          
+          if (data.sessionId) {
+            checkoutSessions.add(data.sessionId)
+          }
+        })
+        
+        console.log('📊 Checkout Sessions:', checkoutSessions.size)
+        return checkoutSessions
+      } catch (e) {
+        console.warn('📊 Could not fetch checkout events:', e.message)
+        return new Set()
+      }
+    }
+    
+    async function calculateAndRenderStats(orders, startDate = null, endDate = null) {
+      // Debug: Log the filtering range
+      console.log('📊 calculateAndRenderStats called:', {
+        totalOrders: orders.length,
+        filteringFrom: startDate ? startDate.toString() : 'No start limit',
+        filteringTo: endDate ? endDate.toString() : 'No end limit'
+      })
+      
+      // Define successful statuses (case-insensitive check will be used)
       const successfulStatuses = ['completed', 'delivered', 'received', 'shipped']
       
-      // Filter successful orders
-      const successfulOrders = orders.filter(order => 
-        successfulStatuses.includes(order.status?.toLowerCase())
-      )
+      // Filter orders by date range first (with strict bounds)
+      let filteredOrders = orders
+      if (startDate || endDate) {
+        const startTime = startDate?.getTime()
+        const endTime = endDate?.getTime()
+        
+        filteredOrders = orders.filter(order => {
+          const orderDate = order.createdAt?.toDate ? order.createdAt.toDate() : 
+                           (order.createdAt ? new Date(order.createdAt) : null)
+          if (!orderDate) return false
+          
+          const orderTime = orderDate.getTime()
+          
+          // Strict comparison: must be >= start AND <= end
+          if (startTime && orderTime < startTime) return false
+          if (endTime && orderTime > endTime) return false
+          return true
+        })
+        
+        console.log('📊 Orders filtered by date:', {
+          before: orders.length,
+          after: filteredOrders.length,
+          filtered: orders.length - filteredOrders.length
+        })
+      }
+      
+      // Debug: Log all unique statuses in orders
+      const allStatuses = [...new Set(filteredOrders.map(o => o.status))]
+      console.log('📊 All order statuses found:', allStatuses)
+      
+      // Filter successful orders (status-based, case-insensitive)
+      // Successful = completed, delivered, received, shipped
+      // Also include orders where status indicates confirmed sale
+      const successfulOrders = filteredOrders.filter(order => {
+        const status = (order.status || '').toLowerCase().trim()
+        const isSuccessful = successfulStatuses.includes(status)
+        return isSuccessful
+      })
+      
+      console.log('📊 Successful orders:', {
+        total: filteredOrders.length,
+        successful: successfulOrders.length,
+        statuses: successfulStatuses
+      })
+      
+      // ============================================
+      // BULLETPROOF PRICE EXTRACTION HELPER
+      // ============================================
+      function extractOrderTotal(order) {
+        // Try all possible field names where total might be stored
+        const rawVal = order.total 
+          ?? order.totalAmount 
+          ?? order.amount 
+          ?? order.sum 
+          ?? order.orderTotal
+          ?? order.summary?.total 
+          ?? order.summary?.orderTotal
+          ?? order.cart?.total
+          ?? order.pricing?.total
+          ?? 0
+        
+        // If already a number, return it
+        if (typeof rawVal === 'number' && !isNaN(rawVal)) {
+          return rawVal
+        }
+        
+        // If string, sanitize and parse
+        if (typeof rawVal === 'string') {
+          // Remove all non-numeric except dots and commas
+          // "1 200,50 грн" -> "1200.50"
+          const cleaned = rawVal
+            .replace(/\s/g, '')           // Remove spaces
+            .replace(/грн|₴|uah/gi, '')   // Remove currency
+            .replace(/,/g, '.')           // Replace comma with dot
+            .replace(/[^\d.]/g, '')       // Keep only digits and dots
+          
+          return parseFloat(cleaned) || 0
+        }
+        
+        return 0
+      }
       
       // 1. Count of successful orders
       const successfulCount = successfulOrders.length
       
-      // 2. Total Revenue (sum of successful orders)
-      const totalRevenue = successfulOrders.reduce((sum, order) => {
-        const total = parseFloat(order.total) || 0
-        return sum + total
-      }, 0)
+      // 2. Total Revenue (sum of successful orders) - WITH DETAILED LOGGING
+      console.log('📊 ===== REVENUE CALCULATION START =====')
+      
+      // Log first 5 orders to see field structure
+      if (successfulOrders.length > 0) {
+        console.log('📊 Sample order structure (first order):', {
+          id: successfulOrders[0].id,
+          total: successfulOrders[0].total,
+          totalAmount: successfulOrders[0].totalAmount,
+          amount: successfulOrders[0].amount,
+          sum: successfulOrders[0].sum,
+          summary: successfulOrders[0].summary,
+          allKeys: Object.keys(successfulOrders[0])
+        })
+      }
+      
+      let totalRevenue = 0
+      let freeShippingCount = 0
+      
+      successfulOrders.forEach((order, index) => {
+        const parsedTotal = extractOrderTotal(order)
+        
+        // Log each order's extraction (first 10 for debugging)
+        if (index < 10) {
+          console.log(`📊 Order #${index + 1}:`, {
+            id: order.id,
+            rawTotal: order.total,
+            rawTotalAmount: order.totalAmount,
+            rawAmount: order.amount,
+            rawSum: order.sum,
+            parsedTotal: parsedTotal
+          })
+        }
+        
+        totalRevenue += parsedTotal
+        
+        // Check free shipping threshold
+        if (parsedTotal >= 1100) {
+          freeShippingCount++
+        }
+      })
+      
+      console.log('📊 ===== REVENUE CALCULATION END =====')
+      console.log('📊 Final Revenue:', totalRevenue, 'from', successfulCount, 'orders')
       
       // 3. Average Order Value (AOV)
       const aov = successfulCount > 0 ? totalRevenue / successfulCount : 0
       
-      // 4. Orders with free shipping (total >= 1100)
-      const freeShippingOrders = successfulOrders.filter(order => {
-        const total = parseFloat(order.total) || 0
-        return total >= 1100
-      }).length
+      // 4. Free Shipping count already calculated above
+      const freeShippingOrders = freeShippingCount
+      
+      console.log('📊 Order Stats Calculated:', {
+        successfulCount,
+        totalRevenue,
+        aov: Math.round(aov),
+        freeShippingOrders
+      })
       
       // 5 & 6. Fetch REAL-TIME analytics from analytics_cart_adds collection
-      const cartAnalytics = await fetchCartAnalytics()
+      const cartAnalytics = await fetchCartAnalytics(startDate, endDate)
       const fromCategory = cartAnalytics.fromCategory
       const fromProduct = cartAnalytics.fromProduct
       
-      // Update DOM elements
+      // 7 & 8. Fetch visitor analytics
+      const visitorAnalytics = await fetchVisitorAnalytics(startDate, endDate)
+      const totalVisitors = visitorAnalytics.totalVisitors
+      const onlineNow = visitorAnalytics.onlineNow
+      
+      // 9. Calculate abandoned carts
+      // Abandoned = Added to cart BUT did NOT reach checkout
+      const checkoutSessions = await fetchCheckoutSessions(startDate, endDate)
+      const allCartSessions = cartAnalytics.allCartSessions || new Set()
+      
+      let abandonedCount = 0
+      allCartSessions.forEach(sessionId => {
+        if (!checkoutSessions.has(sessionId)) {
+          abandonedCount++
+        }
+      })
+      
+      // Update DOM elements - Original stats
+      // CRITICAL: Check if elements exist and log for debugging
+      console.log('📊 Updating DOM elements...')
+      
       const successfulEl = document.getElementById('stat-successful-orders')
       const revenueEl = document.getElementById('stat-total-revenue')
       const aovEl = document.getElementById('stat-aov')
@@ -5280,12 +5734,74 @@
       const fromCatEl = document.getElementById('stat-from-category')
       const fromProdEl = document.getElementById('stat-from-product')
       
-      if (successfulEl) successfulEl.textContent = successfulCount.toLocaleString('uk-UA')
-      if (revenueEl) revenueEl.textContent = totalRevenue.toLocaleString('uk-UA') + ' грн'
-      if (aovEl) aovEl.textContent = Math.round(aov).toLocaleString('uk-UA') + ' грн'
-      if (freeShipEl) freeShipEl.textContent = freeShippingOrders.toLocaleString('uk-UA')
-      if (fromCatEl) fromCatEl.textContent = fromCategory.toLocaleString('uk-UA')
-      if (fromProdEl) fromProdEl.textContent = fromProduct.toLocaleString('uk-UA')
+      console.log('📊 DOM Elements found:', {
+        successfulEl: !!successfulEl,
+        revenueEl: !!revenueEl,
+        aovEl: !!aovEl,
+        freeShipEl: !!freeShipEl,
+        fromCatEl: !!fromCatEl,
+        fromProdEl: !!fromProdEl
+      })
+      
+      console.log('📊 Values to set:', {
+        successfulCount,
+        totalRevenue,
+        aov: Math.round(aov),
+        freeShippingOrders,
+        fromCategory,
+        fromProduct
+      })
+      
+      if (successfulEl) {
+        successfulEl.textContent = successfulCount.toLocaleString('uk-UA')
+        console.log('✅ Set stat-successful-orders:', successfulCount)
+      } else {
+        console.error('❌ Element stat-successful-orders NOT FOUND')
+      }
+      
+      if (revenueEl) {
+        revenueEl.textContent = totalRevenue.toLocaleString('uk-UA') + ' грн'
+        console.log('✅ Set stat-total-revenue:', totalRevenue)
+      } else {
+        console.error('❌ Element stat-total-revenue NOT FOUND')
+      }
+      
+      if (aovEl) {
+        aovEl.textContent = Math.round(aov).toLocaleString('uk-UA') + ' грн'
+        console.log('✅ Set stat-aov:', Math.round(aov))
+      } else {
+        console.error('❌ Element stat-aov NOT FOUND')
+      }
+      
+      if (freeShipEl) {
+        freeShipEl.textContent = freeShippingOrders.toLocaleString('uk-UA')
+        console.log('✅ Set stat-free-shipping:', freeShippingOrders)
+      } else {
+        console.error('❌ Element stat-free-shipping NOT FOUND')
+      }
+      
+      if (fromCatEl) {
+        fromCatEl.textContent = fromCategory.toLocaleString('uk-UA')
+        console.log('✅ Set stat-from-category:', fromCategory)
+      } else {
+        console.error('❌ Element stat-from-category NOT FOUND')
+      }
+      
+      if (fromProdEl) {
+        fromProdEl.textContent = fromProduct.toLocaleString('uk-UA')
+        console.log('✅ Set stat-from-product:', fromProduct)
+      } else {
+        console.error('❌ Element stat-from-product NOT FOUND')
+      }
+      
+      // Update DOM elements - Visitor stats
+      const visitorsEl = document.getElementById('stat-total-visitors')
+      const onlineEl = document.getElementById('stat-online-now')
+      const abandonedEl = document.getElementById('stat-abandoned-carts')
+      
+      if (visitorsEl) visitorsEl.textContent = totalVisitors.toLocaleString('uk-UA')
+      if (onlineEl) onlineEl.textContent = onlineNow.toLocaleString('uk-UA')
+      if (abandonedEl) abandonedEl.textContent = abandonedCount.toLocaleString('uk-UA')
       
       console.log('📊 Stats calculated:', {
         successfulOrders: successfulCount,
@@ -5294,7 +5810,9 @@
         freeShipping: freeShippingOrders,
         fromCategory,
         fromProduct,
-        analyticsTotal: cartAnalytics.total
+        totalVisitors,
+        onlineNow,
+        abandonedCarts: abandonedCount
       })
       
       // Hide loading, show content
@@ -5313,14 +5831,18 @@
       if (loadingEl) loadingEl.classList.remove('hidden')
       if (contentEl) contentEl.classList.add('hidden')
       
+      console.log('📊 loadStatsView called, allOrdersCache:', allOrdersCache?.length || 0)
+      
       // If orders are already cached, use them
       if (allOrdersCache && allOrdersCache.length > 0) {
-        calculateAndRenderStats(allOrdersCache)
+        console.log('📊 Using cached orders:', allOrdersCache.length)
+        await calculateAndRenderStats(allOrdersCache)
         return
       }
       
-      // Otherwise, fetch orders
+      // Otherwise, fetch orders directly
       try {
+        console.log('📊 Fetching orders from Firestore...')
         const ordersQuery = query(
           collection(db, 'orders'),
           orderBy('createdAt', 'desc')
@@ -5328,8 +5850,11 @@
         
         const snap = await getDocs(ordersQuery)
         
+        console.log('📊 Orders fetched:', snap.size)
+        
         if (snap.empty) {
-          calculateAndRenderStats([])
+          console.log('📊 No orders found')
+          await calculateAndRenderStats([])
           return
         }
         
@@ -5339,7 +5864,9 @@
           ...docSnap.data()
         }))
         
-        calculateAndRenderStats(allOrdersCache)
+        console.log('📊 Orders cached, sample:', allOrdersCache[0])
+        
+        await calculateAndRenderStats(allOrdersCache)
         
       } catch (e) {
         console.error('❌ Error loading stats:', e)
@@ -5354,6 +5881,368 @@
         }
       }
     }
+    // ============================================
+    // STATISTICS DATE FILTER EVENT LISTENERS
+    // ============================================
+    
+    // Helper: Format date to YYYY-MM-DD for input value (LOCAL timezone)
+    function formatDateForInput(date) {
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+    
+    // Helper: Create start of day (00:00:00.000 LOCAL time)
+    function startOfDay(date) {
+      const d = new Date(date)
+      d.setHours(0, 0, 0, 0)
+      return d
+    }
+    
+    // Helper: Create end of day (23:59:59.999 LOCAL time)
+    function endOfDay(date) {
+      const d = new Date(date)
+      d.setHours(23, 59, 59, 999)
+      return d
+    }
+    
+    // Helper: Parse YYYY-MM-DD input value to local Date
+    // IMPORTANT: new Date('2026-01-20') creates UTC midnight, which can shift to previous day in local time
+    function parseLocalDate(dateString) {
+      if (!dateString) return null
+      const [year, month, day] = dateString.split('-').map(Number)
+      return new Date(year, month - 1, day) // month is 0-indexed
+    }
+    
+    // Apply date filter and recalculate stats
+    async function applyStatsDateFilter() {
+      const startInput = document.getElementById('stats-date-start')
+      const endInput = document.getElementById('stats-date-end')
+      const labelEl = document.getElementById('stats-date-label')
+      
+      let startDate = null
+      let endDate = null
+      let labelText = '📅 Весь час'
+      
+      // Parse dates using LOCAL time (not UTC)
+      if (startInput?.value) {
+        const parsed = parseLocalDate(startInput.value)
+        startDate = startOfDay(parsed)
+      }
+      if (endInput?.value) {
+        const parsed = parseLocalDate(endInput.value)
+        endDate = endOfDay(parsed)
+      }
+      
+      // Debug logging
+      console.log('📅 Date Filter Applied:', {
+        startInputValue: startInput?.value,
+        endInputValue: endInput?.value,
+        startDate: startDate ? startDate.toString() : null,
+        endDate: endDate ? endDate.toString() : null,
+        startTimestamp: startDate?.getTime(),
+        endTimestamp: endDate?.getTime()
+      })
+      
+      // Update label
+      if (startDate && endDate) {
+        const startStr = startDate.toLocaleDateString('uk-UA')
+        const endStr = endDate.toLocaleDateString('uk-UA')
+        labelText = startStr === endStr ? `📅 ${startStr}` : `📅 ${startStr} — ${endStr}`
+      } else if (startDate) {
+        labelText = `📅 від ${startDate.toLocaleDateString('uk-UA')}`
+      } else if (endDate) {
+        labelText = `📅 до ${endDate.toLocaleDateString('uk-UA')}`
+      }
+      
+      if (labelEl) labelEl.textContent = labelText
+      
+      // Show loading
+      const loadingEl = document.getElementById('stats-loading')
+      const contentEl = document.getElementById('stats-content')
+      if (loadingEl) loadingEl.classList.remove('hidden')
+      if (contentEl) contentEl.classList.add('hidden')
+      
+      // Recalculate with date filter
+      if (allOrdersCache && allOrdersCache.length > 0) {
+        await calculateAndRenderStats(allOrdersCache, startDate, endDate)
+      } else {
+        await calculateAndRenderStats([], startDate, endDate)
+      }
+    }
+    
+    // Setup filter event listeners (called after DOM ready)
+    function setupStatsFilterListeners() {
+      // Apply button
+      const applyBtn = document.getElementById('stats-filter-apply')
+      if (applyBtn) {
+        applyBtn.addEventListener('click', applyStatsDateFilter)
+      }
+      
+      // Today button
+      const todayBtn = document.getElementById('stats-filter-today')
+      if (todayBtn) {
+        todayBtn.addEventListener('click', () => {
+          const today = new Date()
+          const startInput = document.getElementById('stats-date-start')
+          const endInput = document.getElementById('stats-date-end')
+          if (startInput) startInput.value = formatDateForInput(today)
+          if (endInput) endInput.value = formatDateForInput(today)
+          applyStatsDateFilter()
+        })
+      }
+      
+      // 7 Days button
+      const weekBtn = document.getElementById('stats-filter-week')
+      if (weekBtn) {
+        weekBtn.addEventListener('click', () => {
+          const today = new Date()
+          const weekAgo = new Date(today)
+          weekAgo.setDate(weekAgo.getDate() - 6) // Last 7 days including today
+          const startInput = document.getElementById('stats-date-start')
+          const endInput = document.getElementById('stats-date-end')
+          if (startInput) startInput.value = formatDateForInput(weekAgo)
+          if (endInput) endInput.value = formatDateForInput(today)
+          applyStatsDateFilter()
+        })
+      }
+      
+      // 30 Days button
+      const monthBtn = document.getElementById('stats-filter-month')
+      if (monthBtn) {
+        monthBtn.addEventListener('click', () => {
+          const today = new Date()
+          const monthAgo = new Date(today)
+          monthAgo.setDate(monthAgo.getDate() - 29) // Last 30 days including today
+          const startInput = document.getElementById('stats-date-start')
+          const endInput = document.getElementById('stats-date-end')
+          if (startInput) startInput.value = formatDateForInput(monthAgo)
+          if (endInput) endInput.value = formatDateForInput(today)
+          applyStatsDateFilter()
+        })
+      }
+      
+      // All Time button
+      const allBtn = document.getElementById('stats-filter-all')
+      if (allBtn) {
+        allBtn.addEventListener('click', () => {
+          const startInput = document.getElementById('stats-date-start')
+          const endInput = document.getElementById('stats-date-end')
+          if (startInput) startInput.value = ''
+          if (endInput) endInput.value = ''
+          applyStatsDateFilter()
+        })
+      }
+      
+      console.log('📊 Stats filter listeners attached')
+    }
+    
+    // Initialize filter listeners when stats view is shown
+    // We'll call this from showView when stats is selected
+    window.initStatsFilters = setupStatsFilterListeners
+    
+    // ============================================
+    // RESET STATISTICS - DANGER ZONE
+    // ============================================
+    
+    // Open Reset Modal
+    function openResetStatsModal() {
+      const modal = document.getElementById('modal-reset-stats')
+      const input = document.getElementById('input-confirm-reset')
+      const confirmBtn = document.getElementById('btn-confirm-reset')
+      const hint = document.getElementById('reset-hint')
+      
+      if (modal) {
+        modal.classList.remove('hidden')
+        modal.classList.add('flex')
+      }
+      if (input) {
+        input.value = ''
+        input.focus()
+      }
+      if (confirmBtn) confirmBtn.disabled = true
+      if (hint) hint.classList.add('hidden')
+    }
+    
+    // Close Reset Modal
+    function closeResetStatsModal() {
+      const modal = document.getElementById('modal-reset-stats')
+      const input = document.getElementById('input-confirm-reset')
+      
+      if (modal) {
+        modal.classList.add('hidden')
+        modal.classList.remove('flex')
+      }
+      if (input) input.value = ''
+    }
+    
+    // Validate confirmation input
+    function validateResetInput() {
+      const input = document.getElementById('input-confirm-reset')
+      const confirmBtn = document.getElementById('btn-confirm-reset')
+      const hint = document.getElementById('reset-hint')
+      
+      const value = (input?.value || '').trim().toUpperCase()
+      const isValid = value === 'ВИДАЛИТИ'
+      
+      if (confirmBtn) confirmBtn.disabled = !isValid
+      if (hint) {
+        if (isValid) {
+          hint.classList.remove('hidden')
+          hint.classList.add('text-green-600')
+        } else {
+          hint.classList.add('hidden')
+        }
+      }
+    }
+    
+    // Delete all analytics data (batch delete with chunking)
+    async function resetAnalyticsData() {
+      const confirmBtn = document.getElementById('btn-confirm-reset')
+      
+      // Disable button and show loading state
+      if (confirmBtn) {
+        confirmBtn.disabled = true
+        confirmBtn.innerHTML = `
+          <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" opacity="0.25"></circle>
+            <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+          Видалення...
+        `
+      }
+      
+      console.log('🗑️ Starting analytics reset...')
+      
+      try {
+        // Collections to delete
+        const collectionsToDelete = [
+          'analytics_cart_adds',
+          'analytics_sessions', 
+          'analytics_checkout_events'
+        ]
+        
+        let totalDeleted = 0
+        
+        for (const collectionName of collectionsToDelete) {
+          console.log(`🗑️ Deleting collection: ${collectionName}`)
+          
+          const collRef = collection(db, collectionName)
+          const snapshot = await getDocs(collRef)
+          
+          if (snapshot.empty) {
+            console.log(`✓ ${collectionName} is already empty`)
+            continue
+          }
+          
+          // Batch delete (max 500 operations per batch)
+          const BATCH_SIZE = 500
+          let batch = writeBatch(db)
+          let batchCount = 0
+          let collectionDeleted = 0
+          
+          for (const docSnap of snapshot.docs) {
+            batch.delete(docSnap.ref)
+            batchCount++
+            collectionDeleted++
+            
+            // Commit batch when reaching limit
+            if (batchCount >= BATCH_SIZE) {
+              await batch.commit()
+              console.log(`✓ Committed batch of ${batchCount} deletions`)
+              batch = writeBatch(db)
+              batchCount = 0
+            }
+          }
+          
+          // Commit remaining deletions
+          if (batchCount > 0) {
+            await batch.commit()
+            console.log(`✓ Committed final batch of ${batchCount} deletions`)
+          }
+          
+          console.log(`✓ Deleted ${collectionDeleted} documents from ${collectionName}`)
+          totalDeleted += collectionDeleted
+        }
+        
+        console.log(`🗑️ Analytics reset complete! Total deleted: ${totalDeleted}`)
+        
+        // Close modal
+        closeResetStatsModal()
+        
+        // Show success message
+        alert(`✅ Статистику очищено!\n\nВидалено ${totalDeleted} записів аналітики.\nЗамовлення залишились недоторканими.`)
+        
+        // Refresh stats view (should show zeros now)
+        await loadStatsView()
+        
+      } catch (e) {
+        console.error('❌ Error resetting analytics:', e)
+        alert(`❌ Помилка при видаленні: ${e.message}`)
+        
+        // Re-enable button
+        if (confirmBtn) {
+          confirmBtn.disabled = false
+          confirmBtn.innerHTML = `
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+            </svg>
+            Скинути статистику
+          `
+        }
+      }
+    }
+    
+    // Setup Reset Stats event listeners
+    function setupResetStatsListeners() {
+      // Open modal button
+      const openBtn = document.getElementById('btn-open-reset-stats')
+      if (openBtn) {
+        openBtn.addEventListener('click', openResetStatsModal)
+      }
+      
+      // Cancel button
+      const cancelBtn = document.getElementById('btn-cancel-reset')
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', closeResetStatsModal)
+      }
+      
+      // Confirm input validation
+      const input = document.getElementById('input-confirm-reset')
+      if (input) {
+        input.addEventListener('input', validateResetInput)
+      }
+      
+      // Confirm button
+      const confirmBtn = document.getElementById('btn-confirm-reset')
+      if (confirmBtn) {
+        confirmBtn.addEventListener('click', resetAnalyticsData)
+      }
+      
+      // Close on backdrop click
+      const modal = document.getElementById('modal-reset-stats')
+      if (modal) {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            closeResetStatsModal()
+          }
+        })
+      }
+      
+      // Close on Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+          closeResetStatsModal()
+        }
+      })
+      
+      console.log('🗑️ Reset stats listeners attached')
+    }
+    
+    // Add to window for initialization
+    window.initResetStatsListeners = setupResetStatsListeners
+    
     // ============================================
     // END STATISTICS DASHBOARD
     // ============================================

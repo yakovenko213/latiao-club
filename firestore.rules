@@ -14,6 +14,21 @@ service cloud.firestore {
       allow update, delete: if request.auth != null;
     }
     
+    // Session Tracking - Track unique visitors
+    // Uses setDoc with merge so sessions can be updated
+    match /analytics_sessions/{sessionId} {
+      allow create, update: if true;          // ✅ Public - track visits & heartbeats
+      allow read: if request.auth != null;    // Admin reads for analytics
+      allow delete: if request.auth != null;
+    }
+    
+    // Checkout Events - Track when users reach checkout
+    match /analytics_checkout_events/{eventId} {
+      allow create, update: if true;          // ✅ Public - user visited checkout
+      allow read: if request.auth != null;    // Admin reads for analytics
+      allow delete: if request.auth != null;
+    }
+    
     // Daily Stats
     match /daily_stats/{dateId} {
       allow read: if request.auth != null;

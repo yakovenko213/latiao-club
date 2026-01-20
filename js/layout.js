@@ -686,6 +686,96 @@ function getOrGenerateSessionId() {
   return anonId;
 }
 
+// ============================================
+// ANALYTICS: Session Tracking (Visitors)
+// Track unique visitors + heartbeat for "Online Now"
+// ============================================
+window.trackSessionStart = async function() {
+  try {
+    let attempts = 0;
+    while (!window.firebaseInit && attempts < 30) {
+      await new Promise(r => setTimeout(r, 100));
+      attempts++;
+    }
+    
+    if (!window.firebaseInit) {
+      console.warn('📊 Session: Firebase not ready');
+      return;
+    }
+    
+    const { db, doc, setDoc, serverTimestamp } = window.firebaseInit;
+    if (!db || !doc || !setDoc) {
+      console.warn('📊 Session: Missing Firestore functions');
+      return;
+    }
+    
+    const sessionId = getOrGenerateSessionId();
+    const sessionRef = doc(db, 'analytics_sessions', sessionId);
+    
+    await setDoc(sessionRef, {
+      sessionId: sessionId,
+      lastSeen: serverTimestamp(),
+      device: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+      firstVisit: serverTimestamp()
+    }, { merge: true }); // merge: true - update lastSeen, keep firstVisit
+    
+    console.log('📊 Session tracked:', sessionId);
+    
+    // Setup heartbeat every 5 minutes to track "online now"
+    setInterval(async () => {
+      try {
+        await setDoc(sessionRef, { lastSeen: serverTimestamp() }, { merge: true });
+        console.log('💓 Heartbeat sent');
+      } catch (e) {
+        console.warn('💓 Heartbeat failed:', e.message);
+      }
+    }, 5 * 60 * 1000); // Every 5 minutes
+    
+  } catch (e) {
+    console.error('📊 Session tracking failed:', e.message);
+  }
+};
+
+// ============================================
+// ANALYTICS: Checkout Visit Tracking
+// Track when users reach the checkout page
+// ============================================
+window.trackCheckoutVisit = async function() {
+  try {
+    let attempts = 0;
+    while (!window.firebaseInit && attempts < 30) {
+      await new Promise(r => setTimeout(r, 100));
+      attempts++;
+    }
+    
+    if (!window.firebaseInit) {
+      console.warn('📊 Checkout: Firebase not ready');
+      return;
+    }
+    
+    const { db, doc, setDoc, serverTimestamp } = window.firebaseInit;
+    if (!db || !doc || !setDoc) {
+      console.warn('📊 Checkout: Missing Firestore functions');
+      return;
+    }
+    
+    const sessionId = getOrGenerateSessionId();
+    // Use session ID as doc ID so each user has only one checkout record
+    const checkoutRef = doc(db, 'analytics_checkout_events', sessionId);
+    
+    await setDoc(checkoutRef, {
+      sessionId: sessionId,
+      reachedCheckout: true,
+      lastVisit: serverTimestamp()
+    }, { merge: true });
+    
+    console.log('📊 Checkout visit tracked:', sessionId);
+    
+  } catch (e) {
+    console.error('📊 Checkout tracking failed:', e.message);
+  }
+};
+
 window.trackAddToCart = async function(product, source) {
   // source: 'category' | 'product' | 'homepage' | 'repeat_order'
   console.log('📊 trackAddToCart called:', { product: product?.name, source });
@@ -1442,12 +1532,20 @@ async function loadFooterDynamicContent() {
 }
 
 // ============================================
-// AUTO-LOAD LAYOUT
+// AUTO-LOAD LAYOUT + START SESSION TRACKING
 // ============================================
 
+async function initPage() {
+  await loadLayout();
+  // Track visitor session (fire-and-forget)
+  if (typeof window.trackSessionStart === 'function') {
+    window.trackSessionStart();
+  }
+}
+
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', loadLayout);
+  document.addEventListener('DOMContentLoaded', initPage);
 } else {
   // DOM already loaded
-  loadLayout();
+  initPage();
 }

@@ -778,7 +778,7 @@
     // ============================================
     import { db, collection, addDoc, serverTimestamp, getDocs, query, where, getDoc, doc } from './js/firebase-init.js'
     // Import additional Firestore methods for Mini-CRM
-    import { updateDoc, increment, arrayUnion, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
+    import { updateDoc, increment, arrayUnion, limit, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
     // NEW: Import Cloud Functions
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'
     import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js'
@@ -787,6 +787,36 @@
     // If you already have firebase app initialized in firebase-init.js, you can import it
     // Otherwise, you'll need to initialize it here with your config
     const functions = getFunctions()
+    
+    // ============================================
+    // ANALYTICS: Track Checkout Visit
+    // ============================================
+    function getOrGenerateSessionId() {
+      const userPhone = localStorage.getItem('userPhone');
+      if (userPhone) return `phone_${userPhone}`;
+      let anonId = localStorage.getItem('anon_session_id');
+      if (anonId) return anonId;
+      anonId = `anon_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+      localStorage.setItem('anon_session_id', anonId);
+      return anonId;
+    }
+    
+    // Fire-and-forget checkout tracking
+    (async function trackCheckoutVisit() {
+      try {
+        const sessionId = getOrGenerateSessionId();
+        const checkoutRef = doc(db, 'analytics_checkout_events', sessionId);
+        await setDoc(checkoutRef, {
+          sessionId: sessionId,
+          reachedCheckout: true,
+          lastVisit: serverTimestamp()
+        }, { merge: true });
+        console.log('📊 Checkout visit tracked:', sessionId);
+      } catch (e) {
+        console.warn('📊 Checkout tracking failed:', e.message);
+      }
+    })();
+
 
     // ============================================
     // MINI-CRM: INLINE FALLBACK FUNCTION
@@ -931,6 +961,8 @@
     // ============================================
 
     document.addEventListener('DOMContentLoaded', async function () {
+      // NOTE: Checkout tracking is done via IIFE at the top of this script
+      
       // ============================================
       // PART 1: MAGIC LINK - Recovery from SMS
       // ============================================
