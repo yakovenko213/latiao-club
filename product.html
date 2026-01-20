@@ -925,23 +925,36 @@
       }
 
       // ============================================
-      // PRICE
+      // PRICE (with originalPrice support for sales)
       // ============================================
       const price = product.price || 0
-      const oldPrice = product.oldPrice || product.priceOld || 0
+      // Support both originalPrice (from bulk discount) and oldPrice/priceOld (legacy)
+      const oldPrice = product.originalPrice || product.oldPrice || product.priceOld || 0
+      const isOnSale = product.isOnSale === true || (oldPrice > price)
 
       if (priceEl) {
-        priceEl.textContent = `${price} ₴`
+        if (isOnSale && oldPrice > price) {
+          // Sale mode: show green price
+          priceEl.textContent = `${price} ₴`
+          priceEl.classList.remove('text-spicy')
+          priceEl.classList.add('text-green-600')
+        } else {
+          // Normal mode
+          priceEl.textContent = `${price} ₴`
+          priceEl.classList.remove('text-green-600')
+          priceEl.classList.add('text-spicy')
+        }
       } else {
         console.warn('Element not found: product-price')
       }
 
-      if (oldPrice > price) {
+      if (isOnSale && oldPrice > price) {
         const discount = Math.round(((oldPrice - price) / oldPrice) * 100)
 
         if (oldPriceEl) {
           oldPriceEl.textContent = `${oldPrice} ₴`
           oldPriceEl.classList.remove('hidden')
+          oldPriceEl.classList.add('text-red-500')
         }
 
         if (discountEl) {

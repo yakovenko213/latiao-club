@@ -326,9 +326,15 @@ window.loadProducts = async function() {
         // ✅ FIXED: Using backticks for template literals
         let html = `
             <div class="overflow-x-auto">
-                <table class="w-full">
+                <table class="w-full" id="products-table">
                     <thead class="bg-gray-50">
                         <tr>
+                            <th class="px-4 py-3 text-center w-12">
+                                <input type="checkbox" id="select-all-products" 
+                                    class="w-4 h-4 rounded border-gray-300 text-spicy focus:ring-spicy cursor-pointer"
+                                    onchange="window.toggleSelectAllProducts(this.checked)"
+                                    title="Вибрати всі">
+                            </th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Фото</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Назва</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Ціна</th>
@@ -337,7 +343,7 @@ window.loadProducts = async function() {
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Дії</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200">
+                    <tbody class="divide-y divide-gray-200" id="products-table-body">
         `;
 
         snapshot.forEach(docSnap => {
@@ -347,14 +353,28 @@ window.loadProducts = async function() {
             // Safe image URL extraction
             const img = p.images?.[0] || p.image || p.imageUrl || 'https://placehold.co/50';
             
+            // Sale badge and price display logic
+            const isOnSale = p.isOnSale === true;
+            const originalPrice = p.originalPrice || null;
+            const priceDisplay = isOnSale && originalPrice 
+                ? `<span class="line-through text-gray-400 text-xs mr-1">₴${originalPrice}</span><span class="text-red-600">₴${p.price || 0}</span>`
+                : `₴${p.price || 0}`;
+            const saleBadge = isOnSale ? '<span class="ml-2 px-1.5 py-0.5 bg-red-100 text-red-600 rounded text-xs font-semibold">SALE</span>' : '';
+            
             // ✅ FIXED: Using backticks for template literals
             html += `
-                <tr class="hover:bg-gray-50">
+                <tr class="hover:bg-gray-50 product-row" data-product-id="${productId}">
+                    <td class="px-4 py-3 text-center">
+                        <input type="checkbox" 
+                            class="product-checkbox w-4 h-4 rounded border-gray-300 text-spicy focus:ring-spicy cursor-pointer"
+                            data-product-id="${productId}"
+                            onchange="window.handleProductSelection(this)">
+                    </td>
                     <td class="px-4 py-3">
                         <img src="${img}" class="w-12 h-12 object-cover rounded-lg" onerror="this.src='https://placehold.co/50'">
                     </td>
-                    <td class="px-4 py-3 text-sm font-medium text-gray-900">${p.name || 'Без назви'}</td>
-                    <td class="px-4 py-3 text-sm font-semibold text-gray-900">₴${p.price || 0}</td>
+                    <td class="px-4 py-3 text-sm font-medium text-gray-900">${p.name || 'Без назви'}${saleBadge}</td>
+                    <td class="px-4 py-3 text-sm font-semibold text-gray-900">${priceDisplay}</td>
                     <td class="px-4 py-3 text-sm text-gray-700">${p.category || '-'}</td>
                     <td class="px-4 py-3">
                         <span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold">В наявності</span>
@@ -391,6 +411,447 @@ window.loadProducts = async function() {
         list.innerHTML = `<div class="text-red-500 text-center py-10">Помилка: ${e.message}</div>`;
     }
 };
+
+// ============================================
+// BULK DISCOUNT: Selection State & UI
+// ============================================
+let selectedProductIds = [];
+
+/**
+ * Toggle selection of all products
+ */
+window.toggleSelectAllProducts = function(isChecked) {
+    const checkboxes = document.querySelectorAll('.product-checkbox');
+    selectedProductIds = [];
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = isChecked;
+        if (isChecked) {
+            selectedProductIds.push(checkbox.dataset.productId);
+        }
+    });
+    
+    updateBulkActionBar();
+    console.log(`📦 Select all: ${isChecked}, selected: ${selectedProductIds.length}`);
+};
+
+/**
+ * Handle individual product selection
+ */
+window.handleProductSelection = function(checkbox) {
+    const productId = checkbox.dataset.productId;
+    
+    if (checkbox.checked) {
+        if (!selectedProductIds.includes(productId)) {
+            selectedProductIds.push(productId);
+        }
+    } else {
+        selectedProductIds = selectedProductIds.filter(id => id !== productId);
+    }
+    
+    // Update "select all" checkbox state
+    const selectAllCheckbox = document.getElementById('select-all-products');
+    const allCheckboxes = document.querySelectorAll('.product-checkbox');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = selectedProductIds.length === allCheckboxes.length && allCheckboxes.length > 0;
+        selectAllCheckbox.indeterminate = selectedProductIds.length > 0 && selectedProductIds.length < allCheckboxes.length;
+    }
+    
+    updateBulkActionBar();
+    console.log(`📦 Product selection changed, selected: ${selectedProductIds.length}`);
+};
+
+/**
+ * Clear all product selections
+ */
+window.clearProductSelection = function() {
+    selectedProductIds = [];
+    
+    const checkboxes = document.querySelectorAll('.product-checkbox');
+    checkboxes.forEach(checkbox => checkbox.checked = false);
+    
+    const selectAllCheckbox = document.getElementById('select-all-products');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+    }
+    
+    updateBulkActionBar();
+    console.log('📦 Selection cleared');
+};
+
+/**
+ * Update the bulk action bar visibility and count
+ */
+function updateBulkActionBar() {
+    const bar = document.getElementById('bulk-action-bar');
+    const countEl = document.getElementById('selected-count');
+    
+    if (!bar) return;
+    
+    if (selectedProductIds.length > 0) {
+        bar.classList.remove('translate-y-full');
+        bar.classList.add('translate-y-0');
+        if (countEl) {
+            const count = selectedProductIds.length;
+            const word = count === 1 ? 'товар' : count < 5 ? 'товари' : 'товарів';
+            countEl.textContent = `${count} ${word}`;
+        }
+    } else {
+        bar.classList.remove('translate-y-0');
+        bar.classList.add('translate-y-full');
+    }
+    
+    // Reinitialize icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+// ============================================
+// BULK DISCOUNT: Modal Functions
+// ============================================
+
+/**
+ * Open the bulk discount modal
+ */
+window.openBulkDiscountModal = function() {
+    if (selectedProductIds.length === 0) {
+        alert('Спочатку виберіть товари!');
+        return;
+    }
+    
+    const modal = document.getElementById('bulk-discount-modal');
+    const subtitle = document.getElementById('discount-modal-subtitle');
+    
+    if (modal) {
+        modal.classList.remove('hidden');
+        if (subtitle) {
+            const count = selectedProductIds.length;
+            const word = count === 1 ? 'товар' : count < 5 ? 'товари' : 'товарів';
+            subtitle.textContent = `Вибрано: ${count} ${word}`;
+        }
+        
+        // Reset to percentage by default
+        const percentageRadio = document.querySelector('input[name="discount-type"][value="percentage"]');
+        if (percentageRadio) percentageRadio.checked = true;
+        
+        updateDiscountPreview();
+        
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+    
+    console.log('🏷️ Bulk discount modal opened');
+};
+
+/**
+ * Close the bulk discount modal
+ */
+window.closeBulkDiscountModal = function() {
+    const modal = document.getElementById('bulk-discount-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+};
+
+/**
+ * Update discount preview based on selected type and value
+ */
+function updateDiscountPreview() {
+    const valueInput = document.getElementById('bulk-discount-value');
+    const unitSpan = document.getElementById('discount-unit');
+    const previewEl = document.getElementById('discount-preview');
+    const hintEl = document.getElementById('discount-hint');
+    
+    const selectedType = document.querySelector('input[name="discount-type"]:checked')?.value || 'percentage';
+    const value = parseFloat(valueInput?.value) || 0;
+    
+    if (unitSpan) {
+        unitSpan.textContent = selectedType === 'percentage' ? '%' : '₴';
+    }
+    
+    if (valueInput) {
+        valueInput.max = selectedType === 'percentage' ? 100 : 10000;
+    }
+    
+    if (hintEl) {
+        hintEl.textContent = selectedType === 'percentage' 
+            ? 'Наприклад: 10% = нова ціна буде на 10% менша'
+            : 'Наприклад: 50₴ = ціна зменшиться на 50 гривень';
+    }
+    
+    // Calculate preview (based on 100₴ example)
+    let newPrice = 100;
+    if (selectedType === 'percentage') {
+        newPrice = 100 - (100 * value / 100);
+    } else {
+        newPrice = 100 - value;
+    }
+    newPrice = Math.max(0, newPrice);
+    
+    if (previewEl) {
+        previewEl.textContent = `→ ₴${newPrice.toFixed(0)}`;
+    }
+}
+
+// Add event listeners for discount type and value changes
+document.addEventListener('DOMContentLoaded', () => {
+    // Listen for discount type changes
+    document.querySelectorAll('input[name="discount-type"]').forEach(radio => {
+        radio.addEventListener('change', updateDiscountPreview);
+    });
+    
+    // Listen for value changes
+    const valueInput = document.getElementById('bulk-discount-value');
+    if (valueInput) {
+        valueInput.addEventListener('input', updateDiscountPreview);
+    }
+});
+
+// Also set up listeners when modal is opened (for dynamic content)
+const discountModalObserver = new MutationObserver(() => {
+    document.querySelectorAll('input[name="discount-type"]').forEach(radio => {
+        radio.removeEventListener('change', updateDiscountPreview);
+        radio.addEventListener('change', updateDiscountPreview);
+    });
+    
+    const valueInput = document.getElementById('bulk-discount-value');
+    if (valueInput) {
+        valueInput.removeEventListener('input', updateDiscountPreview);
+        valueInput.addEventListener('input', updateDiscountPreview);
+    }
+});
+
+// ============================================
+// BULK DISCOUNT: Apply Discount Logic
+// ============================================
+
+/**
+ * Apply discount to all selected products using Firestore batch
+ */
+window.applyBulkDiscount = async function() {
+    if (selectedProductIds.length === 0) {
+        alert('Спочатку виберіть товари!');
+        return;
+    }
+    
+    const selectedType = document.querySelector('input[name="discount-type"]:checked')?.value || 'percentage';
+    const valueInput = document.getElementById('bulk-discount-value');
+    const discountValue = parseFloat(valueInput?.value) || 0;
+    
+    if (discountValue <= 0) {
+        alert('Введіть коректне значення знижки!');
+        return;
+    }
+    
+    if (selectedType === 'percentage' && discountValue > 100) {
+        alert('Відсоток знижки не може бути більше 100%!');
+        return;
+    }
+    
+    // Confirmation
+    const count = selectedProductIds.length;
+    const discountText = selectedType === 'percentage' ? `${discountValue}%` : `${discountValue}₴`;
+    const confirmMsg = `Застосувати знижку ${discountText} до ${count} товарів?`;
+    
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+    
+    // Show loading
+    const applyBtn = document.querySelector('#bulk-discount-modal button[onclick="window.applyBulkDiscount()"]');
+    const originalBtnText = applyBtn?.innerHTML;
+    if (applyBtn) {
+        applyBtn.disabled = true;
+        applyBtn.innerHTML = '<div class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full mx-auto"></div>';
+    }
+    
+    try {
+        console.log(`🏷️ Applying ${selectedType} discount: ${discountValue} to ${count} products`);
+        
+        // Create batch
+        const batch = writeBatch(db);
+        let updatedCount = 0;
+        
+        for (const productId of selectedProductIds) {
+            const productRef = doc(db, 'products', productId);
+            const productSnap = await getDoc(productRef);
+            
+            if (!productSnap.exists()) {
+                console.warn(`⚠️ Product ${productId} not found, skipping`);
+                continue;
+            }
+            
+            const productData = productSnap.data();
+            const currentPrice = parseFloat(productData.price) || 0;
+            
+            // Determine original price (use existing or current price)
+            const originalPrice = productData.originalPrice || currentPrice;
+            
+            // Calculate new price based on ORIGINAL price (not current discounted price)
+            let newPrice;
+            if (selectedType === 'percentage') {
+                newPrice = originalPrice - (originalPrice * discountValue / 100);
+            } else {
+                newPrice = originalPrice - discountValue;
+            }
+            
+            // Ensure price doesn't go negative
+            newPrice = Math.max(0, Math.round(newPrice * 100) / 100);
+            
+            // Update document
+            batch.update(productRef, {
+                price: newPrice,
+                originalPrice: originalPrice,
+                isOnSale: true,
+                discountType: selectedType,
+                discountValue: discountValue,
+                discountAppliedAt: new Date().toISOString()
+            });
+            
+            updatedCount++;
+            console.log(`  📦 ${productData.name}: ₴${originalPrice} → ₴${newPrice}`);
+        }
+        
+        // Commit batch
+        await batch.commit();
+        
+        console.log(`✅ Discount applied to ${updatedCount} products`);
+        
+        // Close modal and reload products
+        window.closeBulkDiscountModal();
+        window.clearProductSelection();
+        await window.loadProducts();
+        
+        // Show success toast
+        showToast(`✅ Знижку застосовано до ${updatedCount} товарів!`, 'success');
+        
+    } catch (error) {
+        console.error('❌ Error applying bulk discount:', error);
+        alert(`Помилка: ${error.message}`);
+    } finally {
+        if (applyBtn) {
+            applyBtn.disabled = false;
+            applyBtn.innerHTML = originalBtnText;
+        }
+    }
+};
+
+// ============================================
+// BULK DISCOUNT: Remove Discount Logic
+// ============================================
+
+/**
+ * Remove discount from all selected products
+ */
+window.removeBulkDiscount = async function() {
+    if (selectedProductIds.length === 0) {
+        alert('Спочатку виберіть товари!');
+        return;
+    }
+    
+    const count = selectedProductIds.length;
+    const confirmMsg = `Зняти знижку з ${count} товарів та повернути оригінальні ціни?`;
+    
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+    
+    // Show loading toast
+    const loadingToast = document.createElement('div');
+    loadingToast.className = 'fixed top-4 right-4 bg-blue-600 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3';
+    loadingToast.innerHTML = `
+        <div class="animate-spin w-6 h-6 border-3 border-white border-t-transparent rounded-full"></div>
+        <span class="font-semibold">Знімаю знижки...</span>
+    `;
+    document.body.appendChild(loadingToast);
+    
+    try {
+        console.log(`❌ Removing discount from ${count} products`);
+        
+        // Create batch
+        const batch = writeBatch(db);
+        let restoredCount = 0;
+        
+        for (const productId of selectedProductIds) {
+            const productRef = doc(db, 'products', productId);
+            const productSnap = await getDoc(productRef);
+            
+            if (!productSnap.exists()) {
+                console.warn(`⚠️ Product ${productId} not found, skipping`);
+                continue;
+            }
+            
+            const productData = productSnap.data();
+            const originalPrice = productData.originalPrice;
+            
+            if (!originalPrice && originalPrice !== 0) {
+                console.log(`  ℹ️ ${productData.name}: No original price, skipping`);
+                continue;
+            }
+            
+            // Restore original price
+            batch.update(productRef, {
+                price: originalPrice,
+                originalPrice: null,
+                isOnSale: false,
+                discountType: null,
+                discountValue: null,
+                discountAppliedAt: null,
+                discountRemovedAt: new Date().toISOString()
+            });
+            
+            restoredCount++;
+            console.log(`  📦 ${productData.name}: restored to ₴${originalPrice}`);
+        }
+        
+        // Commit batch
+        await batch.commit();
+        
+        console.log(`✅ Discount removed from ${restoredCount} products`);
+        
+        // Remove loading toast
+        loadingToast.remove();
+        
+        // Clear selection and reload
+        window.clearProductSelection();
+        await window.loadProducts();
+        
+        // Show success toast
+        showToast(`✅ Знижку знято з ${restoredCount} товарів!`, 'success');
+        
+    } catch (error) {
+        console.error('❌ Error removing bulk discount:', error);
+        loadingToast.remove();
+        alert(`Помилка: ${error.message}`);
+    }
+};
+
+/**
+ * Helper function to show toast notifications
+ */
+function showToast(message, type = 'info') {
+    const colors = {
+        success: 'bg-green-600',
+        error: 'bg-red-600',
+        info: 'bg-blue-600',
+        warning: 'bg-yellow-600'
+    };
+    
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 ${colors[type] || colors.info} text-white px-6 py-4 rounded-xl shadow-2xl z-[100] animate-slide-in`;
+    toast.innerHTML = `<span class="font-semibold">${message}</span>`;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        toast.style.transition = 'all 0.3s ease-out';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
 
 // ============================================
 // RENDER WAREHOUSE (FIXED WITH BACKTICKS)

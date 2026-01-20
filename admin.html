@@ -2169,6 +2169,126 @@
     </div>
 
   </div>
+
+  <!-- ============================================ -->
+  <!-- BULK DISCOUNT: Floating Action Bar -->
+  <!-- ============================================ -->
+  <div id="bulk-action-bar" class="fixed bottom-0 left-64 right-0 bg-white border-t-2 border-spicy shadow-2xl z-40 transform translate-y-full transition-transform duration-300 ease-in-out">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2">
+          <div class="w-10 h-10 bg-spicy/10 rounded-full flex items-center justify-center">
+            <i data-lucide="check-square" class="w-5 h-5 text-spicy"></i>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600">Вибрано:</p>
+            <p class="text-lg font-bold text-gray-900" id="selected-count">0 товарів</p>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="window.openBulkDiscountModal()" 
+          class="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl">
+          <span>🏷️</span>
+          <span>Застосувати знижку</span>
+        </button>
+        <button onclick="window.removeBulkDiscount()" 
+          class="flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all border border-gray-200">
+          <span>❌</span>
+          <span>Зняти знижку</span>
+        </button>
+        <button onclick="window.clearProductSelection()" 
+          class="p-2.5 hover:bg-gray-100 rounded-xl transition-colors" title="Скасувати вибір">
+          <i data-lucide="x" class="w-5 h-5 text-gray-500"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- BULK DISCOUNT: Modal Window -->
+  <!-- ============================================ -->
+  <div id="bulk-discount-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl animate-slide-up">
+      <!-- Modal Header -->
+      <div class="p-6 border-b flex justify-between items-center">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl flex items-center justify-center">
+            <span class="text-2xl">🏷️</span>
+          </div>
+          <div>
+            <h3 class="text-xl font-bold text-gray-900">Масова знижка</h3>
+            <p class="text-sm text-gray-500" id="discount-modal-subtitle">Вибрано: 0 товарів</p>
+          </div>
+        </div>
+        <button onclick="window.closeBulkDiscountModal()" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <i data-lucide="x" class="w-5 h-5 text-gray-500"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 space-y-6">
+        <!-- Discount Type Selection -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-3">Тип знижки</label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="relative">
+              <input type="radio" name="discount-type" value="percentage" class="peer hidden" checked>
+              <div class="p-4 border-2 rounded-xl cursor-pointer transition-all peer-checked:border-spicy peer-checked:bg-orange-50 hover:border-gray-300">
+                <div class="text-center">
+                  <span class="text-2xl">%</span>
+                  <p class="text-sm font-medium text-gray-700 mt-1">Відсоток</p>
+                </div>
+              </div>
+            </label>
+            <label class="relative">
+              <input type="radio" name="discount-type" value="fixed" class="peer hidden">
+              <div class="p-4 border-2 rounded-xl cursor-pointer transition-all peer-checked:border-spicy peer-checked:bg-orange-50 hover:border-gray-300">
+                <div class="text-center">
+                  <span class="text-2xl">₴</span>
+                  <p class="text-sm font-medium text-gray-700 mt-1">Фіксована сума</p>
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Discount Value Input -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Значення знижки</label>
+          <div class="relative">
+            <input type="number" id="bulk-discount-value" min="1" max="100" value="10"
+              class="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-xl text-lg font-semibold focus:border-spicy focus:ring-2 focus:ring-spicy/20 outline-none transition-all"
+              placeholder="Введіть значення">
+            <span id="discount-unit" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">%</span>
+          </div>
+          <p class="text-xs text-gray-500 mt-2" id="discount-hint">Наприклад: 10% = нова ціна буде на 10% менша</p>
+        </div>
+
+        <!-- Preview -->
+        <div class="bg-gray-50 rounded-xl p-4">
+          <p class="text-sm text-gray-600 mb-2">Попередній перегляд:</p>
+          <div class="flex items-center justify-between">
+            <span class="text-gray-500">Стара ціна: ₴100</span>
+            <span class="text-xl font-bold text-green-600" id="discount-preview">→ ₴90</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-6 border-t bg-gray-50 rounded-b-2xl flex gap-3">
+        <button onclick="window.closeBulkDiscountModal()"
+          class="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-bold transition-colors">
+          Скасувати
+        </button>
+        <button onclick="window.applyBulkDiscount()"
+          class="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-bold transition-all shadow-lg">
+          ✓ Застосувати
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Product Modal -->
 
   <div id="product-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
@@ -8174,29 +8294,53 @@
           return
         }
 
-        let html = '<div class="overflow-x-auto"><table class="w-full"><thead class="bg-gray-50"><tr>'
-        html += '<th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Фото</th>'
-        html += '<th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Назва</th>'
-        html += '<th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Ціна</th>'
-        html += '<th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Дії</th>'
-        html += '</tr></thead><tbody class="divide-y divide-gray-200">'
+        let html = `<div class="overflow-x-auto"><table class="w-full" id="products-table"><thead class="bg-gray-50"><tr>
+          <th class="px-4 py-3 text-center w-12">
+            <input type="checkbox" id="select-all-products" 
+              class="w-4 h-4 rounded border-gray-300 text-spicy focus:ring-spicy cursor-pointer"
+              onchange="window.toggleSelectAllProducts(this.checked)"
+              title="Вибрати всі">
+          </th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Фото</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Назва</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Ціна</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Категорія</th>
+          <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Дії</th>
+        </tr></thead><tbody class="divide-y divide-gray-200" id="products-table-body">`
 
         snap.docs.forEach(d => {
           const p = d.data()
+          const productId = d.id
           const img = p.images?.[0] || p.image || 'https://placehold.co/50'
-          html += `<tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3"><img src="${img}" class="w-12 h-12 object-cover rounded-lg"></td>
-                        <td class="px-4 py-3 text-sm font-medium text-gray-900">${p.name}</td>
-                        <td class="px-4 py-3 text-sm font-semibold text-gray-900">₴${p.price}</td>
-                        <td class="px-4 py-3 text-right">
-                            <button onclick="startEditProduct('${d.id}')" class="p-2 hover:bg-blue-50 rounded-lg text-blue-600">
-                                <i data-lucide="pencil" class="w-4 h-4"></i>
-                            </button>
-                            <button onclick="deleteProduct('${d.id}')" class="p-2 hover:bg-red-50 rounded-lg text-red-600">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                            </button>
-                        </td>
-                    </tr>`
+          
+          // Sale badge and price display
+          const isOnSale = p.isOnSale === true
+          const originalPrice = p.originalPrice || null
+          const priceDisplay = isOnSale && originalPrice 
+            ? `<span class="line-through text-gray-400 text-xs mr-1">₴${originalPrice}</span><span class="text-red-600">₴${p.price || 0}</span>`
+            : `₴${p.price || 0}`
+          const saleBadge = isOnSale ? '<span class="ml-2 px-1.5 py-0.5 bg-red-100 text-red-600 rounded text-xs font-semibold">SALE</span>' : ''
+          
+          html += `<tr class="hover:bg-gray-50 product-row" data-product-id="${productId}">
+            <td class="px-4 py-3 text-center">
+              <input type="checkbox" 
+                class="product-checkbox w-4 h-4 rounded border-gray-300 text-spicy focus:ring-spicy cursor-pointer"
+                data-product-id="${productId}"
+                onchange="window.handleProductSelection(this)">
+            </td>
+            <td class="px-4 py-3"><img src="${img}" class="w-12 h-12 object-cover rounded-lg" onerror="this.src='https://placehold.co/50'"></td>
+            <td class="px-4 py-3 text-sm font-medium text-gray-900">${p.name || 'Без назви'}${saleBadge}</td>
+            <td class="px-4 py-3 text-sm font-semibold text-gray-900">${priceDisplay}</td>
+            <td class="px-4 py-3 text-sm text-gray-700">${p.category || '-'}</td>
+            <td class="px-4 py-3 text-right">
+              <button onclick="startEditProduct('${productId}')" class="p-2 hover:bg-blue-50 rounded-lg text-blue-600">
+                <i data-lucide="pencil" class="w-4 h-4"></i>
+              </button>
+              <button onclick="deleteProduct('${productId}')" class="p-2 hover:bg-red-50 rounded-lg text-red-600">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </td>
+          </tr>`
         })
 
         html += '</tbody></table></div>'
@@ -8205,6 +8349,276 @@
       } catch (e) {
         list.innerHTML = `<div class="text-red-500 text-center py-10">Помилка: ${e.message}</div>`
       }
+    }
+
+    // ============================================
+    // BULK DISCOUNT: Selection State & Functions
+    // ============================================
+    let selectedProductIds = [];
+
+    window.toggleSelectAllProducts = function(isChecked) {
+      const checkboxes = document.querySelectorAll('.product-checkbox');
+      selectedProductIds = [];
+      
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = isChecked;
+        if (isChecked) {
+          selectedProductIds.push(checkbox.dataset.productId);
+        }
+      });
+      
+      updateBulkActionBar();
+    };
+
+    window.handleProductSelection = function(checkbox) {
+      const productId = checkbox.dataset.productId;
+      
+      if (checkbox.checked) {
+        if (!selectedProductIds.includes(productId)) {
+          selectedProductIds.push(productId);
+        }
+      } else {
+        selectedProductIds = selectedProductIds.filter(id => id !== productId);
+      }
+      
+      const selectAllCheckbox = document.getElementById('select-all-products');
+      const allCheckboxes = document.querySelectorAll('.product-checkbox');
+      if (selectAllCheckbox) {
+        selectAllCheckbox.checked = selectedProductIds.length === allCheckboxes.length && allCheckboxes.length > 0;
+        selectAllCheckbox.indeterminate = selectedProductIds.length > 0 && selectedProductIds.length < allCheckboxes.length;
+      }
+      
+      updateBulkActionBar();
+    };
+
+    window.clearProductSelection = function() {
+      selectedProductIds = [];
+      document.querySelectorAll('.product-checkbox').forEach(cb => cb.checked = false);
+      const selectAllCheckbox = document.getElementById('select-all-products');
+      if (selectAllCheckbox) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+      }
+      updateBulkActionBar();
+    };
+
+    function updateBulkActionBar() {
+      const bar = document.getElementById('bulk-action-bar');
+      const countEl = document.getElementById('selected-count');
+      
+      if (!bar) return;
+      
+      if (selectedProductIds.length > 0) {
+        bar.classList.remove('translate-y-full');
+        bar.classList.add('translate-y-0');
+        if (countEl) {
+          const count = selectedProductIds.length;
+          const word = count === 1 ? 'товар' : count < 5 ? 'товари' : 'товарів';
+          countEl.textContent = `${count} ${word}`;
+        }
+      } else {
+        bar.classList.remove('translate-y-0');
+        bar.classList.add('translate-y-full');
+      }
+      lucide.createIcons();
+    }
+
+    window.openBulkDiscountModal = function() {
+      if (selectedProductIds.length === 0) {
+        alert('Спочатку виберіть товари!');
+        return;
+      }
+      
+      const modal = document.getElementById('bulk-discount-modal');
+      const subtitle = document.getElementById('discount-modal-subtitle');
+      
+      if (modal) {
+        modal.classList.remove('hidden');
+        if (subtitle) {
+          const count = selectedProductIds.length;
+          const word = count === 1 ? 'товар' : count < 5 ? 'товари' : 'товарів';
+          subtitle.textContent = `Вибрано: ${count} ${word}`;
+        }
+        updateDiscountPreview();
+        lucide.createIcons();
+      }
+    };
+
+    window.closeBulkDiscountModal = function() {
+      const modal = document.getElementById('bulk-discount-modal');
+      if (modal) modal.classList.add('hidden');
+    };
+
+    function updateDiscountPreview() {
+      const valueInput = document.getElementById('bulk-discount-value');
+      const unitSpan = document.getElementById('discount-unit');
+      const previewEl = document.getElementById('discount-preview');
+      const hintEl = document.getElementById('discount-hint');
+      
+      const selectedType = document.querySelector('input[name="discount-type"]:checked')?.value || 'percentage';
+      const value = parseFloat(valueInput?.value) || 0;
+      
+      if (unitSpan) unitSpan.textContent = selectedType === 'percentage' ? '%' : '₴';
+      if (valueInput) valueInput.max = selectedType === 'percentage' ? 100 : 10000;
+      if (hintEl) {
+        hintEl.textContent = selectedType === 'percentage' 
+          ? 'Наприклад: 10% = нова ціна буде на 10% менша'
+          : 'Наприклад: 50₴ = ціна зменшиться на 50 гривень';
+      }
+      
+      let newPrice = selectedType === 'percentage' ? 100 - (100 * value / 100) : 100 - value;
+      newPrice = Math.max(0, newPrice);
+      if (previewEl) previewEl.textContent = `→ ₴${newPrice.toFixed(0)}`;
+    }
+
+    // Setup discount type listeners
+    document.querySelectorAll('input[name="discount-type"]').forEach(radio => {
+      radio.addEventListener('change', updateDiscountPreview);
+    });
+    document.getElementById('bulk-discount-value')?.addEventListener('input', updateDiscountPreview);
+
+    window.applyBulkDiscount = async function() {
+      if (selectedProductIds.length === 0) {
+        alert('Спочатку виберіть товари!');
+        return;
+      }
+      
+      const selectedType = document.querySelector('input[name="discount-type"]:checked')?.value || 'percentage';
+      const discountValue = parseFloat(document.getElementById('bulk-discount-value')?.value) || 0;
+      
+      if (discountValue <= 0) {
+        alert('Введіть коректне значення знижки!');
+        return;
+      }
+      
+      if (selectedType === 'percentage' && discountValue > 100) {
+        alert('Відсоток знижки не може бути більше 100%!');
+        return;
+      }
+      
+      const count = selectedProductIds.length;
+      const discountText = selectedType === 'percentage' ? `${discountValue}%` : `${discountValue}₴`;
+      if (!confirm(`Застосувати знижку ${discountText} до ${count} товарів?`)) return;
+      
+      const applyBtn = document.querySelector('#bulk-discount-modal button[onclick="window.applyBulkDiscount()"]');
+      const originalBtnText = applyBtn?.innerHTML;
+      if (applyBtn) {
+        applyBtn.disabled = true;
+        applyBtn.innerHTML = '<div class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full mx-auto"></div>';
+      }
+      
+      try {
+        const batch = writeBatch(db);
+        let updatedCount = 0;
+        
+        for (const productId of selectedProductIds) {
+          const productRef = doc(db, 'products', productId);
+          const productSnap = await getDoc(productRef);
+          
+          if (!productSnap.exists()) continue;
+          
+          const productData = productSnap.data();
+          const currentPrice = parseFloat(productData.price) || 0;
+          const originalPrice = productData.originalPrice || currentPrice;
+          
+          let newPrice = selectedType === 'percentage' 
+            ? originalPrice - (originalPrice * discountValue / 100)
+            : originalPrice - discountValue;
+          
+          newPrice = Math.max(0, Math.round(newPrice * 100) / 100);
+          
+          batch.update(productRef, {
+            price: newPrice,
+            originalPrice: originalPrice,
+            isOnSale: true,
+            discountType: selectedType,
+            discountValue: discountValue,
+            discountAppliedAt: new Date().toISOString()
+          });
+          
+          updatedCount++;
+        }
+        
+        await batch.commit();
+        
+        window.closeBulkDiscountModal();
+        window.clearProductSelection();
+        await loadProducts();
+        
+        showToast(`✅ Знижку застосовано до ${updatedCount} товарів!`, 'success');
+        
+      } catch (error) {
+        console.error('❌ Error applying bulk discount:', error);
+        alert(`Помилка: ${error.message}`);
+      } finally {
+        if (applyBtn) {
+          applyBtn.disabled = false;
+          applyBtn.innerHTML = originalBtnText;
+        }
+      }
+    };
+
+    window.removeBulkDiscount = async function() {
+      if (selectedProductIds.length === 0) {
+        alert('Спочатку виберіть товари!');
+        return;
+      }
+      
+      const count = selectedProductIds.length;
+      if (!confirm(`Зняти знижку з ${count} товарів та повернути оригінальні ціни?`)) return;
+      
+      try {
+        const batch = writeBatch(db);
+        let restoredCount = 0;
+        
+        for (const productId of selectedProductIds) {
+          const productRef = doc(db, 'products', productId);
+          const productSnap = await getDoc(productRef);
+          
+          if (!productSnap.exists()) continue;
+          
+          const productData = productSnap.data();
+          const originalPrice = productData.originalPrice;
+          
+          if (!originalPrice && originalPrice !== 0) continue;
+          
+          batch.update(productRef, {
+            price: originalPrice,
+            originalPrice: null,
+            isOnSale: false,
+            discountType: null,
+            discountValue: null,
+            discountAppliedAt: null
+          });
+          
+          restoredCount++;
+        }
+        
+        await batch.commit();
+        
+        window.clearProductSelection();
+        await loadProducts();
+        
+        showToast(`✅ Знижку знято з ${restoredCount} товарів!`, 'success');
+        
+      } catch (error) {
+        console.error('❌ Error removing bulk discount:', error);
+        alert(`Помилка: ${error.message}`);
+      }
+    };
+
+    function showToast(message, type = 'info') {
+      const colors = { success: 'bg-green-600', error: 'bg-red-600', info: 'bg-blue-600' };
+      const toast = document.createElement('div');
+      toast.className = `fixed top-4 right-4 ${colors[type] || colors.info} text-white px-6 py-4 rounded-xl shadow-2xl z-[100] animate-slide-in`;
+      toast.innerHTML = `<span class="font-semibold">${message}</span>`;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        toast.style.transition = 'all 0.3s ease-out';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
     }
 
 

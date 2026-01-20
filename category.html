@@ -658,7 +658,14 @@
                     <a href="product.html?id=${product.id}" class="block hover:text-orange-600 transition-colors">
                       <h3 class="text-sm md:text-lg font-bold text-gray-900 mb-1 md:mb-2 line-clamp-2">${product.name}</h3>
                     </a>
-                    <p class="text-xl md:text-2xl font-extrabold text-[#ff6b00] mb-2 md:mb-3">₴ ${product.price} <span class="text-xs md:text-sm font-normal text-gray-500">грн</span></p>
+                    ${(product.originalPrice && product.originalPrice > product.price)
+                      ? `<div class="flex items-center gap-2 mb-2 md:mb-3">
+                           <span class="text-red-500 line-through text-sm md:text-base">₴ ${product.originalPrice}</span>
+                           <span class="text-xl md:text-2xl font-extrabold text-green-600">₴ ${product.price}</span>
+                           <span class="bg-red-100 text-red-600 text-[10px] md:text-xs font-bold px-1.5 py-0.5 rounded-full">-${Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%</span>
+                         </div>`
+                      : `<p class="text-xl md:text-2xl font-extrabold text-[#ff6b00] mb-2 md:mb-3">₴ ${product.price} <span class="text-xs md:text-sm font-normal text-gray-500">грн</span></p>`
+                    }
                     
                     <div class="flex items-center gap-0.5 md:gap-1 mb-2 md:mb-3 text-sm md:text-lg">
                       ${spicinessHTML}
