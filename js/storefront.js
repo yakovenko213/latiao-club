@@ -7,8 +7,13 @@ import {
     getDocs, 
     query, 
     where, 
-    orderBy 
+    orderBy,
+    addDoc,
+    serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+// Track when page was loaded for time_to_cart analytics
+const pageLoadTime = Date.now();
 
 console.log('🛒 Storefront module loaded');
 
@@ -23,8 +28,44 @@ window.addToCartFromStorefront = function(productId, name, price, image, source)
             price: price,
             image: image
         }, source);
+        
+        // Track time to cart (fire-and-forget, non-blocking)
+        trackTimeToCartFromStorefront(productId, name, source);
     }
 };
+
+/**
+ * Track time from page load to add-to-cart action
+ * Non-blocking analytics
+ */
+async function trackTimeToCartFromStorefront(productId, productName, source) {
+    try {
+        const durationMs = Date.now() - pageLoadTime;
+        const durationSeconds = Math.round(durationMs / 100) / 10; // Round to 1 decimal
+        
+        // Skip if duration is too short or too long
+        if (durationSeconds < 1 || durationSeconds > 1800) {
+            console.log('⏱️ Time to cart skipped (out of range):', durationSeconds, 's');
+            return;
+        }
+        
+        console.log('⏱️ Time to Add to Cart:', durationSeconds, 'seconds');
+        
+        await addDoc(collection(db, 'analytics_timings'), {
+            type: 'time_to_cart_add',
+            durationSeconds: durationSeconds,
+            productId: productId || 'unknown',
+            productName: productName || 'unknown',
+            source: source || 'storefront',
+            timestamp: serverTimestamp(),
+            device: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
+        });
+        
+        console.log('✅ Time to cart tracked successfully');
+    } catch (e) {
+        console.error('⏱️ Failed to track time to cart:', e.message);
+    }
+}
 
 // ============================================
 // SPICINESS RENDERER

@@ -83,22 +83,22 @@ service cloud.firestore {
     }
     
     // =============================================
-    // 🛒 ORDERS (Create: Public, Read: Auth only)
+    // 🛒 ORDERS (Create: Public, Read/Update/Delete: Auth only)
     // =============================================
     
     match /orders/{orderId} {
       allow create: if true;                  // Anyone can place an order
       allow read, update, delete: if request.auth != null;
     }
-    
+
     // =============================================
-    // 👤 CUSTOMERS (Private - Auth only)
+    // 👤 CUSTOMERS (Admin only)
     // =============================================
-    
+
     match /customers/{customerId} {
       allow read, write: if request.auth != null;
     }
-    
+
     // Personal promo codes
     match /personal_promocodes/{promoId} {
       allow read, write: if request.auth != null;

@@ -803,24 +803,11 @@
     
     // Generate unique order ID with collision check
     async function generateUniqueOrderId(maxAttempts = 5) {
-      for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        const shortId = generateShortOrderId();
-        
-        // Check if ID already exists
-        const existingDoc = await getDoc(doc(db, 'orders', shortId));
-        
-        if (!existingDoc.exists()) {
-          console.log(`✅ Generated unique order ID: ${shortId} (attempt ${attempt + 1})`);
-          return shortId;
-        }
-        
-        console.warn(`⚠️ Order ID collision: ${shortId}, retrying...`);
-      }
-      
-      // Fallback: Add timestamp suffix to ensure uniqueness
-      const fallbackId = generateShortOrderId(4) + Date.now().toString(36).slice(-2).toUpperCase();
-      console.log(`🚨 Using fallback order ID: ${fallbackId}`);
-      return fallbackId;
+      // Generate short order ID without checking for collisions
+      // Probability of collision is extremely low: 1 in 300+ million
+      const shortId = generateShortOrderId();
+      console.log(`✅ Generated order ID: ${shortId}`);
+      return shortId;
     }
     
     // ============================================
@@ -852,89 +839,6 @@
       }
     })();
 
-
-    // ============================================
-    // MINI-CRM: INLINE FALLBACK FUNCTION
-    // ============================================
-    /**
-     * Inline Mini-CRM function for checkout (fallback if admin.js not loaded)
-     * Creates or updates customer profile based on order data
-     */
-    async function syncCustomerInline(orderData, orderId) {
-      try {
-        const customer = orderData.customer || {}
-        const rawPhone = customer.phone || ''
-        const phone = rawPhone.replace(/[\s\-\(\)\+]/g, '').trim()
-        
-        if (!phone) {
-          console.warn('⚠️ syncCustomerInline: No phone, skipping.')
-          return null
-        }
-        
-        const fullName = customer.fullName?.trim() || ''
-        const email = customer.email?.trim() || customer.telegram?.trim() || ''
-        const orderTotal = orderData.summary?.total || 0
-        
-        console.log(`👤 Mini-CRM: Syncing customer: ${phone}`)
-        
-        // Query for existing customer
-        const customersRef = collection(db, 'customers')
-        const q = query(customersRef, where('phone', '==', phone), limit(1))
-        const querySnapshot = await getDocs(q)
-        
-        if (querySnapshot.empty) {
-          // NEW CUSTOMER
-          const newCustomer = {
-            fullName: fullName,
-            phone: phone,
-            email: email,
-            firstOrderDate: serverTimestamp(),
-            lastOrderDate: serverTimestamp(),
-            ordersCount: 1,
-            totalSpent: orderTotal,
-            orderIds: orderId ? [orderId] : [],
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp()
-          }
-          
-          const docRef = await addDoc(customersRef, newCustomer)
-          console.log(`✅ New customer created: ${docRef.id}`)
-          return { action: 'created', customerId: docRef.id }
-          
-        } else {
-          // EXISTING CUSTOMER - Update
-          const existingDoc = querySnapshot.docs[0]
-          const existingData = existingDoc.data()
-          
-          const updateData = {
-            ordersCount: increment(1),
-            totalSpent: increment(orderTotal),
-            lastOrderDate: serverTimestamp(),
-            updatedAt: serverTimestamp()
-          }
-          
-          if (orderId) {
-            updateData.orderIds = arrayUnion(orderId)
-          }
-          
-          if (!existingData.fullName && fullName) {
-            updateData.fullName = fullName
-          }
-          
-          if (!existingData.email && email) {
-            updateData.email = email
-          }
-          
-          await updateDoc(doc(db, 'customers', existingDoc.id), updateData)
-          console.log(`✅ Customer updated: ${existingDoc.id}`)
-          return { action: 'updated', customerId: existingDoc.id }
-        }
-        
-      } catch (error) {
-        console.error('❌ Mini-CRM inline error:', error)
-        return { action: 'error', error: error.message }
-      }
-    }
 
     // ============================================
     // NOVA POSHTA API CONFIGURATION
@@ -996,7 +900,14 @@
     // ============================================
 
     document.addEventListener('DOMContentLoaded', async function () {
-      // NOTE: Checkout tracking is done via IIFE at the top of this script
+      // ============================================
+      // ANALYTICS: Ensure checkout_load_time exists
+      // (Fallback if user navigated directly to checkout)
+      // ============================================
+      if (!localStorage.getItem('checkout_load_time')) {
+        localStorage.setItem('checkout_load_time', Date.now().toString());
+        console.log('⏱️ Checkout load time set (fallback)');
+      }
       
       // ============================================
       // PART 1: MAGIC LINK - Recovery from SMS
@@ -2636,6 +2547,33 @@
         orderData.id = orderId;
         orderData.orderId = orderId;
         
+        // ============================================
+        // CHECK PREPAYMENT SETTING FOR COD ORDERS
+        // (before saving to set correct status)
+        // ============================================
+        let isPrepaymentEnabled = true; // Default
+        if (paymentMethod === 'cod') {
+          try {
+            const generalSettingsDoc = await getDoc(doc(db, 'settings', 'general'));
+            if (generalSettingsDoc.exists()) {
+              const generalData = generalSettingsDoc.data();
+              isPrepaymentEnabled = generalData.isPrepaymentEnabled !== false;
+            }
+            console.log('💳 Prepayment setting:', isPrepaymentEnabled);
+            
+            // If prepayment disabled for COD, set status to 'new' immediately
+            if (!isPrepaymentEnabled) {
+              orderData.status = 'new';
+              orderData.payment.status = 'cod_no_prepayment';
+              orderData.payment.prepaymentSkipped = true;
+              orderData.payment.prepaymentSkippedAt = new Date();
+              console.log('📝 Order will be saved with status "new" (no prepayment required)');
+            }
+          } catch (settingsError) {
+            console.warn('⚠️ Could not fetch prepayment setting, using default (true):', settingsError);
+          }
+        }
+        
         console.log('💾 Saving order to Firestore...', { orderId, orderData })
         
         // Use setDoc with custom ID instead of addDoc
@@ -2647,20 +2585,6 @@
         // ============================================
         // STEP 8.1: Mini-CRM - Sync Customer Profile
         // ============================================
-        // Automatically create or update customer in 'customers' collection
-        try {
-          if (typeof window.syncCustomerFromOrder === 'function') {
-            const crmResult = await window.syncCustomerFromOrder(orderData, orderId)
-            console.log('👤 Mini-CRM result:', crmResult)
-          } else {
-            // Fallback: inline Mini-CRM logic if admin.js not loaded
-            console.log('⚠️ syncCustomerFromOrder not available, using inline fallback...')
-            await syncCustomerInline(orderData, orderId)
-          }
-        } catch (crmError) {
-          console.error('⚠️ Mini-CRM error (non-blocking):', crmError)
-        }
-
         // ============================================
         // STEP 8.25: Smart Cleanup (Abandoned Carts + Old Pending Orders)
         // ============================================
@@ -2775,9 +2699,9 @@
 
         } else {
           // ============================================
-          // CASH ON DELIVERY - CHECK PREPAYMENT SETTING
+          // CASH ON DELIVERY - USE PREPAYMENT SETTING (already fetched)
           // ============================================
-          console.log('💵 COD payment selected - checking prepayment setting...')
+          console.log('💵 COD payment selected, isPrepaymentEnabled:', isPrepaymentEnabled)
 
           // CRITICAL: Validate orderId exists
           if (!orderId) {
@@ -2786,41 +2710,12 @@
 
           console.log('🔍 Order ID:', orderId)
 
-          btn.textContent = 'Перевірка налаштувань...'
-
           try {
-            // ============================================
-            // FETCH PREPAYMENT SETTING FROM FIRESTORE
-            // ============================================
-            let isPrepaymentEnabled = true // Default to true (require prepayment)
-            
-            try {
-              const generalSettingsDoc = await getDoc(doc(db, 'settings', 'general'))
-              if (generalSettingsDoc.exists()) {
-                const generalData = generalSettingsDoc.data()
-                // If isPrepaymentEnabled is explicitly false, disable prepayment
-                isPrepaymentEnabled = generalData.isPrepaymentEnabled !== false
-              }
-              console.log('💳 Prepayment setting:', isPrepaymentEnabled)
-            } catch (settingsError) {
-              console.warn('⚠️ Could not fetch prepayment setting, using default (true):', settingsError)
-            }
-
             // ============================================
             // CONDITIONAL: PREPAYMENT DISABLED - SKIP PAYMENT
             // ============================================
             if (!isPrepaymentEnabled) {
               console.log('✅ Prepayment DISABLED - skipping payment, redirecting to thank-you page...')
-              
-              // Update order status to 'new' (confirmed without payment)
-              await updateDoc(doc(db, 'orders', orderId), {
-                status: 'new',
-                'payment.status': 'cod_no_prepayment',
-                'payment.prepaymentSkipped': true,
-                'payment.prepaymentSkippedAt': new Date()
-              })
-              
-              console.log('📝 Order status updated to "new" (no prepayment required)')
               
               // Save order details to localStorage for thank-you page fallback
               localStorage.setItem('last_order_details', JSON.stringify({

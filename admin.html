@@ -1785,7 +1785,7 @@
             
           </div>
           
-          <!-- ============================================ -->
+                 <!-- ============================================ -->
           <!-- ⏱️ CUSTOMER BEHAVIOR ANALYTICS SECTION -->
           <!-- ============================================ -->
           <div class="flex items-center justify-between mb-4 mt-8">
@@ -6200,7 +6200,7 @@
       if (allOrdersCache && allOrdersCache.length > 0) {
         console.log('📊 Using cached orders:', allOrdersCache.length)
         await calculateAndRenderStats(allOrdersCache)
-        // Also load behavior analytics
+         // Also load behavior analytics
         await loadBehaviorAnalytics()
         return
       }
@@ -6247,7 +6247,7 @@
           `
         }
       }
-      
+        
       // Load behavior analytics after main stats
       await loadBehaviorAnalytics()
     }
@@ -6262,10 +6262,14 @@
      * @returns {string} Formatted string like "2хв 15с" or "45с"
      */
     function formatDuration(seconds) {
-      if (!seconds || seconds <= 0) return '—'
+      if (seconds === null || seconds === undefined || isNaN(seconds) || seconds <= 0) return '—'
       
-      const mins = Math.floor(seconds / 60)
-      const secs = Math.round(seconds % 60)
+      // Ensure we have a valid number
+      const numSeconds = Number(seconds)
+      if (!Number.isFinite(numSeconds) || numSeconds <= 0) return '—'
+      
+      const mins = Math.floor(numSeconds / 60)
+      const secs = Math.round(numSeconds % 60)
       
       if (mins >= 60) {
         const hours = Math.floor(mins / 60)
@@ -6278,9 +6282,9 @@
       }
       
       return `${secs}с`
-    }
+       }
     
-    /**
+        /**
      * Load and display behavior analytics from analytics_timings collection
      */
     async function loadBehaviorAnalytics() {
@@ -6477,7 +6481,7 @@
     // ============================================
     // TEST: Add sample analytics data
     // ============================================
-    window.addTestAnalyticsData = async function() {
+    window.addTestBehaviorData = async function() {
       try {
         console.log('🧪 Adding test analytics data...')
         
@@ -6519,7 +6523,7 @@
         alert('❌ Помилка: ' + e.message)
       }
     }
-    
+
     // ============================================
     // STATISTICS DATE FILTER EVENT LISTENERS
     // ============================================
