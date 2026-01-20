@@ -1785,6 +1785,93 @@
             
           </div>
           
+          <!-- ============================================ -->
+          <!-- ⏱️ CUSTOMER BEHAVIOR ANALYTICS SECTION -->
+          <!-- ============================================ -->
+          <div class="flex items-center justify-between mb-4 mt-8">
+            <h3 class="text-lg font-bold text-gray-700 flex items-center gap-2">
+              <span class="text-xl">⏱️</span>
+              Поведінка Клієнтів
+            </h3>
+            <button onclick="resetBehaviorStats()" 
+                    title="Очистити статистику часу"
+                    class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+            </button>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            
+            <!-- Metric 1: Time to Add to Cart -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 hover:shadow-lg transition-all duration-300">
+              <div class="flex items-center gap-4 mb-3">
+                <div class="p-3 bg-cyan-100 rounded-xl">
+                  <span class="text-2xl">🛒</span>
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm text-gray-500 font-medium">Час на роздуми</p>
+                  <p id="stat-time-to-cart" class="text-3xl font-bold text-gray-900">—</p>
+                  <p id="stat-time-to-cart-count" class="text-xs text-gray-400"></p>
+                </div>
+              </div>
+              <p class="text-xs text-cyan-700 bg-cyan-50 rounded-lg px-3 py-2">
+                💡 Скільки часу клієнт вивчає товар перед додаванням у кошик
+              </p>
+            </div>
+            
+            <!-- Metric 2: Full Purchase Cycle -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 hover:shadow-lg transition-all duration-300">
+              <div class="flex items-center gap-4 mb-3">
+                <div class="p-3 bg-violet-100 rounded-xl">
+                  <span class="text-2xl">🏁</span>
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm text-gray-500 font-medium">Повний цикл покупки</p>
+                  <p id="stat-cart-to-checkout" class="text-3xl font-bold text-gray-900">—</p>
+                  <p id="stat-cart-to-checkout-count" class="text-xs text-gray-400"></p>
+                </div>
+              </div>
+              <p class="text-xs text-violet-700 bg-violet-50 rounded-lg px-3 py-2">
+                💡 Час від першого товару в кошику до сторінки подяки
+              </p>
+            </div>
+            
+            <!-- Metric 3: Checkout Duration -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 hover:shadow-lg transition-all duration-300">
+              <div class="flex items-center gap-4 mb-3">
+                <div class="p-3 bg-amber-100 rounded-xl">
+                  <span class="text-2xl">✍️</span>
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm text-gray-500 font-medium">Швидкість оформлення</p>
+                  <p id="stat-checkout-duration" class="text-3xl font-bold text-gray-900">—</p>
+                  <p id="stat-checkout-duration-count" class="text-xs text-gray-400"></p>
+                </div>
+              </div>
+              <p class="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
+                💡 Скільки часу займає заповнення форми замовлення
+              </p>
+            </div>
+            
+          </div>
+          
+          <!-- Behavior Analytics Info Card -->
+          <div class="bg-gradient-to-r from-cyan-50 to-violet-50 border border-cyan-200 rounded-2xl p-6 mb-8">
+            <div class="flex items-start gap-4">
+              <div class="p-3 bg-cyan-100 rounded-xl">
+                <svg class="w-6 h-6 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+              </div>
+              <div>
+                <h3 class="font-bold text-cyan-900 mb-1">Про метрики поведінки</h3>
+                <p class="text-sm text-cyan-800">Дані збираються автоматично при взаємодії клієнтів з сайтом. Відображаються <strong>середні значення</strong> за весь період. Короткий час = швидке рішення, довгий час = можлива нерішучість або складнощі.</p>
+              </div>
+            </div>
+          </div>
+          
           <!-- Additional Info Card -->
           <div class="bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-2xl p-6">
             <div class="flex items-start gap-4">
@@ -3205,6 +3292,7 @@
       query,
       where,
       orderBy,
+      limit,
       serverTimestamp,
       writeBatch,
       setDoc
@@ -6112,6 +6200,8 @@
       if (allOrdersCache && allOrdersCache.length > 0) {
         console.log('📊 Using cached orders:', allOrdersCache.length)
         await calculateAndRenderStats(allOrdersCache)
+        // Also load behavior analytics
+        await loadBehaviorAnalytics()
         return
       }
       
@@ -6130,6 +6220,8 @@
         if (snap.empty) {
           console.log('📊 No orders found')
           await calculateAndRenderStats([])
+          // Still load behavior analytics even if no orders
+          await loadBehaviorAnalytics()
           return
         }
         
@@ -6155,7 +6247,279 @@
           `
         }
       }
+      
+      // Load behavior analytics after main stats
+      await loadBehaviorAnalytics()
     }
+    
+    // ============================================
+    // ⏱️ BEHAVIOR ANALYTICS - TIME TRACKING
+    // ============================================
+    
+    /**
+     * Formats seconds into human-readable Ukrainian string
+     * @param {number} seconds - Duration in seconds
+     * @returns {string} Formatted string like "2хв 15с" or "45с"
+     */
+    function formatDuration(seconds) {
+      if (!seconds || seconds <= 0) return '—'
+      
+      const mins = Math.floor(seconds / 60)
+      const secs = Math.round(seconds % 60)
+      
+      if (mins >= 60) {
+        const hours = Math.floor(mins / 60)
+        const remainingMins = mins % 60
+        return `${hours}год ${remainingMins.toString().padStart(2, '0')}хв`
+      }
+      
+      if (mins > 0) {
+        return `${mins}хв ${secs.toString().padStart(2, '0')}с`
+      }
+      
+      return `${secs}с`
+    }
+    
+    /**
+     * Load and display behavior analytics from analytics_timings collection
+     */
+    async function loadBehaviorAnalytics() {
+      console.log('⏱️ Loading behavior analytics...')
+      console.log('⏱️ DB instance:', db ? 'OK' : 'MISSING')
+      
+      try {
+        // Fetch all timing records (no orderBy to avoid index requirement)
+        console.log('⏱️ Fetching from analytics_timings collection...')
+        const timingsSnap = await getDocs(collection(db, 'analytics_timings'))
+        console.log('⏱️ Fetched documents:', timingsSnap.size)
+        
+        if (timingsSnap.empty) {
+          console.log('⏱️ No timing data found')
+          // Update UI with defaults
+          updateBehaviorUI(null, null, null, {})
+          return
+        }
+        
+        // Group timings by type
+        const timeToCartLogs = []
+        const cartToCheckoutLogs = []
+        const checkoutDurationLogs = []
+        
+        timingsSnap.forEach(doc => {
+          const data = doc.data()
+          const duration = data.durationSeconds
+          
+          if (typeof duration !== 'number' || duration <= 0) return
+          
+          switch (data.type) {
+            case 'time_to_cart_add':
+              timeToCartLogs.push(duration)
+              break
+            case 'time_full_cycle':  // Changed from time_cart_to_checkout
+              cartToCheckoutLogs.push(duration)  // Reusing same array for UI
+              break
+            case 'time_checkout_completion':
+              checkoutDurationLogs.push(duration)
+              break
+          }
+        })
+        
+        console.log('⏱️ Timing logs collected:', {
+          timeToCart: timeToCartLogs.length,
+          fullCycle: cartToCheckoutLogs.length,  // Renamed from cartToCheckout
+          checkoutDuration: checkoutDurationLogs.length
+        })
+        
+        // Calculate averages
+        const avgTimeToCart = timeToCartLogs.length > 0 
+          ? timeToCartLogs.reduce((a, b) => a + b, 0) / timeToCartLogs.length 
+          : null
+          
+        const avgCartToCheckout = cartToCheckoutLogs.length > 0 
+          ? cartToCheckoutLogs.reduce((a, b) => a + b, 0) / cartToCheckoutLogs.length 
+          : null
+          
+        const avgCheckoutDuration = checkoutDurationLogs.length > 0 
+          ? checkoutDurationLogs.reduce((a, b) => a + b, 0) / checkoutDurationLogs.length 
+          : null
+        
+        console.log('⏱️ Average times calculated:', {
+          timeToCart: avgTimeToCart ? formatDuration(avgTimeToCart) : 'N/A',
+          cartToCheckout: avgCartToCheckout ? formatDuration(avgCartToCheckout) : 'N/A',
+          checkoutDuration: avgCheckoutDuration ? formatDuration(avgCheckoutDuration) : 'N/A'
+        })
+        
+        // Update UI with counts
+        updateBehaviorUI(avgTimeToCart, avgCartToCheckout, avgCheckoutDuration, {
+          timeToCart: timeToCartLogs.length,
+          cartToCheckout: cartToCheckoutLogs.length,
+          checkoutDuration: checkoutDurationLogs.length
+        })
+        
+      } catch (error) {
+        console.error('⏱️ Error loading behavior analytics:', error)
+        updateBehaviorUI(null, null, null, {})
+      }
+    }
+    
+    /**
+     * Update behavior analytics UI elements
+     */
+    function updateBehaviorUI(avgTimeToCart, avgCartToCheckout, avgCheckoutDuration, counts = {}) {
+      const timeToCartEl = document.getElementById('stat-time-to-cart')
+      const cartToCheckoutEl = document.getElementById('stat-cart-to-checkout')
+      const checkoutDurationEl = document.getElementById('stat-checkout-duration')
+      
+      const timeToCartCountEl = document.getElementById('stat-time-to-cart-count')
+      const cartToCheckoutCountEl = document.getElementById('stat-cart-to-checkout-count')
+      const checkoutDurationCountEl = document.getElementById('stat-checkout-duration-count')
+      
+      if (timeToCartEl) {
+        timeToCartEl.textContent = avgTimeToCart !== null ? formatDuration(avgTimeToCart) : '—'
+        timeToCartEl.title = avgTimeToCart !== null ? `Середнє: ${avgTimeToCart.toFixed(1)}с` : 'Немає даних'
+      }
+      if (timeToCartCountEl) {
+        timeToCartCountEl.textContent = counts.timeToCart > 0 ? `на основі ${counts.timeToCart} записів` : ''
+      }
+      
+      if (cartToCheckoutEl) {
+        cartToCheckoutEl.textContent = avgCartToCheckout !== null ? formatDuration(avgCartToCheckout) : '—'
+        cartToCheckoutEl.title = avgCartToCheckout !== null ? `Середнє: ${avgCartToCheckout.toFixed(1)}с` : 'Немає даних'
+      }
+      if (cartToCheckoutCountEl) {
+        cartToCheckoutCountEl.textContent = counts.cartToCheckout > 0 ? `на основі ${counts.cartToCheckout} записів` : ''
+      }
+      
+      if (checkoutDurationEl) {
+        checkoutDurationEl.textContent = avgCheckoutDuration !== null ? formatDuration(avgCheckoutDuration) : '—'
+        checkoutDurationEl.title = avgCheckoutDuration !== null ? `Середнє: ${avgCheckoutDuration.toFixed(1)}с` : 'Немає даних'
+      }
+      if (checkoutDurationCountEl) {
+        checkoutDurationCountEl.textContent = counts.checkoutDuration > 0 ? `на основі ${counts.checkoutDuration} записів` : ''
+      }
+      
+      console.log('⏱️ Behavior analytics UI updated')
+    }
+    
+    // ============================================
+    // RESET: Clear behavior analytics data
+    // ============================================
+    window.resetBehaviorStats = async function() {
+      // Confirmation dialog
+      if (!confirm('⚠️ Ви впевнені, що хочете видалити всю статистику поведінки?\n\nЦю дію неможливо скасувати!')) {
+        return
+      }
+      
+      console.log('🗑️ Resetting behavior analytics...')
+      
+      try {
+        // Show loading state in UI
+        const timeToCartEl = document.getElementById('stat-time-to-cart')
+        const fullCycleEl = document.getElementById('stat-cart-to-checkout')
+        const checkoutEl = document.getElementById('stat-checkout-duration')
+        
+        if (timeToCartEl) timeToCartEl.textContent = '⏳'
+        if (fullCycleEl) fullCycleEl.textContent = '⏳'
+        if (checkoutEl) checkoutEl.textContent = '⏳'
+        
+        // Fetch all documents from analytics_timings
+        const timingsSnap = await getDocs(collection(db, 'analytics_timings'))
+        
+        if (timingsSnap.empty) {
+          alert('ℹ️ Статистика вже порожня')
+          await loadBehaviorAnalytics()
+          return
+        }
+        
+        const totalDocs = timingsSnap.size
+        console.log(`🗑️ Found ${totalDocs} documents to delete`)
+        
+        // Batch delete (max 500 per batch)
+        const batchSize = 500
+        let deleted = 0
+        let batch = writeBatch(db)
+        let batchCount = 0
+        
+        for (const docSnap of timingsSnap.docs) {
+          batch.delete(docSnap.ref)
+          batchCount++
+          
+          // Commit batch when it reaches 500
+          if (batchCount === batchSize) {
+            await batch.commit()
+            deleted += batchCount
+            console.log(`🗑️ Deleted ${deleted}/${totalDocs} documents`)
+            batch = writeBatch(db)
+            batchCount = 0
+          }
+        }
+        
+        // Commit remaining documents
+        if (batchCount > 0) {
+          await batch.commit()
+          deleted += batchCount
+        }
+        
+        console.log(`✅ Successfully deleted ${deleted} documents`)
+        alert(`✅ Статистику очищено!\n\nВидалено записів: ${deleted}`)
+        
+        // Reload the analytics UI
+        await loadBehaviorAnalytics()
+        
+      } catch (error) {
+        console.error('❌ Error resetting behavior stats:', error)
+        alert('❌ Помилка очищення: ' + error.message)
+        // Reload to show current state
+        await loadBehaviorAnalytics()
+      }
+    }
+    
+    // ============================================
+    // TEST: Add sample analytics data
+    // ============================================
+    window.addTestAnalyticsData = async function() {
+      try {
+        console.log('🧪 Adding test analytics data...')
+        
+        // Add time_to_cart_add samples
+        await addDoc(collection(db, 'analytics_timings'), {
+          type: 'time_to_cart_add',
+          durationSeconds: 45.5,
+          productId: 'test-product',
+          productName: 'Test Product',
+          timestamp: serverTimestamp(),
+          device: 'desktop'
+        })
+        
+        // Add time_full_cycle samples
+        await addDoc(collection(db, 'analytics_timings'), {
+          type: 'time_full_cycle',
+          durationSeconds: 180.0,
+          cartItemsCount: 2,
+          cartTotal: 500,
+          timestamp: serverTimestamp(),
+          device: 'desktop'
+        })
+        
+        // Add time_checkout_completion samples
+        await addDoc(collection(db, 'analytics_timings'), {
+          type: 'time_checkout_completion',
+          durationSeconds: 120.0,
+          cartItemsCount: 2,
+          cartTotal: 500,
+          timestamp: serverTimestamp(),
+          device: 'desktop'
+        })
+        
+        console.log('🧪 Test data added! Refreshing...')
+        await loadBehaviorAnalytics()
+        alert('✅ Тестові дані додано!')
+      } catch (e) {
+        console.error('🧪 Error adding test data:', e)
+        alert('❌ Помилка: ' + e.message)
+      }
+    }
+    
     // ============================================
     // STATISTICS DATE FILTER EVENT LISTENERS
     // ============================================

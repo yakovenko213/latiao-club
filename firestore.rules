@@ -29,6 +29,13 @@ service cloud.firestore {
       allow delete: if request.auth != null;
     }
     
+    // Behavior Analytics - Time tracking (time to cart, checkout speed, etc.)
+    match /analytics_timings/{timingId} {
+      allow create: if true;                  // ✅ Public - anyone can track timing
+      allow read: if request.auth != null;    // Admin reads for analytics
+      allow update, delete: if request.auth != null;
+    }
+    
     // Daily Stats
     match /daily_stats/{dateId} {
       allow read: if request.auth != null;

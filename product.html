@@ -735,7 +735,7 @@
 
   <script type="module">
     import { db } from './js/firebase-init.js'
-    import { doc, getDoc, collection, query, where, getDocs, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
+    import { doc, getDoc, collection, query, where, getDocs, limit, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
 
     // ============================================
     // GLOBAL STATE
@@ -743,6 +743,44 @@
     let currentProduct = null
     let quantity = 1
     let maxStock = 0
+
+    // ============================================
+    // TIME TRACKING: Time to Add to Cart
+    // ============================================
+    let productPageOpenedAt = performance.now()
+    
+    /**
+     * Track time from page open to add-to-cart action
+     * Saves to Firestore analytics_timings collection
+     */
+    async function trackTimeToCart() {
+      try {
+        const durationMs = performance.now() - productPageOpenedAt
+        const durationSeconds = Math.round(durationMs / 100) / 10 // Round to 1 decimal
+        
+        // Skip if duration is too short (accidental click) or too long (left page open)
+        if (durationSeconds < 1 || durationSeconds > 1800) { // 1s to 30min
+          console.log('⏱️ Time to cart skipped (out of range):', durationSeconds, 's')
+          return
+        }
+        
+        console.log('⏱️ Time to Add to Cart:', durationSeconds, 'seconds')
+        
+        await addDoc(collection(db, 'analytics_timings'), {
+          type: 'time_to_cart_add',
+          durationSeconds: durationSeconds,
+          productId: currentProduct?.id || 'unknown',
+          productName: currentProduct?.name || 'unknown',
+          timestamp: serverTimestamp(),
+          userAgent: navigator.userAgent.substring(0, 100),
+          device: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
+        })
+        
+        console.log('✅ Time to cart tracked successfully')
+      } catch (e) {
+        console.error('⏱️ Failed to track time to cart:', e.message)
+      }
+    }
 
     // ============================================
     // SOCIAL PROOF: VIEW COUNTER
@@ -1499,6 +1537,11 @@
         console.error('❌ Product or addToCart function not available')
         return
       }
+
+      // ============================================
+      // TRACK TIME TO ADD TO CART (Analytics)
+      // ============================================
+      trackTimeToCart()
 
       // Call global addToCart from layout.js
       const productData = {

@@ -830,6 +830,14 @@ window.trackAddToCart = async function(product, source) {
 
 // Add product to cart
 window.addToCart = function(product, source = null) {
+  // ============================================
+  // TRACK FIRST ITEM TIME (for cart-to-checkout analytics)
+  // ============================================
+  if (window.cart.length === 0 && !localStorage.getItem('cart_started_at')) {
+    localStorage.setItem('cart_started_at', Date.now().toString());
+    console.log('⏱️ Cart started - timestamp saved');
+  }
+  
   // REFINED LOGIC: Check by ID + isGift status
   // This allows GIFT and PAID versions of the same product to coexist
   const productIsGift = product.isGift === true;
@@ -1060,12 +1068,19 @@ window.toggleMobileMenu = function() {
 };
 
 // Checkout
-window.checkout = function() {
+window.checkout = async function() {
   const total = calculateTotal();
   if (total < 100) {
     window.showToast('Мінімальна сума — 100 грн', 'warning');
     return;
   }
+  
+  // Save checkout start time for tracking checkout duration
+  localStorage.setItem('checkout_load_time', Date.now().toString());
+  
+  // NOTE: cart_started_at is NOT cleared here - it's needed for full_cycle tracking
+  // which happens on successful order completion (checkout.html → submitOrder)
+  
   window.location.href = 'checkout.html';
 };
 

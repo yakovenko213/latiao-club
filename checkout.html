@@ -1074,6 +1074,8 @@
       renderProducts()
       calculateTotals()
       validateForm()
+      
+      console.log('🚀 Checkout page: calling updateDispatchTimes()')
       updateDispatchTimes()
 
       // ⭐ Initialize delivery and payment methods (set correct initial state)
@@ -1559,7 +1561,7 @@
         } else if (currentHour >= 10 && currentHour < 15) {
           return '🕒 Відправка сьогодні до 17:00'
         } else {
-          return '🕒 Відправка завтра до 12:00';;
+          return '🕒 Відправка завтра до 12:00'
         }
       } else if (carrier === 'ukrposhta') {
         // Ukrposhta: Dispatch at 12:00, no dispatch on Sunday (0) and Monday (1)
@@ -1602,12 +1604,18 @@
       const novaDispatch = document.getElementById('dispatch-nova')
       const ukrDispatch = document.getElementById('dispatch-ukr')
 
+      console.log('⏰ Updating dispatch times...', { novaDispatch: !!novaDispatch, ukrDispatch: !!ukrDispatch })
+
       if (novaDispatch) {
-        novaDispatch.textContent = getDispatchTime('novaposhta')
+        const novaTime = getDispatchTime('novaposhta')
+        novaDispatch.textContent = novaTime
+        console.log('⏰ Nova Poshta dispatch:', novaTime)
       }
 
       if (ukrDispatch) {
-        ukrDispatch.textContent = getDispatchTime('ukrposhta')
+        const ukrTime = getDispatchTime('ukrposhta')
+        ukrDispatch.textContent = ukrTime
+        console.log('⏰ Ukrposhta dispatch:', ukrTime)
       }
     }
 
@@ -2555,6 +2563,71 @@
         // ============================================
         console.log('💾 Generating unique order ID...')
         
+        // ============================================
+        // TRACK CHECKOUT COMPLETION TIME (Analytics)
+        // ============================================
+        try {
+          const checkoutLoadTime = localStorage.getItem('checkout_load_time');
+          if (checkoutLoadTime) {
+            const durationMs = Date.now() - parseInt(checkoutLoadTime);
+            const durationSeconds = Math.round(durationMs / 100) / 10; // Round to 1 decimal
+            
+            // Only track if reasonable time (5 seconds to 30 minutes)
+            if (durationSeconds >= 5 && durationSeconds <= 1800) {
+              console.log('⏱️ Checkout completion time:', durationSeconds, 'seconds');
+              
+              await addDoc(collection(db, 'analytics_timings'), {
+                type: 'time_checkout_completion',
+                durationSeconds: durationSeconds,
+                cartItemsCount: cartItems.length,
+                cartTotal: total,
+                deliveryMethod: deliveryMethod,
+                paymentMethod: paymentMethod,
+                timestamp: serverTimestamp(),
+                device: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
+              });
+              console.log('✅ Checkout time tracked');
+            }
+            // Clear the timestamp after tracking
+            localStorage.removeItem('checkout_load_time');
+          }
+        } catch (trackingError) {
+          console.error('⏱️ Failed to track checkout time:', trackingError.message);
+        }
+        
+        // ============================================
+        // TRACK FULL PURCHASE CYCLE (Analytics)
+        // Time from first add-to-cart → successful order
+        // ============================================
+        try {
+          const cartStartedAt = localStorage.getItem('cart_started_at');
+          if (cartStartedAt) {
+            const fullCycleDurationMs = Date.now() - parseInt(cartStartedAt);
+            const fullCycleDurationSeconds = Math.round(fullCycleDurationMs / 100) / 10;
+            
+            // Only track if reasonable time (10 seconds to 24 hours)
+            if (fullCycleDurationSeconds >= 10 && fullCycleDurationSeconds <= 86400) {
+              console.log('⏱️ Full purchase cycle time:', fullCycleDurationSeconds, 'seconds');
+              
+              await addDoc(collection(db, 'analytics_timings'), {
+                type: 'time_full_cycle',
+                durationSeconds: fullCycleDurationSeconds,
+                cartItemsCount: cartItems.length,
+                cartTotal: total,
+                deliveryMethod: deliveryMethod,
+                paymentMethod: paymentMethod,
+                timestamp: serverTimestamp(),
+                device: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
+              });
+              console.log('✅ Full cycle time tracked');
+            }
+            // Clear the timestamp after tracking
+            localStorage.removeItem('cart_started_at');
+          }
+        } catch (fullCycleError) {
+          console.error('⏱️ Failed to track full cycle:', fullCycleError.message);
+        }
+        
         // Generate short, user-friendly order ID (e.g., "7X2M9P")
         const orderId = await generateUniqueOrderId();
         
@@ -2747,7 +2820,7 @@
                 'payment.prepaymentSkippedAt': new Date()
               })
               
-              console.log('📝 Order status updated to "new" (no prepayment required)'))
+              console.log('📝 Order status updated to "new" (no prepayment required)')
               
               // Save order details to localStorage for thank-you page fallback
               localStorage.setItem('last_order_details', JSON.stringify({
