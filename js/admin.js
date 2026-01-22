@@ -541,7 +541,14 @@ window.startEditProduct = async function(productId) {
         document.getElementById('product-stock').value = product.stock || 0;
         document.getElementById('product-active').checked = product.isVisible !== false;
         
-        // ✅ STEP 3: UPDATE IMAGE PREVIEW
+        // ✅ STEP 3: PRESERVE EXISTING IMAGE URL in hidden field
+        const existingImageInput = document.getElementById('product-existing-image');
+        if (existingImageInput && product.image) {
+            existingImageInput.value = product.image;
+            console.log('✅ Existing image URL preserved:', product.image);
+        }
+        
+        // ✅ STEP 4: UPDATE IMAGE PREVIEW
         const imagePreview = document.getElementById('image-preview');
         if (imagePreview) {
             imagePreview.innerHTML = ''; // Clear existing
@@ -553,6 +560,7 @@ window.startEditProduct = async function(productId) {
                 imgDiv.innerHTML = `
                     <img src="${product.image}" 
                          class="w-full h-24 object-cover rounded-lg border-2 border-blue-500" 
+                         onerror="this.src='https://placehold.co/100x100?text=IMG'"
                          alt="Current image">
                     <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition rounded-lg flex items-center justify-center">
                         <span class="text-white text-xs font-semibold">Поточне фото</span>
@@ -572,13 +580,13 @@ window.startEditProduct = async function(productId) {
             }
         }
         
-        // ✅ STEP 4: UPDATE MODAL TITLE
+        // ✅ STEP 5: UPDATE MODAL TITLE
         const title = document.getElementById('product-modal-title');
         if (title) {
             title.textContent = 'Редагувати товар';
         }
         
-        // ✅ STEP 5: SHOW MODAL
+        // ✅ STEP 6: SHOW MODAL
         const modal = document.getElementById('product-modal');
         if (modal) {
             modal.classList.remove('hidden');
@@ -658,6 +666,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     productData.image = imageUrl;
                     console.log('✅ Image uploaded:', imageUrl);
+                } else if (productId) {
+                    // ✅ EDIT MODE: Preserve existing image if no new file selected
+                    const existingImageInput = document.getElementById('product-existing-image');
+                    if (existingImageInput && existingImageInput.value) {
+                        productData.image = existingImageInput.value;
+                        console.log('✅ Preserving existing image:', productData.image);
+                    } else {
+                        console.log('⚠️ No existing image found');
+                    }
                 }
                 
                 // ✅ SAVE TO FIRESTORE

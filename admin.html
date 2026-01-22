@@ -2749,6 +2749,8 @@
 
         <div>
           <label class="block text-sm font-medium mb-1">Фото товару (можна вибрати декілька)</label>
+          <!-- Hidden field to preserve existing image URLs -->
+          <input type="hidden" id="p-existing-images" value="">
           <input type="file" id="p-images" class="w-full border rounded-lg p-2" multiple accept="image">
 
           <p class="text-xs text-gray-500 mt-1">Виберіть одну або кілька фотографій. Перша буде
@@ -10466,15 +10468,32 @@
         const product = docSnap.data()
         editingProductId = productId
 
-        document.getElementById('p-name').value = product.name || ''
-        document.getElementById('p-price').value = product.price || ''
-        document.getElementById('p-sku').value = product.sku || ''
-        document.getElementById('p-spiciness').value = product.spiciness || 1
-        document.getElementById('p-description').value = product.description || ''
-        document.getElementById('p-full-description').value = product.fullDescription || ''
-        document.getElementById('p-specs').value = product.specs || ''
-        document.getElementById('p-ingredients').value = product.ingredients || ''
-        document.getElementById('p-hot').checked = product.isHot || false
+        // ✅ SAFE: Check if elements exist before setting values
+        const setValueSafely = (id, value) => {
+          const el = document.getElementById(id)
+          if (el) el.value = value || ''
+          else console.warn(`⚠️ Element not found: ${id}`)
+        }
+
+        setValueSafely('p-name', product.name)
+        setValueSafely('p-price', product.price)
+        setValueSafely('p-sku', product.sku)
+        setValueSafely('p-spiciness', product.spiciness || 1)
+        setValueSafely('p-description', product.description)
+        setValueSafely('p-full-description', product.fullDescription)
+        setValueSafely('p-specs', product.specs)
+        setValueSafely('p-ingredients', product.ingredients)
+        
+        const hotCheckbox = document.getElementById('p-hot')
+        if (hotCheckbox) hotCheckbox.checked = product.isHot || false
+        
+        // ✅ PRESERVE EXISTING IMAGES: Store URLs in hidden field
+        const existingImagesInput = document.getElementById('p-existing-images')
+        if (existingImagesInput) {
+          const imageUrls = product.images || (product.image ? [product.image] : [])
+          existingImagesInput.value = JSON.stringify(imageUrls)
+          console.log('✅ Existing images preserved:', imageUrls)
+        }
 
         // ============================================
         // PRE-CHECK CATEGORIES (Multiple Support)
@@ -10502,18 +10521,44 @@
         
         console.log('✅ Pre-checked categories:', categoriesToCheck)
 
-        if (product.images && product.images.length > 0) {
-          imagePreview.innerHTML = ''
-          imagePreview.classList.remove('hidden')
-          product.images.forEach((url, index) => {
-            const div = document.createElement('div')
-            div.className = 'relative group'
-            div.innerHTML = `
-                                  <img src="${url}" class="w-full h-24 object-cover rounded-lg border-2 border-blue-300">
-                                  <div class="absolute top-1 right-1 bg-blue-500 text-white text-xs px-2 py-1 rounded">Існуюче ${index + 1}</div>
-                              `
-            imagePreview.appendChild(div)
-          })
+        // ✅ DISPLAY EXISTING IMAGES with safe check
+        if (imagePreview) {
+          const imageUrls = product.images || (product.image ? [product.image] : [])
+          
+          if (imageUrls.length > 0) {
+            imagePreview.innerHTML = ''
+            imagePreview.classList.remove('hidden')
+            
+            imageUrls.forEach((url, index) => {
+              const div = document.createElement('div')
+              div.className = 'relative group'
+              div.innerHTML = `
+                <img src="${url}" 
+                     class="w-full h-24 object-cover rounded-lg border-2 border-blue-500" 
+                     onerror="this.src='https://placehold.co/100x100?text=IMG'">
+                <div class="absolute top-1 right-1 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow-lg">
+                  📷 Фото ${index + 1}
+                </div>
+                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition rounded-lg flex items-center justify-center">
+                  <span class="text-white text-xs font-semibold">Поточне зображення</span>
+                </div>
+              `
+              imagePreview.appendChild(div)
+            })
+            
+            console.log(`✅ Displayed ${imageUrls.length} existing images`)
+          } else {
+            // No images - show placeholder
+            imagePreview.innerHTML = `
+              <div class="col-span-4 p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 text-center">
+                <p class="text-gray-500 text-sm">📷 Фото відсутнє</p>
+                <p class="text-gray-400 text-xs mt-1">Виберіть нові файли для завантаження</p>
+              </div>
+            `
+            imagePreview.classList.remove('hidden')
+          }
+        } else {
+          console.warn('⚠️ image-preview element not found')
         }
 
         const submitBtn = productForm.querySelector('button[type="submit"]')
@@ -10602,11 +10647,27 @@
           imageUrls = await Promise.all(uploadPromises)
           console.log(`✅ All ${imageUrls.length} images uploaded successfully!`)
         } else if (isEditMode) {
-          const existingDoc = await getDoc(doc(db, 'products', editingProductId))
-          if (existingDoc.exists()) {
-            imageUrls = existingDoc.data().images || []
-            console.log(`ℹ️ Keeping ${imageUrls.length} existing images`)
+          // ✅ FIX: Use hidden field to preserve existing images
+          const existingImagesInput = document.getElementById('p-existing-images')
+          if (existingImagesInput && existingImagesInput.value) {
+            try {
+              imageUrls = JSON.parse(existingImagesInput.value)
+              console.log(`✅ Preserving ${imageUrls.length} existing images from hidden field`)
+            } catch (e) {
+              console.warn('⚠️ Failed to parse existing images, fetching from Firestore')
+              const existingDoc = await getDoc(doc(db, 'products', editingProductId))
+              if (existingDoc.exists()) {
+                imageUrls = existingDoc.data().images || []
+              }
+            }
+          } else {
+            console.log('⚠️ No existing images field found, fetching from Firestore')
+            const existingDoc = await getDoc(doc(db, 'products', editingProductId))
+            if (existingDoc.exists()) {
+              imageUrls = existingDoc.data().images || []
+            }
           }
+          console.log(`ℹ️ Keeping ${imageUrls.length} existing images`)
         } else {
           console.log('ℹ️ No images selected')
         }

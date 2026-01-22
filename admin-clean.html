@@ -413,6 +413,8 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Фото товару</label>
+                    <!-- Hidden field to preserve existing image URL -->
+                    <input type="hidden" id="product-existing-image" value="">
                     <input type="file" id="product-images" class="w-full border rounded-lg p-2" multiple accept="image/*">
                     <div id="image-preview" class="mt-3 grid grid-cols-4 gap-2 hidden"></div>
                 </div>
