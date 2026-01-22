@@ -472,8 +472,25 @@ window.openProductModal = function() {
     
     // Reset form for CREATE mode
     form.reset();
-    document.getElementById('product-id').value = '';
-    document.getElementById('product-active').checked = true;
+    
+    // ✅ NULL-SAFE: Set product-id to empty (create hidden if not exists)
+    let productIdInput = document.getElementById('product-id');
+    if (!productIdInput) {
+        productIdInput = document.createElement('input');
+        productIdInput.type = 'hidden';
+        productIdInput.id = 'product-id';
+        form.appendChild(productIdInput);
+        console.log('✅ Created hidden input: product-id');
+    }
+    productIdInput.value = '';
+    
+    // ✅ NULL-SAFE: Set product-active checkbox
+    let productActiveCheckbox = document.getElementById('product-active');
+    if (productActiveCheckbox) {
+        productActiveCheckbox.checked = true;
+    } else {
+        console.warn('⚠️ product-active checkbox not found');
+    }
     
     // Clear image preview
     const imagePreview = document.getElementById('image-preview');
@@ -490,7 +507,8 @@ window.openProductModal = function() {
     
     // Focus first field
     setTimeout(() => {
-        document.getElementById('product-name')?.focus();
+        const nameInput = document.getElementById('product-name');
+        if (nameInput) nameInput.focus();
     }, 100);
     
     console.log('➕ Product modal opened (CREATE mode)');
@@ -530,26 +548,97 @@ window.startEditProduct = async function(productId) {
         
         const product = productSnap.data();
         
-        // ✅ STEP 2: POPULATE FORM FIELDS
-        document.getElementById('product-id').value = productId;
-        document.getElementById('product-name').value = product.name || '';
-        document.getElementById('product-price').value = product.price || 0;
-        document.getElementById('product-sku').value = product.sku || '';
-        document.getElementById('product-category').value = product.category || '';
-        document.getElementById('product-spiciness').value = product.spiciness || 1;
-        document.getElementById('product-description').value = product.description || '';
-        document.getElementById('product-stock').value = product.stock || 0;
-        document.getElementById('product-active').checked = product.isVisible !== false;
+        // ✅ STEP 2: POPULATE FORM FIELDS WITH NULL-SAFE HELPER
+        /**
+         * Null-safe helper: finds element or creates if missing
+         */
+        const setValueSafely = (elementId, value, isCheckbox = false) => {
+            let element = document.getElementById(elementId);
+            
+            if (!element) {
+                console.warn(`⚠️ Element '${elementId}' not found, attempting to create...`);
+                
+                // Try to find the form to append missing elements
+                const form = document.getElementById('product-form');
+                if (form && elementId.startsWith('product-')) {
+                    // Create missing input dynamically
+                    element = document.createElement('input');
+                    element.type = isCheckbox ? 'checkbox' : 'hidden';
+                    element.id = elementId;
+                    form.appendChild(element);
+                    console.log(`✅ Created missing element: ${elementId}`);
+                } else {
+                    console.error(`❌ Cannot create element '${elementId}' - form not found`);
+                    return false;
+                }
+            }
+            
+            // Set value based on type
+            if (isCheckbox) {
+                element.checked = value;
+            } else {
+                element.value = value;
+            }
+            
+            return true;
+        };
         
-        // ✅ STEP 3: PRESERVE EXISTING IMAGE URL in hidden field
-        const existingImageInput = document.getElementById('product-existing-image');
+        // Populate all form fields safely
+        setValueSafely('product-id', productId);
+        setValueSafely('product-name', product.name || '');
+        setValueSafely('product-price', product.price || 0);
+        setValueSafely('product-sku', product.sku || '');
+        setValueSafely('product-category', product.category || '');
+        setValueSafely('product-spiciness', product.spiciness || 1);
+        setValueSafely('product-description', product.description || '');
+        setValueSafely('product-stock', product.stock || 0);
+        setValueSafely('product-active', product.isVisible !== false, true);
+        
+        // ✅ STEP 3: PRESERVE EXISTING IMAGE URL - FIND OR CREATE
+        let existingImageInput = document.getElementById('product-existing-image');
+        
+        if (!existingImageInput) {
+            // Create hidden input for existing image URL
+            const form = document.getElementById('product-form');
+            if (form) {
+                existingImageInput = document.createElement('input');
+                existingImageInput.type = 'hidden';
+                existingImageInput.id = 'product-existing-image';
+                existingImageInput.name = 'existing-image';
+                form.appendChild(existingImageInput);
+                console.log('✅ Created hidden input: product-existing-image');
+            }
+        }
+        
         if (existingImageInput && product.image) {
             existingImageInput.value = product.image;
             console.log('✅ Existing image URL preserved:', product.image);
         }
         
-        // ✅ STEP 4: UPDATE IMAGE PREVIEW
-        const imagePreview = document.getElementById('image-preview');
+        // ✅ STEP 4: UPDATE IMAGE PREVIEW - NULL-SAFE WITH DYNAMIC CREATION
+        let imagePreview = document.getElementById('image-preview');
+        
+        if (!imagePreview) {
+            console.warn('⚠️ image-preview not found, creating dynamically...');
+            
+            // Try to find a place to insert image preview
+            const form = document.getElementById('product-form');
+            const imageInput = document.getElementById('product-images');
+            
+            if (form && imageInput) {
+                // Create image preview container
+                imagePreview = document.createElement('div');
+                imagePreview.id = 'image-preview';
+                imagePreview.className = 'mt-3 grid grid-cols-4 gap-2';
+                
+                // Insert after the file input
+                imageInput.parentNode.insertBefore(imagePreview, imageInput.nextSibling);
+                console.log('✅ Created image-preview container');
+            } else {
+                console.error('❌ Cannot create image preview - form or file input not found');
+            }
+        }
+        
         if (imagePreview) {
             imagePreview.innerHTML = ''; // Clear existing
             
@@ -562,12 +651,16 @@ window.startEditProduct = async function(productId) {
                          class="w-full h-24 object-cover rounded-lg border-2 border-blue-500" 
                          onerror="this.src='https://placehold.co/100x100?text=IMG'"
                          alt="Current image">
+                    <div class="absolute top-1 right-1 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow-lg">
+                        📷 Поточне
+                    </div>
                     <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition rounded-lg flex items-center justify-center">
-                        <span class="text-white text-xs font-semibold">Поточне фото</span>
+                        <span class="text-white text-xs font-semibold">Існуюче фото</span>
                     </div>
                 `;
                 imagePreview.appendChild(imgDiv);
                 imagePreview.classList.remove('hidden');
+                console.log('✅ Image preview displayed');
             } else {
                 // No image - show placeholder
                 imagePreview.innerHTML = `
@@ -577,6 +670,7 @@ window.startEditProduct = async function(productId) {
                     </div>
                 `;
                 imagePreview.classList.remove('hidden');
+                console.log('ℹ️ No image, showing placeholder');
             }
         }
         
