@@ -867,6 +867,13 @@
     const FREE_DELIVERY_THRESHOLD = 1100
     const DELIVERY_COST = 70
 
+    // ============================================
+    // ABANDONED CART: Order submission flag
+    // Prevents Telegram notification if order was placed
+    // ============================================
+    let isOrderSubmitted = false
+    let currentAbandonedCartData = null // Stores cart data to send on page exit
+
     // Initialize Lucide icons
     lucide.createIcons()
 
@@ -1092,7 +1099,115 @@
         })
       }
 
+      // ============================================
+      // 🚨 PAGE LEAVE DETECTION - Telegram notification trigger
+      // ONLY sends if: user leaves AND hasn't placed order
+      // ============================================
+      
+      let hasTriggeredPageLeave = false
+      
+      function handlePageLeave(eventType) {
+        // ============================================
+        // GUARD 1: Already triggered (prevent duplicates)
+        // ============================================
+        if (hasTriggeredPageLeave) {
+          console.log(`⏭️ Page leave (${eventType}): Already triggered, skipping`)
+          return
+        }
+        
+        // ============================================
+        // GUARD 2: Order was submitted - NO notification
+        // ============================================
+        if (isOrderSubmitted) {
+          console.log(`✅ Page leave (${eventType}): Order submitted, no notification needed`)
+          return
+        }
+        
+        // ============================================
+        // GUARD 3: No captured data - nothing to send
+        // ============================================
+        if (!currentAbandonedCartData) {
+          console.log(`⏭️ Page leave (${eventType}): No cart data captured, skipping`)
+          return
+        }
+        
+        // ============================================
+        // GUARD 4: Check 24h TTL to prevent spam
+        // ============================================
+        const phone = currentAbandonedCartData.customer?.phone
+        if (!phone) {
+          console.log(`⏭️ Page leave (${eventType}): No phone in captured data`)
+          return
+        }
+        
+        const notificationKey = `telegram_notified_${phone}`
+        const lastNotified = localStorage.getItem(notificationKey)
+        const TTL_HOURS = 24
+        const TTL_MS = TTL_HOURS * 60 * 60 * 1000
+        
+        if (lastNotified) {
+          const timeSinceNotified = Date.now() - parseInt(lastNotified)
+          if (timeSinceNotified < TTL_MS) {
+            const hoursAgo = Math.round(timeSinceNotified / 1000 / 60 / 60 * 10) / 10
+            console.log(`📱 Page leave (${eventType}): Already notified ${hoursAgo}h ago, skipping`)
+            return
+          }
+        }
+        
+        // ============================================
+        // ALL GUARDS PASSED - Send notification!
+        // ============================================
+        hasTriggeredPageLeave = true
+        console.log(`🚨 PAGE LEAVE (${eventType}): User leaving without order - sending Telegram!`)
+        
+        // Mark as notified to prevent spam
+        localStorage.setItem(notificationKey, Date.now().toString())
+        
+        // Get fresh form data (user might have updated fields)
+        const freshTelegram = document.getElementById('telegram')?.value.trim() || ''
+        const freshFullName = document.getElementById('fullName')?.value.trim() || ''
+        
+        const freshCartData = {
+          ...currentAbandonedCartData,
+          customer: {
+            ...currentAbandonedCartData.customer,
+            fullName: freshFullName || currentAbandonedCartData.customer.fullName,
+            telegram: freshTelegram || currentAbandonedCartData.customer.telegram
+          }
+        }
+        
+        // Send notification (with keepalive for tab close)
+        notifyAbandonedCartToTelegram(freshCartData).catch(e => {
+          console.warn('📱 Telegram notification failed:', e.message)
+        })
+      }
+      
+      // ============================================
+      // EVENT LISTENERS: Multiple triggers for reliability
+      // ============================================
+      
+      // visibilitychange - Standard, fires when tab becomes hidden
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+          handlePageLeave('visibilitychange')
+        } else {
+          // User came back - reset for future leave
+          hasTriggeredPageLeave = false
+        }
+      })
+      
+      // pagehide - Reliable on mobile/iOS Safari
+      window.addEventListener('pagehide', (e) => {
+        handlePageLeave('pagehide')
+      })
+      
+      // beforeunload - Desktop browsers (tab close)
+      window.addEventListener('beforeunload', (e) => {
+        handlePageLeave('beforeunload')
+      })
+
       console.log('✅ All event listeners attached successfully')
+      console.log('✅ Page leave detection enabled for Telegram notifications')
       console.log('✅ Checkout page initialized successfully')
     })
 
@@ -2073,7 +2188,10 @@
       }
     }
 
-    // Auto-save abandoned cart when phone is valid
+    // ============================================
+    // ABANDONED CART: Capture data (NO Telegram notification here)
+    // Telegram notification is ONLY sent when user LEAVES the page
+    // ============================================
     async function saveAbandonedCart() {
       try {
         // Get raw form values (even if some are empty)
@@ -2083,16 +2201,17 @@
         const comment = document.getElementById('comment')?.value.trim() || ''
 
         // PRIORITY CHECK: Phone must be at least 10 characters
-        // Even if name is empty, we save it (phone is the retargeting key)
         if (phone.length < 10) {
-          console.log('⏭️ Phone too short (<10 chars), skipping abandoned cart save')
+          console.log('⏭️ Phone too short (<10 chars), skipping abandoned cart capture')
+          currentAbandonedCartData = null
           return
         }
 
         // Get current cart items
         const cart = JSON.parse(localStorage.getItem('latiao_cart') || '[]')
         if (cart.length === 0) {
-          console.log('⏭️ Cart is empty, skipping abandoned cart save')
+          console.log('⏭️ Cart is empty, skipping abandoned cart capture')
+          currentAbandonedCartData = null
           return
         }
 
@@ -2127,13 +2246,11 @@
           deliveryInfo.address = upCity && upPostcode ? `${upCity}, Індекс: ${upPostcode}` : upCity || 'Не вказано'
         }
 
-        // Prepare abandoned cart data
-        // IMPORTANT: Save raw values, even if name is empty
-        // Phone is mandatory (checked above), but name can be empty
+        // Prepare abandoned cart data (capture only, NO Telegram yet)
         const abandonedCartData = {
           customer: {
             fullName: fullName || 'Не вказано',
-            phone: phone, // Always present (validated above)
+            phone: phone,
             telegram: telegram || 'Не вказано'
           },
           delivery: deliveryInfo,
@@ -2149,7 +2266,6 @@
           total: total,
           updatedAt: serverTimestamp(),
           status: 'browsing',
-          // Initialize history array with creation event
           history: [{
             action: 'created',
             timestamp: new Date().toISOString(),
@@ -2157,15 +2273,94 @@
           }]
         }
 
-        // Use phone as document ID to avoid duplicates (upsert)
+        // ============================================
+        // STEP 1: Save to Firestore (for recovery links)
+        // ============================================
         const { doc: firestoreDoc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')
         const cartRef = firestoreDoc(db, 'abandoned_carts', phone)
-
         await setDoc(cartRef, abandonedCartData)
-        console.log('✅ Abandoned cart auto-saved for phone:', phone)
+        console.log('✅ Abandoned cart saved to Firestore:', phone)
+
+        // ============================================
+        // STEP 2: Store data for page exit notification
+        // Telegram notification will ONLY be sent when user LEAVES
+        // ============================================
+        currentAbandonedCartData = abandonedCartData
+        console.log('📝 Abandoned cart data captured (Telegram will send on page exit)')
 
       } catch (error) {
         console.error('⚠️ Error saving abandoned cart (non-critical):', error)
+      }
+    }
+
+    async function notifyAbandonedCartToTelegram(cartData) {
+      try {
+        console.log('📱 Starting Telegram notification process...')
+        
+        // Fetch Telegram config
+        const { doc: firestoreDoc, getDoc: firestoreGetDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')
+        const telegramDoc = await firestoreGetDoc(firestoreDoc(db, 'settings', 'telegram_config'))
+        
+        if (!telegramDoc.exists()) {
+          console.log('📱 No Telegram config found in Firestore')
+          return
+        }
+        
+        const config = telegramDoc.data()
+        console.log('📱 Telegram config loaded:', { enabled: config.enabled, hasToken: !!config.botToken, hasChatId: !!config.chatId })
+        
+        if (!config.enabled) {
+          console.log('📱 Telegram notifications are disabled')
+          return
+        }
+        
+        if (!config.botToken || !config.chatId) {
+          console.log('📱 Telegram config incomplete - missing botToken or chatId')
+          return
+        }
+
+        // Build message
+        const customer = cartData.customer || {}
+        const items = cartData.items || []
+        const total = cartData.total || items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0)
+        
+        const message = `🛒 *Покинутий кошик!*
+
+👤 *Клієнт:* ${customer.fullName || 'Не вказано'}
+📞 *Телефон:* \`${customer.phone || 'Не вказано'}\`
+💬 *Telegram:* ${customer.telegram || '—'}
+
+🛍️ *Товарів:* ${items.length}
+💰 *Сума:* ${total} грн
+
+📅 ${new Date().toLocaleString('uk-UA')}`
+
+        // Send via Telegram Bot API
+        const url = `https://api.telegram.org/bot${config.botToken}/sendMessage`
+        console.log('📱 Sending to Telegram API...')
+        
+        // CRITICAL: keepalive: true ensures request survives tab close
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: config.chatId,
+            text: message,
+            parse_mode: 'Markdown'
+          }),
+          keepalive: true // MUST be true to survive page navigation/close
+        })
+
+        const result = await response.json()
+        console.log('📱 Telegram API response:', result)
+        
+        if (result.ok) {
+          console.log('✅ Telegram notification sent successfully!')
+        } else {
+          console.error('❌ Telegram API error:', result.description)
+        }
+      } catch (error) {
+        console.error('❌ Telegram notification error:', error)
       }
     }
 
@@ -2298,6 +2493,14 @@
       }
 
       console.log('✅ Form validation passed - proceeding with order')
+
+      // ============================================
+      // CRITICAL: Mark order as submitted to prevent
+      // Abandoned Cart notification on page leave
+      // ============================================
+      isOrderSubmitted = true
+      currentAbandonedCartData = null // Clear pending data
+      console.log('🚫 Abandoned cart notification disabled (order submitted)')
 
       // Get validated values
       const fullName = document.getElementById('fullName').value.trim()

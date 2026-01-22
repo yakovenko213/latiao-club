@@ -12,12 +12,15 @@
     // Initialize popup manager
     async function initPopupManager() {
         try {
-            // Wait for Firebase to be ready
-            if (typeof db === 'undefined') {
-                console.warn('⚠️ Firebase not initialized, retrying...');
-                setTimeout(initPopupManager, 1000);
+            // Wait for Firebase to be ready (check window.firebaseInit)
+            if (typeof window.firebaseInit === 'undefined' || !window.firebaseInit.db) {
+                console.warn('⚠️ Firebase not initialized, retrying in 500ms...');
+                setTimeout(initPopupManager, 500);
                 return;
             }
+
+            // Get Firebase references from window
+            const { db, collection, getDocs, query, where } = window.firebaseInit;
 
             console.log('🎯 Initializing popup manager...');
 
@@ -29,30 +32,44 @@
 
             activePopups = [];
             snapshot.forEach(doc => {
-                activePopups.push({ id: doc.id, ...doc.data() });
+                const popupData = { id: doc.id, ...doc.data() };
+                activePopups.push(popupData);
+                console.log('📢 Found active popup:', {
+                    id: doc.id,
+                    title: popupData.title,
+                    triggerType: popupData.triggerType,
+                    isActive: popupData.isActive
+                });
             });
 
-            console.log(`✅ Loaded ${activePopups.length} active popups`);
+            console.log(`✅ Loaded ${activePopups.length} active popups`, activePopups);
 
             if (activePopups.length === 0) {
+                console.log('ℹ️ No active popups found');
                 return;
             }
 
-            // Sort by trigger priority (exit_intent > scroll > timer)
+            // Sort by trigger priority (exit_intent > scroll > idle_cart > timer)
             activePopups.sort((a, b) => {
-                const priority = { exit_intent: 3, scroll: 2, timer: 1 };
+                const priority = { exit_intent: 4, scroll: 3, idle_cart: 2, timer: 1 };
                 return (priority[b.triggerType] || 0) - (priority[a.triggerType] || 0);
             });
+
+            console.log('📋 Sorted popups by priority:', activePopups.map(p => `${p.triggerType}: ${p.title}`));
 
             // Set up triggers for each popup
             activePopups.forEach(popup => {
                 if (shouldShowPopup(popup)) {
+                    console.log(`✨ Setting up trigger for: ${popup.title}`);
                     setupPopupTrigger(popup);
+                } else {
+                    console.log(`⏭️ Skipping popup (already shown): ${popup.title}`);
                 }
             });
 
         } catch (error) {
             console.error('❌ Error initializing popup manager:', error);
+            console.error('Error details:', error.message, error.stack);
         }
     }
 
@@ -98,20 +115,16 @@
 
         switch (triggerType) {
             case 'timer':
-                // Show after X seconds
                 setTimeout(() => {
                     showPopup(popup);
                 }, triggerValue * 1000);
                 break;
 
-            case 'scroll':
-                // Show when user scrolls X% of page
+            case 'scroll': {
                 let scrollTriggered = false;
                 const handleScroll = () => {
                     if (scrollTriggered) return;
-
                     const scrollPercent = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
-
                     if (scrollPercent >= triggerValue) {
                         scrollTriggered = true;
                         showPopup(popup);
@@ -120,14 +133,12 @@
                 };
                 window.addEventListener('scroll', handleScroll);
                 break;
+            }
 
-            case 'exit_intent':
-                // Show when mouse leaves viewport (exit intent)
+            case 'exit_intent': {
                 let exitTriggered = false;
                 const handleMouseLeave = (e) => {
                     if (exitTriggered) return;
-
-                    // Trigger only when mouse leaves from top of viewport
                     if (e.clientY <= 0) {
                         exitTriggered = true;
                         showPopup(popup);
@@ -136,6 +147,121 @@
                 };
                 document.addEventListener('mouseleave', handleMouseLeave);
                 break;
+            }
+
+            case 'idle_cart': {
+                // Idle Cart trigger - Enhanced with detailed logging
+                let idleTimer = null;
+                let lastCartState = null;
+                const idleTime = popup.idleTime || 60; // seconds
+                const minCartValue = popup.minCartValue || 0;
+
+                console.log(`🛒 Idle Cart Setup:`, {
+                    idleTime: `${idleTime}s`,
+                    minCartValue: `${minCartValue} грн`,
+                    popupTitle: popup.title
+                });
+
+                function getCart() {
+                    try {
+                        const cartRaw = localStorage.getItem('latiao_cart');
+                        if (!cartRaw) return null;
+                        const cart = JSON.parse(cartRaw);
+                        if (!Array.isArray(cart)) return null;
+                        return cart;
+                    } catch (e) {
+                        console.error('❌ Error reading cart:', e);
+                        return null;
+                    }
+                }
+
+                function getCartTotal(cart) {
+                    if (!cart) return 0;
+                    return cart.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
+                }
+
+                function startIdleTimer() {
+                    if (idleTimer) {
+                        console.log('⏸️ Timer already running, skipping...');
+                        return;
+                    }
+                    
+                    idleTimer = setTimeout(() => {
+                        console.log('🚀 BOOM! Showing Idle Cart popup now.');
+                        showPopup(popup);
+                    }, idleTime * 1000);
+                    
+                    console.log(`⏳ Starting timer for ${idleTime} seconds...`);
+                }
+
+                function cancelIdleTimer() {
+                    if (idleTimer) {
+                        clearTimeout(idleTimer);
+                        idleTimer = null;
+                        console.log('🛑 Idle Cart timer cancelled');
+                    }
+                }
+
+                function cartWatcher() {
+                    const cart = getCart();
+                    const cartTotal = getCartTotal(cart);
+                    const hasItems = cart && cart.length > 0;
+                    const meetsValue = cartTotal >= minCartValue;
+
+                    console.log(`🛒 Cart Check:`, {
+                        hasItems,
+                        cartTotal: `${cartTotal} грн`,
+                        minRequired: `${minCartValue} грн`,
+                        meetsValue,
+                        itemsCount: cart ? cart.length : 0
+                    });
+
+                    if (hasItems && meetsValue) {
+                        console.log(`✅ Cart Value: ${cartTotal}, Min Required: ${minCartValue} -> Condition Met`);
+                        if (!idleTimer) {
+                            startIdleTimer();
+                        }
+                    } else {
+                        if (!hasItems) {
+                            console.log('⚠️ No items in cart, timer not started');
+                        } else if (!meetsValue) {
+                            console.log(`⚠️ Cart value too low (${cartTotal} < ${minCartValue}), timer not started`);
+                        }
+                        cancelIdleTimer();
+                    }
+                    lastCartState = JSON.stringify(cart);
+                }
+
+                // Watch for cart changes via storage event
+                window.addEventListener('storage', (e) => {
+                    if (e.key === 'latiao_cart') {
+                        console.log('📦 Cart changed (storage event)');
+                        cartWatcher();
+                    }
+                });
+
+                // Also poll every 2s in case storage event doesn't fire
+                const pollInterval = setInterval(() => {
+                    const cart = getCart();
+                    const state = JSON.stringify(cart);
+                    if (state !== lastCartState) {
+                        console.log('📦 Cart changed (polling detected)');
+                        cartWatcher();
+                    }
+                }, 2000);
+
+                // Cancel timer on checkout (order placed)
+                window.addEventListener('orderPlaced', () => {
+                    console.log('✅ Order placed - cancelling idle cart timer');
+                    cancelIdleTimer();
+                    clearInterval(pollInterval);
+                });
+
+                // Initial check on page load
+                console.log('🔍 Running initial cart check...');
+                cartWatcher();
+                break;
+            }
 
             default:
                 console.warn(`⚠️ Unknown trigger type: ${triggerType}`);
@@ -149,60 +275,83 @@
             return;
         }
 
-        console.log(`🎉 Showing popup: ${popup.title}`);
+        console.log(`🎉 SHOWING POPUP NOW: "${popup.title}"`);
+        console.log('Popup details:', {
+            id: popup.id,
+            title: popup.title,
+            triggerType: popup.triggerType,
+            frequency: popup.frequency
+        });
+        
         displayedPopups.add(popup.id);
 
-        // Create modal HTML
+        // Create modal HTML with premium design
         const modal = document.createElement('div');
         modal.id = `popup-modal-${popup.id}`;
-        modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-fade-in';
+        modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4';
         modal.style.animation = 'fadeIn 0.3s ease-out';
 
         const hasImage = popup.imageUrl && popup.imageUrl.trim() !== '';
         const hasButton = popup.buttonText && popup.buttonText.trim() !== '';
 
         modal.innerHTML = `
-            <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden animate-scale-in" style="animation: scaleIn 0.3s ease-out">
+            <div class="relative bg-white rounded-2xl w-full max-w-md mx-4 shadow-2xl overflow-hidden transform transition-all" style="animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)">
+                
+                <!-- Close Button - Top Right Corner -->
+                <button onclick="closePopup('${popup.id}')" class="absolute top-4 right-4 z-10 p-2 rounded-full hover:bg-gray-100 transition-all duration-200 group">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 group-hover:text-gray-600 transition-colors">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+
                 ${hasImage ? `
-                    <div class="relative h-48 bg-gradient-to-br from-orange-100 to-orange-50">
-                        <img src="${popup.imageUrl}" alt="${escapeHtml(popup.title)}" class="w-full h-full object-cover">
+                    <!-- Hero Image Banner -->
+                    <div class="relative w-full h-56 bg-gradient-to-br from-orange-50 to-orange-100 overflow-hidden">
+                        <img src="${popup.imageUrl}" 
+                             alt="${escapeHtml(popup.title)}" 
+                             class="w-full h-full object-cover"
+                             loading="lazy">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                     </div>
                 ` : ''}
                 
-                <div class="p-6">
-                    <div class="flex items-start justify-between gap-4 mb-4">
-                        <h2 class="text-2xl font-bold text-gray-900">${escapeHtml(popup.title)}</h2>
-                        <button onclick="closePopup('${popup.id}')" class="flex-shrink-0 p-1 hover:bg-gray-100 rounded-full transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 hover:text-gray-600">
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                            </svg>
-                        </button>
-                    </div>
+                <!-- Content Section -->
+                <div class="p-8 text-center">
                     
-                    <p class="text-gray-600 mb-6 whitespace-pre-wrap">${escapeHtml(popup.content)}</p>
+                    <!-- Title -->
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4 leading-tight">
+                        ${escapeHtml(popup.title)}
+                    </h2>
                     
-                    <div class="flex gap-3">
-                        ${hasButton && popup.buttonLink ? `
-                            <a href="${popup.buttonLink}" class="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-orange-600 hover:to-orange-700 transition-all text-center shadow-lg hover:shadow-xl">
-                                ${escapeHtml(popup.buttonText)}
-                            </a>
-                        ` : hasButton ? `
-                            <button onclick="closePopup('${popup.id}')" class="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl">
-                                ${escapeHtml(popup.buttonText)}
-                            </button>
-                        ` : ''}
-                        
-                        <button onclick="closePopup('${popup.id}')" class="px-6 py-3 text-gray-600 hover:text-gray-900 font-medium transition-colors">
-                            Закрити
-                        </button>
-                    </div>
+                    <!-- Description -->
+                    <p class="text-gray-600 text-base leading-relaxed mb-6 whitespace-pre-wrap max-w-sm mx-auto">
+                        ${escapeHtml(popup.content)}
+                    </p>
+                    
+                    <!-- CTA Buttons -->
+                    ${hasButton ? `
+                        <div class="flex flex-col gap-3">
+                            ${popup.buttonLink ? `
+                                <a href="${popup.buttonLink}" 
+                                   class="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-orange-600 hover:to-red-600 transform hover:scale-105 hover:shadow-xl transition-all duration-300 inline-block text-center">
+                                    ${escapeHtml(popup.buttonText)}
+                                </a>
+                            ` : `
+                                <button onclick="closePopup('${popup.id}')" 
+                                        class="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-orange-600 hover:to-red-600 transform hover:scale-105 hover:shadow-xl transition-all duration-300">
+                                    ${escapeHtml(popup.buttonText)}
+                                </button>
+                            `}
+                        </div>
+                    ` : ''}
                 </div>
             </div>
         `;
 
         // Append to body
         document.body.appendChild(modal);
+        console.log('✅ Modal appended to DOM');
 
         // Prevent body scroll
         document.body.style.overflow = 'hidden';
@@ -256,20 +405,42 @@
         return div.innerHTML;
     }
 
-    // Add CSS animations
+    // Add CSS animations with enhanced effects
     const style = document.createElement('style');
     style.textContent = `
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from { 
+                opacity: 0; 
+            }
+            to { 
+                opacity: 1; 
+            }
         }
         @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
+            from { 
+                opacity: 1; 
+            }
+            to { 
+                opacity: 0; 
+            }
         }
         @keyframes scaleIn {
-            from { transform: scale(0.9); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
+            from { 
+                transform: scale(0.95) translateY(10px); 
+                opacity: 0; 
+            }
+            to { 
+                transform: scale(1) translateY(0); 
+                opacity: 1; 
+            }
+        }
+        
+        /* Mobile responsive adjustments */
+        @media (max-width: 640px) {
+            [id^="popup-modal-"] > div {
+                max-width: calc(100vw - 2rem);
+                margin: 0 1rem;
+            }
         }
     `;
     document.head.appendChild(style);

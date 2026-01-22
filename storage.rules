@@ -12,6 +12,15 @@ service firebase.storage {
       allow write: if request.auth != null;
     }
     
+    // Pop-up images - uploaded by authenticated admins only, readable by all
+    match /popups/{imageId} {
+      // Allow public read access for pop-up images
+      allow read: if true;
+      
+      // Only authenticated users (admins) can upload/update/delete
+      allow write: if request.auth != null;
+    }
+    
     // Default: deny all other access
     match /{allPaths=**} {
       allow read, write: if false;

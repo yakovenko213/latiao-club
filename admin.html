@@ -1038,6 +1038,12 @@
                 <i data-lucide="archive" class="w-4 h-4"></i>
                 <span id="archive-toggle-text-payments">🗄️ Показати архів</span>
               </button>
+              <button onclick="openPaymentSettingsModal()"
+                class="flex items-center gap-2 px-4 py-2 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-lg font-semibold transition"
+                title="Налаштування сповіщень про неуспішні оплати">
+                <i data-lucide="settings" class="w-4 h-4"></i>
+                <span>Налаштування</span>
+              </button>
               <button onclick="loadAbandonedOrders()"
                 class="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold transition">
                 <i data-lucide="refresh-cw" class="w-4 h-4"></i>
@@ -1283,15 +1289,15 @@
         </div>
         <!-- Create/Edit Form -->
 
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-6">
+        <div id="popup-form-section" class="bg-white rounded-xl border border-gray-200 shadow-sm mb-6">
 
           <div class="px-6 py-4 border-b border-gray-200">
 
-            <h3 class="text-lg font-bold text-gray-900">Створити новий Pop-up</h3>
+            <h3 id="popup-form-title" class="text-lg font-bold text-gray-900">Створити новий Pop-up</h3>
 
           </div>
 
-          <form id="popup-form" class="p-6 space-y-6">
+          <form id="popup-form" class="p-6 space-y-6" onsubmit="savePopup(event)">
             <!-- Title -->
 
             <div>
@@ -1356,36 +1362,39 @@
               <div class="grid grid-cols-2 gap-4">
                 <!-- Trigger Type -->
 
+
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Типтригера</label>
-
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Тип тригера</label>
                   <select id="popup-trigger-type"
-                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-spicy outline-none">
-
-
+                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-spicy outline-none"
+                    onchange="onPopupTriggerTypeChange()">
                     <option value="timer">⏱️ Таймер (секунди)</option>
-
-
                     <option value="scroll">📜 Прокрутка (%)</option>
-
-
                     <option value="exit_intent">🚪 Вихід з сайту</option>
-
+                    <option value="idle_cart">🛒 Idle Cart (Abandoned Cart)</option>
                   </select>
-
                 </div>
-                <!-- Trigger Value -->
 
+                <!-- Standard Trigger Value -->
                 <div id="trigger-value-container">
-                  <labelclass="block text-sm font-medium text-gray-700 mb-2">
-                    Значення</label>
-                    <input type="number" id="popup-trigger-value"
-                      class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-spicy outline-none"
-                      placeholder="5" min="0">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Значення</label>
+                  <input type="number" id="popup-trigger-value"
+                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-spicy outline-none"
+                    placeholder="5" min="0">
+                  <p class="text-xs text-gray-500 mt-1">Секунди або % прокрутки</p>
+                </div>
 
-                    <p class="text-xs text-gray-500 mt-1">Секунди або % прокрутки
-                    </p>
-
+                <!-- Idle Cart Fields -->
+                <div id="idle-cart-fields" class="hidden">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Idle Time (секунди)</label>
+                  <input type="number" id="popup-idle-time"
+                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-spicy outline-none"
+                    placeholder="60" min="1">
+                  <label class="block text-sm font-medium text-gray-700 mb-2 mt-4">Мінімальна сума кошика (грн, опціонально)</label>
+                  <input type="number" id="popup-min-cart-value"
+                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-spicy outline-none"
+                    placeholder="500" min="0">
+                  <p class="text-xs text-gray-500 mt-1">Показувати лише якщо сума кошика більше цієї суми</p>
                 </div>
                 <!-- Frequency -->
 
@@ -1462,17 +1471,15 @@
 
           </div>
 
+          <!-- Loading Spinner -->
+          <div id="popups-loading" class="text-center py-10">
+            <div class="animate-spin w-8 h-8 border-4 border-spicy border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p class="text-gray-600">Завантаження pop-ups...</p>
+          </div>
+
+          <!-- Popups List Container -->
           <div id="popups-list" class="divide-y divide-gray-200">
-
-            <div class="text-center py-10">
-
-              <div class="animate-spin w-8 h-8 border-4 border-spicy border-t-transparent rounded-full mx-auto mb-4">
-              </div>
-
-              <p class="text-gray-600">Завантаження pop-ups...</p>
-
-            </div>
-
+            <!-- Popups will be loaded here by JS -->
           </div>
 
         </div>
@@ -1616,6 +1623,13 @@
                 <button id="stats-filter-all" 
                   class="px-4 py-2 bg-gray-500 text-white text-sm font-medium rounded-lg hover:bg-gray-600 transition-colors">
                   Весь час
+                </button>
+                <!-- AI Analysis Button -->
+                <button id="btn-ai-analyze" 
+                  onclick="analyzeStatsWithAI()"
+                  class="px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-sm font-medium rounded-lg hover:from-purple-600 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl flex items-center gap-2">
+                  <span>🤖</span>
+                  <span>AI Аналіз</span>
                 </button>
               </div>
               <div id="stats-date-label" class="ml-auto text-sm text-gray-500 font-medium">
@@ -1979,6 +1993,69 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
               </svg>
               Скинути статистику
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- ============================================ -->
+      <!-- MODAL: AI Analysis Results -->
+      <!-- ============================================ -->
+      <div id="modal-ai-analysis" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-center justify-center overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 my-8 overflow-hidden animate-in fade-in zoom-in duration-200">
+          <!-- Header -->
+          <div class="bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-4">
+            <div class="flex items-center justify-between">
+              <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                <span class="text-2xl">🧠</span>
+                Висновки штучного інтелекту
+              </h2>
+              <button onclick="closeAIModal()" class="text-white/80 hover:text-white transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Body -->
+          <div class="p-6 max-h-[70vh] overflow-y-auto">
+            <!-- Loading State -->
+            <div id="ai-loading" class="text-center py-10">
+              <div class="relative w-20 h-20 mx-auto mb-4">
+                <div class="absolute inset-0 rounded-full border-4 border-purple-200"></div>
+                <div class="absolute inset-0 rounded-full border-4 border-purple-600 border-t-transparent animate-spin"></div>
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <span class="text-2xl">🤖</span>
+                </div>
+              </div>
+              <p class="text-lg font-semibold text-gray-700">AI аналізує дані...</p>
+              <p class="text-sm text-gray-500 mt-1">Зазвичай це займає 5-15 секунд</p>
+            </div>
+            
+            <!-- Result Content -->
+            <div id="ai-result" class="hidden prose prose-sm max-w-none">
+              <!-- AI response will be rendered here -->
+            </div>
+            
+            <!-- Error State -->
+            <div id="ai-error" class="hidden bg-red-50 border border-red-200 rounded-xl p-4">
+              <div class="flex items-start gap-3">
+                <span class="text-2xl">❌</span>
+                <div>
+                  <h3 class="font-bold text-red-800">Помилка аналізу</h3>
+                  <p id="ai-error-message" class="text-sm text-red-700 mt-1"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Footer -->
+          <div class="px-6 py-4 bg-gray-50 flex justify-between items-center">
+            <p class="text-xs text-gray-500">💡 Powered by Google Gemini AI</p>
+            <button onclick="closeAIModal()" 
+              class="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors">
+              Закрити
             </button>
           </div>
         </div>
@@ -2998,6 +3075,81 @@
           </div>
 
         </div>
+
+        <!-- ============================================ -->
+        <!-- 📱 TELEGRAM NOTIFICATIONS SECTION -->
+        <!-- ============================================ -->
+        <div class="border-t pt-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="p-2 bg-blue-500 rounded-lg">
+              <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+              </svg>
+            </div>
+            <div>
+              <h4 class="font-bold text-gray-900">Telegram сповіщення</h4>
+              <p class="text-xs text-gray-600">Отримуйте миттєві сповіщення про покинуті кошики</p>
+            </div>
+          </div>
+
+          <!-- Telegram Enable Toggle -->
+          <div class="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-xl p-5 border border-cyan-200 mb-4">
+            <label class="flex items-center justify-between cursor-pointer">
+              <div class="flex items-center gap-3">
+                <div class="p-2 bg-cyan-500 rounded-lg">
+                  <i data-lucide="bell" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                  <div class="font-bold text-gray-900">✅ Увімкнути сповіщення</div>
+                  <div class="text-xs text-gray-600 mt-0.5">Отримувати повідомлення в Telegram</div>
+                </div>
+              </div>
+              <div class="relative">
+                <input type="checkbox" id="telegram-enabled" class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
+              </div>
+            </label>
+          </div>
+
+          <!-- Bot Token -->
+          <div class="mb-4">
+            <label class="block text-sm font-semibold text-gray-900 mb-2">
+              🤖 Bot Token
+            </label>
+            <div class="relative">
+              <input type="password" id="telegram-bot-token" 
+                class="w-full border-2 border-gray-200 rounded-xl p-3 pr-12 text-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 transition font-mono"
+                placeholder="123456789:ABCdefGHI...">
+              <button type="button" onclick="toggleTelegramTokenVisibility()"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <i id="telegram-token-eye" data-lucide="eye" class="w-5 h-5"></i>
+              </button>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">Отримайте токен від @BotFather в Telegram</p>
+          </div>
+
+          <!-- Chat ID -->
+          <div class="mb-4">
+            <label class="block text-sm font-semibold text-gray-900 mb-2">
+              💬 Chat ID
+            </label>
+            <input type="text" id="telegram-chat-id" 
+              class="w-full border-2 border-gray-200 rounded-xl p-3 text-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 transition font-mono"
+              placeholder="-1001234567890 або 123456789">
+            <p class="text-xs text-gray-500 mt-1">ID чату/групи куди надсилати сповіщення. Отримайте через @userinfobot</p>
+          </div>
+
+          <!-- Test Button -->
+          <button type="button" onclick="testTelegramNotification()"
+            class="w-full py-2.5 bg-cyan-100 hover:bg-cyan-200 text-cyan-700 rounded-xl font-semibold transition flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+            </svg>
+            Надіслати тестове повідомлення
+          </button>
+
+        </div>
+
         <!-- Info Block -->
 
         <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
@@ -3037,6 +3189,156 @@
     </div>
 
   </div>
+
+  <!-- ============================================ -->
+  <!-- 💸 PAYMENT SETTINGS MODAL (Telegram for Failed Payments) -->
+  <!-- ============================================ -->
+  <div id="payment-settings-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+
+    <div class="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+
+      <div class="p-6 border-b flex justify-between items-center sticky top-0 bg-white z-10">
+
+        <div>
+
+          <h3 class="text-xl font-bold text-gray-900">Налаштування сповіщень</h3>
+
+          <p class="text-sm text-gray-500 mt-1">Неуспішні оплати</p>
+
+        </div>
+        <button onclick="closePaymentSettingsModal()" class="p-2 hover:bg-gray-100 rounded-full">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+
+      </div>
+
+      <form id="payment-settings-form" class="p-6 space-y-6">
+
+        <!-- Info Block -->
+        <div class="bg-gradient-to-r from-orange-50 to-red-50 rounded-xl p-4 border border-orange-200">
+          <div class="flex items-start gap-3">
+            <div class="p-2 bg-orange-500 rounded-lg">
+              <i data-lucide="alert-triangle" class="w-5 h-5 text-white"></i>
+            </div>
+            <div>
+              <p class="text-sm text-gray-700">
+                <span class="font-semibold">💡 Опис:</span>
+                Отримуйте миттєві сповіщення в Telegram, коли клієнт починає оплату, але не завершує її.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- 📱 TELEGRAM NOTIFICATIONS SECTION -->
+        <!-- ============================================ -->
+        <div class="border-t pt-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="p-2 bg-blue-500 rounded-lg">
+              <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+              </svg>
+            </div>
+            <div>
+              <h4 class="font-bold text-gray-900">Telegram сповіщення</h4>
+              <p class="text-xs text-gray-600">Отримуйте миттєві сповіщення про проблеми з оплатою</p>
+            </div>
+          </div>
+
+          <!-- Telegram Enable Toggle -->
+          <div class="bg-gradient-to-r from-orange-50 to-red-50 rounded-xl p-5 border border-orange-200 mb-4">
+            <label class="flex items-center justify-between cursor-pointer">
+              <div class="flex items-center gap-3">
+                <div class="p-2 bg-orange-500 rounded-lg">
+                  <i data-lucide="bell" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                  <div class="font-bold text-gray-900">✅ Сповіщати про неуспішні оплати</div>
+                  <div class="text-xs text-gray-600 mt-0.5">Отримувати повідомлення в Telegram</div>
+                </div>
+              </div>
+              <div class="relative">
+                <input type="checkbox" id="payment-telegram-enabled" class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+              </div>
+            </label>
+          </div>
+
+          <!-- Bot Token -->
+          <div class="mb-4">
+            <label class="block text-sm font-semibold text-gray-900 mb-2">
+              🤖 Bot Token
+            </label>
+            <div class="relative">
+              <input type="password" id="payment-telegram-bot-token" 
+                class="w-full border-2 border-gray-200 rounded-xl p-3 pr-12 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition font-mono"
+                placeholder="123456789:ABCdefGHI...">
+              <button type="button" onclick="togglePaymentTelegramTokenVisibility()"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <i id="payment-telegram-token-eye" data-lucide="eye" class="w-5 h-5"></i>
+              </button>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">Отримайте токен від @BotFather в Telegram</p>
+          </div>
+
+          <!-- Chat ID -->
+          <div class="mb-4">
+            <label class="block text-sm font-semibold text-gray-900 mb-2">
+              💬 Chat ID
+            </label>
+            <input type="text" id="payment-telegram-chat-id" 
+              class="w-full border-2 border-gray-200 rounded-xl p-3 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition font-mono"
+              placeholder="-1001234567890 або 123456789">
+            <p class="text-xs text-gray-500 mt-1">ID чату/групи куди надсилати сповіщення. Отримайте через @userinfobot</p>
+          </div>
+
+          <!-- Test Button -->
+          <button type="button" onclick="testPaymentTelegramNotification()"
+            class="w-full py-2.5 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-xl font-semibold transition flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+            </svg>
+            Надіслати тестове повідомлення
+          </button>
+
+        </div>
+
+        <!-- Info Block -->
+        <div class="bg-amber-50 rounded-lg p-4 border border-amber-200">
+          <div class="flex items-start gap-3">
+            <i data-lucide="info" class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5"></i>
+            <div class="text-sm text-gray-700">
+              <p class="font-semibold mb-1">📌 Формат повідомлення:</p>
+              <p class="text-xs text-gray-600">
+                💸 Проблема з оплатою!<br>
+                Замовлення: #ID<br>
+                Клієнт: Ім'я<br>
+                Сума: X грн<br>
+                Телефон: +380...<br>
+                ⚠️ Статус: Оплата не пройшла
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="pt-4 flex gap-3">
+          <button type="button" onclick="closePaymentSettingsModal()"
+            class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold text-gray-700 transition">
+            Скасувати
+          </button>
+          <button type="submit"
+            class="flex-1 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-xl font-bold shadow-lg transition">
+            💾 Зберегти
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
   <!-- Settings Modal -->
 
   <div id="settings-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
@@ -3793,6 +4095,10 @@
             abandonedOrders.push({ id: orderId, data: order })
           }
         })
+
+        // NOTE: Telegram notifications for abandoned payments are now triggered 
+        // from checkout.html when payment fails, not from admin panel loading.
+        // This prevents duplicate notifications every time admin views this page.
 
         if (abandonedOrders.length === 0) {
           const emptyMessage = showArchivedPayments
@@ -4751,6 +5057,24 @@
     // SMS RECOVERY FEATURE
     // ============================================
 
+    // ============================================
+    // 🛡️ SMS DEDUPLICATION CACHE (Prevents duplicate sends)
+    // Track phones that are currently being processed or recently sent
+    // ============================================
+    const smsProcessingCache = new Set()  // Phones currently being processed
+    const smsSentCache = new Map()        // phone -> timestamp of last send
+
+    /**
+     * Check if SMS was recently sent to this phone (within 24 hours)
+     */
+    function wasSmsSentRecently(phone, hoursLimit = 24) {
+      const lastSent = smsSentCache.get(phone)
+      if (!lastSent) return false
+      
+      const hoursSince = (Date.now() - lastSent) / (1000 * 60 * 60)
+      return hoursSince < hoursLimit
+    }
+
     /**
      * Send SMS with recovery link to customer with abandoned cart
      * @param {string} phoneDocId - The document ID in abandoned_carts collection (usually phone number)
@@ -4758,8 +5082,18 @@
     window.sendRecoverySMS = async function (phoneDocId) {
       console.log('📩 Starting SMS recovery for document ID:', phoneDocId)
 
+      // 🛡️ Check if already being processed
+      if (smsProcessingCache.has(phoneDocId)) {
+        console.log(`⏳ SMS to ${phoneDocId} is already being sent, skipping...`)
+        alert('⏳ SMS вже відправляється, зачекайте...')
+        return
+      }
+
       const btnElement = event.target.closest('button')
       const originalHTML = btnElement.innerHTML
+
+      // 🛡️ Mark as processing immediately
+      smsProcessingCache.add(phoneDocId)
 
       try {
         // Step 1: Check if SMS Recovery is enabled
@@ -5005,6 +5339,9 @@
 
         // Show error alert
         alert(`❌ Помилка відправки SMS:\n\n${error.message}\n\nПеревірте:\n- TurboSMS API Token\n- Баланс рахунку\n- Формат номеру телефону\n- Правильність даних кошика`)
+      } finally {
+        // 🛡️ Always remove from processing cache
+        smsProcessingCache.delete(phoneDocId)
       }
     }
 
@@ -5087,8 +5424,20 @@
           const cart = docSnapshot.data()
           const phoneDocId = docSnapshot.id
 
-          // Skip if SMS already sent
+          // Skip if SMS already sent (Firestore flag)
           if (cart.smsSent) {
+            continue
+          }
+
+          // 🛡️ Skip if currently being processed (prevents race condition)
+          if (smsProcessingCache.has(phoneDocId)) {
+            console.log(`⏳ Skipping ${phoneDocId} - already being processed`)
+            continue
+          }
+
+          // 🛡️ Skip if SMS was sent recently (local cache backup)
+          if (wasSmsSentRecently(phoneDocId)) {
+            console.log(`⏭️ Skipping ${phoneDocId} - SMS sent recently (cache)`)
             continue
           }
 
@@ -5111,11 +5460,20 @@
             eligibleCount++
             console.log(`📤 Auto-sending SMS to ${phoneDocId} (abandoned ${diffMinutes} min ago)`)
 
+            // 🛡️ Mark as processing BEFORE sending
+            smsProcessingCache.add(phoneDocId)
+
             try {
               // Send SMS without button (simulate manual send)
               await sendAutoSms(phoneDocId, cart)
+              
+              // 🛡️ Update local cache on success
+              smsSentCache.set(phoneDocId, Date.now())
             } catch (smsError) {
               console.error(`❌ Failed to auto-send SMS to ${phoneDocId}:`, smsError)
+            } finally {
+              // 🛡️ Always remove from processing cache
+              smsProcessingCache.delete(phoneDocId)
             }
           }
         }
@@ -6521,6 +6879,292 @@
       } catch (e) {
         console.error('🧪 Error adding test data:', e)
         alert('❌ Помилка: ' + e.message)
+      }
+    }
+
+    // ============================================
+    // 🤖 AI BUSINESS ANALYST
+    // ============================================
+    
+    // ============================================
+    // GEMINI API CONFIGURATION
+    // ============================================
+    // ⚠️ IMPORTANT: Replace with your own API key
+    // Get it free at: https://aistudio.google.com/app/apikey
+    const GEMINI_API_KEY = 'AIzaSyA11Wu1XUxEXXeCz3t_NfOr0ygoEblvbhY'
+    const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
+    
+    /**
+     * Gather all dashboard statistics into a structured object
+     * @returns {Object} Dashboard data summary
+     */
+    function gatherDashboardData() {
+      console.log('📊 Gathering dashboard data for AI analysis...')
+      
+      // === MAIN STATS ===
+      const successfulOrders = document.getElementById('stat-successful-orders')?.textContent || '0'
+      const totalRevenue = document.getElementById('stat-total-revenue')?.textContent || '0 грн'
+      const avgOrderValue = document.getElementById('stat-aov')?.textContent || '0 грн'
+      const freeShipping = document.getElementById('stat-free-shipping')?.textContent || '0'
+      const fromCategory = document.getElementById('stat-from-category')?.textContent || '0'
+      const fromProduct = document.getElementById('stat-from-product')?.textContent || '0'
+      
+      // === VISITOR ANALYTICS ===
+      const totalVisitors = document.getElementById('stat-total-visitors')?.textContent || '0'
+      const onlineNow = document.getElementById('stat-online-now')?.textContent || '0'
+      const abandonedCarts = document.getElementById('stat-abandoned-carts')?.textContent || '0'
+      
+      // === BEHAVIOR ANALYTICS ===
+      const timeToCart = document.getElementById('stat-time-to-cart')?.textContent || '—'
+      const fullCycle = document.getElementById('stat-cart-to-checkout')?.textContent || '—'
+      const checkoutDuration = document.getElementById('stat-checkout-duration')?.textContent || '—'
+      
+      // === DATE RANGE ===
+      const dateLabel = document.getElementById('stats-date-label')?.textContent || 'Весь час'
+      
+      // Calculate conversion rate if possible
+      const visitors = parseInt(totalVisitors.replace(/\s/g, '')) || 0
+      const orders = parseInt(successfulOrders.replace(/\s/g, '')) || 0
+      const conversionRate = visitors > 0 ? ((orders / visitors) * 100).toFixed(2) + '%' : 'N/A'
+      
+      // Calculate cart abandonment rate
+      const abandoned = parseInt(abandonedCarts.replace(/\s/g, '')) || 0
+      const totalCarts = orders + abandoned
+      const abandonmentRate = totalCarts > 0 ? ((abandoned / totalCarts) * 100).toFixed(1) + '%' : 'N/A'
+      
+      const data = {
+        period: dateLabel,
+        sales: {
+          successfulOrders: successfulOrders,
+          totalRevenue: totalRevenue,
+          averageOrderValue: avgOrderValue,
+          freeShippingOrders: freeShipping
+        },
+        traffic: {
+          totalVisitors: totalVisitors,
+          onlineNow: onlineNow,
+          conversionRate: conversionRate
+        },
+        productSources: {
+          addedFromCategory: fromCategory,
+          addedFromProductPage: fromProduct
+        },
+        issues: {
+          abandonedCarts: abandonedCarts,
+          abandonmentRate: abandonmentRate
+        },
+        customerBehavior: {
+          avgTimeToAddToCart: timeToCart,
+          avgFullPurchaseCycle: fullCycle,
+          avgCheckoutDuration: checkoutDuration
+        }
+      }
+      
+      console.log('📊 Dashboard data gathered:', data)
+      return data
+    }
+    
+    /**
+     * Call Google Gemini API with the given prompt
+     * @param {string} systemPrompt - Instructions for the AI
+     * @param {string} userPrompt - The data to analyze
+     * @returns {Promise<string>} AI response text
+     */
+    async function callGeminiAPI(systemPrompt, userPrompt) {
+      console.log('🤖 Calling Gemini API...')
+      
+      if (GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY_HERE') {
+        throw new Error('API ключ не налаштовано. Відредагуйте GEMINI_API_KEY в admin.html')
+      }
+      
+      const requestBody = {
+        contents: [{
+          parts: [{
+            text: `${systemPrompt}\n\n${userPrompt}`
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 2048
+        }
+      }
+      
+      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error?.message || `API Error: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      
+      // Extract text from Gemini response
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+      if (!text) {
+        throw new Error('Пуста відповідь від AI')
+      }
+      
+      console.log('🤖 Gemini response received')
+      return text
+    }
+    
+    /**
+     * Convert Markdown to HTML (simple parser)
+     * @param {string} markdown - Markdown text
+     * @returns {string} HTML string
+     */
+    function markdownToHTML(markdown) {
+      let html = markdown
+        // Escape HTML
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        // Headers
+        .replace(/^### (.+)$/gm, '<h3 class="text-lg font-bold text-gray-800 mt-4 mb-2">$1</h3>')
+        .replace(/^## (.+)$/gm, '<h2 class="text-xl font-bold text-gray-900 mt-5 mb-3">$1</h2>')
+        .replace(/^# (.+)$/gm, '<h1 class="text-2xl font-bold text-gray-900 mt-6 mb-4">$1</h1>')
+        // Bold
+        .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
+        // Italic
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        // Bullet points
+        .replace(/^[\-\*] (.+)$/gm, '<li class="ml-4 mb-1">$1</li>')
+        // Numbered lists
+        .replace(/^\d+\. (.+)$/gm, '<li class="ml-4 mb-1 list-decimal">$1</li>')
+        // Line breaks
+        .replace(/\n\n/g, '</p><p class="mb-3">')
+        .replace(/\n/g, '<br>')
+      
+      // Wrap in paragraph if not starting with header
+      if (!html.startsWith('<h')) {
+        html = '<p class="mb-3">' + html + '</p>'
+      }
+      
+      // Wrap lists
+      html = html.replace(/(<li[^>]*>.*?<\/li>)+/gs, '<ul class="list-disc mb-4">$&</ul>')
+      
+      return html
+    }
+    
+    /**
+     * Open the AI Analysis modal
+     */
+    function openAIModal() {
+      const modal = document.getElementById('modal-ai-analysis')
+      if (modal) {
+        modal.classList.remove('hidden')
+        modal.classList.add('flex')
+      }
+    }
+    
+    /**
+     * Close the AI Analysis modal
+     */
+    window.closeAIModal = function() {
+      const modal = document.getElementById('modal-ai-analysis')
+      if (modal) {
+        modal.classList.add('hidden')
+        modal.classList.remove('flex')
+      }
+    }
+    
+    /**
+     * Main function: Analyze stats with AI
+     */
+    window.analyzeStatsWithAI = async function() {
+      console.log('🤖 Starting AI analysis...')
+      
+      // Show modal with loading state
+      openAIModal()
+      
+      const loadingEl = document.getElementById('ai-loading')
+      const resultEl = document.getElementById('ai-result')
+      const errorEl = document.getElementById('ai-error')
+      const errorMsgEl = document.getElementById('ai-error-message')
+      
+      // Reset states
+      loadingEl?.classList.remove('hidden')
+      resultEl?.classList.add('hidden')
+      errorEl?.classList.add('hidden')
+      if (resultEl) resultEl.innerHTML = ''
+      
+      try {
+        // Step 1: Gather data
+        const dashboardData = gatherDashboardData()
+        
+        // Step 2: Create prompts
+        const systemPrompt = `Ти — досвідчений бізнес-аналітик для e-commerce магазину снеків "Latiao Snack" (Україна, гривні).
+
+Твоє завдання:
+1. Проаналізувати надані метрики магазину
+2. Виділити 3-5 ключових інсайтів (що добре, що погано)
+3. Дати 3-5 конкретних рекомендацій для збільшення продажів
+
+Правила відповіді:
+- Пиши УКРАЇНСЬКОЮ мовою
+- Будь конкретним і практичним
+- Використовуй емодзі для візуального виділення
+- Структуруй відповідь з заголовками
+- Якщо даних недостатньо — вкажи які метрики варто відстежувати`
+        
+        const userPrompt = `## Дані магазину за період: ${dashboardData.period}
+
+### Продажі:
+- Успішних замовлень: ${dashboardData.sales.successfulOrders}
+- Загальний дохід: ${dashboardData.sales.totalRevenue}
+- Середній чек: ${dashboardData.sales.averageOrderValue}
+- Безкоштовна доставка: ${dashboardData.sales.freeShippingOrders} замовлень
+
+### Трафік:
+- Всього відвідувачів: ${dashboardData.traffic.totalVisitors}
+- Онлайн зараз: ${dashboardData.traffic.onlineNow}
+- Конверсія: ${dashboardData.traffic.conversionRate}
+
+### Джерела додавання в кошик:
+- З категорії: ${dashboardData.productSources.addedFromCategory}
+- З картки товару: ${dashboardData.productSources.addedFromProductPage}
+
+### Проблемні зони:
+- Покинуті кошики: ${dashboardData.issues.abandonedCarts}
+- Рівень покидання: ${dashboardData.issues.abandonmentRate}
+
+### Поведінка клієнтів:
+- Час на роздуми (до додавання в кошик): ${dashboardData.customerBehavior.avgTimeToAddToCart}
+- Повний цикл покупки: ${dashboardData.customerBehavior.avgFullPurchaseCycle}
+- Швидкість оформлення checkout: ${dashboardData.customerBehavior.avgCheckoutDuration}
+
+Проаналізуй ці дані та дай рекомендації.`
+        
+        // Step 3: Call AI API
+        const aiResponse = await callGeminiAPI(systemPrompt, userPrompt)
+        
+        // Step 4: Render response
+        loadingEl?.classList.add('hidden')
+        resultEl?.classList.remove('hidden')
+        
+        if (resultEl) {
+          resultEl.innerHTML = markdownToHTML(aiResponse)
+        }
+        
+        console.log('🤖 AI analysis complete!')
+        
+      } catch (error) {
+        console.error('❌ AI Analysis error:', error)
+        
+        loadingEl?.classList.add('hidden')
+        errorEl?.classList.remove('hidden')
+        
+        if (errorMsgEl) {
+          errorMsgEl.textContent = error.message || 'Невідома помилка'
+        }
       }
     }
 
@@ -9904,7 +10548,7 @@
     }
 
     window.openAbandonedSettingsModal = async () => {
-      console.log('🔧 Opening Abandoned Carts SMS Settings...')
+      console.log('🔧 Opening Abandoned Carts Settings...')
 
       try {
         // Load current SMS settings
@@ -9942,8 +10586,13 @@
 
         console.log('✅ SMS settings loaded')
 
+        // ============================================
+        // LOAD TELEGRAM SETTINGS
+        // ============================================
+        await loadTelegramSettings()
+
       } catch (e) {
-        console.error('❌ Error loading SMS settings:', e)
+        console.error('❌ Error loading settings:', e)
       }
 
       document.getElementById('abandoned-settings-modal').classList.remove('hidden')
@@ -9988,6 +10637,11 @@
           autoSendDelay: autoSendDelay,
           updatedAt: new Date().toISOString()
         }, { merge: true })
+
+        // ============================================
+        // SAVE TELEGRAM SETTINGS
+        // ============================================
+        await saveTelegramSettings()
 
         console.log('✅ Abandoned SMS settings saved:', {
           enabled,
@@ -10047,6 +10701,525 @@
       }
       lucide.createIcons()
     }
+
+    // ============================================
+    // 📱 TELEGRAM NOTIFICATIONS FUNCTIONS
+    // ============================================
+
+    // Cache for telegram config
+    let telegramConfigCache = null
+
+    /**
+     * Toggle Telegram token visibility
+     */
+    window.toggleTelegramTokenVisibility = () => {
+      const input = document.getElementById('telegram-bot-token')
+      const icon = document.getElementById('telegram-token-eye')
+      if (input.type === 'password') {
+        input.type = 'text'
+        icon.setAttribute('data-lucide', 'eye-off')
+      } else {
+        input.type = 'password'
+        icon.setAttribute('data-lucide', 'eye')
+      }
+      lucide.createIcons()
+    }
+
+    /**
+     * Load Telegram settings from Firestore
+     */
+    async function loadTelegramSettings() {
+      try {
+        const telegramDoc = await getDoc(doc(db, 'settings', 'telegram_config'))
+        
+        if (telegramDoc.exists()) {
+          const data = telegramDoc.data()
+          telegramConfigCache = data
+          
+          document.getElementById('telegram-enabled').checked = data.enabled || false
+          document.getElementById('telegram-bot-token').value = data.botToken || ''
+          document.getElementById('telegram-chat-id').value = data.chatId || ''
+          
+          console.log('📱 Telegram settings loaded:', { enabled: data.enabled, hasBotToken: !!data.botToken })
+        } else {
+          // Set defaults
+          document.getElementById('telegram-enabled').checked = false
+          document.getElementById('telegram-bot-token').value = ''
+          document.getElementById('telegram-chat-id').value = ''
+          telegramConfigCache = null
+        }
+      } catch (error) {
+        console.error('❌ Error loading Telegram settings:', error)
+      }
+    }
+
+    /**
+     * Save Telegram settings to Firestore
+     */
+    async function saveTelegramSettings() {
+      try {
+        const enabled = document.getElementById('telegram-enabled').checked
+        const botToken = document.getElementById('telegram-bot-token').value.trim()
+        const chatId = document.getElementById('telegram-chat-id').value.trim()
+
+        // Validate if enabled
+        if (enabled && (!botToken || !chatId)) {
+          alert('⚠️ Для Telegram сповіщень потрібно вказати Bot Token та Chat ID!')
+          return false
+        }
+
+        const config = {
+          enabled: enabled,
+          botToken: botToken,
+          chatId: chatId,
+          updatedAt: new Date().toISOString()
+        }
+
+        await setDoc(doc(db, 'settings', 'telegram_config'), config, { merge: true })
+        
+        // Update cache
+        telegramConfigCache = config
+        
+        console.log('📱 Telegram settings saved:', { enabled, hasBotToken: !!botToken, hasChatId: !!chatId })
+        return true
+      } catch (error) {
+        console.error('❌ Error saving Telegram settings:', error)
+        alert('❌ Помилка збереження Telegram налаштувань: ' + error.message)
+        return false
+      }
+    }
+
+    /**
+     * Send a message to Telegram
+     * @param {string} message - The message to send (supports Markdown)
+     * @returns {Promise<boolean>} - Success status
+     */
+    window.sendTelegramNotification = async function(message) {
+      try {
+        // Get config from cache or Firestore
+        let config = telegramConfigCache
+        
+        if (!config) {
+          const telegramDoc = await getDoc(doc(db, 'settings', 'telegram_config'))
+          if (telegramDoc.exists()) {
+            config = telegramDoc.data()
+            telegramConfigCache = config
+          }
+        }
+
+        // Validate config
+        if (!config || !config.enabled) {
+          console.log('📱 Telegram notifications disabled')
+          return false
+        }
+
+        if (!config.botToken || !config.chatId) {
+          console.warn('📱 Telegram config incomplete')
+          return false
+        }
+
+        // Send message via Telegram Bot API
+        const url = `https://api.telegram.org/bot${config.botToken}/sendMessage`
+        
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            chat_id: config.chatId,
+            text: message,
+            parse_mode: 'Markdown'
+          })
+        })
+
+        const result = await response.json()
+
+        if (result.ok) {
+          console.log('📱 Telegram message sent successfully')
+          return true
+        } else {
+          console.error('📱 Telegram API error:', result.description)
+          return false
+        }
+      } catch (error) {
+        console.error('📱 Error sending Telegram notification:', error)
+        return false
+      }
+    }
+
+    /**
+     * Test Telegram notification
+     */
+    window.testTelegramNotification = async function() {
+      const botToken = document.getElementById('telegram-bot-token').value.trim()
+      const chatId = document.getElementById('telegram-chat-id').value.trim()
+
+      if (!botToken || !chatId) {
+        alert('⚠️ Спочатку введіть Bot Token та Chat ID!')
+        return
+      }
+
+      // Show loading state
+      const btn = event.target.closest('button')
+      const originalHtml = btn.innerHTML
+      btn.innerHTML = `
+        <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Надсилаємо...
+      `
+      btn.disabled = true
+
+      try {
+        const testMessage = `🧪 *Тестове повідомлення*
+
+✅ Telegram сповіщення працюють!
+
+🏪 Latiao Club Admin Panel
+📅 ${new Date().toLocaleString('uk-UA')}`
+
+        const url = `https://api.telegram.org/bot${botToken}/sendMessage`
+        
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: testMessage,
+            parse_mode: 'Markdown'
+          })
+        })
+
+        const result = await response.json()
+
+        if (result.ok) {
+          alert('✅ Тестове повідомлення успішно надіслано!')
+        } else {
+          alert(`❌ Помилка Telegram API:\n\n${result.description}`)
+        }
+      } catch (error) {
+        alert(`❌ Помилка з'єднання:\n\n${error.message}`)
+      } finally {
+        btn.innerHTML = originalHtml
+        btn.disabled = false
+      }
+    }
+
+    /**
+     * Send notification about abandoned cart
+     * @param {object} cartData - Abandoned cart data
+     */
+    window.notifyAbandonedCart = async function(cartData) {
+      const customer = cartData.customer || {}
+      const items = cartData.items || []
+      const total = items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0)
+      
+      const message = `🛒 *Покинутий кошик!*
+
+👤 *Клієнт:* ${customer.fullName || 'Не вказано'}
+📞 *Телефон:* ${customer.phone || 'Не вказано'}
+💬 *Telegram:* ${customer.telegram || '—'}
+
+🛍️ *Товарів:* ${items.length}
+💰 *Сума:* ${total} грн
+
+📅 ${new Date().toLocaleString('uk-UA')}`
+
+      return await sendTelegramNotification(message)
+    }
+
+    // ============================================
+    // 💸 PAYMENT TELEGRAM NOTIFICATIONS FUNCTIONS
+    // ============================================
+
+    // Cache for payment telegram config
+    let paymentTelegramConfigCache = null
+
+    /**
+     * Open Payment Settings Modal
+     */
+    window.openPaymentSettingsModal = async () => {
+      try {
+        // Load Telegram settings
+        await loadPaymentTelegramSettings()
+      } catch (e) {
+        console.error('❌ Error loading payment settings:', e)
+      }
+
+      document.getElementById('payment-settings-modal').classList.remove('hidden')
+      lucide.createIcons()
+    }
+
+    /**
+     * Close Payment Settings Modal
+     */
+    window.closePaymentSettingsModal = () => {
+      document.getElementById('payment-settings-modal').classList.add('hidden')
+      document.getElementById('payment-settings-form').reset()
+    }
+
+    /**
+     * Toggle Payment Telegram token visibility
+     */
+    window.togglePaymentTelegramTokenVisibility = () => {
+      const input = document.getElementById('payment-telegram-bot-token')
+      const icon = document.getElementById('payment-telegram-token-eye')
+      if (input.type === 'password') {
+        input.type = 'text'
+        icon.setAttribute('data-lucide', 'eye-off')
+      } else {
+        input.type = 'password'
+        icon.setAttribute('data-lucide', 'eye')
+      }
+      lucide.createIcons()
+    }
+
+    /**
+     * Load Payment Telegram settings from Firestore
+     */
+    async function loadPaymentTelegramSettings() {
+      try {
+        const telegramDoc = await getDoc(doc(db, 'settings', 'telegram_payment_config'))
+        
+        if (telegramDoc.exists()) {
+          const data = telegramDoc.data()
+          paymentTelegramConfigCache = data
+          
+          document.getElementById('payment-telegram-enabled').checked = data.enabled || false
+          document.getElementById('payment-telegram-bot-token').value = data.botToken || ''
+          document.getElementById('payment-telegram-chat-id').value = data.chatId || ''
+          
+          console.log('💸 Payment Telegram settings loaded:', { enabled: data.enabled, hasBotToken: !!data.botToken })
+        } else {
+          // Set defaults
+          document.getElementById('payment-telegram-enabled').checked = false
+          document.getElementById('payment-telegram-bot-token').value = ''
+          document.getElementById('payment-telegram-chat-id').value = ''
+          paymentTelegramConfigCache = null
+        }
+      } catch (error) {
+        console.error('❌ Error loading Payment Telegram settings:', error)
+      }
+    }
+
+    /**
+     * Save Payment Telegram settings to Firestore
+     */
+    async function savePaymentTelegramSettings() {
+      try {
+        const enabled = document.getElementById('payment-telegram-enabled').checked
+        const botToken = document.getElementById('payment-telegram-bot-token').value.trim()
+        const chatId = document.getElementById('payment-telegram-chat-id').value.trim()
+
+        // Validate if enabled
+        if (enabled && (!botToken || !chatId)) {
+          alert('⚠️ Для Telegram сповіщень потрібно вказати Bot Token та Chat ID!')
+          return false
+        }
+
+        const config = {
+          enabled: enabled,
+          botToken: botToken,
+          chatId: chatId,
+          updatedAt: new Date().toISOString()
+        }
+
+        await setDoc(doc(db, 'settings', 'telegram_payment_config'), config, { merge: true })
+        
+        // Update cache
+        paymentTelegramConfigCache = config
+        
+        console.log('💸 Payment Telegram settings saved:', { enabled, hasBotToken: !!botToken, hasChatId: !!chatId })
+        return true
+      } catch (error) {
+        console.error('❌ Error saving Payment Telegram settings:', error)
+        alert('❌ Помилка збереження налаштувань: ' + error.message)
+        return false
+      }
+    }
+
+    /**
+     * Send a message to Payment Telegram
+     * @param {string} message - The message to send (supports Markdown)
+     * @returns {Promise<boolean>} - Success status
+     */
+    window.sendPaymentTelegramNotification = async function(message) {
+      try {
+        // Get config from cache or Firestore
+        let config = paymentTelegramConfigCache
+        
+        if (!config) {
+          const telegramDoc = await getDoc(doc(db, 'settings', 'telegram_payment_config'))
+          if (telegramDoc.exists()) {
+            config = telegramDoc.data()
+            paymentTelegramConfigCache = config
+          }
+        }
+
+        // Validate config
+        if (!config || !config.enabled) {
+          console.log('💸 Payment Telegram notifications disabled')
+          return false
+        }
+
+        if (!config.botToken || !config.chatId) {
+          console.warn('💸 Payment Telegram config incomplete')
+          return false
+        }
+
+        // Send message via Telegram Bot API
+        const url = `https://api.telegram.org/bot${config.botToken}/sendMessage`
+        
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            chat_id: config.chatId,
+            text: message,
+            parse_mode: 'Markdown'
+          })
+        })
+
+        const result = await response.json()
+
+        if (result.ok) {
+          console.log('💸 Payment Telegram message sent successfully')
+          return true
+        } else {
+          console.error('💸 Payment Telegram API error:', result.description)
+          return false
+        }
+      } catch (error) {
+        console.error('💸 Error sending Payment Telegram notification:', error)
+        return false
+      }
+    }
+
+    /**
+     * Test Payment Telegram notification
+     */
+    window.testPaymentTelegramNotification = async function() {
+      const botToken = document.getElementById('payment-telegram-bot-token').value.trim()
+      const chatId = document.getElementById('payment-telegram-chat-id').value.trim()
+
+      if (!botToken || !chatId) {
+        alert('⚠️ Спочатку введіть Bot Token та Chat ID!')
+        return
+      }
+
+      // Show loading state
+      const btn = event.target.closest('button')
+      const originalHtml = btn.innerHTML
+      btn.innerHTML = `
+        <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Надсилаємо...
+      `
+      btn.disabled = true
+
+      try {
+        const testMessage = `🧪 *Тестове повідомлення*
+
+✅ Сповіщення про неуспішні оплати працюють!
+
+💸 Ви будете отримувати сповіщення, коли клієнт не завершить оплату.
+
+🏪 Latiao Club Admin Panel
+📅 ${new Date().toLocaleString('uk-UA')}`
+
+        const url = `https://api.telegram.org/bot${botToken}/sendMessage`
+        
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: testMessage,
+            parse_mode: 'Markdown'
+          })
+        })
+
+        const result = await response.json()
+
+        if (result.ok) {
+          alert('✅ Тестове повідомлення успішно надіслано!')
+        } else {
+          alert(`❌ Помилка Telegram API:\n\n${result.description}`)
+        }
+      } catch (error) {
+        alert(`❌ Помилка з'єднання:\n\n${error.message}`)
+      } finally {
+        btn.innerHTML = originalHtml
+        btn.disabled = false
+      }
+    }
+
+    /**
+     * Send notification about abandoned/failed payment
+     * @param {object} orderData - Order data with payment issue
+     */
+    window.notifyAbandonedPayment = async function(orderData) {
+      const orderId = orderData.orderId || orderData.id || 'Н/Д'
+      const customer = orderData.customer || {}
+      const total = orderData.total || orderData.amount || 0
+      const status = orderData.paymentStatus || 'Оплата не пройшла'
+      
+      const message = `💸 *Проблема з оплатою!*
+
+📦 *Замовлення:* #${orderId}
+👤 *Клієнт:* ${customer.fullName || customer.name || 'Не вказано'}
+💰 *Сума:* ${total} грн
+📞 *Телефон:* \`${customer.phone || 'Не вказано'}\`
+
+⚠️ *Статус:* ${status}
+
+📅 ${new Date().toLocaleString('uk-UA')}`
+
+      return await sendPaymentTelegramNotification(message)
+    }
+
+    // Handle Payment Settings Form submission
+    document.getElementById('payment-settings-form').addEventListener('submit', async (e) => {
+      e.preventDefault()
+
+      console.log('💾 Saving Payment Telegram settings...')
+
+      try {
+        const result = await savePaymentTelegramSettings()
+        
+        if (result === false) {
+          return // Validation failed
+        }
+
+        // Close modal
+        closePaymentSettingsModal()
+
+        // Show success toast
+        const toast = document.createElement('div')
+        toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-2xl z-[100] flex items-center gap-3'
+        toast.innerHTML = `
+          <i data-lucide="check-circle" class="w-5 h-5"></i>
+          <span class="font-bold">Налаштування збережено! 🎉</span>
+        `
+        document.body.appendChild(toast)
+        lucide.createIcons()
+        setTimeout(() => toast.remove(), 3000)
+
+      } catch (error) {
+        console.error('❌ Error saving Payment settings:', error)
+        alert(`❌ Помилка збереження:\n\n${error.message}`)
+      }
+    })
 
     document.getElementById('settings-form').addEventListener('submit', async (e) => {
       e.preventDefault()
@@ -11267,6 +12440,16 @@
       const listDiv = document.getElementById('popups-list')
       const formDiv = document.getElementById('popup-form-section')
 
+      // Safety checks for DOM elements
+      if (!loadingDiv) {
+        console.error('❌ Element #popups-loading not found in DOM')
+        return
+      }
+      if (!listDiv) {
+        console.error('❌ Element #popups-list not found in DOM')
+        return
+      }
+
       loadingDiv.classList.remove('hidden')
       listDiv.innerHTML = ''
 
@@ -11410,8 +12593,15 @@
       const triggerType = document.getElementById('popup-trigger-type').value
       const triggerValue = document.getElementById('popup-trigger-value').value
       const frequency = document.getElementById('popup-frequency').value
-      const isActive = document.getElementById('popup-active').checked
+      const isActive = document.getElementById('popup-is-active').checked
       const imageFile = document.getElementById('popup-image').files[0]
+       // Нові поля для idle_cart
+       let idleTime = null
+       let minCartValue = null
+       if (triggerType === 'idle_cart') {
+         idleTime = parseInt(document.getElementById('popup-idle-time')?.value) || 0
+         minCartValue = parseFloat(document.getElementById('popup-min-cart-value')?.value) || 0
+       }
 
       // Validation
       if (!title) {
@@ -11422,8 +12612,14 @@
         alert('❌ Введіть текст pop-up')
         return
       }
-      if (!triggerValue || triggerValue <= 0) {
+      // Validate trigger value only for non-idle_cart types
+      if (triggerType !== 'idle_cart' && (!triggerValue || triggerValue <= 0)) {
         alert('❌ Введіть коректне значення тригера')
+        return
+      }
+      // Validate idle_cart fields
+      if (triggerType === 'idle_cart' && (!idleTime || idleTime <= 0)) {
+        alert('❌ Введіть коректний час очікування для Idle Cart (мінімум 1 секунда)')
         return
       }
 
@@ -11442,19 +12638,20 @@
           console.log('✅ Image uploaded:', imageUrl)
         }
 
-        const popupData = {
-          title,
-          content,
-          buttonText: buttonText || '',
-          buttonLink: buttonLink || '',
-          triggerType,
-          triggerValue: parseInt(triggerValue),
-          frequency,
-          isActive,
-          imageUrl: imageUrl || (currentPopupId ? undefined : ''), // Keep existing if editing
-          updatedAt: serverTimestamp(),
-          updatedBy: auth.currentUser.email
-        }
+          const popupData = {
+            title,
+            content,
+            buttonText: buttonText || '',
+            buttonLink: buttonLink || '',
+            triggerType,
+            triggerValue: triggerType === 'idle_cart' ? 0 : parseInt(triggerValue),
+            frequency,
+            isActive,
+            imageUrl: imageUrl || (currentPopupId ? undefined : ''), // Keep existing if editing
+            updatedAt: serverTimestamp(),
+            updatedBy: auth.currentUser.email,
+            ...(triggerType === 'idle_cart' ? { idleTime, minCartValue } : {})
+          }
 
         if (currentPopupId) {
           // Update existing popup
@@ -11513,7 +12710,16 @@
         document.getElementById('popup-trigger-type').value = popup.triggerType || 'timer'
         document.getElementById('popup-trigger-value').value = popup.triggerValue || ''
         document.getElementById('popup-frequency').value = popup.frequency || 'always'
-        document.getElementById('popup-active').checked = popup.isActive || false
+        document.getElementById('popup-is-active').checked = popup.isActive || false
+
+        // Load idle_cart fields if applicable
+        if (popup.triggerType === 'idle_cart') {
+          document.getElementById('popup-idle-time').value = popup.idleTime || 60
+          document.getElementById('popup-min-cart-value').value = popup.minCartValue || 0
+        }
+
+        // Trigger field visibility update
+        window.onPopupTriggerTypeChange()
 
         // Show image preview if exists
         if (popup.imageUrl) {
@@ -11576,6 +12782,26 @@
       document.getElementById('popup-form-title').textContent = '➕ Створити новий pop-up'
       document.getElementById('popup-form').reset()
       document.getElementById('popup-image-preview').innerHTML = ''
+    }
+
+    // Toggle idle cart fields visibility based on trigger type
+    window.onPopupTriggerTypeChange = function () {
+      const triggerType = document.getElementById('popup-trigger-type')?.value
+      const idleFields = document.getElementById('idle-cart-fields')
+      const triggerValueContainer = document.getElementById('trigger-value-container')
+      
+      if (!triggerType || !idleFields || !triggerValueContainer) {
+        console.warn('Popup form elements not found yet')
+        return
+      }
+      
+      if (triggerType === 'idle_cart') {
+        idleFields.classList.remove('hidden')
+        triggerValueContainer.classList.add('hidden')
+      } else {
+        idleFields.classList.add('hidden')
+        triggerValueContainer.classList.remove('hidden')
+      }
     }
 
     // Image preview handler
