@@ -2706,77 +2706,92 @@ window.fixMissingAvatars = async function() {
 // ============================================
 // BULK IMAGE UPLOAD UI - DYNAMIC INJECTION
 // ============================================
+// BULK IMAGE UPLOAD UI - DYNAMIC INJECTION WITH POLLING
+// ============================================
 
 /**
  * Initializes the Bulk Image Upload UI dynamically
- * Creates button and modal if they don't exist
+ * Uses polling to wait for the Products toolbar to be rendered
  */
 function initBulkImageUI() {
-    console.log('🎨 Initializing Bulk Image Upload UI...');
+    console.log('🎨 Initializing Bulk Image Upload UI (Polling Mode)...');
     
-    // STEP 1: Inject the Button into Products Toolbar
-    // Look for the products view header with action buttons
-    const productsView = document.getElementById('products-view');
-    if (!productsView) {
-        console.warn('⚠️ Products view not found, skipping Bulk Image UI');
-        return;
-    }
+    let attempts = 0;
+    const maxAttempts = 20; // 20 attempts × 500ms = 10 seconds timeout
     
-    // Find the toolbar (look for the header with buttons)
-    const toolbar = productsView.querySelector('.px-6.py-4.border-b');
-    if (!toolbar) {
-        console.warn('⚠️ Products toolbar not found');
-        return;
-    }
-    
-    // Check if button already exists
-    if (document.getElementById('bulk-image-upload-btn')) {
-        console.log('✅ Bulk Image button already exists');
-        return;
-    }
-    
-    // Find the button container (usually the right side with flex/gap)
-    let buttonContainer = toolbar.querySelector('.flex.items-center.gap-3');
-    
-    // If no container with gap-3, look for any flex container
-    if (!buttonContainer) {
-        buttonContainer = toolbar.querySelector('.flex.items-center');
-    }
-    
-    // If still no container, create one
-    if (!buttonContainer) {
-        buttonContainer = document.createElement('div');
-        buttonContainer.className = 'flex items-center gap-3';
-        toolbar.appendChild(buttonContainer);
-    }
-    
-    // Create the Bulk Images button
-    const bulkImageBtn = document.createElement('button');
-    bulkImageBtn.id = 'bulk-image-upload-btn';
-    bulkImageBtn.className = 'flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition';
-    bulkImageBtn.innerHTML = `
-        <span>📸</span>
-        <span>Bulk Images</span>
-    `;
-    bulkImageBtn.onclick = function() {
-        openBulkImageModal();
-    };
-    
-    // Insert button BEFORE the "Add Product" button
-    const addProductBtn = buttonContainer.querySelector('button');
-    if (addProductBtn) {
-        buttonContainer.insertBefore(bulkImageBtn, addProductBtn);
-    } else {
-        buttonContainer.appendChild(bulkImageBtn);
-    }
-    
-    console.log('✅ Bulk Image button injected');
-    
-    // STEP 2: Inject the Modal HTML (if it doesn't exist)
+    const pollingInterval = setInterval(() => {
+        attempts++;
+        
+        // Search for existing action buttons by text content
+        const buttons = Array.from(document.querySelectorAll('button'));
+        const targetButton = buttons.find(btn => {
+            const text = btn.textContent.toLowerCase();
+            return text.includes('додати товар') || 
+                   text.includes('add product') || 
+                   text.includes('імпорт') ||
+                   text.includes('import');
+        });
+        
+        // Check if we found the target button
+        if (targetButton) {
+            console.log('✅ Target button found:', targetButton.textContent.trim());
+            
+            // Check if our button already exists
+            if (document.getElementById('bulk-image-upload-btn')) {
+                console.log('✅ Bulk Image button already exists');
+                clearInterval(pollingInterval);
+                return;
+            }
+            
+            // Get the parent container of the target button
+            const buttonContainer = targetButton.parentElement;
+            
+            // Create the Bulk Images button
+            const bulkImageBtn = document.createElement('button');
+            bulkImageBtn.id = 'bulk-image-upload-btn';
+            bulkImageBtn.className = 'flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition';
+            bulkImageBtn.innerHTML = `
+                <span>📸</span>
+                <span>Bulk Images</span>
+            `;
+            bulkImageBtn.onclick = function() {
+                window.openBulkImageModal();
+            };
+            
+            // Insert button BEFORE the target button
+            buttonContainer.insertBefore(bulkImageBtn, targetButton);
+            
+            console.log('✅ Bulk Image button injected successfully');
+            
+            // Inject the modal HTML
+            injectBulkImageModal();
+            
+            // Stop polling
+            clearInterval(pollingInterval);
+            
+        } else if (attempts >= maxAttempts) {
+            // Timeout after 10 seconds
+            console.warn('⚠️ Timeout: Products toolbar not found after 10 seconds');
+            clearInterval(pollingInterval);
+        } else {
+            // Still searching...
+            console.log(`🔍 Attempt ${attempts}/${maxAttempts}: Searching for Products toolbar...`);
+        }
+        
+    }, 500); // Check every 500ms
+}
+
+/**
+ * Injects the Bulk Image Upload modal HTML into the body
+ */
+function injectBulkImageModal() {
+    // Check if modal already exists
     if (document.getElementById('bulkImageModal')) {
         console.log('✅ Bulk Image modal already exists');
         return;
     }
+    
+    console.log('📦 Injecting Bulk Image modal...');
     
     const modalHTML = `
         <div id="bulkImageModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] hidden flex items-center justify-center p-4">
@@ -2863,7 +2878,7 @@ function initBulkImageUI() {
     document.body.insertAdjacentHTML('beforeend', modalHTML);
     console.log('✅ Bulk Image modal injected');
     
-    // STEP 3: Setup file input change listener
+    // Setup file input change listener
     const fileInput = document.getElementById('bulkImageInput');
     const fileCountDiv = document.getElementById('bulkFileCount');
     
@@ -2872,9 +2887,6 @@ function initBulkImageUI() {
             const count = e.target.files.length;
             if (count > 0) {
                 fileCountDiv.textContent = `📁 Вибрано файлів: ${count}`;
-                fileCountDiv.className = 'mt-2 text-sm font-semibold text-purple-600';
-            } else {
-                fileCountDiv.textContent = '';
             }
         });
     }
