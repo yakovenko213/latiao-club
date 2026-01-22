@@ -584,143 +584,220 @@ async function loadCategoriesIntoDropdown() {
 }
 
 /**
+ * Helper: Wait for categories to load into dropdown
+ * Returns Promise that resolves when dropdown has options
+ */
+function waitForCategories(maxWaitMs = 3000) {
+    return new Promise((resolve, reject) => {
+        const categorySelect = document.getElementById('product-category');
+        
+        if (!categorySelect) {
+            console.error('❌ product-category select NOT FOUND');
+            reject(new Error('Category select element not found'));
+            return;
+        }
+        
+        // Check if already loaded
+        if (categorySelect.options.length > 1) {
+            console.log('✅ Categories already loaded in dropdown');
+            resolve(true);
+            return;
+        }
+        
+        console.log('⏳ Waiting for categories to load...');
+        
+        const startTime = Date.now();
+        const checkInterval = setInterval(() => {
+            const elapsed = Date.now() - startTime;
+            
+            if (categorySelect.options.length > 1) {
+                clearInterval(checkInterval);
+                console.log(`✅ Categories loaded after ${elapsed}ms`);
+                resolve(true);
+            } else if (elapsed > maxWaitMs) {
+                clearInterval(checkInterval);
+                console.error(`❌ Timeout: Categories not loaded after ${maxWaitMs}ms`);
+                reject(new Error('Category loading timeout'));
+            }
+        }, 100); // Check every 100ms
+    });
+}
+
+/**
  * Open product modal for EDITING an existing product
- * ✅ CLEAN VERSION: Only populates existing HTML elements, NO createElement
+ * ✅ BULLETPROOF VERSION: Deep logging + async safety + null-safe ID mapping
  */
 window.startEditProduct = async function(productId) {
+    console.log('═══════════════════════════════════════════════');
+    console.log('🛠️ EDIT PRODUCT - Starting function');
+    console.log('═══════════════════════════════════════════════');
+    console.log('🆔 Product ID:', productId);
+    
+    // ✅ VALIDATION: Product ID must exist
     if (!productId) {
-        console.error('❌ Product ID is required');
+        console.error('❌ CRITICAL ERROR: Product ID is MISSING');
+        alert('❌ Помилка: ID товару відсутній');
         return;
     }
     
     try {
-        console.log('📝 Loading product for editing:', productId);
-        
-        // ✅ STEP 1: FETCH LATEST DATA FROM FIRESTORE
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // STEP 1: FETCH PRODUCT DATA FROM FIRESTORE
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        console.log('');
+        console.log('📡 STEP 1: Fetching product from Firestore...');
         const productRef = doc(db, 'products', productId);
         const productSnap = await getDoc(productRef);
         
         if (!productSnap.exists()) {
-            alert('❌ Товар не знайдено');
+            console.error('❌ Product NOT FOUND in Firestore');
+            alert('❌ Товар не знайдено в базі даних');
             return;
         }
         
         const product = productSnap.data();
+        console.log('✅ Product fetched successfully');
+        console.log('📦 Product data:', JSON.stringify(product, null, 2));
         
-        // 🔥 DEBUG: Log product data to verify it's loaded correctly
-        console.log('📦 Product data from Firestore:', {
-            id: productId,
-            name: product.name,
-            price: product.price,
-            sku: product.sku,
-            category: product.category,
-            description: product.description,
-            image: product.image,
-            stock: product.stock,
-            spiciness: product.spiciness,
-            isVisible: product.isVisible
-        });
+        // Verify essential fields
+        if (!product.name) {
+            console.warn('⚠️ WARNING: Product has no name!');
+        }
+        if (!product.price) {
+            console.warn('⚠️ WARNING: Product has no price!');
+        }
         
-        // ✅ STEP 2: ENSURE CATEGORIES ARE LOADED FIRST (async operation)
-        console.log('📂 Loading categories into dropdown...');
-        await loadCategoriesIntoDropdown();
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // STEP 2: LOAD CATEGORIES INTO DROPDOWN
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        console.log('');
+        console.log('📂 STEP 2: Loading categories...');
         
-        // ✅ STEP 3: POPULATE FORM FIELDS - SIMPLE & ROBUST
-        // Only fill existing elements, log warning if missing
-        const setValueSafely = (elementId, value, isCheckbox = false) => {
-            const element = document.getElementById(elementId);
+        try {
+            // Trigger category loading
+            const categoriesLoaded = await loadCategoriesIntoDropdown();
             
-            if (!element) {
-                console.warn(`⚠️ Element '${elementId}' NOT FOUND in HTML - check admin-clean.html`);
+            if (!categoriesLoaded) {
+                console.error('❌ Failed to load categories');
+            }
+            
+            // Wait for dropdown to be populated (with timeout)
+            await waitForCategories(3000);
+            
+        } catch (categoryError) {
+            console.error('❌ Category loading error:', categoryError);
+            console.warn('⚠️ Continuing without categories...');
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // STEP 3: POPULATE FORM FIELDS (BULLETPROOF)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        console.log('');
+        console.log('📝 STEP 3: Populating form fields...');
+        
+        /**
+         * Bulletproof field setter with detailed logging
+         */
+        const setField = (id, value, isCheckbox = false) => {
+            const el = document.getElementById(id);
+            
+            if (!el) {
+                console.error(`❌ Element NOT FOUND: #${id}`);
                 return false;
             }
             
-            // Set value based on type
-            if (isCheckbox) {
-                element.checked = Boolean(value);
-                console.log(`  ✓ ${elementId}: ${value ? '✅ checked' : '❌ unchecked'}`);
-            } else {
-                element.value = value ?? ''; // Use nullish coalescing
-                console.log(`  ✓ ${elementId}: "${element.value}"`);
+            try {
+                if (isCheckbox) {
+                    el.checked = Boolean(value);
+                    console.log(`✅ Set #${id} = ${el.checked ? '✅ checked' : '❌ unchecked'}`);
+                } else {
+                    el.value = value ?? ''; // Nullish coalescing (preserves 0, false)
+                    console.log(`✅ Set #${id} = "${el.value}"`);
+                }
+                return true;
+            } catch (err) {
+                console.error(`❌ Error setting #${id}:`, err);
+                return false;
             }
-            
-            return true;
         };
         
-        // Populate all fields (these IDs must match admin-clean.html)
-        console.log('📝 Populating form fields:');
-        setValueSafely('product-id', productId);
-        setValueSafely('product-name', product.name);
-        setValueSafely('product-price', product.price);
-        setValueSafely('product-sku', product.sku);
-        setValueSafely('product-spiciness', product.spiciness ?? 1);
-        setValueSafely('product-description', product.description);
-        setValueSafely('product-stock', product.stock ?? 0);
-        setValueSafely('product-active', product.isVisible !== false, true);
+        // Map product data to form fields
+        setField('product-id', productId);
+        setField('product-name', product.name);
+        setField('product-price', product.price);
+        setField('product-sku', product.sku);
+        setField('product-spiciness', product.spiciness ?? 1);
+        setField('product-description', product.description);
+        setField('product-stock', product.stock ?? 0);
+        setField('product-active', product.isVisible !== false, true);
         
-        // ✅ STEP 4: SET CATEGORY - WITH RETRY MECHANISM
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // STEP 4: SET CATEGORY (AFTER DROPDOWN IS READY)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        console.log('');
+        console.log('🏷️ STEP 4: Setting category...');
+        
         const categorySelect = document.getElementById('product-category');
         
         if (!categorySelect) {
-            console.error('❌ product-category select NOT FOUND in HTML');
+            console.error('❌ #product-category select NOT FOUND');
         } else if (!product.category) {
-            console.warn('⚠️ Product has no category value');
-            categorySelect.selectedIndex = 0; // Reset to placeholder
+            console.warn('⚠️ Product has NO category value - resetting to placeholder');
+            categorySelect.selectedIndex = 0;
         } else {
-            // Wait for categories to load (they should be loaded by now)
-            const setCategoryValue = () => {
-                if (categorySelect.options.length <= 1) {
-                    console.warn('⚠️ Category dropdown still empty, retrying...');
-                    return false;
-                }
-                
-                // Try to find matching option
-                let found = false;
-                for (let i = 0; i < categorySelect.options.length; i++) {
-                    if (categorySelect.options[i].value === product.category) {
-                        categorySelect.selectedIndex = i;
-                        found = true;
-                        console.log(`  ✓ product-category: "${product.category}" ✅ selected`);
-                        break;
-                    }
-                }
-                
-                if (!found) {
-                    console.error(`❌ Category "${product.category}" NOT FOUND in dropdown`);
-                    console.log('   Available options:', 
-                        Array.from(categorySelect.options).map(o => o.value).join(', '));
-                }
-                
-                return found;
-            };
+            console.log(`🔍 Looking for category: "${product.category}"`);
+            console.log(`📊 Dropdown has ${categorySelect.options.length} options`);
             
-            // Try immediately
-            if (!setCategoryValue()) {
-                // Retry after 300ms if dropdown wasn't ready
-                setTimeout(setCategoryValue, 300);
+            // Log all available options
+            const availableOptions = Array.from(categorySelect.options).map(opt => ({
+                index: opt.index,
+                value: opt.value,
+                text: opt.textContent
+            }));
+            console.table(availableOptions);
+            
+            // Find matching option
+            let found = false;
+            for (let i = 0; i < categorySelect.options.length; i++) {
+                if (categorySelect.options[i].value === product.category) {
+                    categorySelect.selectedIndex = i;
+                    found = true;
+                    console.log(`✅ Category "${product.category}" selected (index ${i})`);
+                    break;
+                }
+            }
+            
+            if (!found) {
+                console.error(`❌ Category "${product.category}" NOT FOUND in dropdown!`);
+                console.warn('💡 Available values:', availableOptions.map(o => o.value).join(', '));
             }
         }
         
-        // ✅ STEP 5: PRESERVE EXISTING IMAGE URL (use existing hidden input)
-        const existingImageInput = document.getElementById('product-existing-image');
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // STEP 5: PRESERVE EXISTING IMAGE URL
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        console.log('');
+        console.log('🖼️ STEP 5: Handling image...');
         
+        const existingImageInput = document.getElementById('product-existing-image');
         if (existingImageInput) {
             existingImageInput.value = product.image || '';
-            console.log('  ✓ product-existing-image:', product.image ? '📷 preserved' : '❌ empty');
+            console.log('✅ Image URL preserved:', product.image || '(empty)');
         } else {
-            console.warn('⚠️ Hidden input #product-existing-image NOT FOUND - check HTML');
+            console.error('❌ #product-existing-image hidden input NOT FOUND');
         }
         
-        // ✅ STEP 6: UPDATE IMAGE PREVIEW (use existing container)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // STEP 6: UPDATE IMAGE PREVIEW
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         const imagePreview = document.getElementById('image-preview');
         
         if (!imagePreview) {
-            console.warn('⚠️ #image-preview container NOT FOUND in HTML');
+            console.error('❌ #image-preview container NOT FOUND');
         } else {
-            imagePreview.innerHTML = ''; // Clear previous content
+            imagePreview.innerHTML = ''; // Clear previous
             
             if (product.image) {
-                // Show current image with preview card
                 const imgDiv = document.createElement('div');
                 imgDiv.className = 'relative group';
                 imgDiv.innerHTML = `
@@ -737,9 +814,8 @@ window.startEditProduct = async function(productId) {
                 `;
                 imagePreview.appendChild(imgDiv);
                 imagePreview.classList.remove('hidden');
-                console.log('  ✓ image-preview: 📷 displayed');
+                console.log('✅ Image preview displayed');
             } else {
-                // No image - show placeholder message
                 imagePreview.innerHTML = `
                     <div class="col-span-4 p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 text-center">
                         <p class="text-gray-500 text-sm">📷 Фото відсутнє</p>
@@ -747,30 +823,51 @@ window.startEditProduct = async function(productId) {
                     </div>
                 `;
                 imagePreview.classList.remove('hidden');
-                console.log('  ℹ️ image-preview: placeholder shown');
+                console.log('ℹ️ Placeholder displayed (no image)');
             }
         }
         
-        // ✅ STEP 7: UPDATE MODAL TITLE
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // STEP 7: UPDATE MODAL TITLE
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         const modalTitle = document.getElementById('product-modal-title');
         if (modalTitle) {
             modalTitle.textContent = 'Редагувати товар';
+            console.log('✅ Modal title updated');
         }
         
-        // ✅ STEP 8: SHOW MODAL (remove 'hidden' class)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // STEP 8: SHOW MODAL
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        console.log('');
+        console.log('🚀 STEP 8: Opening modal...');
+        
         const modal = document.getElementById('product-modal');
-        if (modal) {
-            modal.classList.remove('hidden');
-            console.log('✅ Modal opened successfully');
-        } else {
+        if (!modal) {
             console.error('❌ #product-modal NOT FOUND in HTML');
+            alert('❌ Помилка: модальне вікно не знайдено');
+            return;
         }
         
-        console.log('✅ Product loaded for editing:', product.name || productId);
+        modal.classList.remove('hidden');
+        console.log('✅ Modal opened successfully');
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // SUCCESS
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        console.log('');
+        console.log('═══════════════════════════════════════════════');
+        console.log('✅ SUCCESS: Product loaded for editing');
+        console.log(`📦 Product: "${product.name}" (ID: ${productId})`);
+        console.log('═══════════════════════════════════════════════');
         
     } catch (error) {
-        console.error('❌ Error loading product:', error);
-        alert('❌ Помилка завантаження товару: ' + error.message);
+        console.log('');
+        console.log('═══════════════════════════════════════════════');
+        console.error('❌ FATAL ERROR:', error);
+        console.error('Stack trace:', error.stack);
+        console.log('═══════════════════════════════════════════════');
+        alert('❌ Критична помилка завантаження товару:\n' + error.message);
     }
 };
 
