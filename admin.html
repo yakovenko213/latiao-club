@@ -2705,17 +2705,20 @@
 
       <div class="p-6 border-b flex justify-between items-center sticky top-0 bg-white z-10">
 
-        <h3 class="text-xl font-bold">Новий товар</h3>
+        <h3 class="text-xl font-bold" id="product-modal-title">Новий товар</h3>
         <button onclick="closeProductModal()" class="p-2 hover:bg-gray-100 rounded-full"><i
             data-lucide="x"></i></button>
 
       </div>
 
       <form id="product-form" class="p-6 space-y-4">
+        
+        <!-- Hidden ID field for editing (required by js/admin.js) -->
+        <input type="hidden" id="product-id">
 
         <div>
           <label class="block text-sm font-medium mb-1">Назва</label>
-          <input type="text" id="p-name" class="w-full border rounded-lg p-2" required>
+          <input type="text" id="product-name" class="w-full border rounded-lg p-2" required>
 
         </div>
 
@@ -2723,13 +2726,13 @@
 
           <div>
             <label class="block text-sm font-medium mb-1">Ціна (₴)</label>
-            <input type="number" id="p-price" class="w-full border rounded-lg p-2" required>
+            <input type="number" id="product-price" class="w-full border rounded-lg p-2" required>
 
           </div>
 
           <div>
             <label class="block text-sm font-medium mb-1">Артикул (SKU)</label>
-            <input type="text" id="p-sku" class="w-full border rounded-lg p-2" placeholder="LT-001">
+            <input type="text" id="product-sku" class="w-full border rounded-lg p-2" placeholder="LT-001">
 
             <p class="text-xs text-gray-500 mt-1">Залишіть порожнім для автогенерації</p>
 
@@ -2741,17 +2744,30 @@
 
           <div>
             <label class="block text-sm font-medium mb-1">Гострота (1-5)</label>
-            <input type="number" id="p-spiciness" min="0" max="5" class="w-full border rounded-lg p-2" value="1">
+            <input type="number" id="product-spiciness" min="0" max="5" class="w-full border rounded-lg p-2" value="1">
+
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Залишок на складі</label>
+            <input type="number" id="product-stock" class="w-full border rounded-lg p-2" value="0" min="0">
 
           </div>
 
         </div>
 
         <div>
+          <label class="block text-sm font-medium mb-1">Категорія</label>
+          <select id="product-category" class="w-full border rounded-lg p-2" required>
+            <option value="">Оберіть категорію...</option>
+          </select>
+        </div>
+
+        <div>
           <label class="block text-sm font-medium mb-1">Фото товару (можна вибрати декілька)</label>
           <!-- Hidden field to preserve existing image URLs -->
-          <input type="hidden" id="p-existing-images" value="">
-          <input type="file" id="p-images" class="w-full border rounded-lg p-2" multiple accept="image">
+          <input type="hidden" id="product-existing-image" value="">
+          <input type="file" id="product-images" class="w-full border rounded-lg p-2" multiple accept="image/*">
 
           <p class="text-xs text-gray-500 mt-1">Виберіть одну або кілька фотографій. Перша буде
             головною.
@@ -2762,57 +2778,22 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium mb-2">Категорії (можна обрати декілька)</label>
-          
-          <!-- Checkbox Grid for Multiple Categories -->
-          <div id="p-categories-container" 
-               class="border-2 border-gray-200 rounded-lg p-4 max-h-48 overflow-y-auto bg-gray-50">
-            <div id="p-categories-grid" class="grid grid-cols-2 gap-3">
-              <!-- Categories will be dynamically loaded here -->
-              <div class="text-center py-8 text-gray-400 col-span-2">
-                <div class="animate-spin w-6 h-6 border-2 border-gray-300 border-t-spicy rounded-full mx-auto mb-2"></div>
-                <p class="text-sm">Завантаження категорій...</p>
-              </div>
-            </div>
-          </div>
-          
-          <p class="text-xs text-gray-500 mt-2">Виберіть одну або декілька категорій для товару</p>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium mb-1">Короткий опис</label>
-          <textarea id="p-description" class="w-full border rounded-lg p-2" rows="2"
-            placeholder="Короткий опис для картки товару..."></textarea>
+          <label class="block text-sm font-medium mb-1">Опис</label>
+          <textarea id="product-description" class="w-full border rounded-lg p-2" rows="3"
+            placeholder="Опис товару..."></textarea>
 
         </div>
 
-        <div>
-          <label class="block text-sm font-medium mb-1">Детальний опис</label>
-          <textarea id="p-full-description" class="w-full border rounded-lg p-2" rows="4"
-            placeholder="Повний опис товару для сторінки продукту..."></textarea>
-
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium mb-1">Характеристики</label>
-
-          <textarea id="p-specs" class="w-full border rounded-lg p-2" rows="3"
-            placeholder="Вага: 106г\nКалорійність: 380 ккал/100г\nТермін придатності: 12 місяців"></textarea>
-
-          <p class="text-xs text-gray-500 mt-1">Кожна характеристика з нового рядка</p>
-
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium mb-1">Склад</label>
-          <textarea id="p-ingredients" class="w-full border rounded-lg p-2" rows="3"
-            placeholder="Пшенична мука, рослинна олія, соєвий соус, перець чилі..."></textarea>
-
+        <!-- Legacy fields for backwards compatibility (hidden but keep IDs) -->
+        <div class="hidden">
+          <textarea id="p-full-description" class="w-full border rounded-lg p-2" rows="4"></textarea>
+          <textarea id="p-specs" class="w-full border rounded-lg p-2" rows="3"></textarea>
+          <textarea id="p-ingredients" class="w-full border rounded-lg p-2" rows="3"></textarea>
         </div>
 
         <div class="flex items-center gap-2">
-          <input type="checkbox" id="p-hot" class="w-5 h-5 text-spicy rounded">
-          <label for="p-hot" class="font-medium">Хіт продажів 🔥</label>
+          <input type="checkbox" id="product-active" class="w-5 h-5 text-spicy rounded" checked>
+          <label for="product-active" class="font-medium">Активний товар</label>
 
         </div>
 
