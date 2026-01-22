@@ -13,11 +13,8 @@
 
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- SheetJS for Excel Import -->
-  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-
-  <!-- PapaParse for CSV Import -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <!-- SheetJS for Excel & CSV Import -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
   <!-- SortableJS for Drag & Drop -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
@@ -2620,16 +2617,17 @@
         <!-- Step 1: File Selection -->
         <div id="csv-step-1" class="space-y-6">
           <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
-            <h4 class="text-lg font-bold text-gray-900 mb-3">📁 Крок 1: Виберіть CSV файл</h4>
+            <h4 class="text-lg font-bold text-gray-900 mb-3">📁 Крок 1: Виберіть CSV або Excel файл</h4>
             <p class="text-gray-600 mb-4">Завантажте файл з вашими товарами. Перший рядок може містити заголовки (їх можна видалити).</p>
             
-            <input type="file" id="csv-file-input" accept=".csv" 
+            <input type="file" id="csv-file-input" 
+              accept=".csv, .xlsx, .xls, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" 
               class="block w-full text-sm text-gray-600 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600 cursor-pointer">
             
             <div class="mt-4 text-sm text-gray-500 space-y-1">
-              <p>💡 <strong>Підказка:</strong> CSV файл має містити дані про товари в колонках.</p>
+              <p>💡 <strong>Підказка:</strong> Підтримуються CSV та Excel файли (.csv, .xlsx, .xls).</p>
               <p>📝 Приклад: Назва, Ціна, Категорія, Опис, Фото</p>
-              <p>✅ <strong>Підтримувані роздільники:</strong> Кома <code>,</code> або Крапка з комою <code>;</code> (авто-визначення)</p>
+              <p>✅ <strong>Формати:</strong> CSV (кома <code>,</code> або крапка з комою <code>;</code>), Excel (.xlsx, .xls)</p>
             </div>
           </div>
 
@@ -9617,18 +9615,34 @@
 
       document.getElementById('csv-loading-indicator').classList.remove('hidden')
 
-      // Parse CSV with PapaParse (Auto-detect delimiter: comma or semicolon)
-      Papa.parse(file, {
-        delimiter: "",              // Auto-detect delimiter (comma or semicolon)
-        skipEmptyLines: true,       // Skip blank rows
-        complete: function(results) {
-          console.log('📊 PapaParse Results:', results)
-          console.log('📋 Parsed Data Sample (first row):', results.data[0])
+      // Use SheetJS (XLSX) to read both CSV and Excel files
+      const reader = new FileReader()
+      
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result)
+          const workbook = XLSX.read(data, { type: 'array' })
           
-          csvParsedData = results.data.filter(row => row.some(cell => cell && cell.trim() !== ''))
+          console.log('📊 SheetJS Workbook:', workbook)
+          console.log('📊 Sheet Names:', workbook.SheetNames)
+          
+          // Get first sheet
+          const sheetName = workbook.SheetNames[0]
+          const worksheet = workbook.Sheets[sheetName]
+          
+          // Convert to array of arrays (header: 1 means no header row parsing)
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
+          
+          console.log('📋 Parsed Data Sample (first row):', jsonData[0])
+          console.log('📊 Total rows (raw):', jsonData.length)
+          
+          // Filter out empty rows
+          csvParsedData = jsonData.filter(row => 
+            row && row.length > 0 && row.some(cell => cell !== null && cell !== undefined && String(cell).trim() !== '')
+          )
           
           if (csvParsedData.length === 0) {
-            alert('❌ CSV файл порожній або містить некоректні дані')
+            alert('❌ Файл порожній або містить некоректні дані')
             document.getElementById('csv-loading-indicator').classList.add('hidden')
             return
           }
@@ -9639,13 +9653,22 @@
           // Show step 2 with preview
           showCSVPreviewAndMapping()
           document.getElementById('csv-loading-indicator').classList.add('hidden')
-        },
-        error: function(error) {
-          console.error('❌ CSV Parse Error:', error)
-          alert('❌ Помилка парсингу CSV: ' + error.message)
+          
+        } catch (error) {
+          console.error('❌ SheetJS Parse Error:', error)
+          alert('❌ Помилка парсингу: ' + error.message)
           document.getElementById('csv-loading-indicator').classList.add('hidden')
         }
-      })
+      }
+      
+      reader.onerror = function(error) {
+        console.error('❌ File Read Error:', error)
+        alert('❌ Помилка читання файлу')
+        document.getElementById('csv-loading-indicator').classList.add('hidden')
+      }
+      
+      // Read file as ArrayBuffer (works for both CSV and Excel)
+      reader.readAsArrayBuffer(file)
     }
 
     function showCSVPreviewAndMapping() {
