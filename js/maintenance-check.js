@@ -5,40 +5,52 @@
 // and displays a "Under Maintenance" screen if needed.
 // Import this FIRST on all public pages to prevent flashing.
 
-import { db } from './firebase-init.js';
+import { db, auth } from './firebase-init.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+// Admin email for bypass (change to your actual admin email)
+const ADMIN_EMAIL = 'yakovenko7002@gmail.com';
 
 /**
  * Check if maintenance mode is active.
- * ADMIN BYPASS: Admins (marked in localStorage) can view the site with a warning badge.
- * Regular users see the maintenance screen.
+ * ADMIN BYPASS: Waits for Firebase Auth to confirm if user is admin.
+ * Regular users see the maintenance screen, admins get access with a badge.
  */
 export async function checkMaintenanceMode() {
     try {
         console.log('🔍 Checking maintenance mode...');
+        
+        // Step 1: Get maintenance status from Firestore
         const globalDoc = await getDoc(doc(db, 'settings', 'global'));
         const isMaintenanceMode = globalDoc.exists() && globalDoc.data().isMaintenance === true;
         
-        // Check if current user is an admin (marked in localStorage)
-        const isAdmin = localStorage.getItem('isAdmin') === 'true';
+        if (!isMaintenanceMode) {
+            // NORMAL MODE - No maintenance, reveal site immediately
+            console.log('✅ Site is operational - proceeding with normal load');
+            revealPage();
+            return;
+        }
         
-        if (isMaintenanceMode && !isAdmin) {
-            // BLOCK SITE FOR REGULAR USERS
-            console.log('🚧 MAINTENANCE MODE ACTIVE - Blocking site for public users');
-            renderMaintenanceScreen();
-            revealPage(); // Reveal maintenance screen
-            throw new Error('MAINTENANCE_MODE_ACTIVE');
-            
-        } else if (isMaintenanceMode && isAdmin) {
-            // ALLOW ACCESS FOR ADMINS WITH WARNING
+        // Step 2: Maintenance is ON - Wait for Auth to determine if user is admin
+        console.log('⏳ Maintenance Mode detected - waiting for auth state...');
+        
+        const currentUser = await waitForAuthState();
+        
+        // Step 3: Determine access based on user
+        const isAdmin = currentUser && currentUser.email === ADMIN_EMAIL;
+        
+        if (isAdmin) {
+            // ALLOW ACCESS FOR ADMIN WITH WARNING BADGE
             console.warn('⚠️ Maintenance Mode is ON, but you have Admin access.');
             showAdminMaintenanceBadge();
             revealPage(); // Reveal site for admin
             
         } else {
-            // NORMAL MODE
-            console.log('✅ Site is operational - proceeding with normal load');
-            revealPage(); // Reveal site normally
+            // BLOCK SITE FOR REGULAR USERS
+            console.log('🚧 MAINTENANCE MODE ACTIVE - Blocking site for public users');
+            renderMaintenanceScreen();
+            revealPage(); // Reveal maintenance screen
+            throw new Error('MAINTENANCE_MODE_ACTIVE');
         }
         
     } catch (error) {
@@ -50,6 +62,27 @@ export async function checkMaintenanceMode() {
         console.error('⚠️ Error checking maintenance mode:', error);
         revealPage(); // Reveal site even on error (fail-safe)
     }
+}
+
+/**
+ * Wait for Firebase Auth state to be determined.
+ * Returns the current user or null if not authenticated.
+ * Timeout after 3 seconds to prevent infinite waiting.
+ */
+function waitForAuthState() {
+    return new Promise((resolve) => {
+        const timeout = setTimeout(() => {
+            console.warn('⏱️ Auth check timed out after 3 seconds - assuming not admin');
+            resolve(null);
+        }, 3000);
+        
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            clearTimeout(timeout);
+            unsubscribe(); // Stop listening after first result
+            console.log('🔐 Auth state resolved:', user ? `Logged in as ${user.email}` : 'Not authenticated');
+            resolve(user);
+        });
+    });
 }
 
 /**
