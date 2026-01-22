@@ -26,16 +26,19 @@ export async function checkMaintenanceMode() {
             // BLOCK SITE FOR REGULAR USERS
             console.log('🚧 MAINTENANCE MODE ACTIVE - Blocking site for public users');
             renderMaintenanceScreen();
+            revealPage(); // Reveal maintenance screen
             throw new Error('MAINTENANCE_MODE_ACTIVE');
             
         } else if (isMaintenanceMode && isAdmin) {
             // ALLOW ACCESS FOR ADMINS WITH WARNING
             console.warn('⚠️ Maintenance Mode is ON, but you have Admin access.');
             showAdminMaintenanceBadge();
+            revealPage(); // Reveal site for admin
             
         } else {
             // NORMAL MODE
             console.log('✅ Site is operational - proceeding with normal load');
+            revealPage(); // Reveal site normally
         }
         
     } catch (error) {
@@ -45,7 +48,26 @@ export async function checkMaintenanceMode() {
         }
         // Unexpected error - log but allow site to load (fail-safe)
         console.error('⚠️ Error checking maintenance mode:', error);
+        revealPage(); // Reveal site even on error (fail-safe)
     }
+}
+
+/**
+ * Reveal the page with smooth fade-in after maintenance check
+ * Removes the anti-flash hiding and smoothly reveals content
+ */
+function revealPage() {
+    // Remove the anti-flash style to make body visible
+    document.body.style.visibility = 'visible';
+    document.body.style.opacity = '1';
+    
+    // Optionally remove the inline style tag from head
+    const antiFlashStyle = document.getElementById('anti-flash-style');
+    if (antiFlashStyle) {
+        antiFlashStyle.remove();
+    }
+    
+    console.log('✨ Page revealed with smooth fade-in');
 }
 
 /**
@@ -53,8 +75,116 @@ export async function checkMaintenanceMode() {
  */
 function renderMaintenanceScreen() {
     document.body.innerHTML = `
-        <div class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center px-4">
-            <div class="max-w-2xl w-full text-center space-y-8 animate-fade-in">
+        <!-- CSS Animations for Flying Peppers -->
+        <style>
+            @keyframes fade-in {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .animate-fade-in {
+                animation: fade-in 0.8s ease-out;
+            }
+            
+            /* Floating Pepper Animation */
+            @keyframes float-pepper {
+                0%, 100% { 
+                    transform: translateY(0px) translateX(0px) rotate(0deg); 
+                }
+                25% { 
+                    transform: translateY(-20px) translateX(10px) rotate(5deg); 
+                }
+                50% { 
+                    transform: translateY(-40px) translateX(-10px) rotate(-5deg); 
+                }
+                75% { 
+                    transform: translateY(-20px) translateX(5px) rotate(3deg); 
+                }
+            }
+            
+            @keyframes float-pepper-reverse {
+                0%, 100% { 
+                    transform: translateY(0px) translateX(0px) rotate(0deg); 
+                }
+                25% { 
+                    transform: translateY(20px) translateX(-10px) rotate(-5deg); 
+                }
+                50% { 
+                    transform: translateY(40px) translateX(10px) rotate(5deg); 
+                }
+                75% { 
+                    transform: translateY(20px) translateX(-5px) rotate(-3deg); 
+                }
+            }
+            
+            .pepper-float {
+                animation: float-pepper 8s ease-in-out infinite;
+                opacity: 0.15;
+            }
+            
+            .pepper-float-reverse {
+                animation: float-pepper-reverse 10s ease-in-out infinite;
+                opacity: 0.12;
+            }
+        </style>
+        
+        <div class="min-h-screen bg-white relative flex items-center justify-center px-4 overflow-hidden">
+            <!-- Flying Peppers Background Layer -->
+            <div class="absolute inset-0 overflow-hidden pointer-events-none z-0">
+                <!-- Row 1 - Top -->
+                <img src="https://cdn-icons-png.flaticon.com/512/2921/2921829.png" 
+                     class="pepper-float absolute w-12 h-12" 
+                     style="top: 5%; left: 10%; animation-delay: 0s;" alt="">
+                <img src="https://cdn-icons-png.flaticon.com/512/2921/2921829.png" 
+                     class="pepper-float-reverse absolute w-16 h-16" 
+                     style="top: 8%; left: 75%; animation-delay: 1.5s;" alt="">
+                <img src="https://cdn-icons-png.flaticon.com/512/2921/2921829.png" 
+                     class="pepper-float absolute w-10 h-10" 
+                     style="top: 12%; left: 45%; animation-delay: 3s;" alt="">
+                
+                <!-- Row 2 - Upper Middle -->
+                <img src="https://cdn-icons-png.flaticon.com/512/2921/2921829.png" 
+                     class="pepper-float-reverse absolute w-14 h-14" 
+                     style="top: 25%; left: 5%; animation-delay: 2s;" alt="">
+                <img src="https://cdn-icons-png.flaticon.com/512/2921/2921829.png" 
+                     class="pepper-float absolute w-12 h-12" 
+                     style="top: 28%; left: 85%; animation-delay: 4s;" alt="">
+                <img src="https://cdn-icons-png.flaticon.com/512/2921/2921829.png" 
+                     class="pepper-float-reverse absolute w-11 h-11" 
+                     style="top: 32%; left: 60%; animation-delay: 1s;" alt="">
+                
+                <!-- Row 3 - Middle -->
+                <img src="https://cdn-icons-png.flaticon.com/512/2921/2921829.png" 
+                     class="pepper-float absolute w-13 h-13" 
+                     style="top: 48%; left: 15%; animation-delay: 3.5s;" alt="">
+                <img src="https://cdn-icons-png.flaticon.com/512/2921/2921829.png" 
+                     class="pepper-float-reverse absolute w-15 h-15" 
+                     style="top: 52%; left: 90%; animation-delay: 2.5s;" alt="">
+                
+                <!-- Row 4 - Lower Middle -->
+                <img src="https://cdn-icons-png.flaticon.com/512/2921/2921829.png" 
+                     class="pepper-float absolute w-12 h-12" 
+                     style="top: 68%; left: 8%; animation-delay: 1.2s;" alt="">
+                <img src="https://cdn-icons-png.flaticon.com/512/2921/2921829.png" 
+                     class="pepper-float-reverse absolute w-14 h-14" 
+                     style="top: 65%; left: 70%; animation-delay: 4.5s;" alt="">
+                <img src="https://cdn-icons-png.flaticon.com/512/2921/2921829.png" 
+                     class="pepper-float absolute w-11 h-11" 
+                     style="top: 72%; left: 40%; animation-delay: 0.5s;" alt="">
+                
+                <!-- Row 5 - Bottom -->
+                <img src="https://cdn-icons-png.flaticon.com/512/2921/2921829.png" 
+                     class="pepper-float-reverse absolute w-16 h-16" 
+                     style="top: 85%; left: 20%; animation-delay: 3.8s;" alt="">
+                <img src="https://cdn-icons-png.flaticon.com/512/2921/2921829.png" 
+                     class="pepper-float absolute w-13 h-13" 
+                     style="top: 88%; left: 80%; animation-delay: 2.2s;" alt="">
+                <img src="https://cdn-icons-png.flaticon.com/512/2921/2921829.png" 
+                     class="pepper-float-reverse absolute w-12 h-12" 
+                     style="top: 92%; left: 55%; animation-delay: 1.8s;" alt="">
+            </div>
+            
+            <!-- Main Content (Above Peppers) -->
+            <div class="max-w-2xl w-full text-center space-y-8 animate-fade-in relative z-10">
                 <!-- Icon/Image -->
                 <div class="flex justify-center mb-8">
                     <img 
@@ -65,57 +195,36 @@ function renderMaintenanceScreen() {
                 </div>
                 
                 <!-- Title -->
-                <h1 class="text-4xl md:text-5xl font-black text-white leading-tight">
+                <h1 class="text-4xl md:text-5xl font-black text-gray-900 leading-tight">
                     🚧 Сайт на технічному обслуговуванні
                 </h1>
                 
                 <!-- Message -->
-                <p class="text-xl text-gray-300 leading-relaxed">
+                <p class="text-xl text-gray-600 leading-relaxed">
                     Ми оновлюємося, щоб стати кращими!<br>
                     Повернемось зовсім скоро.
                 </p>
                 
-                <!-- Socials (Optional) -->
-                <div class="flex justify-center gap-6 pt-8">
+                <!-- Instagram Button (Prominent & Centered) -->
+                <div class="flex justify-center pt-8">
                     <a 
-                        href="https://instagram.com/latiao.club" 
+                        href="https://instagram.com/latiao_snack" 
                         target="_blank"
-                        class="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-full font-semibold hover:scale-105 transition-transform shadow-lg"
+                        class="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-pink-500 via-purple-500 to-pink-600 text-white rounded-full text-xl font-bold hover:scale-110 hover:shadow-2xl transition-all duration-300 shadow-lg"
                     >
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073z"/>
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
                         </svg>
-                        Instagram
-                    </a>
-                    <a 
-                        href="https://t.me/latiao_club" 
-                        target="_blank"
-                        class="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full font-semibold hover:scale-105 transition-transform shadow-lg"
-                    >
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
-                        </svg>
-                        Telegram
+                        <span>Instagram</span>
                     </a>
                 </div>
                 
                 <!-- Footer Note -->
                 <p class="text-sm text-gray-500 pt-8">
-                    Будь ласка, зв'яжіться з нами в соцмережах для термінових питань
+                    Зв'яжіться з нами в Instagram для термінових питань
                 </p>
             </div>
         </div>
-        
-        <!-- Fade-in Animation -->
-        <style>
-            @keyframes fade-in {
-                from { opacity: 0; transform: translateY(20px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-            .animate-fade-in {
-                animation: fade-in 0.8s ease-out;
-            }
-        </style>
     `;
 }
 
