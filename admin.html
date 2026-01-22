@@ -3585,6 +3585,29 @@
           </div>
         </div>
 
+        <!-- AI Assistant Toggle Section -->
+        <div class="pt-4 border-t border-gray-200">
+          <h4 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+            <span>🧠</span> AI Асистент
+          </h4>
+          
+          <div class="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-xl">
+            <div class="flex-1">
+              <label for="toggle-ai-assistant" class="font-semibold text-gray-800 cursor-pointer flex items-center gap-2">
+                <span>🪄</span> Увімкнути AI Checkout Assistant
+              </label>
+              <p class="text-xs text-gray-600 mt-1">
+                Якщо увімкнено — на сторінці оформлення з'явиться кнопка AI-асистента для автозаповнення форм.
+                <br><strong class="text-purple-600">Gemini 2.0 Flash</strong> — розпізнає текст та заповнює поля автоматично.
+              </p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer ml-4">
+              <input type="checkbox" id="toggle-ai-assistant" class="sr-only peer">
+              <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+            </label>
+          </div>
+        </div>
+
         <!-- Dev Tools Section -->
         <div class="pt-4 border-t border-gray-200">
           <h4 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
@@ -11492,6 +11515,14 @@
         document.getElementById('setting-maintenance-toggle').checked = isMaintenanceMode
         console.log('🔴 Maintenance mode loaded:', isMaintenanceMode)
         
+        // Load AI Assistant setting from settings/checkout_config (default: false)
+        const checkoutConfigDoc = await getDoc(doc(db, 'settings', 'checkout_config'))
+        const isAiEnabled = checkoutConfigDoc.exists() 
+          ? (checkoutConfigDoc.data().aiEnabled === true) // default false
+          : false
+        document.getElementById('toggle-ai-assistant').checked = isAiEnabled
+        console.log('🧠 AI Assistant setting loaded:', isAiEnabled)
+        
       } catch (e) {
         console.error('Error loading settings:', e)
       }
@@ -12251,6 +12282,7 @@
         const senderName = document.getElementById('setting-sender').value.trim()
         const isPrepaymentEnabled = document.getElementById('setting-prepayment-toggle').checked
         const isMaintenanceMode = document.getElementById('setting-maintenance-toggle').checked
+        const isAiAssistantEnabled = document.getElementById('toggle-ai-assistant').checked
 
         // Save main settings (API tokens only)
         console.log('💾 Saving API credentials to Firestore...')
@@ -12275,6 +12307,13 @@
           isMaintenance: isMaintenanceMode,
           updatedAt: new Date().toISOString()
         }, { merge: true })
+        
+        // Save AI Assistant setting to settings/checkout_config
+        console.log('🧠 Saving AI Assistant setting:', isAiAssistantEnabled)
+        await setDoc(doc(db, 'settings', 'checkout_config'), {
+          aiEnabled: isAiAssistantEnabled,
+          updatedAt: new Date().toISOString()
+        }, { merge: true })
 
         console.log('✅ API credentials saved:', {
           turboSmsToken: turboSmsToken ? '•••••' : '',
@@ -12282,7 +12321,8 @@
           keycrmApiKey: keycrmApiKey ? '•••••' : '',
           senderName,
           isPrepaymentEnabled,
-          isMaintenanceMode
+          isMaintenanceMode,
+          aiAssistantEnabled: isAiAssistantEnabled
         })
 
         closeSettingsModal()
