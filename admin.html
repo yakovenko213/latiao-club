@@ -2592,7 +2592,8 @@
   <!-- CSV IMPORT MODAL (Advanced Column Mapping) -->
   <!-- ============================================ -->
   <div id="csv-import-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl w-11/12 max-w-7xl h-[90vh] overflow-hidden shadow-2xl animate-slide-up flex flex-col">
+    <!-- ⚡ CRITICAL: w-[95vw] max-w-full allows FULL width expansion ⚡ -->
+    <div class="bg-white rounded-2xl w-[95vw] max-w-full h-[90vh] overflow-hidden shadow-2xl animate-slide-up flex flex-col">
       
       <!-- Modal Header -->
       <div class="p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50 flex justify-between items-center">
@@ -2647,16 +2648,17 @@
             </p>
           </div>
 
-          <!-- Preview Table with Dropdown Mapping (Excel-style with horizontal scroll) -->
-          <div class="overflow-x-auto overflow-y-auto max-h-[60vh] border-2 border-gray-200 rounded-xl">
-            <table class="min-w-max text-sm divide-y divide-gray-200" id="csv-preview-table">
-              <thead class="bg-gray-100 border-b-2 border-gray-300 sticky top-0 z-10 shadow-sm">
+          <!-- ⚡ CRITICAL: Force Horizontal Scroll Table Wrapper ⚡ -->
+          <div class="overflow-x-auto overflow-y-auto block max-h-[65vh] border-2 border-gray-300 rounded-xl bg-gray-50 shadow-inner">
+            <table class="min-w-max w-full table-auto border-collapse" id="csv-preview-table" style="display: table;">
+              <thead class="bg-gradient-to-r from-gray-100 to-gray-200 border-b-2 border-gray-400 sticky top-0 z-10 shadow-md">
                 <tr id="csv-mapping-row">
-                  <!-- Dropdowns will be inserted here dynamically -->
+                  <!-- ✅ Dropdowns will be inserted here dynamically -->
                 </tr>
               </thead>
               <tbody id="csv-preview-body" class="bg-white divide-y divide-gray-200">
-                <!-- Preview rows will be inserted here -->
+                <!-- ✅ Preview rows will be inserted here -->
+              </tbody>
               </tbody>
             </table>
           </div>
@@ -9672,6 +9674,18 @@
     }
 
     function showCSVPreviewAndMapping() {
+      console.log('🔄 Starting renderImportPreview...')
+      console.log('📊 First Row (Headers):', csvParsedData[0])
+      console.log('📊 Data Type Check:', typeof csvParsedData[0], Array.isArray(csvParsedData[0]))
+      console.log('📊 Number of Columns:', csvParsedData[0]?.length)
+      
+      // Validate data structure
+      if (!Array.isArray(csvParsedData[0])) {
+        console.error('❌ CRITICAL: First row is NOT an array! Data:', csvParsedData[0])
+        alert('❌ Помилка: дані не розпарсені правильно. Перевірте Console для деталей.')
+        return
+      }
+      
       // Switch to step 2
       document.getElementById('csv-step-1').classList.add('hidden')
       document.getElementById('csv-step-2').classList.remove('hidden')
@@ -9682,8 +9696,12 @@
       // Get number of columns
       const numColumns = csvParsedData[0].length
       const previewRows = csvParsedData.slice(0, 5)
+      
+      console.log(`✅ Rendering ${numColumns} columns, ${previewRows.length} preview rows`)
 
-      // Build dropdown mapping row
+      // ==========================================
+      // RENDER HEADER ROW WITH DROPDOWNS
+      // ==========================================
       const mappingRow = document.getElementById('csv-mapping-row')
       mappingRow.innerHTML = ''
       
@@ -9700,15 +9718,17 @@
 
       for (let i = 0; i < numColumns; i++) {
         const th = document.createElement('th')
-        th.className = 'px-4 py-3 text-left text-xs font-semibold text-gray-700 min-w-[200px] whitespace-nowrap bg-gray-100'
+        // CRITICAL: whitespace-nowrap FORCES horizontal expansion
+        th.className = 'px-4 py-3 text-left text-xs font-semibold text-gray-700 min-w-[220px] whitespace-nowrap bg-gray-100 border-r border-gray-300'
         
-        // Column header with number
+        // Column header label
         const columnLabel = document.createElement('div')
         columnLabel.className = 'text-xs text-gray-500 mb-2 font-normal'
-        columnLabel.textContent = `Колонка ${i + 1}`
+        columnLabel.textContent = `📍 Колонка ${i + 1}`
         
+        // Dropdown select
         const select = document.createElement('select')
-        select.className = 'w-full min-w-[180px] px-3 py-2 border border-gray-300 rounded-lg text-xs font-medium bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+        select.className = 'block w-full min-w-[200px] px-3 py-2 border-2 border-gray-300 rounded-lg text-xs font-semibold bg-white shadow-sm hover:border-blue-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors'
         select.dataset.columnIndex = i
         
         fieldOptions.forEach(opt => {
@@ -9719,19 +9739,29 @@
         })
 
         // Auto-detect common column names
-        const firstCellValue = csvParsedData[0][i].toLowerCase().trim()
+        const firstCellValue = String(csvParsedData[0][i] || '').toLowerCase().trim()
+        console.log(`  Column ${i}: "${csvParsedData[0][i]}" -> detecting...`)
+        
         if (firstCellValue.includes('назв') || firstCellValue.includes('name') || firstCellValue.includes('title')) {
           select.value = 'title'
+          console.log(`    ✅ Auto-mapped to: title`)
         } else if (firstCellValue.includes('ціна') || firstCellValue.includes('price') || firstCellValue.includes('cost')) {
           select.value = 'price'
+          console.log(`    ✅ Auto-mapped to: price`)
         } else if (firstCellValue.includes('категор') || firstCellValue.includes('category')) {
           select.value = 'category'
+          console.log(`    ✅ Auto-mapped to: category`)
         } else if (firstCellValue.includes('фото') || firstCellValue.includes('image') || firstCellValue.includes('photo')) {
           select.value = 'image'
+          console.log(`    ✅ Auto-mapped to: image`)
         } else if (firstCellValue.includes('опис') || firstCellValue.includes('description')) {
           select.value = 'description'
+          console.log(`    ✅ Auto-mapped to: description`)
         } else if (firstCellValue.includes('вага') || firstCellValue.includes('weight')) {
           select.value = 'weight'
+          console.log(`    ✅ Auto-mapped to: weight`)
+        } else {
+          console.log(`    ⚪ No auto-mapping`)
         }
 
         th.appendChild(columnLabel)
@@ -9739,24 +9769,35 @@
         mappingRow.appendChild(th)
       }
 
-      // Build preview rows
+      // ==========================================
+      // RENDER PREVIEW DATA ROWS
+      // ==========================================
       const previewBody = document.getElementById('csv-preview-body')
       previewBody.innerHTML = ''
 
       previewRows.forEach((row, rowIndex) => {
         const tr = document.createElement('tr')
-        tr.className = rowIndex % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100'
+        tr.className = rowIndex % 2 === 0 ? 'bg-white hover:bg-gray-50 transition-colors' : 'bg-gray-50 hover:bg-gray-100 transition-colors'
 
-        row.forEach(cell => {
+        // CRITICAL: Must iterate through SAME number of columns
+        for (let colIndex = 0; colIndex < numColumns; colIndex++) {
           const td = document.createElement('td')
-          td.className = 'px-4 py-3 text-xs text-gray-700 min-w-[200px] whitespace-nowrap border-r border-gray-200 last:border-r-0'
-          td.textContent = cell || '—'
-          td.title = cell || '—' // Tooltip for long values
+          // CRITICAL: whitespace-nowrap prevents wrapping -> forces horizontal scroll
+          td.className = 'px-4 py-3 text-xs text-gray-800 min-w-[220px] max-w-[400px] whitespace-nowrap border-r border-gray-200 overflow-hidden text-ellipsis'
+          
+          const cellValue = row[colIndex]
+          const displayValue = cellValue !== null && cellValue !== undefined ? String(cellValue) : '—'
+          
+          td.textContent = displayValue
+          td.title = displayValue // Tooltip for full value on hover
+          
           tr.appendChild(td)
-        })
+        }
 
         previewBody.appendChild(tr)
       })
+      
+      console.log('✅ Table rendered successfully')
     }
 
     window.startCSVImport = async function() {
