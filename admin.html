@@ -16,6 +16,9 @@
   <!-- SheetJS for Excel Import -->
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
+  <!-- PapaParse for CSV Import -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
   <!-- SortableJS for Drag & Drop -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
@@ -731,9 +734,9 @@
               </button>
               <!-- Advanced Import Modal -->
               <button onclick="window.openImportModal()"
-                class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">
+                class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">
                 <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
-                <span>Імпорт Excel</span>
+                <span>CSV Імпорт</span>
               </button>
               <button onclick="openProductModal()"
                 class="flex items-center gap-2 px-4 py-2 bg-spicy text-white rounded-lg font-semibold hover:bg-orange-700 transition">
@@ -2583,6 +2586,105 @@
         <button onclick="window.applyBulkDiscount()"
           class="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-bold transition-all shadow-lg">
           ✓ Застосувати
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- CSV IMPORT MODAL (Advanced Column Mapping) -->
+  <!-- ============================================ -->
+  <div id="csv-import-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden shadow-2xl animate-slide-up">
+      
+      <!-- Modal Header -->
+      <div class="p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+            <span class="text-2xl">📊</span>
+          </div>
+          <div>
+            <h3 class="text-2xl font-bold text-gray-900">Імпорт товарів з CSV</h3>
+            <p class="text-sm text-gray-600">Крок <span id="csv-step-indicator">1</span> з 2</p>
+          </div>
+        </div>
+        <button onclick="window.closeCSVImportModal()" 
+          class="p-2 hover:bg-white/80 rounded-full transition-colors">
+          <i data-lucide="x" class="w-6 h-6 text-gray-600"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-8 overflow-y-auto max-h-[calc(90vh-200px)]">
+        
+        <!-- Step 1: File Selection -->
+        <div id="csv-step-1" class="space-y-6">
+          <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
+            <h4 class="text-lg font-bold text-gray-900 mb-3">📁 Крок 1: Виберіть CSV файл</h4>
+            <p class="text-gray-600 mb-4">Завантажте файл з вашими товарами. Перший рядок може містити заголовки (їх можна видалити).</p>
+            
+            <input type="file" id="csv-file-input" accept=".csv" 
+              class="block w-full text-sm text-gray-600 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600 cursor-pointer">
+            
+            <div class="mt-4 text-sm text-gray-500 space-y-1">
+              <p>💡 <strong>Підказка:</strong> CSV файл має містити дані про товари в колонках.</p>
+              <p>📝 Приклад: Назва, Ціна, Категорія, Опис, Фото</p>
+            </div>
+          </div>
+
+          <div id="csv-loading-indicator" class="hidden text-center py-10">
+            <div class="animate-spin w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p class="text-gray-600 font-semibold">Обробка файлу...</p>
+          </div>
+        </div>
+
+        <!-- Step 2: Column Mapping -->
+        <div id="csv-step-2" class="hidden space-y-6">
+          <div class="bg-green-50 border-2 border-green-200 rounded-xl p-6">
+            <h4 class="text-lg font-bold text-gray-900 mb-3">🔗 Крок 2: Зв'яжіть колонки CSV з полями бази даних</h4>
+            <p class="text-gray-600 mb-2">Виберіть у випадаючих списках, які колонки відповідають яким полям. Поля <strong>Назва</strong> та <strong>Ціна</strong> — обов'язкові.</p>
+            <p class="text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-2">
+              ⚠️ <strong>Увага:</strong> Рядки без назви або ціни будуть пропущені.
+            </p>
+          </div>
+
+          <!-- Preview Table with Dropdown Mapping -->
+          <div class="overflow-x-auto border-2 border-gray-200 rounded-xl">
+            <table class="w-full text-sm" id="csv-preview-table">
+              <thead class="bg-gray-100 border-b-2 border-gray-300">
+                <tr id="csv-mapping-row">
+                  <!-- Dropdowns will be inserted here dynamically -->
+                </tr>
+              </thead>
+              <tbody id="csv-preview-body" class="divide-y divide-gray-200">
+                <!-- Preview rows will be inserted here -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="flex items-center gap-2 text-sm text-gray-600">
+            <i data-lucide="info" class="w-4 h-4"></i>
+            <span>Показано перші 5 рядків для попереднього перегляду. Імпортовано буде всі дані з файлу.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-6 border-t bg-gray-50 flex gap-3">
+        <button onclick="window.closeCSVImportModal()" 
+          class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-bold transition-colors">
+          Скасувати
+        </button>
+        
+        <button id="csv-back-btn" onclick="window.goBackCSVStep()" 
+          class="hidden px-6 py-3 bg-white border-2 border-gray-300 hover:bg-gray-50 text-gray-700 rounded-xl font-bold transition-colors">
+          ← Назад
+        </button>
+        
+        <button id="csv-import-btn" onclick="window.startCSVImport()" 
+          class="hidden flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center gap-2">
+          <i data-lucide="upload" class="w-5 h-5"></i>
+          <span>Імпортувати товари</span>
         </button>
       </div>
     </div>
@@ -9461,6 +9563,266 @@
         syncBtn.innerHTML = originalBtnHTML
       }
     }
+
+    // ========================================
+    // CSV IMPORT WITH ADVANCED COLUMN MAPPING
+    // ========================================
+
+    let csvParsedData = null // Stores full parsed CSV data
+
+    window.openImportModal = function() {
+      window.openCSVImportModal()
+    }
+
+    window.openCSVImportModal = function() {
+      const modal = document.getElementById('csv-import-modal')
+      modal.classList.remove('hidden')
+      
+      // Reset to step 1
+      csvParsedData = null
+      document.getElementById('csv-step-1').classList.remove('hidden')
+      document.getElementById('csv-step-2').classList.add('hidden')
+      document.getElementById('csv-back-btn').classList.add('hidden')
+      document.getElementById('csv-import-btn').classList.add('hidden')
+      document.getElementById('csv-step-indicator').textContent = '1'
+      document.getElementById('csv-file-input').value = ''
+      
+      // File input change listener
+      document.getElementById('csv-file-input').addEventListener('change', handleCSVFileSelect)
+    }
+
+    window.closeCSVImportModal = function() {
+      document.getElementById('csv-import-modal').classList.add('hidden')
+      csvParsedData = null
+    }
+
+    window.goBackCSVStep = function() {
+      document.getElementById('csv-step-2').classList.add('hidden')
+      document.getElementById('csv-step-1').classList.remove('hidden')
+      document.getElementById('csv-back-btn').classList.add('hidden')
+      document.getElementById('csv-import-btn').classList.add('hidden')
+      document.getElementById('csv-step-indicator').textContent = '1'
+    }
+
+    function handleCSVFileSelect(event) {
+      const file = event.target.files[0]
+      if (!file) return
+
+      document.getElementById('csv-loading-indicator').classList.remove('hidden')
+
+      // Parse CSV with PapaParse
+      Papa.parse(file, {
+        complete: function(results) {
+          csvParsedData = results.data.filter(row => row.some(cell => cell.trim() !== ''))
+          
+          if (csvParsedData.length === 0) {
+            alert('❌ CSV файл порожній або містить некоректні дані')
+            document.getElementById('csv-loading-indicator').classList.add('hidden')
+            return
+          }
+
+          // Show step 2 with preview
+          showCSVPreviewAndMapping()
+          document.getElementById('csv-loading-indicator').classList.add('hidden')
+        },
+        error: function(error) {
+          alert('❌ Помилка парсингу CSV: ' + error.message)
+          document.getElementById('csv-loading-indicator').classList.add('hidden')
+        }
+      })
+    }
+
+    function showCSVPreviewAndMapping() {
+      // Switch to step 2
+      document.getElementById('csv-step-1').classList.add('hidden')
+      document.getElementById('csv-step-2').classList.remove('hidden')
+      document.getElementById('csv-back-btn').classList.remove('hidden')
+      document.getElementById('csv-import-btn').classList.remove('hidden')
+      document.getElementById('csv-step-indicator').textContent = '2'
+
+      // Get number of columns
+      const numColumns = csvParsedData[0].length
+      const previewRows = csvParsedData.slice(0, 5)
+
+      // Build dropdown mapping row
+      const mappingRow = document.getElementById('csv-mapping-row')
+      mappingRow.innerHTML = ''
+      
+      const fieldOptions = [
+        { value: '', label: '❌ Не імпортувати' },
+        { value: 'title', label: '📝 Назва (обов\'язково)' },
+        { value: 'price', label: '💰 Ціна (обов\'язково)' },
+        { value: 'category', label: '📂 Категорія' },
+        { value: 'image', label: '🖼️ URL Фото' },
+        { value: 'description', label: '📄 Опис' },
+        { value: 'weight', label: '⚖️ Вага' },
+        { value: 'inStock', label: '✅ В наявності' }
+      ]
+
+      for (let i = 0; i < numColumns; i++) {
+        const th = document.createElement('th')
+        th.className = 'px-3 py-2 text-left text-xs font-semibold text-gray-600'
+        
+        const select = document.createElement('select')
+        select.className = 'w-full px-2 py-1 border border-gray-300 rounded text-xs font-medium bg-white'
+        select.dataset.columnIndex = i
+        
+        fieldOptions.forEach(opt => {
+          const option = document.createElement('option')
+          option.value = opt.value
+          option.textContent = opt.label
+          select.appendChild(option)
+        })
+
+        // Auto-detect common column names
+        const firstCellValue = csvParsedData[0][i].toLowerCase().trim()
+        if (firstCellValue.includes('назв') || firstCellValue.includes('name') || firstCellValue.includes('title')) {
+          select.value = 'title'
+        } else if (firstCellValue.includes('ціна') || firstCellValue.includes('price') || firstCellValue.includes('cost')) {
+          select.value = 'price'
+        } else if (firstCellValue.includes('категор') || firstCellValue.includes('category')) {
+          select.value = 'category'
+        } else if (firstCellValue.includes('фото') || firstCellValue.includes('image') || firstCellValue.includes('photo')) {
+          select.value = 'image'
+        } else if (firstCellValue.includes('опис') || firstCellValue.includes('description')) {
+          select.value = 'description'
+        } else if (firstCellValue.includes('вага') || firstCellValue.includes('weight')) {
+          select.value = 'weight'
+        }
+
+        th.appendChild(select)
+        mappingRow.appendChild(th)
+      }
+
+      // Build preview rows
+      const previewBody = document.getElementById('csv-preview-body')
+      previewBody.innerHTML = ''
+
+      previewRows.forEach((row, rowIndex) => {
+        const tr = document.createElement('tr')
+        tr.className = rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+
+        row.forEach(cell => {
+          const td = document.createElement('td')
+          td.className = 'px-3 py-2 text-xs text-gray-700'
+          td.textContent = cell || '—'
+          tr.appendChild(td)
+        })
+
+        previewBody.appendChild(tr)
+      })
+    }
+
+    window.startCSVImport = async function() {
+      if (!csvParsedData || csvParsedData.length === 0) {
+        alert('❌ Немає даних для імпорту')
+        return
+      }
+
+      // Get column mapping from dropdowns
+      const mappingSelects = document.querySelectorAll('#csv-mapping-row select')
+      const columnMapping = {}
+      
+      mappingSelects.forEach(select => {
+        const columnIndex = parseInt(select.dataset.columnIndex)
+        const fieldName = select.value
+        if (fieldName) {
+          columnMapping[columnIndex] = fieldName
+        }
+      })
+
+      // Check if required fields are mapped
+      const hasTitleMapping = Object.values(columnMapping).includes('title')
+      const hasPriceMapping = Object.values(columnMapping).includes('price')
+
+      if (!hasTitleMapping || !hasPriceMapping) {
+        alert('❌ Обов\'язково треба зв\'язати колонки "Назва" та "Ціна"')
+        return
+      }
+
+      // Confirm import
+      const confirm = window.confirm(`📊 Імпортувати ${csvParsedData.length} рядків?\n\nУвага: рядки без назви або ціни будуть пропущені.`)
+      if (!confirm) return
+
+      // Disable button and show progress
+      const importBtn = document.getElementById('csv-import-btn')
+      importBtn.disabled = true
+      importBtn.innerHTML = '<div class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>'
+
+      let successCount = 0
+      let skipCount = 0
+      const batchSize = 500
+      let batch = writeBatch(db)
+      let batchCount = 0
+
+      try {
+        for (let rowIndex = 0; rowIndex < csvParsedData.length; rowIndex++) {
+          const row = csvParsedData[rowIndex]
+          const productData = {}
+
+          // Map columns to fields
+          Object.keys(columnMapping).forEach(colIndex => {
+            const fieldName = columnMapping[colIndex]
+            const cellValue = row[colIndex]?.trim()
+            
+            if (cellValue) {
+              if (fieldName === 'price') {
+                productData[fieldName] = parseFloat(cellValue.replace(/[^\d.]/g, '')) || 0
+              } else if (fieldName === 'inStock') {
+                productData[fieldName] = ['true', '1', 'yes', 'так', '+'].includes(cellValue.toLowerCase())
+              } else {
+                productData[fieldName] = cellValue
+              }
+            }
+          })
+
+          // Skip if no title or price
+          if (!productData.title || !productData.price) {
+            skipCount++
+            continue
+          }
+
+          // Set defaults
+          productData.isActive = true
+          productData.inStock = productData.inStock !== undefined ? productData.inStock : true
+          productData.createdAt = new Date().toISOString()
+
+          // Add to batch
+          const newDocRef = doc(collection(db, 'products'))
+          batch.set(newDocRef, productData)
+          batchCount++
+          successCount++
+
+          // Commit batch if reached limit
+          if (batchCount >= batchSize) {
+            await batch.commit()
+            batch = writeBatch(db)
+            batchCount = 0
+          }
+        }
+
+        // Commit remaining
+        if (batchCount > 0) {
+          await batch.commit()
+        }
+
+        alert(`✅ Імпорт завершено!\n\n✔️ Додано: ${successCount} товарів\n⚠️ Пропущено: ${skipCount} рядків (без назви/ціни)`)
+        window.closeCSVImportModal()
+        loadProducts()
+
+      } catch (error) {
+        console.error('CSV Import Error:', error)
+        alert('❌ Помилка імпорту: ' + error.message)
+      } finally {
+        importBtn.disabled = false
+        importBtn.innerHTML = '<i data-lucide="upload" class="w-5 h-5"></i><span>Імпортувати товари</span>'
+        lucide.createIcons()
+      }
+    }
+
+    // ========================================
+    // PRODUCTS CRUD
+    // ========================================
 
     async function loadProducts() {
       const list = document.getElementById('products-list')
