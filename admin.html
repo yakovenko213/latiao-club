@@ -2705,20 +2705,17 @@
 
       <div class="p-6 border-b flex justify-between items-center sticky top-0 bg-white z-10">
 
-        <h3 class="text-xl font-bold" id="product-modal-title">Новий товар</h3>
+        <h3 class="text-xl font-bold">Новий товар</h3>
         <button onclick="closeProductModal()" class="p-2 hover:bg-gray-100 rounded-full"><i
             data-lucide="x"></i></button>
 
       </div>
 
       <form id="product-form" class="p-6 space-y-4">
-        
-        <!-- Hidden ID field for editing (required by js/admin.js) -->
-        <input type="hidden" id="product-id">
 
         <div>
           <label class="block text-sm font-medium mb-1">Назва</label>
-          <input type="text" id="product-name" class="w-full border rounded-lg p-2" required>
+          <input type="text" id="p-name" class="w-full border rounded-lg p-2" required>
 
         </div>
 
@@ -2726,13 +2723,13 @@
 
           <div>
             <label class="block text-sm font-medium mb-1">Ціна (₴)</label>
-            <input type="number" id="product-price" class="w-full border rounded-lg p-2" required>
+            <input type="number" id="p-price" class="w-full border rounded-lg p-2" required>
 
           </div>
 
           <div>
             <label class="block text-sm font-medium mb-1">Артикул (SKU)</label>
-            <input type="text" id="product-sku" class="w-full border rounded-lg p-2" placeholder="LT-001">
+            <input type="text" id="p-sku" class="w-full border rounded-lg p-2" placeholder="LT-001">
 
             <p class="text-xs text-gray-500 mt-1">Залишіть порожнім для автогенерації</p>
 
@@ -2744,30 +2741,15 @@
 
           <div>
             <label class="block text-sm font-medium mb-1">Гострота (1-5)</label>
-            <input type="number" id="product-spiciness" min="0" max="5" class="w-full border rounded-lg p-2" value="1">
+            <input type="number" id="p-spiciness" min="0" max="5" class="w-full border rounded-lg p-2" value="1">
 
           </div>
 
-          <div>
-            <label class="block text-sm font-medium mb-1">Залишок на складі</label>
-            <input type="number" id="product-stock" class="w-full border rounded-lg p-2" value="0" min="0">
-
-          </div>
-
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium mb-1">Категорія</label>
-          <select id="product-category" class="w-full border rounded-lg p-2" required>
-            <option value="">Оберіть категорію...</option>
-          </select>
         </div>
 
         <div>
           <label class="block text-sm font-medium mb-1">Фото товару (можна вибрати декілька)</label>
-          <!-- Hidden field to preserve existing image URLs -->
-          <input type="hidden" id="product-existing-image" value="">
-          <input type="file" id="product-images" class="w-full border rounded-lg p-2" multiple accept="image/*">
+          <input type="file" id="p-images" class="w-full border rounded-lg p-2" multiple accept="image">
 
           <p class="text-xs text-gray-500 mt-1">Виберіть одну або кілька фотографій. Перша буде
             головною.
@@ -2778,22 +2760,57 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium mb-1">Опис</label>
-          <textarea id="product-description" class="w-full border rounded-lg p-2" rows="3"
-            placeholder="Опис товару..."></textarea>
+          <label class="block text-sm font-medium mb-2">Категорії (можна обрати декілька)</label>
+          
+          <!-- Checkbox Grid for Multiple Categories -->
+          <div id="p-categories-container" 
+               class="border-2 border-gray-200 rounded-lg p-4 max-h-48 overflow-y-auto bg-gray-50">
+            <div id="p-categories-grid" class="grid grid-cols-2 gap-3">
+              <!-- Categories will be dynamically loaded here -->
+              <div class="text-center py-8 text-gray-400 col-span-2">
+                <div class="animate-spin w-6 h-6 border-2 border-gray-300 border-t-spicy rounded-full mx-auto mb-2"></div>
+                <p class="text-sm">Завантаження категорій...</p>
+              </div>
+            </div>
+          </div>
+          
+          <p class="text-xs text-gray-500 mt-2">Виберіть одну або декілька категорій для товару</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Короткий опис</label>
+          <textarea id="p-description" class="w-full border rounded-lg p-2" rows="2"
+            placeholder="Короткий опис для картки товару..."></textarea>
 
         </div>
 
-        <!-- Legacy fields for backwards compatibility (hidden but keep IDs) -->
-        <div class="hidden">
-          <textarea id="p-full-description" class="w-full border rounded-lg p-2" rows="4"></textarea>
-          <textarea id="p-specs" class="w-full border rounded-lg p-2" rows="3"></textarea>
-          <textarea id="p-ingredients" class="w-full border rounded-lg p-2" rows="3"></textarea>
+        <div>
+          <label class="block text-sm font-medium mb-1">Детальний опис</label>
+          <textarea id="p-full-description" class="w-full border rounded-lg p-2" rows="4"
+            placeholder="Повний опис товару для сторінки продукту..."></textarea>
+
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Характеристики</label>
+
+          <textarea id="p-specs" class="w-full border rounded-lg p-2" rows="3"
+            placeholder="Вага: 106г\nКалорійність: 380 ккал/100г\nТермін придатності: 12 місяців"></textarea>
+
+          <p class="text-xs text-gray-500 mt-1">Кожна характеристика з нового рядка</p>
+
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Склад</label>
+          <textarea id="p-ingredients" class="w-full border rounded-lg p-2" rows="3"
+            placeholder="Пшенична мука, рослинна олія, соєвий соус, перець чилі..."></textarea>
+
         </div>
 
         <div class="flex items-center gap-2">
-          <input type="checkbox" id="product-active" class="w-5 h-5 text-spicy rounded" checked>
-          <label for="product-active" class="font-medium">Активний товар</label>
+          <input type="checkbox" id="p-hot" class="w-5 h-5 text-spicy rounded">
+          <label for="p-hot" class="font-medium">Хіт продажів 🔥</label>
 
         </div>
 
@@ -9916,6 +9933,7 @@
           </th>
           <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Фото</th>
           <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Назва</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Артикул</th>
           <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Ціна</th>
           <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Категорія</th>
           <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Дії</th>
@@ -9956,6 +9974,7 @@
             </td>
             <td class="px-4 py-3"><img src="${img}" class="w-12 h-12 object-cover rounded-lg" onerror="this.src='https://placehold.co/50'"></td>
             <td class="px-4 py-3 text-sm font-medium text-gray-900">${p.name || 'Без назви'}${saleBadge}</td>
+            <td class="px-4 py-3 text-sm text-gray-600">${p.sku || '-'}</td>
             <td class="px-4 py-3 text-sm font-semibold text-gray-900">${priceDisplay}</td>
             <td class="px-4 py-3 text-sm text-gray-700">${categoriesHtml}</td>
             <td class="px-4 py-3 text-right">
@@ -10449,32 +10468,15 @@
         const product = docSnap.data()
         editingProductId = productId
 
-        // ✅ SAFE: Check if elements exist before setting values
-        const setValueSafely = (id, value) => {
-          const el = document.getElementById(id)
-          if (el) el.value = value || ''
-          else console.warn(`⚠️ Element not found: ${id}`)
-        }
-
-        setValueSafely('p-name', product.name)
-        setValueSafely('p-price', product.price)
-        setValueSafely('p-sku', product.sku)
-        setValueSafely('p-spiciness', product.spiciness || 1)
-        setValueSafely('p-description', product.description)
-        setValueSafely('p-full-description', product.fullDescription)
-        setValueSafely('p-specs', product.specs)
-        setValueSafely('p-ingredients', product.ingredients)
-        
-        const hotCheckbox = document.getElementById('p-hot')
-        if (hotCheckbox) hotCheckbox.checked = product.isHot || false
-        
-        // ✅ PRESERVE EXISTING IMAGES: Store URLs in hidden field
-        const existingImagesInput = document.getElementById('p-existing-images')
-        if (existingImagesInput) {
-          const imageUrls = product.images || (product.image ? [product.image] : [])
-          existingImagesInput.value = JSON.stringify(imageUrls)
-          console.log('✅ Existing images preserved:', imageUrls)
-        }
+        document.getElementById('p-name').value = product.name || ''
+        document.getElementById('p-price').value = product.price || ''
+        document.getElementById('p-sku').value = product.sku || ''
+        document.getElementById('p-spiciness').value = product.spiciness || 1
+        document.getElementById('p-description').value = product.description || ''
+        document.getElementById('p-full-description').value = product.fullDescription || ''
+        document.getElementById('p-specs').value = product.specs || ''
+        document.getElementById('p-ingredients').value = product.ingredients || ''
+        document.getElementById('p-hot').checked = product.isHot || false
 
         // ============================================
         // PRE-CHECK CATEGORIES (Multiple Support)
@@ -10502,44 +10504,18 @@
         
         console.log('✅ Pre-checked categories:', categoriesToCheck)
 
-        // ✅ DISPLAY EXISTING IMAGES with safe check
-        if (imagePreview) {
-          const imageUrls = product.images || (product.image ? [product.image] : [])
-          
-          if (imageUrls.length > 0) {
-            imagePreview.innerHTML = ''
-            imagePreview.classList.remove('hidden')
-            
-            imageUrls.forEach((url, index) => {
-              const div = document.createElement('div')
-              div.className = 'relative group'
-              div.innerHTML = `
-                <img src="${url}" 
-                     class="w-full h-24 object-cover rounded-lg border-2 border-blue-500" 
-                     onerror="this.src='https://placehold.co/100x100?text=IMG'">
-                <div class="absolute top-1 right-1 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow-lg">
-                  📷 Фото ${index + 1}
-                </div>
-                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition rounded-lg flex items-center justify-center">
-                  <span class="text-white text-xs font-semibold">Поточне зображення</span>
-                </div>
-              `
-              imagePreview.appendChild(div)
-            })
-            
-            console.log(`✅ Displayed ${imageUrls.length} existing images`)
-          } else {
-            // No images - show placeholder
-            imagePreview.innerHTML = `
-              <div class="col-span-4 p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 text-center">
-                <p class="text-gray-500 text-sm">📷 Фото відсутнє</p>
-                <p class="text-gray-400 text-xs mt-1">Виберіть нові файли для завантаження</p>
-              </div>
-            `
-            imagePreview.classList.remove('hidden')
-          }
-        } else {
-          console.warn('⚠️ image-preview element not found')
+        if (product.images && product.images.length > 0) {
+          imagePreview.innerHTML = ''
+          imagePreview.classList.remove('hidden')
+          product.images.forEach((url, index) => {
+            const div = document.createElement('div')
+            div.className = 'relative group'
+            div.innerHTML = `
+                                  <img src="${url}" class="w-full h-24 object-cover rounded-lg border-2 border-blue-300">
+                                  <div class="absolute top-1 right-1 bg-blue-500 text-white text-xs px-2 py-1 rounded">Існуюче ${index + 1}</div>
+                              `
+            imagePreview.appendChild(div)
+          })
         }
 
         const submitBtn = productForm.querySelector('button[type="submit"]')
@@ -10628,27 +10604,11 @@
           imageUrls = await Promise.all(uploadPromises)
           console.log(`✅ All ${imageUrls.length} images uploaded successfully!`)
         } else if (isEditMode) {
-          // ✅ FIX: Use hidden field to preserve existing images
-          const existingImagesInput = document.getElementById('p-existing-images')
-          if (existingImagesInput && existingImagesInput.value) {
-            try {
-              imageUrls = JSON.parse(existingImagesInput.value)
-              console.log(`✅ Preserving ${imageUrls.length} existing images from hidden field`)
-            } catch (e) {
-              console.warn('⚠️ Failed to parse existing images, fetching from Firestore')
-              const existingDoc = await getDoc(doc(db, 'products', editingProductId))
-              if (existingDoc.exists()) {
-                imageUrls = existingDoc.data().images || []
-              }
-            }
-          } else {
-            console.log('⚠️ No existing images field found, fetching from Firestore')
-            const existingDoc = await getDoc(doc(db, 'products', editingProductId))
-            if (existingDoc.exists()) {
-              imageUrls = existingDoc.data().images || []
-            }
+          const existingDoc = await getDoc(doc(db, 'products', editingProductId))
+          if (existingDoc.exists()) {
+            imageUrls = existingDoc.data().images || []
+            console.log(`ℹ️ Keeping ${imageUrls.length} existing images`)
           }
-          console.log(`ℹ️ Keeping ${imageUrls.length} existing images`)
         } else {
           console.log('ℹ️ No images selected')
         }
