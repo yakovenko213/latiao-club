@@ -454,6 +454,244 @@ window.loadProducts = async function() {
 };
 
 // ============================================
+// PRODUCT MODAL: Open/Close/Edit
+// ============================================
+
+/**
+ * Open product modal for creating a NEW product
+ */
+window.openProductModal = function() {
+    const modal = document.getElementById('product-modal');
+    const title = document.getElementById('product-modal-title');
+    const form = document.getElementById('product-form');
+    
+    if (!modal || !form) {
+        console.error('❌ Product modal not found');
+        return;
+    }
+    
+    // Reset form for CREATE mode
+    form.reset();
+    document.getElementById('product-id').value = '';
+    document.getElementById('product-active').checked = true;
+    
+    // Clear image preview
+    const imagePreview = document.getElementById('image-preview');
+    if (imagePreview) {
+        imagePreview.innerHTML = '';
+        imagePreview.classList.add('hidden');
+    }
+    
+    // Set title
+    if (title) title.textContent = 'Новий товар';
+    
+    // Show modal
+    modal.classList.remove('hidden');
+    
+    // Focus first field
+    setTimeout(() => {
+        document.getElementById('product-name')?.focus();
+    }, 100);
+    
+    console.log('➕ Product modal opened (CREATE mode)');
+};
+
+/**
+ * Close product modal
+ */
+window.closeProductModal = function() {
+    const modal = document.getElementById('product-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+};
+
+/**
+ * Open product modal for EDITING an existing product
+ * 🔥 FIX: Fetches latest data from Firestore and updates image preview
+ */
+window.startEditProduct = async function(productId) {
+    if (!productId) {
+        console.error('❌ Product ID is required');
+        return;
+    }
+    
+    try {
+        console.log('📝 Loading product for editing:', productId);
+        
+        // ✅ STEP 1: FETCH LATEST DATA FROM FIRESTORE
+        const productRef = doc(db, 'products', productId);
+        const productSnap = await getDoc(productRef);
+        
+        if (!productSnap.exists()) {
+            alert('❌ Товар не знайдено');
+            return;
+        }
+        
+        const product = productSnap.data();
+        
+        // ✅ STEP 2: POPULATE FORM FIELDS
+        document.getElementById('product-id').value = productId;
+        document.getElementById('product-name').value = product.name || '';
+        document.getElementById('product-price').value = product.price || 0;
+        document.getElementById('product-sku').value = product.sku || '';
+        document.getElementById('product-category').value = product.category || '';
+        document.getElementById('product-spiciness').value = product.spiciness || 1;
+        document.getElementById('product-description').value = product.description || '';
+        document.getElementById('product-stock').value = product.stock || 0;
+        document.getElementById('product-active').checked = product.isVisible !== false;
+        
+        // ✅ STEP 3: UPDATE IMAGE PREVIEW
+        const imagePreview = document.getElementById('image-preview');
+        if (imagePreview) {
+            imagePreview.innerHTML = ''; // Clear existing
+            
+            if (product.image) {
+                // Show current image
+                const imgDiv = document.createElement('div');
+                imgDiv.className = 'relative group';
+                imgDiv.innerHTML = `
+                    <img src="${product.image}" 
+                         class="w-full h-24 object-cover rounded-lg border-2 border-blue-500" 
+                         alt="Current image">
+                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition rounded-lg flex items-center justify-center">
+                        <span class="text-white text-xs font-semibold">Поточне фото</span>
+                    </div>
+                `;
+                imagePreview.appendChild(imgDiv);
+                imagePreview.classList.remove('hidden');
+            } else {
+                // No image - show placeholder
+                imagePreview.innerHTML = `
+                    <div class="col-span-4 p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 text-center">
+                        <p class="text-gray-500 text-sm">📷 Фото відсутнє</p>
+                        <p class="text-gray-400 text-xs mt-1">Виберіть новий файл для завантаження</p>
+                    </div>
+                `;
+                imagePreview.classList.remove('hidden');
+            }
+        }
+        
+        // ✅ STEP 4: UPDATE MODAL TITLE
+        const title = document.getElementById('product-modal-title');
+        if (title) {
+            title.textContent = 'Редагувати товар';
+        }
+        
+        // ✅ STEP 5: SHOW MODAL
+        const modal = document.getElementById('product-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+        
+        console.log('✅ Product loaded for editing:', product.name);
+        
+    } catch (error) {
+        console.error('❌ Error loading product:', error);
+        alert('❌ Помилка завантаження товару: ' + error.message);
+    }
+};
+
+/**
+ * Delete product with confirmation
+ */
+window.deleteProduct = async function(productId) {
+    if (!confirm('Видалити цей товар? Це НЕ можна скасувати!')) {
+        return;
+    }
+    
+    try {
+        await deleteDoc(doc(db, 'products', productId));
+        console.log('✅ Product deleted:', productId);
+        alert('✅ Товар видалено');
+        await loadProducts();
+    } catch (error) {
+        console.error('❌ Error deleting product:', error);
+        alert('❌ Помилка видалення: ' + error.message);
+    }
+};
+
+// ============================================
+// PRODUCT FORM: Submit Handler (CREATE/UPDATE)
+// ============================================
+
+// Attach form submit listener when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    const productForm = document.getElementById('product-form');
+    
+    if (productForm) {
+        productForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const productId = document.getElementById('product-id').value;
+            const submitBtn = productForm.querySelector('button[type="submit"]');
+            
+            if (!submitBtn) return;
+            
+            const originalBtnText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<div class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full mx-auto"></div>';
+            
+            try {
+                // ✅ GATHER FORM DATA
+                const productData = {
+                    name: document.getElementById('product-name').value.trim(),
+                    price: parseFloat(document.getElementById('product-price').value) || 0,
+                    sku: document.getElementById('product-sku').value.trim(),
+                    category: document.getElementById('product-category').value,
+                    spiciness: parseInt(document.getElementById('product-spiciness').value) || 1,
+                    description: document.getElementById('product-description').value.trim(),
+                    stock: parseInt(document.getElementById('product-stock').value) || 0,
+                    isVisible: document.getElementById('product-active').checked,
+                    updatedAt: new Date().toISOString()
+                };
+                
+                // ✅ HANDLE IMAGE UPLOAD (if new file selected)
+                const fileInput = document.getElementById('product-images');
+                if (fileInput.files && fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    const storageRef = ref(storage, `product_images/${Date.now()}_${file.name}`);
+                    
+                    console.log('📤 Uploading new image...');
+                    const snapshot = await uploadBytes(storageRef, file);
+                    const imageUrl = await getDownloadURL(snapshot.ref);
+                    
+                    productData.image = imageUrl;
+                    console.log('✅ Image uploaded:', imageUrl);
+                }
+                
+                // ✅ SAVE TO FIRESTORE
+                if (productId) {
+                    // UPDATE existing product
+                    await updateDoc(doc(db, 'products', productId), productData);
+                    console.log('✅ Product updated:', productId);
+                    alert('✅ Товар оновлено!');
+                } else {
+                    // CREATE new product
+                    productData.createdAt = new Date().toISOString();
+                    const docRef = await addDoc(collection(db, 'products'), productData);
+                    console.log('✅ Product created:', docRef.id);
+                    alert('✅ Товар створено!');
+                }
+                
+                // ✅ CLOSE MODAL & RELOAD
+                closeProductModal();
+                await loadProducts();
+                
+            } catch (error) {
+                console.error('❌ Error saving product:', error);
+                alert('❌ Помилка збереження: ' + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
+            }
+        });
+        
+        console.log('✅ Product form submit listener attached');
+    }
+});
+
+// ============================================
 // BULK DISCOUNT: Selection State & UI
 // ============================================
 let selectedProductIds = [];
