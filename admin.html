@@ -2749,13 +2749,22 @@
 
         <div>
           <label class="block text-sm font-medium mb-1">Фото товару (можна вибрати декілька)</label>
-          <input type="file" id="p-images" class="w-full border rounded-lg p-2" multiple accept="image">
+          <input type="file" id="p-images" class="w-full border rounded-lg p-2" multiple accept="image/*" onchange="handleImageUpload(event)">
 
           <p class="text-xs text-gray-500 mt-1">Виберіть одну або кілька фотографій. Перша буде
             головною.
           </p>
 
-          <div id="image-preview" class="mt-3 grid grid-cols-4 gap-2 hidden"></div>
+          <!-- 🎨 NEW: Gallery Manager with Delete & Reorder -->
+          <div id="imageGalleryPreview" class="mt-4 hidden">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-sm font-semibold text-gray-700">📸 Галерея зображень <span id="imageCount" class="text-gray-500">(0)</span></p>
+              <p class="text-xs text-gray-500">Перша фотографія — головна</p>
+            </div>
+            <div id="imageGalleryGrid" class="grid grid-cols-4 gap-3">
+              <!-- Images will be rendered here dynamically -->
+            </div>
+          </div>
 
         </div>
 
@@ -10449,8 +10458,16 @@
       const categoryCheckboxes = document.querySelectorAll('input[name="product-category"]')
       categoryCheckboxes.forEach(checkbox => checkbox.checked = false)
       
-      imagePreview.innerHTML = ''
-      imagePreview.classList.add('hidden')
+      // 🎨 NEW: Clear Gallery Manager
+      clearGallery()
+      
+      // Legacy code (still here for compatibility)
+      const legacyPreview = document.getElementById('image-preview')
+      if (legacyPreview) {
+        legacyPreview.innerHTML = ''
+        legacyPreview.classList.add('hidden')
+      }
+      
       editingProductId = null
       const submitBtn = productForm.querySelector('button[type="submit"]')
       submitBtn.innerHTML = '<i data-lucide="plus" class="w-4 h-4 inline mr-2"></i>Створити товар'
@@ -10504,6 +10521,20 @@
         
         console.log('✅ Pre-checked categories:', categoriesToCheck)
 
+        // ============================================
+        // 🎨 NEW: Load existing images into Gallery Manager
+        // ============================================
+        if (product.images && product.images.length > 0) {
+          console.log(`📸 Loading ${product.images.length} existing images into gallery...`)
+          currentImages = [...product.images] // Copy existing URLs
+          renderGallery()
+        } else {
+          console.log('ℹ️ No existing images')
+          clearGallery()
+        }
+
+        // Legacy preview (commented out)
+        /*
         if (product.images && product.images.length > 0) {
           imagePreview.innerHTML = ''
           imagePreview.classList.remove('hidden')
@@ -10517,6 +10548,7 @@
             imagePreview.appendChild(div)
           })
         }
+        */
 
         const submitBtn = productForm.querySelector('button[type="submit"]')
         submitBtn.innerHTML = '<i data-lucide="save" class="w-4 h-4 inline mr-2"></i>Оновити товар'
@@ -10532,6 +10564,168 @@
       }
     }
 
+    // ============================================
+    // 🎨 GALLERY MANAGER: Image Upload, Delete, Reorder
+    // ============================================
+    let currentImages = [] // Store image URLs or Data URLs
+
+    /**
+     * Handle file input change - convert files to Data URLs
+     */
+    window.handleImageUpload = function(event) {
+      const files = event.target.files
+      if (files.length === 0) return
+
+      console.log(`📸 Processing ${files.length} new images...`)
+
+      // Convert FileList to array and process each file
+      const filePromises = Array.from(files).map(file => {
+        return new Promise((resolve) => {
+          const reader = new FileReader()
+          reader.onload = (e) => resolve(e.target.result)
+          reader.readAsDataURL(file)
+        })
+      })
+
+      Promise.all(filePromises).then(dataUrls => {
+        // Append new images to existing array
+        currentImages = [...currentImages, ...dataUrls]
+        console.log(`✅ Total images in gallery: ${currentImages.length}`)
+        renderGallery()
+      })
+    }
+
+    /**
+     * Render the gallery with all images
+     */
+    function renderGallery() {
+      const galleryContainer = document.getElementById('imageGalleryPreview')
+      const galleryGrid = document.getElementById('imageGalleryGrid')
+      const imageCount = document.getElementById('imageCount')
+
+      if (!galleryContainer || !galleryGrid) {
+        console.error('❌ Gallery containers not found')
+        return
+      }
+
+      // Show/hide gallery
+      if (currentImages.length === 0) {
+        galleryContainer.classList.add('hidden')
+        return
+      }
+
+      galleryContainer.classList.remove('hidden')
+      imageCount.textContent = `(${currentImages.length})`
+
+      // Clear and rebuild gallery
+      galleryGrid.innerHTML = ''
+
+      currentImages.forEach((imgUrl, index) => {
+        const card = document.createElement('div')
+        card.className = 'relative group bg-white rounded-lg border-2 border-gray-200 overflow-hidden hover:border-blue-400 transition'
+        
+        // Main badge (first image)
+        const mainBadge = index === 0 
+          ? `<div class="absolute top-1 left-1 bg-blue-600 text-white text-xs px-2 py-1 rounded font-semibold z-10">Головна</div>` 
+          : ''
+
+        card.innerHTML = `
+          <!-- Image -->
+          <img src="${imgUrl}" 
+               class="w-full h-32 object-cover" 
+               onerror="this.src='https://placehold.co/200x200?text=Error'">
+          
+          ${mainBadge}
+          
+          <!-- Delete Button (top-right) -->
+          <button onclick="deleteImage(${index})" 
+                  class="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full p-1.5 shadow-lg opacity-0 group-hover:opacity-100 transition z-10"
+                  title="Видалити">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+          
+          <!-- Reorder Buttons (bottom) -->
+          <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 opacity-0 group-hover:opacity-100 transition p-2 flex justify-center gap-2">
+            <button onclick="moveImage(${index}, 'left')" 
+                    class="bg-white hover:bg-gray-200 text-gray-800 rounded px-2 py-1 text-xs font-semibold ${index === 0 ? 'opacity-50 cursor-not-allowed' : ''}"
+                    ${index === 0 ? 'disabled' : ''}
+                    title="Вліво">
+              ← Вліво
+            </button>
+            <button onclick="moveImage(${index}, 'right')" 
+                    class="bg-white hover:bg-gray-200 text-gray-800 rounded px-2 py-1 text-xs font-semibold ${index === currentImages.length - 1 ? 'opacity-50 cursor-not-allowed' : ''}"
+                    ${index === currentImages.length - 1 ? 'disabled' : ''}
+                    title="Вправо">
+              Вправо →
+            </button>
+          </div>
+          
+          <!-- Image Number -->
+          <div class="absolute bottom-1 right-1 bg-gray-800 bg-opacity-75 text-white text-xs px-2 py-1 rounded">
+            ${index + 1}
+          </div>
+        `
+        
+        galleryGrid.appendChild(card)
+      })
+
+      console.log('✅ Gallery rendered with', currentImages.length, 'images')
+    }
+
+    /**
+     * Delete image from gallery
+     */
+    window.deleteImage = function(index) {
+      if (!confirm(`Видалити зображення #${index + 1}?`)) return
+
+      console.log(`🗑️ Deleting image at index ${index}`)
+      currentImages.splice(index, 1)
+      
+      // Clear file input if no images left
+      if (currentImages.length === 0) {
+        document.getElementById('p-images').value = ''
+      }
+      
+      renderGallery()
+    }
+
+    /**
+     * Move image left or right
+     */
+    window.moveImage = function(index, direction) {
+      const newIndex = direction === 'left' ? index - 1 : index + 1
+
+      // Boundary checks
+      if (newIndex < 0 || newIndex >= currentImages.length) {
+        console.warn('⚠️ Cannot move image out of bounds')
+        return
+      }
+
+      console.log(`↔️ Moving image from ${index} to ${newIndex}`)
+
+      // Swap images
+      const temp = currentImages[index]
+      currentImages[index] = currentImages[newIndex]
+      currentImages[newIndex] = temp
+
+      renderGallery()
+    }
+
+    /**
+     * Clear gallery (for modal close)
+     */
+    function clearGallery() {
+      currentImages = []
+      renderGallery()
+      document.getElementById('p-images').value = ''
+    }
+
+    // ============================================
+    // LEGACY CODE (commented out, using Gallery Manager now)
+    // ============================================
+    /*
     const imageInput = document.getElementById('p-images')
     const imagePreview = document.getElementById('image-preview')
 
@@ -10560,6 +10754,8 @@
         reader.readAsDataURL(file)
       })
     })
+    */
+    // END LEGACY CODE
 
     productForm.addEventListener('submit', async (e) => {
       e.preventDefault()
@@ -10583,27 +10779,72 @@
           console.log('📝 Auto-generated SKU:', sku)
         }
 
-        const imageFiles = imageInput.files
+        // ✅ FIX: Define imageInput variable
+        const imageInput = document.getElementById('p-images')
         let imageUrls = []
 
-        if (imageFiles.length > 0) {
-          console.log(`📸 Uploading ${imageFiles.length} new images in parallel...`)
-          const timestamp = Date.now()
-
-          const uploadPromises = Array.from(imageFiles).map(async (file, i) => {
-            const fileName = `products/${sku}_${timestamp}_${i}.jpg`
-            const storageRef = ref(storage, fileName)
-
-            console.log(`  ⬆️ Uploading image ${i + 1}/${imageFiles.length}: ${fileName}`)
-            await uploadBytes(storageRef, file)
-            const downloadURL = await getDownloadURL(storageRef)
-            console.log(`  ✅ Image ${i + 1} uploaded successfully`)
-            return downloadURL
+        // ============================================
+        // 🎨 NEW: Use Gallery Manager images
+        // ============================================
+        if (currentImages.length > 0) {
+          console.log(`📸 Processing ${currentImages.length} images from Gallery Manager...`)
+          
+          // Separate Data URLs (new files) from existing URLs
+          const newFiles = []
+          const existingUrls = []
+          
+          currentImages.forEach(img => {
+            if (img.startsWith('data:')) {
+              // Data URL - needs to be uploaded
+              newFiles.push(img)
+            } else if (img.startsWith('http')) {
+              // Already uploaded URL - keep as is
+              existingUrls.push(img)
+            }
           })
-
-          imageUrls = await Promise.all(uploadPromises)
-          console.log(`✅ All ${imageUrls.length} images uploaded successfully!`)
+          
+          console.log(`  📤 New files to upload: ${newFiles.length}`)
+          console.log(`  ✅ Existing URLs to keep: ${existingUrls.length}`)
+          
+          // Upload new files
+          if (newFiles.length > 0) {
+            const timestamp = Date.now()
+            
+            const uploadPromises = newFiles.map(async (dataUrl, i) => {
+              // Convert Data URL to Blob
+              const response = await fetch(dataUrl)
+              const blob = await response.blob()
+              
+              const fileName = `products/${sku}_${timestamp}_${i}.jpg`
+              const storageRef = ref(storage, fileName)
+              
+              console.log(`  ⬆️ Uploading image ${i + 1}/${newFiles.length}: ${fileName}`)
+              await uploadBytes(storageRef, blob)
+              const downloadURL = await getDownloadURL(storageRef)
+              console.log(`  ✅ Image ${i + 1} uploaded successfully`)
+              return downloadURL
+            })
+            
+            const uploadedUrls = await Promise.all(uploadPromises)
+            
+            // Reconstruct imageUrls in the same order as currentImages
+            imageUrls = currentImages.map(img => {
+              if (img.startsWith('http')) {
+                return img // Existing URL
+              } else {
+                // Data URL - find corresponding uploaded URL
+                const index = newFiles.indexOf(img)
+                return uploadedUrls[index]
+              }
+            })
+            
+            console.log(`✅ All images processed! Total: ${imageUrls.length}`)
+          } else {
+            // No new files, just use existing URLs
+            imageUrls = existingUrls
+          }
         } else if (isEditMode) {
+          // Edit mode with no new images - keep existing
           const existingDoc = await getDoc(doc(db, 'products', editingProductId))
           if (existingDoc.exists()) {
             imageUrls = existingDoc.data().images || []
