@@ -230,10 +230,10 @@
   </div>
 
   <!-- Main Content -->
-  <div class="max-w-6xl mx-auto px-4">
+  <div class="max-w-6xl mx-auto px-4" id="checkout-container">
     <div class="flex flex-col lg:grid lg:grid-cols-3 gap-4 lg:gap-6">
       <!-- Checkout Form -->
-      <div class="lg:col-span-2 space-y-4 lg:space-y-6">
+      <div class="lg:col-span-2 space-y-4 lg:space-y-6" id="checkout-form-column">
 
         <!-- Customer Info -->
         <div class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm fade-in">
@@ -496,7 +496,7 @@
       </div>
 
       <!-- Order Summary -->
-      <div class="lg:col-span-1 order-last lg:order-none">
+      <div class="lg:col-span-1 order-last lg:order-none" id="order-summary-column">
         <div class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm lg:sticky lg:top-24 fade-in">
           <h2 class="text-base lg:text-lg font-bold text-gray-900 mb-4 lg:mb-5">Ваше замовлення</h2>
 
@@ -634,6 +634,73 @@
             Підтвердити замовлення
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Success Message (Hidden by Default) -->
+  <div id="order-success-message" class="max-w-6xl mx-auto px-4 pb-8 lg:pb-12 hidden">
+    <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-3xl p-6 lg:p-10 shadow-2xl border-2 border-green-200 fade-in">
+      <!-- Success Icon -->
+      <div class="flex justify-center mb-6">
+        <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center shadow-lg pulse-animation">
+          <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+          </svg>
+        </div>
+      </div>
+      
+      <!-- Success Message -->
+      <h2 class="text-2xl lg:text-4xl font-extrabold text-gray-900 text-center mb-3">
+        🎉 Дякуємо за замовлення!
+      </h2>
+      
+      <div class="bg-white rounded-2xl p-5 lg:p-6 mb-6 shadow-md">
+        <p class="text-base lg:text-lg text-gray-700 text-center mb-2">
+          Ваше замовлення <span class="font-black text-orange-500 text-xl lg:text-2xl" id="success-order-id">#ABC123</span> успішно прийнято!
+        </p>
+        <p class="text-sm lg:text-base text-gray-600 text-center">
+          Ми зателефонуємо вам найближчим часом для підтвердження деталей.
+        </p>
+      </div>
+      
+      <!-- Additional Info -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div class="bg-white rounded-xl p-4 shadow-sm">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+              <i data-lucide="phone" class="w-5 h-5 text-blue-600"></i>
+            </div>
+            <h3 class="font-bold text-gray-900">Очікуйте дзвінка</h3>
+          </div>
+          <p class="text-sm text-gray-600">Ми передзвонимо вам протягом 15-30 хвилин для підтвердження.</p>
+        </div>
+        
+        <div class="bg-white rounded-xl p-4 shadow-sm">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+              <svg class="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 0a12 12 0 1 0 12 12A12 12 0 0 0 12 0zm5.5 8.5l-7 7a.5.5 0 0 1-.7 0l-3-3a.5.5 0 0 1 .7-.7l2.6 2.6 6.6-6.6a.5.5 0 0 1 .8.7z"/>
+              </svg>
+            </div>
+            <h3 class="font-bold text-gray-900">Telegram</h3>
+          </div>
+          <p class="text-sm text-gray-600">Також напишемо вам у Telegram для зручного зв'язку.</p>
+        </div>
+      </div>
+      
+      <!-- Action Buttons -->
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <a href="index.html" 
+          class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl transition-all hover:scale-105 shadow-lg">
+          <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+          Повернутися в магазин
+        </a>
+        <a href="tel:+380" 
+          class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white hover:bg-gray-50 text-gray-900 font-bold rounded-xl border-2 border-gray-200 transition-all hover:scale-105">
+          <i data-lucide="phone" class="w-5 h-5"></i>
+          Зателефонувати нам
+        </a>
       </div>
     </div>
   </div>
@@ -2476,6 +2543,49 @@
     }
 
     // ============================================
+    // HELPER: Show Success Message
+    // ============================================
+    function showSuccessMessage(orderId) {
+      console.log('🎉 Displaying success message for order:', orderId)
+      
+      // Hide checkout form and order summary
+      const checkoutFormColumn = document.getElementById('checkout-form-column')
+      if (checkoutFormColumn) {
+        checkoutFormColumn.style.display = 'none'
+      }
+      
+      const orderSummaryColumn = document.getElementById('order-summary-column')
+      if (orderSummaryColumn) {
+        orderSummaryColumn.style.display = 'none'
+      }
+      
+      // Hide mobile sticky bar
+      const mobileBar = document.querySelector('.fixed.bottom-0')
+      if (mobileBar) {
+        mobileBar.style.display = 'none'
+      }
+      
+      // Show success message
+      const successMessage = document.getElementById('order-success-message')
+      if (successMessage) {
+        successMessage.classList.remove('hidden')
+        document.getElementById('success-order-id').textContent = '#' + orderId
+        
+        // Scroll to success message
+        setTimeout(() => {
+          successMessage.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }, 100)
+        
+        // Reinitialize Lucide icons
+        if (typeof lucide !== 'undefined') {
+          lucide.createIcons()
+        }
+      }
+      
+      console.log('✅ Success message displayed')
+    }
+
+    // ============================================
     // ⭐ UPDATED SUBMIT ORDER FUNCTION WITH MONOBANK INTEGRATION
     // ============================================
     async function submitOrder() {
@@ -2918,21 +3028,18 @@
             // CONDITIONAL: PREPAYMENT DISABLED - SKIP PAYMENT
             // ============================================
             if (!isPrepaymentEnabled) {
-              console.log('✅ Prepayment DISABLED - skipping payment, redirecting to thank-you page...')
-              
-              // Save order details to localStorage for thank-you page fallback
-              localStorage.setItem('last_order_details', JSON.stringify({
-                ...orderData,
-                orderId: orderId, // Use the same short ID for consistency
-                createdAt: new Date().toISOString()
-              }))
+              console.log('✅ Prepayment DISABLED - skipping payment, showing success message...')
               
               // Clear cart
               localStorage.removeItem('latiao_cart')
               
-              // Redirect to thank-you page with the SHORT orderId
-              console.log('🔄 Redirecting to thank-you page with orderId:', orderId)
-              window.location.href = 'thank-you.html?orderId=' + orderId
+              // Show success message
+              showSuccessMessage(orderId)
+              
+              // Reset button state
+              btn.textContent = originalText
+              btn.disabled = false
+              
               return
             }
 
@@ -3033,11 +3140,6 @@
   <!-- 🪄 AI Checkout Smart Filler v3.0 -->
   <script src="js/ai-checkout-helper.js"></script>
 
-  <!-- TEMP: Test Button for Thank You Page -->
-  <a href="thank-you.html?orderId=test-123" 
-     class="fixed bottom-4 left-4 z-50 px-3 py-2 bg-gray-500/50 hover:bg-gray-500/70 text-white text-xs rounded-lg backdrop-blur-sm transition-all">
-    🧪 Test Thank You Page
-  </a>
 </body>
 
 </html>

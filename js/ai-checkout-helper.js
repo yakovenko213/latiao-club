@@ -854,31 +854,276 @@ Example output 2:
     }
 
     /**
-     * 🏢 Smart Branch Selection with MutationObserver
-     * Waits for dropdown options to load before selecting
+     * 🏢 AGGRESSIVE Branch Selection (Complete Rewrite)
+     * Requirements:
+     * 1. Wait for 5+ options
+     * 2. Exact regex matching with word boundaries
+     * 3. Multi-step priority scoring
+     * 4. Force event simulation
+     * 5. Visual validation with green glow
      */
     async function selectBranchSmart(branchNumber, branchType = null) {
-        if (CONFIG.DEBUG) console.log(`🏢 Smart selecting branch: ${branchNumber} (type: ${branchType || 'auto'})`);
+        console.log(`🔥 AGGRESSIVE branch selection: "${branchNumber}" (type: ${branchType || 'auto'})`);
 
-        // Find branch/warehouse select
+        // Step 1: Find the select element
         const branchSelect = await findBranchSelect();
         
         if (!branchSelect) {
-            if (CONFIG.DEBUG) console.warn('⚠️ Branch select not found');
+            console.error('❌ Branch select element not found');
             return false;
         }
 
-        // Wait for options to load using MutationObserver
-        const success = await waitForBranchOptions(branchSelect, branchNumber, branchType);
+        console.log('✅ Found branch select:', branchSelect.id || branchSelect.name || 'unnamed');
+
+        // Step 2: Wait for OPTIONS to load (5+ options minimum)
+        const optionsLoaded = await waitForMinimumOptions(branchSelect, 5);
         
-        if (success) {
-            // Scroll to field and highlight
-            scrollToElement(branchSelect);
-            branchSelect.classList.add('field-highlight');
-            setTimeout(() => branchSelect.classList.remove('field-highlight'), 2000);
+        if (!optionsLoaded) {
+            console.warn('⚠️ Timeout: Branch options did not load');
+            return false;
         }
+
+        // Step 3: Find the EXACT match using regex and priority scoring
+        const matchedOption = findExactBranchMatch(branchSelect, branchNumber, branchType);
         
-        return success;
+        if (!matchedOption) {
+            console.warn(`⚠️ No exact match for branch [${branchNumber}]`);
+            console.log('Available options:', Array.from(branchSelect.options).map(o => o.textContent));
+            showMessage(`Не вдалося знайти відділення №${branchNumber}. Будь ласка, оберіть зі списку.`, 'warning');
+            return false;
+        }
+
+        // Step 4: Select the option with FORCE event simulation
+        forceSelectOption(branchSelect, matchedOption, branchNumber);
+
+        // Step 5: Visual validation (green glow)
+        applyGreenGlow(branchSelect);
+
+        // Step 6: Scroll to field
+        scrollToElement(branchSelect);
+
+        console.log(`✅ SUCCESS: Selected "${matchedOption.textContent.trim()}"`);
+        return true;
+    }
+
+    /**
+     * ⏳ Wait for Minimum Options to Load
+     * Polls every 200ms until 5+ options are available or timeout
+     */
+    function waitForMinimumOptions(selectElement, minOptions = 5, maxWaitMs = 5000) {
+        return new Promise((resolve) => {
+            const CHECK_INTERVAL = 200;
+            let elapsedTime = 0;
+            let attemptCount = 0;
+
+            console.log(`⏳ Waiting for ${minOptions}+ options to load...`);
+
+            const checkOptions = () => {
+                attemptCount++;
+                const currentCount = selectElement.options.length;
+
+                if (attemptCount % 5 === 0) {
+                    console.log(`🔄 Attempt ${attemptCount}: ${currentCount} options loaded`);
+                }
+
+                // Success: enough options
+                if (currentCount > minOptions) {
+                    console.log(`✅ Options loaded: ${currentCount} options`);
+                    clearInterval(intervalId);
+                    observer.disconnect();
+                    resolve(true);
+                    return;
+                }
+
+                // Timeout
+                if (elapsedTime >= maxWaitMs) {
+                    console.warn(`⏰ Timeout: Only ${currentCount} options after ${maxWaitMs}ms`);
+                    clearInterval(intervalId);
+                    observer.disconnect();
+                    resolve(false);
+                }
+
+                elapsedTime += CHECK_INTERVAL;
+            };
+
+            // Initial check
+            if (selectElement.options.length > minOptions) {
+                console.log(`✅ Options already loaded: ${selectElement.options.length} options`);
+                resolve(true);
+                return;
+            }
+
+            // MutationObserver for dynamic loading
+            const observer = new MutationObserver(() => {
+                if (selectElement.options.length > minOptions) {
+                    console.log(`✅ Options loaded via MutationObserver: ${selectElement.options.length} options`);
+                    clearInterval(intervalId);
+                    observer.disconnect();
+                    resolve(true);
+                }
+            });
+
+            observer.observe(selectElement, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['disabled']
+            });
+
+            // Fallback: polling
+            const intervalId = setInterval(checkOptions, CHECK_INTERVAL);
+        });
+    }
+
+    /**
+     * 🎯 Find Exact Branch Match (Priority Scoring)
+     * Priority 1 (Score 100): Type keyword + exact number
+     * Priority 2 (Score 80): Exact number (word boundary)
+     * Priority 3 (Score 0): No match
+     */
+    function findExactBranchMatch(selectElement, branchNumber, branchType) {
+        const options = Array.from(selectElement.options);
+        
+        // Skip placeholder
+        const validOptions = options.filter(opt => 
+            opt.value && opt.value !== '' && !opt.textContent.toLowerCase().includes('оберіть')
+        );
+
+        console.log(`🎯 Searching for branch "${branchNumber}" in ${validOptions.length} valid options`);
+
+        // Create word boundary regex for EXACT number match
+        // \b ensures "5" matches "№5" or "branch 5" but NOT "№50" or "№15"
+        const exactNumberRegex = new RegExp(`\\b${branchNumber}\\b`, 'i');
+
+        // Type keywords for priority matching
+        const typeKeywords = {
+            'poshtomat': ['поштомат', 'poshtomat', 'банкомат', 'постомат'],
+            'warehouse': ['відділення', 'warehouse', 'склад', 'пункт', 'відд']
+        };
+
+        let bestMatch = null;
+        let bestScore = 0;
+
+        for (const option of validOptions) {
+            const text = option.textContent.toLowerCase();
+            let score = 0;
+
+            // Check if exact number exists (word boundary)
+            const hasExactNumber = exactNumberRegex.test(text);
+            
+            if (!hasExactNumber) {
+                continue; // Skip if number doesn't match exactly
+            }
+
+            // Calculate score
+            if (branchType && typeKeywords[branchType]) {
+                // Priority 1: Type + Number
+                const hasTypeKeyword = typeKeywords[branchType].some(keyword => text.includes(keyword));
+                
+                if (hasTypeKeyword && hasExactNumber) {
+                    score = 100;
+                    console.log(`  🏆 Score 100: "${option.textContent.trim()}" (type + exact number)`);
+                }
+            }
+            
+            if (score === 0 && hasExactNumber) {
+                // Priority 2: Exact number only
+                score = 80;
+                console.log(`  ⭐ Score 80: "${option.textContent.trim()}" (exact number)`);
+            }
+
+            // Update best match
+            if (score > bestScore) {
+                bestScore = score;
+                bestMatch = option;
+            }
+
+            // If we found a perfect match (100), stop searching
+            if (score === 100) {
+                break;
+            }
+        }
+
+        if (bestMatch) {
+            console.log(`🎯 Best match (score ${bestScore}): "${bestMatch.textContent.trim()}"`);
+        } else {
+            console.warn(`❌ No match found for branch "${branchNumber}"`);
+        }
+
+        return bestMatch;
+    }
+
+    /**
+     * 💪 Force Select Option (Aggressive Event Simulation)
+     * Ensures the value change is detected by ANY framework
+     */
+    function forceSelectOption(selectElement, option, branchNumber) {
+        console.log(`💪 Force selecting: value="${option.value}", text="${option.textContent.trim()}"`);
+
+        // Set the value
+        selectElement.value = option.value;
+
+        // Dispatch ALL possible events
+        const events = ['change', 'input', 'select', 'blur'];
+        events.forEach(eventType => {
+            selectElement.dispatchEvent(new Event(eventType, { 
+                bubbles: true, 
+                cancelable: true 
+            }));
+        });
+
+        // jQuery/Select2 support
+        if (typeof jQuery !== 'undefined') {
+            try {
+                jQuery(selectElement).val(option.value).trigger('change');
+                console.log('  ✅ jQuery trigger fired');
+            } catch (e) {
+                console.log('  ℹ️ jQuery not used');
+            }
+        }
+
+        // React/Vue support (trigger native setter)
+        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+            window.HTMLSelectElement.prototype,
+            'value'
+        ).set;
+        nativeInputValueSetter.call(selectElement, option.value);
+        selectElement.dispatchEvent(new Event('input', { bubbles: true }));
+
+        console.log('  ✅ All events dispatched');
+    }
+
+    /**
+     * 💚 Apply Green Glow Effect (Visual Validation)
+     * Shows user that the selection was successful
+     */
+    function applyGreenGlow(element) {
+        // Add temporary green glow class
+        element.style.border = '3px solid #10b981';
+        element.style.boxShadow = '0 0 20px rgba(16, 185, 129, 0.6)';
+        element.style.transition = 'all 0.3s ease';
+
+        // Add pulsing animation
+        let pulseCount = 0;
+        const pulseInterval = setInterval(() => {
+            if (pulseCount % 2 === 0) {
+                element.style.boxShadow = '0 0 30px rgba(16, 185, 129, 0.8)';
+            } else {
+                element.style.boxShadow = '0 0 15px rgba(16, 185, 129, 0.4)';
+            }
+            pulseCount++;
+
+            if (pulseCount >= 6) {
+                clearInterval(pulseInterval);
+                // Fade out
+                setTimeout(() => {
+                    element.style.border = '';
+                    element.style.boxShadow = '';
+                }, 500);
+            }
+        }, 300);
+
+        console.log('💚 Green glow applied');
     }
 
     /**
@@ -918,45 +1163,87 @@ Example output 2:
         return null;
     }
 
+    // =========================================================================
+    // ⚠️ LEGACY FUNCTIONS BELOW (NOT USED BY NEW AGGRESSIVE SELECTION LOGIC)
+    // =========================================================================
+    // The following functions are REPLACED by the new aggressive selection 
+    // implementation in selectBranchSmart() above. They are kept temporarily
+    // for reference but are NOT called by the current code.
+    //
+    // OLD FUNCTIONS (lines 1165-1428):
+    // - waitForBranchOptions()   → REPLACED by waitForMinimumOptions()
+    // - matchAndSelectOption()   → REPLACED by findExactBranchMatch()
+    // - findBestMatch()          → REPLACED by findExactBranchMatch() with regex
+    // - normalizeText()          → REPLACED by inline text processing
+    // - selectOption()           → REPLACED by forceSelectOption()
+    //
+    // NEW FUNCTIONS (lines 913-1155):
+    // ✅ waitForMinimumOptions(): Explicit wait for 5+ options
+    // ✅ findExactBranchMatch():  Word boundary regex (\\b5\\b) matching
+    // ✅ forceSelectOption():     All-framework event simulation
+    // ✅ applyGreenGlow():        Visual validation animation
+    // =========================================================================
+
     /**
-     * ⏳ Wait for Branch Options to Load (MutationObserver + Fallback)
+     * ⏳ Wait for Branch Options to Load (MutationObserver + Retry Logic)
+     * Retries until a STRONG match (score 80+) is found, or timeout
      */
     function waitForBranchOptions(selectElement, targetBranchNumber, branchType) {
         return new Promise((resolve) => {
-            const MAX_WAIT_TIME = 8000; // 8 seconds max
+            const MAX_WAIT_TIME = 5000; // 5 seconds max (as per requirements)
             const CHECK_INTERVAL = 200; // Check every 200ms
             let elapsedTime = 0;
             let attemptCount = 0;
+            let bestScoreSoFar = 0;
 
             if (CONFIG.DEBUG) console.log('⏳ Waiting for branch options to load...');
 
-            // Try to select immediately if options already exist
-            if (selectElement.options.length > 1) {
-                const success = matchAndSelectOption(selectElement, targetBranchNumber, branchType);
-                if (success) {
-                    if (CONFIG.DEBUG) console.log('✅ Options already loaded, selected immediately');
-                    resolve(true);
-                    return;
-                }
-            }
-
-            // Setup MutationObserver
-            const observer = new MutationObserver((mutations) => {
+            // Helper function to check and select
+            const trySelect = () => {
+                attemptCount++;
+                
                 if (CONFIG.DEBUG && attemptCount % 5 === 0) {
                     console.log(`🔄 Attempt ${attemptCount}: Checking for options... (${selectElement.options.length} options)`);
                 }
 
                 if (selectElement.options.length > 1) {
-                    const success = matchAndSelectOption(selectElement, targetBranchNumber, branchType);
-                    if (success) {
-                        observer.disconnect();
-                        clearInterval(intervalId);
-                        if (CONFIG.DEBUG) console.log('✅ Branch options loaded and selected via MutationObserver');
-                        resolve(true);
+                    const validOptions = Array.from(selectElement.options).slice(1);
+                    const bestMatch = findBestMatch(validOptions, targetBranchNumber, branchType);
+                    
+                    if (bestMatch) {
+                        bestScoreSoFar = Math.max(bestScoreSoFar, bestMatch.score);
+                        
+                        // Accept match if score is 80+ (strong match)
+                        if (bestMatch.score >= 80) {
+                            selectOption(selectElement, bestMatch.option, targetBranchNumber);
+                            if (CONFIG.DEBUG) {
+                                console.log(`✅ Strong match found (score ${bestMatch.score}): "${bestMatch.option.textContent}"`);
+                            }
+                            return true;
+                        }
+                        
+                        if (CONFIG.DEBUG && attemptCount % 10 === 0) {
+                            console.log(`⏳ Best score so far: ${bestMatch.score} (waiting for 80+)`);
+                        }
                     }
                 }
+                
+                return false;
+            };
 
-                attemptCount++;
+            // Try immediately if options already exist
+            if (trySelect()) {
+                resolve(true);
+                return;
+            }
+
+            // Setup MutationObserver
+            const observer = new MutationObserver((mutations) => {
+                if (trySelect()) {
+                    observer.disconnect();
+                    clearInterval(intervalId);
+                    resolve(true);
+                }
             });
 
             // Observe the select element and its parent for changes
@@ -978,37 +1265,40 @@ Example output 2:
             // Fallback: setInterval check (in case MutationObserver doesn't fire)
             const intervalId = setInterval(() => {
                 elapsedTime += CHECK_INTERVAL;
-                attemptCount++;
 
-                if (CONFIG.DEBUG && attemptCount % 10 === 0) {
-                    console.log(`⏳ Still waiting... ${elapsedTime}ms elapsed (${selectElement.options.length} options)`);
-                }
-
-                if (selectElement.options.length > 1) {
-                    const success = matchAndSelectOption(selectElement, targetBranchNumber, branchType);
-                    if (success) {
-                        observer.disconnect();
-                        clearInterval(intervalId);
-                        if (CONFIG.DEBUG) console.log('✅ Branch options loaded and selected via setInterval');
-                        resolve(true);
-                    }
+                if (trySelect()) {
+                    observer.disconnect();
+                    clearInterval(intervalId);
+                    resolve(true);
+                    return;
                 }
 
                 if (elapsedTime >= MAX_WAIT_TIME) {
                     observer.disconnect();
                     clearInterval(intervalId);
-                    if (CONFIG.DEBUG) {
-                        console.warn(`⚠️ Timeout: Branch options did not load within ${MAX_WAIT_TIME}ms`);
-                        console.log('Available options:', Array.from(selectElement.options).map(o => o.textContent));
+                    
+                    // After timeout, accept any match with score 50+
+                    if (bestScoreSoFar >= 50) {
+                        if (CONFIG.DEBUG) {
+                            console.log(`⏰ Timeout reached. Accepting best score: ${bestScoreSoFar}`);
+                        }
+                        const success = matchAndSelectOption(selectElement, targetBranchNumber, branchType);
+                        resolve(success);
+                    } else {
+                        if (CONFIG.DEBUG) {
+                            console.warn(`⚠️ Timeout: No good match found (best score: ${bestScoreSoFar})`);
+                            console.log('Available options:', Array.from(selectElement.options).map(o => o.textContent));
+                        }
+                        showMessage('Я знайшов кілька схожих відділень, будь ласка, оберіть потрібне зі списку самостійно.', 'warning');
+                        resolve(false);
                     }
-                    resolve(false);
                 }
             }, CHECK_INTERVAL);
         });
     }
 
     /**
-     * 🎯 Match and Select Option (Smart Matching Logic)
+     * 🎯 Match and Select Option (IMPROVED: Scoring System)
      */
     function matchAndSelectOption(selectElement, targetBranchNumber, branchType) {
         const options = Array.from(selectElement.options);
@@ -1025,79 +1315,112 @@ Example output 2:
             return false;
         }
 
-        // Strategy 1: Exact match with type
-        if (branchType) {
-            const typeKeywords = {
-                'poshtomat': ['поштомат', 'poshtomat', 'банкомат'],
-                'warehouse': ['відділення', 'warehouse', 'склад', 'пункт']
-            };
-
-            const keywords = typeKeywords[branchType] || [];
-            
-            for (const option of validOptions) {
-                const text = option.textContent.toLowerCase();
-                const hasType = keywords.some(keyword => text.includes(keyword));
-                const hasNumber = text.includes(`№${targetBranchNumber}`) || 
-                                  text.includes(`#${targetBranchNumber}`) ||
-                                  text.match(new RegExp(`\\b${targetBranchNumber}\\b`));
-                
-                if (hasType && hasNumber) {
-                    selectOption(selectElement, option, targetBranchNumber);
-                    if (CONFIG.DEBUG) console.log(`✅ Matched by type + number: "${option.textContent}"`);
-                    return true;
-                }
+        // Find best match using scoring system
+        const bestMatch = findBestMatch(validOptions, targetBranchNumber, branchType);
+        
+        if (!bestMatch) {
+            if (CONFIG.DEBUG) {
+                console.warn(`⚠️ Branch ${targetBranchNumber} not found. Available options:`);
+                validOptions.forEach((opt, idx) => {
+                    console.log(`  ${idx + 1}. ${opt.textContent}`);
+                });
             }
-        }
-
-        // Strategy 2: Match by number only (common patterns)
-        for (const option of validOptions) {
-            const text = option.textContent.toLowerCase();
-            
-            // Pattern 1: "№12", "#12"
-            if (text.includes(`№${targetBranchNumber}`) || text.includes(`#${targetBranchNumber}`)) {
-                selectOption(selectElement, option, targetBranchNumber);
-                if (CONFIG.DEBUG) console.log(`✅ Matched by №: "${option.textContent}"`);
-                return true;
-            }
-            
-            // Pattern 2: "Відділення 12", "Branch 12"
-            const pattern2 = new RegExp(`(відділення|warehouse|branch|поштомат|пункт)\\s*${targetBranchNumber}\\b`, 'i');
-            if (pattern2.test(text)) {
-                selectOption(selectElement, option, targetBranchNumber);
-                if (CONFIG.DEBUG) console.log(`✅ Matched by pattern: "${option.textContent}"`);
-                return true;
-            }
-            
-            // Pattern 3: Word boundary (standalone number)
-            const pattern3 = new RegExp(`\\b${targetBranchNumber}\\b`);
-            if (pattern3.test(text)) {
-                selectOption(selectElement, option, targetBranchNumber);
-                if (CONFIG.DEBUG) console.log(`✅ Matched by word boundary: "${option.textContent}"`);
-                return true;
-            }
-        }
-
-        // Strategy 3: Fuzzy match (number anywhere in text, but with verification)
-        for (const option of validOptions) {
-            const text = option.textContent;
-            // Extract all numbers from option text
-            const numbersInOption = text.match(/\d+/g);
-            
-            if (numbersInOption && numbersInOption.includes(targetBranchNumber)) {
-                selectOption(selectElement, option, targetBranchNumber);
-                if (CONFIG.DEBUG) console.log(`✅ Matched by fuzzy: "${option.textContent}"`);
-                return true;
-            }
-        }
-
-        if (CONFIG.DEBUG) {
-            console.warn(`⚠️ Branch ${targetBranchNumber} not found. Available options:`);
-            validOptions.forEach((opt, idx) => {
-                console.log(`  ${idx + 1}. ${opt.textContent}`);
-            });
+            return false;
         }
         
-        return false;
+        if (bestMatch.score < 50) {
+            if (CONFIG.DEBUG) {
+                console.warn(`⚠️ Best match score too low (${bestMatch.score}): "${bestMatch.option.textContent}"`);
+                console.log('💬 User should select manually');
+            }
+            showMessage('Я знайшов кілька схожих відділень, будь ласка, оберіть потрібне зі списку самостійно.', 'warning');
+            return false;
+        }
+        
+        selectOption(selectElement, bestMatch.option, targetBranchNumber);
+        if (CONFIG.DEBUG) {
+            console.log(`✅ Selected (score ${bestMatch.score}): "${bestMatch.option.textContent}"`);
+        }
+        return true;
+    }
+
+    /**
+     * 🏆 Find Best Match with Scoring System
+     * Score 100: Exact number + correct type (поштомат/відділення)
+     * Score 80: Exact number match (word boundary)
+     * Score 50: Partial match (number found in text)
+     */
+    function findBestMatch(options, targetBranchNumber, branchType) {
+        let bestMatch = null;
+        let bestScore = 0;
+
+        const typeKeywords = {
+            'poshtomat': ['поштомат', 'poshtomat', 'банкомат'],
+            'warehouse': ['відділення', 'warehouse', 'склад', 'пункт']
+        };
+
+        for (const option of options) {
+            const rawText = option.textContent;
+            const normalizedText = normalizeText(rawText);
+            let score = 0;
+
+            // Extract option number using regex
+            const optionNumbers = normalizedText.match(/\d+/g);
+            if (!optionNumbers) continue;
+
+            // Check if exact number exists
+            const hasExactNumber = optionNumbers.includes(targetBranchNumber);
+            if (!hasExactNumber) continue;
+
+            // Check if it's a word boundary match (not part of larger number)
+            const wordBoundaryRegex = new RegExp(`\\b${targetBranchNumber}\\b`);
+            const isWordBoundary = wordBoundaryRegex.test(normalizedText);
+
+            // Check type match
+            let hasTypeMatch = false;
+            if (branchType && typeKeywords[branchType]) {
+                hasTypeMatch = typeKeywords[branchType].some(keyword => 
+                    normalizedText.includes(keyword)
+                );
+            }
+
+            // Calculate score
+            if (isWordBoundary && hasTypeMatch) {
+                // Perfect match: exact number + correct type
+                score = 100;
+            } else if (isWordBoundary) {
+                // Good match: exact number as standalone word
+                score = 80;
+            } else if (hasExactNumber) {
+                // Weak match: number found but might be part of larger number
+                score = 50;
+            }
+
+            // Update best match
+            if (score > bestScore) {
+                bestScore = score;
+                bestMatch = { option, score };
+            }
+
+            if (CONFIG.DEBUG && score >= 50) {
+                console.log(`  📊 Score ${score}: "${rawText}"`);
+            }
+        }
+
+        return bestMatch;
+    }
+
+    /**
+     * 🧹 Normalize Text for Comparison
+     * Removes special characters, extra spaces, and converts to lowercase
+     */
+    function normalizeText(text) {
+        return text
+            .toLowerCase()
+            .replace(/[№#]/g, '') // Remove № and #
+            .replace(/\bвул\./gi, '') // Remove "вул."
+            .replace(/\s+/g, ' ') // Collapse multiple spaces
+            .trim();
     }
 
     /**
@@ -1204,40 +1527,86 @@ Example output 2:
     
     /**
      * Check if AI Assistant is enabled in Firestore settings
-     * Defaults to false if document doesn't exist
+     * Defaults to TRUE (enabled) if document doesn't exist or Firebase fails
      */
     async function initAiAssistant() {
+        console.log('🔍 Checking AI Assistant status...');
+        
         try {
-            // Wait for Firebase to be available
-            if (typeof db === 'undefined') {
+            // Step 1: Wait for Firebase DB to be available
+            if (typeof db === 'undefined' || typeof window.getDoc === 'undefined' || typeof window.doc === 'undefined') {
                 console.log('⏳ Waiting for Firebase initialization...');
-                await new Promise(resolve => {
+                
+                let attempts = 0;
+                const maxAttempts = 100; // 10 seconds max
+                
+                await new Promise((resolve, reject) => {
                     const checkFirebase = setInterval(() => {
-                        if (typeof db !== 'undefined') {
+                        attempts++;
+                        
+                        if (typeof db !== 'undefined' && typeof window.getDoc !== 'undefined' && typeof window.doc !== 'undefined') {
                             clearInterval(checkFirebase);
+                            console.log('✅ Firebase initialized after', attempts * 100, 'ms');
                             resolve();
+                        }
+                        
+                        if (attempts >= maxAttempts) {
+                            clearInterval(checkFirebase);
+                            console.warn('⚠️ Firebase timeout - enabling AI Assistant by default');
+                            resolve(); // Continue anyway
                         }
                     }, 100);
                 });
             }
 
-            // Check Firestore setting
+            // Step 2: Check if Firebase methods are available
+            if (typeof window.getDoc === 'undefined' || typeof window.doc === 'undefined') {
+                console.warn('⚠️ Firestore methods not available - enabling AI Assistant by default');
+                init();
+                return;
+            }
+
+            // Step 3: Read Firestore setting
+            console.log('📖 Reading settings/checkout_config from Firestore...');
             const { getDoc, doc } = window;
             const configDoc = await getDoc(doc(db, 'settings', 'checkout_config'));
-            const aiEnabled = configDoc.exists() && configDoc.data().aiEnabled === true;
+            
+            if (!configDoc.exists()) {
+                console.log('⚠️ Document settings/checkout_config does not exist');
+                console.log('🪄 AI Assistant is ENABLED by default (no config found)');
+                init();
+                return;
+            }
+            
+            const data = configDoc.data();
+            const aiEnabled = data.aiEnabled === true;
+            
+            console.log('📊 Firestore config loaded:', { aiEnabled, data });
 
             if (aiEnabled) {
-                console.log('🪄 AI Assistant is Enabled.');
+                console.log('🪄 AI Assistant is ENABLED in Firebase settings');
+                console.log('🎬 Initializing widget...');
                 init();
             } else {
-                console.log('🚫 AI Assistant is Disabled in settings.');
+                console.log('❌ AI Assistant is DISABLED in Firebase settings');
+                console.log('💡 Enable it in Admin Panel → Settings → AI Assistant toggle');
             }
+            
         } catch (error) {
             console.error('❌ Error checking AI Assistant settings:', error);
-            console.log('🚫 AI Assistant will not initialize due to error.');
+            console.error('📍 Error details:', {
+                name: error.name,
+                message: error.message,
+                stack: error.stack
+            });
+            
+            // Default to ENABLED on error
+            console.log('⚠️ Fallback: Enabling AI Assistant despite error');
+            init();
         }
     }
     
+    // Run initialization when DOM is ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initAiAssistant);
     } else {
