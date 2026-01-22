@@ -2595,7 +2595,7 @@
   <!-- CSV IMPORT MODAL (Advanced Column Mapping) -->
   <!-- ============================================ -->
   <div id="csv-import-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl w-full max-w-[95vw] max-h-[90vh] overflow-hidden shadow-2xl animate-slide-up">
+    <div class="bg-white rounded-2xl w-11/12 max-w-7xl h-[90vh] overflow-hidden shadow-2xl animate-slide-up flex flex-col">
       
       <!-- Modal Header -->
       <div class="p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50 flex justify-between items-center">
@@ -2629,6 +2629,7 @@
             <div class="mt-4 text-sm text-gray-500 space-y-1">
               <p>💡 <strong>Підказка:</strong> CSV файл має містити дані про товари в колонках.</p>
               <p>📝 Приклад: Назва, Ціна, Категорія, Опис, Фото</p>
+              <p>✅ <strong>Підтримувані роздільники:</strong> Кома <code>,</code> або Крапка з комою <code>;</code> (авто-визначення)</p>
             </div>
           </div>
 
@@ -9616,10 +9617,15 @@
 
       document.getElementById('csv-loading-indicator').classList.remove('hidden')
 
-      // Parse CSV with PapaParse
+      // Parse CSV with PapaParse (Auto-detect delimiter: comma or semicolon)
       Papa.parse(file, {
+        delimiter: "",              // Auto-detect delimiter (comma or semicolon)
+        skipEmptyLines: true,       // Skip blank rows
         complete: function(results) {
-          csvParsedData = results.data.filter(row => row.some(cell => cell.trim() !== ''))
+          console.log('📊 PapaParse Results:', results)
+          console.log('📋 Parsed Data Sample (first row):', results.data[0])
+          
+          csvParsedData = results.data.filter(row => row.some(cell => cell && cell.trim() !== ''))
           
           if (csvParsedData.length === 0) {
             alert('❌ CSV файл порожній або містить некоректні дані')
@@ -9627,11 +9633,15 @@
             return
           }
 
+          console.log('✅ Total rows after filtering:', csvParsedData.length)
+          console.log('📊 Columns detected:', csvParsedData[0].length)
+          
           // Show step 2 with preview
           showCSVPreviewAndMapping()
           document.getElementById('csv-loading-indicator').classList.add('hidden')
         },
         error: function(error) {
+          console.error('❌ CSV Parse Error:', error)
           alert('❌ Помилка парсингу CSV: ' + error.message)
           document.getElementById('csv-loading-indicator').classList.add('hidden')
         }
