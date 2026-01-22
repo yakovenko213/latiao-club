@@ -730,10 +730,12 @@
   </div>
 
   <!-- ✅ ВАЖЛИВО: Підключаємо Firebase та layout.js -->
+  <script type="module" src="./js/maintenance-check.js"></script>
   <script type="module" src="./js/firebase-init.js"></script>
   <script type="module" src="./js/layout.js"></script>
 
   <script type="module">
+    import './js/maintenance-check.js' // CRITICAL: Check maintenance mode FIRST
     import { db } from './js/firebase-init.js'
     import { doc, getDoc, collection, query, where, getDocs, limit, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
 
@@ -855,6 +857,19 @@
         }
 
         currentProduct = { id: productSnap.id, ...productSnap.data() }
+        
+        // Check if product is hidden
+        if (currentProduct.isVisible === false) {
+          document.getElementById('loading-state').style.display = 'none'
+          document.getElementById('product-container').innerHTML = `
+            <div class="text-center py-20 px-4">
+              <p class="text-red-500 font-bold mb-2">❌ Цей товар тимчасово недоступний</p>
+              <a href="index.html" class="text-spicy hover:underline">Повернутись на головну</a>
+            </div>
+          `
+          return
+        }
+        
         console.log('✅ Товар завантажено:', currentProduct)
 
         // Populate UI
@@ -1229,13 +1244,27 @@
     // ============================================
     async function loadRecommendedProducts(categorySlug) {
       try {
+        // Fetch more products to filter later (since we can't use array-contains in where clause)
         const q = query(
           collection(db, 'products'),
-          where('category', '==', categorySlug || 'latiao'),
-          limit(5)
+          limit(20)
         )
         const snap = await getDocs(q)
-        const products = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        
+        const products = snap.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter(p => {
+            // Skip hidden products
+            if (p.isVisible === false) return false;
+            
+            // ⭐ NEW: Check if product belongs to category (supports multiple categories)
+            if (p.categories && Array.isArray(p.categories)) {
+              return p.categories.includes(categorySlug || 'latiao');
+            }
+            // Fallback to single category (backward compatibility)
+            return p.category === (categorySlug || 'latiao');
+          })
+          .slice(0, 5) // Take first 5 matching products
 
         const html = products.map(p => {
           const spicyIcons = '🌶️'.repeat(p.spiciness || 1)

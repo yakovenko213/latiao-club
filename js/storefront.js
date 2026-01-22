@@ -1,6 +1,7 @@
 // ============================================
 // STOREFRONT.JS - Dynamic Product Loading
 // ============================================
+import './maintenance-check.js'; // CRITICAL: Check maintenance mode FIRST
 import { db } from './firebase-init.js';
 import { 
     collection, 
@@ -307,11 +308,32 @@ async function renderCategories() {
         
         productsSnapshot.forEach(doc => {
             const product = doc.data();
-            const category = product.category || 'uncategorized';
-            if (!productsMap[category]) {
-                productsMap[category] = [];
+            // Skip hidden products (default to visible if field missing)
+            if (product.isVisible === false) {
+                return;
             }
-            productsMap[category].push({ id: doc.id, ...product });
+            
+            // ⭐ NEW: Handle products with multiple categories
+            let productCategories = [];
+            
+            if (product.categories && Array.isArray(product.categories)) {
+                // New format: use categories array
+                productCategories = product.categories;
+            } else if (product.category) {
+                // Old format: single category string (backward compatibility)
+                productCategories = [product.category];
+            } else {
+                // Fallback: uncategorized
+                productCategories = ['uncategorized'];
+            }
+            
+            // Add product to all its categories
+            productCategories.forEach(cat => {
+                if (!productsMap[cat]) {
+                    productsMap[cat] = [];
+                }
+                productsMap[cat].push({ id: doc.id, ...product });
+            });
         });
         
         let html = '';
@@ -383,7 +405,11 @@ async function renderAllProducts(container) {
         `;
         
         snapshot.forEach(doc => {
-            html += createProductCard(doc.data(), doc.id);
+            const product = doc.data();
+            // Filter out hidden products (default to visible if field missing)
+            if (product.isVisible !== false) {
+                html += createProductCard(product, doc.id);
+            }
         });
         
         html += '</div></div>';

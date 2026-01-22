@@ -407,6 +407,7 @@
   <div id="footer-placeholder"></div>
 
   <!-- ✅ ВАЖЛИВО: Підключаємо Firebase та layout.js -->
+  <script type="module" src="./js/maintenance-check.js"></script>
   <script type="module" src="./js/firebase-init.js"></script>
   <script type="module" src="./js/layout.js"></script>
 
@@ -414,6 +415,9 @@
   <script type="module">
     console.log('[v0] Category page script starting...')
 
+    // CRITICAL: Check maintenance mode FIRST
+    import './js/maintenance-check.js'
+    
     // Import Firebase - use same pattern as storefront.js for consistency
     import { db } from './js/firebase-init.js'
     import { collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
@@ -475,7 +479,7 @@
         // Parallel fetch: Category info + Products
         const [catSnap, prodSnap] = await Promise.all([
           getDocs(query(collection(db, 'categories'), where('slug', '==', categorySlug))),
-          getDocs(query(collection(db, 'products'), where('category', '==', categorySlug)))
+          getDocs(collection(db, 'products'))
         ])
 
         // Process category metadata
@@ -493,8 +497,20 @@
           document.getElementById('category-desc').textContent = "Спробуйте іншу категорію"
         }
 
-        // Process products
-        allProducts = prodSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        // ⭐ NEW: Filter products by multiple categories support
+        allProducts = prodSnap.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter(product => {
+            // Check if product has categories array (new format)
+            if (product.categories && Array.isArray(product.categories)) {
+              return product.categories.includes(categorySlug);
+            }
+            // Fallback to single category (old format)
+            return product.category === categorySlug;
+          })
+        
+        // Filter out hidden products (default to visible if field missing)
+        allProducts = allProducts.filter(p => p.isVisible !== false)
         
         // Sort by sortOrder (merchandising order) - client-side sorting
         allProducts.sort((a, b) => (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999))
@@ -622,20 +638,6 @@
             const images = product.images && product.images.length > 0 ? product.images : []
             const img = images[0] || product.image || product.imageUrl || 'https://placehold.co/400x400/fff3e8/ff6b00?text=Latiao'
 
-            // Create safe product object for addToCart (avoid quote issues)
-            const safeProduct = {
-              id: product.id,
-              name: product.name,
-              price: product.price,
-              image: img,
-              spiciness: product.spiciness || 1,
-              stock: stockAmount,
-              sku: product.sku || product.id
-            }
-
-            // Escape for HTML attribute - using single quotes inside the function call
-            const productJson = JSON.stringify(safeProduct).replace(/'/g, "\\'")
-
             // Generate spiciness HTML
             const spicinessHTML = renderSpiciness(product.spiciness)
 
@@ -682,9 +684,16 @@
                   </div>
 
                   <button 
-                    onclick="window.addToCart(${JSON.stringify(product).replace(/"/g, "'")})" 
-                    ${!inStock ? 'disabled' : ''} 
-                    class="w-full font-bold text-xs md:text-base py-2 md:py-3 px-3 md:px-4 rounded-xl md:rounded-2xl transition-all duration-200 hover:shadow-lg active:scale-95 ${inStock ? 'bg-gradient-to-r from-[#ff6b00] to-[#e53e3e] text-white hover:shadow-orange-300/50' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}">
+                    class="add-to-cart-btn w-full font-bold text-xs md:text-base py-2 md:py-3 px-3 md:px-4 rounded-xl md:rounded-2xl transition-all duration-200 hover:shadow-lg active:scale-95 ${inStock ? 'bg-gradient-to-r from-[#ff6b00] to-[#e53e3e] text-white hover:shadow-orange-300/50' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}"
+                    data-id="${product.id}"
+                    data-name="${product.name.replace(/"/g, '&quot;')}"
+                    data-price="${product.price}"
+                    data-image="${img}"
+                    data-stock="${stockAmount}"
+                    data-spiciness="${product.spiciness || 1}"
+                    data-sku="${product.sku || product.id}"
+                    ${!inStock ? 'disabled' : ''}
+                  >
                     ${inStock ? 'Додати в кошик' : 'Немає в наявності'}
                   </button>
                 </div>
@@ -739,6 +748,38 @@
         `
       }
     }
+
+    // ============================================
+    // GLOBAL EVENT DELEGATION FOR ADD TO CART BUTTONS
+    // ============================================
+    // This handles clicks on dynamically rendered buttons
+    document.addEventListener('click', (e) => {
+      // Check if clicked element or its parent is an add-to-cart button
+      const btn = e.target.closest('.add-to-cart-btn');
+      
+      if (btn && !btn.disabled) {
+        e.preventDefault();
+        
+        // Extract product data from data attributes
+        const product = {
+          id: btn.dataset.id,
+          name: btn.dataset.name,
+          price: parseFloat(btn.dataset.price),
+          image: btn.dataset.image,
+          stock: parseInt(btn.dataset.stock) || 0,
+          spiciness: parseInt(btn.dataset.spiciness) || 1,
+          sku: btn.dataset.sku
+        };
+        
+        // Call the global addToCart function from layout.js
+        if (window.addToCart) {
+          window.addToCart(product, 'category');
+          console.log('✅ Item added via delegated click:', product.name);
+        } else {
+          console.error('❌ window.addToCart function not found!');
+        }
+      }
+    });
 
     // Start when DOM is ready
     if (document.readyState === 'loading') {

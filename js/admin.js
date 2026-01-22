@@ -59,6 +59,13 @@ const storage = getStorage(app);
 console.log('🔥 Firebase initialized successfully (admin.js)');
 
 // ============================================
+// MARK BROWSER AS ADMIN (Maintenance Mode Bypass)
+// ============================================
+// This tag allows admins to view the site even when Maintenance Mode is ON
+localStorage.setItem('isAdmin', 'true');
+console.log('✅ Browser marked as Admin - Maintenance Mode bypass enabled');
+
+// ============================================
 // MINI-CRM: SYNC CUSTOMER FROM ORDER
 // ============================================
 /**
@@ -1309,7 +1316,7 @@ window.deleteAbandonedCart = async function(phone) {
 // ============================================
 
 // Global state for import
-let importParsedData = [];
+window.parsedImportData = []; // CRITICAL: Global variable for parsed Excel data
 let importFileName = '';
 
 // Field mapping options (supports Shopify export)
@@ -1357,7 +1364,7 @@ window.closeImportModal = function() {
 
 // Reset import state
 function resetImportState() {
-    importParsedData = [];
+    window.parsedImportData = [];
     importFileName = '';
     
     // Reset file input
@@ -1436,15 +1443,13 @@ if (document.readyState === 'loading') {
 }
 
 // Handle file upload
+// ============================================
+// HANDLE FILE UPLOAD (REWRITTEN)
+// ============================================
 function handleFileUpload(file) {
     console.log('📁 Handling file upload:', file.name);
     
     // Validate file type
-    const validTypes = [
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/vnd.ms-excel',
-        'text/csv'
-    ];
     const validExtensions = ['.xlsx', '.xls', '.csv'];
     const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
     
@@ -1477,19 +1482,26 @@ function handleFileUpload(file) {
             const firstSheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[firstSheetName];
             
-            // Convert to JSON (with headers)
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            // ============================================
+            // CRITICAL: Use { header: 1 } to get Array of Arrays
+            // This ensures we see EVERY column, even with duplicate/missing headers
+            // ============================================
+            const arrayData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
             
-            if (jsonData.length < 2) {
+            if (!arrayData || arrayData.length < 2) {
                 alert('❌ Файл порожній або містить тільки заголовки!');
                 return;
             }
             
-            console.log(`✅ Parsed ${jsonData.length} rows from Excel`);
-            importParsedData = jsonData;
+            console.log(`✅ Parsed ${arrayData.length} rows with ${arrayData[0].length} columns`);
+            console.log('📋 First row (headers):', arrayData[0]);
+            console.log('📋 Second row (sample data):', arrayData[1]);
             
-            // Render mapping table
-            renderMappingTable(jsonData);
+            // Store in global variable
+            window.parsedImportData = arrayData;
+            
+            // Render the preview table
+            renderImportPreview(arrayData);
             
             // Show mapping step
             showImportStep('mapping');
@@ -1503,6 +1515,113 @@ function handleFileUpload(file) {
     reader.readAsArrayBuffer(file);
 }
 
+// ============================================
+// RENDER IMPORT PREVIEW TABLE (REWRITTEN)
+// ============================================
+function renderImportPreview(data) {
+    const header = document.getElementById('import-mapping-header');
+    const body = document.getElementById('import-mapping-body');
+    
+    if (!header || !body) {
+        console.error('❌ Table elements not found!');
+        return;
+    }
+    
+    // Extract headers (first row) and preview data (next 5 rows)
+    const headers = data[0] || [];
+    const previewRows = data.slice(1, 6);
+    
+    console.log(`📊 Rendering table: ${headers.length} columns, ${previewRows.length} preview rows`);
+    
+    // ============================================
+    // BUILD HEADER ROW with MAPPING DROPDOWNS
+    // ============================================
+    let headerHtml = '<tr class="bg-gradient-to-r from-blue-50 to-indigo-50">';
+    
+    headers.forEach((headerName, colIndex) => {
+        const displayName = headerName || `Колонка ${colIndex + 1}`;
+        const guessedField = guessFieldMapping(headerName);
+        
+        // Generate dropdown options
+        const selectOptions = FIELD_MAPPINGS.map(field => 
+            `<option value="${field.value}"${guessedField === field.value ? ' selected' : ''}>${field.label}</option>`
+        ).join('');
+        
+        headerHtml += `
+            <th class="px-4 py-3 text-left border-r border-gray-300 min-w-[200px] align-top">
+                <!-- Original Column Name -->
+                <div class="text-xs font-bold text-gray-700 uppercase mb-2 truncate" title="${displayName}">
+                    📄 ${displayName}
+                </div>
+                <!-- Mapping Dropdown -->
+                <select 
+                    id="map-col-${colIndex}" 
+                    class="w-full border-2 border-blue-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all shadow-sm"
+                >
+                    ${selectOptions}
+                </select>
+            </th>
+        `;
+    });
+    
+    headerHtml += '</tr>';
+    header.innerHTML = headerHtml;
+    
+    // ============================================
+    // BUILD PREVIEW DATA ROWS
+    // ============================================
+    let bodyHtml = '';
+    
+    previewRows.forEach((row, rowIndex) => {
+        const rowClass = rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+        bodyHtml += `<tr class="${rowClass} hover:bg-blue-50 transition-colors">`;
+        
+        headers.forEach((_, colIndex) => {
+            const cellValue = row[colIndex] !== undefined && row[colIndex] !== null ? row[colIndex] : '';
+            const cellStr = String(cellValue);
+            const displayValue = cellStr.length > 100 ? cellStr.substring(0, 100) + '...' : cellStr;
+            const isEmpty = cellStr.trim() === '';
+            
+            bodyHtml += `
+                <td 
+                    class="px-4 py-3 text-sm text-gray-700 border-r border-gray-200 whitespace-nowrap" 
+                    title="${cellStr}"
+                >
+                    ${isEmpty ? '<span class="text-gray-400 italic">пусто</span>' : displayValue}
+                </td>
+            `;
+        });
+        
+        bodyHtml += '</tr>';
+    });
+    
+    // ============================================
+    // ADD FOOTER ROW with TOTAL COUNT
+    // ============================================
+    const totalRows = data.length - 1; // Exclude header row
+    bodyHtml += `
+        <tr class="bg-gradient-to-r from-green-50 to-blue-50 border-t-4 border-green-400">
+            <td colspan="${headers.length}" class="px-4 py-4 text-center">
+                <span class="text-sm font-bold text-gray-700">
+                    📊 Всього рядків для імпорту: 
+                </span>
+                <span class="text-lg font-extrabold text-green-700">
+                    ${totalRows}
+                </span>
+            </td>
+        </tr>
+    `;
+    
+    body.innerHTML = bodyHtml;
+    
+    // Reinitialize icons if available
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+    
+    console.log('✅ Preview table rendered successfully');
+}
+
 // Format file size
 function formatFileSize(bytes) {
     if (bytes < 1024) return bytes + ' B';
@@ -1510,61 +1629,7 @@ function formatFileSize(bytes) {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
-// Render mapping table
-function renderMappingTable(jsonData) {
-    const header = document.getElementById('import-mapping-header');
-    const body = document.getElementById('import-mapping-body');
-    
-    if (!header || !body) return;
-    
-    const columns = jsonData[0] || [];
-    const previewRows = jsonData.slice(1, 6); // First 5 data rows
-    
-    // Build header with dropdowns
-    let headerHtml = '<tr>';
-    columns.forEach((col, idx) => {
-        const selectOptions = FIELD_MAPPINGS.map(f => 
-            `<option value="${f.value}"${guessFieldMapping(col) === f.value ? ' selected' : ''}>${f.label}</option>`
-        ).join('');
-        
-        headerHtml += `
-            <th class="px-4 py-3 text-left">
-                <select id="map-col-${idx}" class="w-full border rounded-lg px-2 py-1 text-sm bg-white mb-2">
-                    ${selectOptions}
-                </select>
-                <div class="text-xs font-medium text-gray-500 truncate" title="${col}">${col || `Колонка ${idx + 1}`}</div>
-            </th>
-        `;
-    });
-    headerHtml += '</tr>';
-    header.innerHTML = headerHtml;
-    
-    // Build preview rows
-    let bodyHtml = '';
-    previewRows.forEach((row, rowIdx) => {
-        bodyHtml += '<tr class="hover:bg-gray-50">';
-        columns.forEach((_, colIdx) => {
-            const cellValue = row[colIdx] !== undefined ? row[colIdx] : '';
-            const displayValue = String(cellValue).substring(0, 50);
-            bodyHtml += `<td class="px-4 py-2 text-sm text-gray-700 truncate" title="${cellValue}">${displayValue}</td>`;
-        });
-        bodyHtml += '</tr>';
-    });
-    
-    // Add row count info
-    const totalRows = jsonData.length - 1;
-    bodyHtml += `
-        <tr class="bg-blue-50">
-            <td colspan="${columns.length}" class="px-4 py-3 text-center text-sm text-blue-700 font-medium">
-                📊 Всього рядків для імпорту: <strong>${totalRows}</strong>
-            </td>
-        </tr>
-    `;
-    
-    body.innerHTML = bodyHtml;
-    
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-}
+// NOTE: renderMappingTable removed - replaced by renderImportPreview above
 
 // Guess field mapping based on column name (supports Shopify export format)
 function guessFieldMapping(columnName) {
@@ -1661,13 +1726,13 @@ function isValidImageUrl(url) {
 window.executeImport = async function() {
     console.log('🚀 Starting Shopify-optimized import...');
     
-    if (importParsedData.length < 2) {
+    if (!window.parsedImportData || window.parsedImportData.length < 2) {
         alert('❌ Немає даних для імпорту!');
         return;
     }
     
     // Get column mappings
-    const columns = importParsedData[0] || [];
+    const columns = window.parsedImportData[0] || [];
     const mappings = {};
     let hasNameField = false;
     let handleColIdx = -1;
@@ -1697,7 +1762,7 @@ window.executeImport = async function() {
     // Show progress
     showImportStep('progress');
     
-    const dataRows = importParsedData.slice(1);
+    const dataRows = window.parsedImportData.slice(1);
     const totalRows = dataRows.length;
     let importedCount = 0;
     let skippedCount = 0;
