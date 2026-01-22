@@ -210,10 +210,16 @@
                 <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
                     <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                         <h3 class="text-lg font-bold text-gray-900">Товари</h3>
-                        <button onclick="openProductModal()" class="flex items-center gap-2 px-4 py-2 bg-spicy text-white rounded-lg font-semibold hover:bg-orange-700 transition">
-                            <i data-lucide="plus" class="w-4 h-4"></i>
-                            <span>Додати товар</span>
-                        </button>
+                        <div class="flex items-center gap-3">
+                            <button onclick="openBulkImageUploadModal()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">
+                                <span>📸</span>
+                                <span>Bulk Image Upload</span>
+                            </button>
+                            <button onclick="openProductModal()" class="flex items-center gap-2 px-4 py-2 bg-spicy text-white rounded-lg font-semibold hover:bg-orange-700 transition">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                <span>Додати товар</span>
+                            </button>
+                        </div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full">
@@ -583,8 +589,93 @@
         </div>
     </div>
 
+    <!-- Bulk Image Upload Modal -->
+    <div id="bulk-image-upload-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            <!-- Header -->
+            <div class="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 p-6 flex justify-between items-center z-10">
+                <div class="flex items-center gap-3">
+                    <span class="text-4xl">📸</span>
+                    <div>
+                        <h3 class="text-2xl font-bold text-white">Масове завантаження зображень</h3>
+                        <p class="text-blue-100 text-sm mt-1">Завантажте зображення товарів за SKU</p>
+                    </div>
+                </div>
+                <button onclick="closeBulkImageUploadModal()" class="p-2 hover:bg-white/10 rounded-full transition">
+                    <i data-lucide="x" class="w-6 h-6 text-white"></i>
+                </button>
+            </div>
+
+            <!-- Instructions -->
+            <div class="p-6 bg-blue-50 border-b border-blue-100">
+                <div class="flex gap-3">
+                    <div class="flex-shrink-0">
+                        <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                            <i data-lucide="info" class="w-5 h-5 text-white"></i>
+                        </div>
+                    </div>
+                    <div class="text-sm text-gray-700">
+                        <h4 class="font-bold text-blue-900 mb-2">Як це працює:</h4>
+                        <ol class="space-y-1 list-decimal list-inside">
+                            <li>Назвіть файли зображень як <strong>SKU товару</strong> (наприклад: <code class="bg-blue-100 px-2 py-0.5 rounded">9840.jpg</code>, <code class="bg-blue-100 px-2 py-0.5 rounded">1520.png</code>)</li>
+                            <li>Виберіть усі зображення (можна кілька одночасно)</li>
+                            <li>Система автоматично знайде товари та оновить їх фото</li>
+                            <li>Максимум <strong>5 файлів одночасно</strong> обробляються для безпеки</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Input -->
+            <div class="p-6 border-b border-gray-200">
+                <label class="block text-sm font-bold text-gray-900 mb-3">Виберіть зображення</label>
+                <div class="relative">
+                    <input type="file" id="bulkImageInput" multiple accept="image/*" 
+                           class="w-full border-2 border-dashed border-gray-300 rounded-xl p-6 text-center cursor-pointer hover:border-blue-500 transition file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    <div id="file-count" class="mt-2 text-sm text-gray-600"></div>
+                </div>
+            </div>
+
+            <!-- Progress Section -->
+            <div id="upload-progress-section" class="hidden p-6 border-b border-gray-200 bg-gray-50">
+                <div class="mb-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-semibold text-gray-700">Прогрес:</span>
+                        <span id="progress-text" class="text-sm font-bold text-blue-600">0 / 0</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                        <div id="progress-bar" class="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Log Console -->
+            <div id="log-console" class="p-6 bg-white max-h-[300px] overflow-y-auto font-mono text-xs space-y-1">
+                <div class="text-gray-400 text-center py-4">Логи з'являться тут після початку завантаження...</div>
+            </div>
+
+            <!-- Actions -->
+            <div class="p-6 bg-gray-50 flex gap-3 sticky bottom-0">
+                <button type="button" onclick="closeBulkImageUploadModal()" class="flex-1 py-3 bg-gray-200 rounded-xl font-bold text-gray-700 hover:bg-gray-300 transition">
+                    Закрити
+                </button>
+                <button type="button" id="start-bulk-upload-btn" onclick="handleBulkImageUpload()" class="flex-1 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-bold hover:from-blue-700 hover:to-blue-800 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    🚀 Почати завантаження
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module" src="./js/admin.js"></script>
+    <script src="./js/bulk-image-upload.js"></script>
+
+</body>
+</html>
+
     <!-- Main Admin Script -->
     <script type="module" src="./js/admin.js"></script>
+    <script src="./js/bulk-image-upload.js"></script>
 
 </body>
 </html>

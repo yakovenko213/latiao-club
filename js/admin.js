@@ -59,6 +59,40 @@ const storage = getStorage(app);
 console.log('🔥 Firebase initialized successfully (admin.js)');
 
 // ============================================
+// EXPOSE FIREBASE INSTANCES FOR OTHER MODULES
+// ============================================
+window.firebaseInstances = {
+    app,
+    db,
+    auth,
+    storage,
+    // Firestore functions
+    collection,
+    doc,
+    getDocs,
+    getDoc,
+    updateDoc,
+    deleteDoc,
+    addDoc,
+    setDoc,
+    query,
+    where,
+    orderBy,
+    limit,
+    serverTimestamp,
+    onSnapshot,
+    writeBatch,
+    increment,
+    arrayUnion,
+    // Storage functions
+    ref,
+    uploadBytes,
+    getDownloadURL
+};
+
+console.log('✅ Firebase instances exposed to window.firebaseInstances');
+
+// ============================================
 // MARK BROWSER AS ADMIN (Maintenance Mode Bypass)
 // ============================================
 // This tag allows admins to view the site even when Maintenance Mode is ON
