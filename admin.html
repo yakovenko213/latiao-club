@@ -2591,9 +2591,9 @@
   <!-- ============================================ -->
   <!-- CSV IMPORT MODAL (Advanced Column Mapping) -->
   <!-- ============================================ -->
-  <div id="csv-import-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <!-- ⚡ CRITICAL: w-[95vw] max-w-full allows FULL width expansion ⚡ -->
-    <div class="bg-white rounded-2xl w-[95vw] max-w-full h-[90vh] overflow-hidden shadow-2xl animate-slide-up flex flex-col">
+  <div id="csv-import-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <!-- ⚡ FULL SCREEN MODAL: 98vw x 95vh ⚡ -->
+    <div class="bg-white rounded-lg shadow-xl w-[98vw] h-[95vh] flex flex-col">
       
       <!-- Modal Header -->
       <div class="p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50 flex justify-between items-center">
@@ -2613,7 +2613,7 @@
       </div>
 
       <!-- Modal Body -->
-      <div class="p-8 overflow-y-auto max-h-[calc(90vh-200px)]">
+      <div class="flex-1 overflow-y-auto p-8">
         
         <!-- Step 1: File Selection -->
         <div id="csv-step-1" class="space-y-6">
@@ -2648,10 +2648,10 @@
             </p>
           </div>
 
-          <!-- ⚡ CRITICAL: Force Horizontal Scroll Table Wrapper ⚡ -->
-          <div class="overflow-x-auto overflow-y-auto block max-h-[65vh] border-2 border-gray-300 rounded-xl bg-gray-50 shadow-inner">
-            <table class="min-w-max w-full table-auto border-collapse" id="csv-preview-table" style="display: table;">
-              <thead class="bg-gradient-to-r from-gray-100 to-gray-200 border-b-2 border-gray-400 sticky top-0 z-10 shadow-md">
+          <!-- ⚡ FLEX-1 OVERFLOW TABLE WRAPPER ⚡ -->
+          <div class="flex-1 overflow-auto border border-gray-200">
+            <table class="min-w-full border-collapse" id="csv-preview-table">
+              <thead class="sticky top-0 z-10 bg-gray-100 shadow">
                 <tr id="csv-mapping-row">
                   <!-- ✅ Dropdowns will be inserted here dynamically -->
                 </tr>
@@ -9718,17 +9718,17 @@
 
       for (let i = 0; i < numColumns; i++) {
         const th = document.createElement('th')
-        // CRITICAL: whitespace-nowrap FORCES horizontal expansion
-        th.className = 'px-4 py-3 text-left text-xs font-semibold text-gray-700 min-w-[220px] whitespace-nowrap bg-gray-100 border-r border-gray-300'
+        // ⚡ CRITICAL: min-w-[200px] + whitespace-nowrap = FORCE WIDE TABLE
+        th.className = 'px-4 py-3 text-left min-w-[200px] whitespace-nowrap border-b border-gray-200'
         
         // Column header label
         const columnLabel = document.createElement('div')
-        columnLabel.className = 'text-xs text-gray-500 mb-2 font-normal'
-        columnLabel.textContent = `📍 Колонка ${i + 1}`
+        columnLabel.className = 'text-xs text-gray-600 mb-2 font-semibold uppercase'
+        columnLabel.textContent = `Колонка ${i + 1}`
         
         // Dropdown select
         const select = document.createElement('select')
-        select.className = 'block w-full min-w-[200px] px-3 py-2 border-2 border-gray-300 rounded-lg text-xs font-semibold bg-white shadow-sm hover:border-blue-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors'
+        select.className = 'w-full px-2 py-1.5 border border-gray-300 rounded text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
         select.dataset.columnIndex = i
         
         fieldOptions.forEach(opt => {
@@ -9748,7 +9748,7 @@
         } else if (firstCellValue.includes('ціна') || firstCellValue.includes('price') || firstCellValue.includes('cost')) {
           select.value = 'price'
           console.log(`    ✅ Auto-mapped to: price`)
-        } else if (firstCellValue.includes('категор') || firstCellValue.includes('category')) {
+        } else if (firstCellValue.includes('kategor') || firstCellValue.includes('category') || firstCellValue.includes('категор')) {
           select.value = 'category'
           console.log(`    ✅ Auto-mapped to: category`)
         } else if (firstCellValue.includes('фото') || firstCellValue.includes('image') || firstCellValue.includes('photo')) {
@@ -9777,19 +9777,19 @@
 
       previewRows.forEach((row, rowIndex) => {
         const tr = document.createElement('tr')
-        tr.className = rowIndex % 2 === 0 ? 'bg-white hover:bg-gray-50 transition-colors' : 'bg-gray-50 hover:bg-gray-100 transition-colors'
+        tr.className = 'border-b border-gray-100'
 
-        // CRITICAL: Must iterate through SAME number of columns
+        // ⚡ CRITICAL: Same number of columns, min-w-[200px] + whitespace-nowrap
         for (let colIndex = 0; colIndex < numColumns; colIndex++) {
           const td = document.createElement('td')
-          // CRITICAL: whitespace-nowrap prevents wrapping -> forces horizontal scroll
-          td.className = 'px-4 py-3 text-xs text-gray-800 min-w-[220px] max-w-[400px] whitespace-nowrap border-r border-gray-200 overflow-hidden text-ellipsis'
+          // ⚡ FORCE WIDTH: min-w-[200px] + whitespace-nowrap
+          td.className = 'px-4 py-3 text-sm text-gray-700 min-w-[200px] whitespace-nowrap'
           
           const cellValue = row[colIndex]
           const displayValue = cellValue !== null && cellValue !== undefined ? String(cellValue) : '—'
           
           td.textContent = displayValue
-          td.title = displayValue // Tooltip for full value on hover
+          td.title = displayValue // Tooltip for full text
           
           tr.appendChild(td)
         }
@@ -9797,7 +9797,7 @@
         previewBody.appendChild(tr)
       })
       
-      console.log('✅ Table rendered successfully')
+      console.log('✅ Table rendered successfully with FULL SCREEN layout')
     }
 
     window.startCSVImport = async function() {

@@ -1460,17 +1460,6 @@ function handleFileUpload(file) {
     
     importFileName = file.name;
     
-    // Show file info
-    const fileInfo = document.getElementById('import-file-info');
-    const fileName = document.getElementById('import-file-name');
-    const fileSize = document.getElementById('import-file-size');
-    
-    if (fileInfo && fileName && fileSize) {
-        fileName.textContent = file.name;
-        fileSize.textContent = formatFileSize(file.size);
-        fileInfo.classList.remove('hidden');
-    }
-    
     // Read file with SheetJS
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -1483,10 +1472,14 @@ function handleFileUpload(file) {
             const worksheet = workbook.Sheets[firstSheetName];
             
             // ============================================
-            // CRITICAL: Use { header: 1 } to get Array of Arrays
-            // This ensures we see EVERY column, even with duplicate/missing headers
+            // CRITICAL: Use { header: 1, defval: '' }
+            // header: 1 - Returns Array of Arrays (never loses columns)
+            // defval: '' - Empty cells become empty strings (not undefined)
             // ============================================
-            const arrayData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            const arrayData = XLSX.utils.sheet_to_json(worksheet, { 
+                header: 1, 
+                defval: '' 
+            });
             
             if (!arrayData || arrayData.length < 2) {
                 alert('❌ Файл порожній або містить тільки заголовки!');
@@ -1497,14 +1490,16 @@ function handleFileUpload(file) {
             console.log('📋 First row (headers):', arrayData[0]);
             console.log('📋 Second row (sample data):', arrayData[1]);
             
-            // Store in global variable
-            window.parsedImportData = arrayData;
+            // Extract headers and data
+            const headers = arrayData[0];
+            const dataRows = arrayData.slice(1);
             
-            // Render the preview table
-            renderImportPreview(arrayData);
+            // Store globally for import execution
+            window.importHeaders = headers;
+            window.importData = dataRows;
             
-            // Show mapping step
-            showImportStep('mapping');
+            // Render preview modal
+            renderImportPreview(headers, dataRows);
             
         } catch (error) {
             console.error('❌ Error parsing Excel file:', error);
@@ -1516,111 +1511,481 @@ function handleFileUpload(file) {
 }
 
 // ============================================
-// RENDER IMPORT PREVIEW TABLE (REWRITTEN)
+// RENDER IMPORT PREVIEW TABLE (COMPLETELY REWRITTEN)
 // ============================================
-function renderImportPreview(data) {
-    const header = document.getElementById('import-mapping-header');
-    const body = document.getElementById('import-mapping-body');
+// RENDER IMPORT PREVIEW TABLE (WITH GLOBAL STATE CACHING)
+// ============================================
+/**
+ * Renders a full-screen Excel-like import preview modal
+ * @param {Array<string>} headers - Column headers from the CSV/Excel file
+ * @param {Array<Array<string>>} previewData - All data rows for preview
+ */
+function renderImportPreview(headers, previewData) {
+  console.log('🎨 renderImportPreview called with:', headers.length, 'columns,', previewData.length, 'rows');
+  
+  // ============================================
+  // STEP 1: CACHE DATA GLOBALLY (CRITICAL!)
+  // ============================================
+  window.cachedImportData = previewData;
+  window.cachedHeaders = headers;
+  console.log('✅ Data cached to window.cachedImportData:', window.cachedImportData.length, 'rows');
+  console.log('✅ Headers cached to window.cachedHeaders:', window.cachedHeaders.length, 'columns');
+  
+  // Define available Firestore field mappings
+  const fieldMappings = [
+    { value: '', label: '-- Пропустити --' },
+    { value: 'name', label: '📦 Назва товару (обов\'язково)' },
+    { value: 'price', label: '💰 Ціна (обов\'язково)' },
+    { value: 'sku', label: '🔖 Артикул (SKU)' },
+    { value: 'description', label: '📝 Короткий опис' },
+    { value: 'fullDescription', label: '📄 Детальний опис' },
+    { value: 'category', label: '🏷️ Категорія' },
+    { value: 'spiciness', label: '🌶️ Гострота (1-5)' },
+    { value: 'specs', label: '⚙️ Характеристики' },
+    { value: 'ingredients', label: '🧪 Склад' },
+    { value: 'imageUrl', label: '🖼️ URL фото' },
+    { value: 'tags', label: '🏷️ Теги (через кому)' },
+    { value: 'isHot', label: '🔥 Хіт продажів (так/ні)' }
+  ];
+
+  // Auto-detect Shopify columns
+  const shopifyMapping = {
+    'title': 'name',
+    'variant price': 'price',
+    'variant sku': 'sku',
+    'body (html)': 'fullDescription',
+    'type': 'category',
+    'tags': 'tags',
+    'image src': 'imageUrl'
+  };
+
+  // Auto-map columns
+  const columnMappings = headers.map(header => {
+    const normalized = header.toLowerCase().trim();
     
-    if (!header || !body) {
-        console.error('❌ Table elements not found!');
-        return;
+    // Check Shopify mapping
+    if (shopifyMapping[normalized]) {
+      return shopifyMapping[normalized];
     }
     
-    // Extract headers (first row) and preview data (next 5 rows)
-    const headers = data[0] || [];
-    const previewRows = data.slice(1, 6);
+    // Check Ukrainian/direct matches
+    if (normalized.includes('назва') || normalized === 'name') return 'name';
+    if (normalized.includes('ціна') || normalized === 'price') return 'price';
+    if (normalized.includes('артикул') || normalized === 'sku') return 'sku';
+    if (normalized.includes('опис') || normalized === 'description') return 'description';
+    if (normalized.includes('категор') || normalized === 'category') return 'category';
+    if (normalized.includes('фото') || normalized.includes('image')) return 'imageUrl';
     
-    console.log(`📊 Rendering table: ${headers.length} columns, ${previewRows.length} preview rows`);
+    return ''; // Skip by default
+  });
+
+  // ============================================
+  // STEP 1: Build the options HTML ONCE
+  // ============================================
+  const optionsHtml = fieldMappings.map(field => 
+    '<option value="' + field.value + '">' + field.label + '</option>'
+  ).join('');
+  
+  console.log('✅ Options HTML built:', optionsHtml.length, 'characters');
+
+  // ============================================
+  // STEP 2: Build Header Row with Dropdowns for EVERY Column
+  // ============================================
+  let tableHeaderHTML = '';
+  
+  for (let i = 0; i < headers.length; i++) {
+    const headerName = headers[i];
+    const autoMapping = columnMappings[i] || '';
     
-    // ============================================
-    // BUILD HEADER ROW with MAPPING DROPDOWNS
-    // ============================================
-    let headerHtml = '<tr class="bg-gradient-to-r from-blue-50 to-indigo-50">';
+    // Build select element with pre-selected value
+    let selectHtml = '<select data-col-index="' + i + '" ' +
+      'class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm font-semibold focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all bg-white" ' +
+      'onchange="window.updateColumnMapping(' + i + ', this.value)">';
     
-    headers.forEach((headerName, colIndex) => {
-        const displayName = headerName || `Колонка ${colIndex + 1}`;
-        const guessedField = guessFieldMapping(headerName);
-        
-        // Generate dropdown options
-        const selectOptions = FIELD_MAPPINGS.map(field => 
-            `<option value="${field.value}"${guessedField === field.value ? ' selected' : ''}>${field.label}</option>`
-        ).join('');
-        
-        headerHtml += `
-            <th class="px-4 py-3 text-left border-r border-gray-300 min-w-[200px] align-top">
-                <!-- Original Column Name -->
-                <div class="text-xs font-bold text-gray-700 uppercase mb-2 truncate" title="${displayName}">
-                    📄 ${displayName}
-                </div>
-                <!-- Mapping Dropdown -->
-                <select 
-                    id="map-col-${colIndex}" 
-                    class="w-full border-2 border-blue-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all shadow-sm"
-                >
-                    ${selectOptions}
-                </select>
-            </th>
-        `;
-    });
-    
-    headerHtml += '</tr>';
-    header.innerHTML = headerHtml;
-    
-    // ============================================
-    // BUILD PREVIEW DATA ROWS
-    // ============================================
-    let bodyHtml = '';
-    
-    previewRows.forEach((row, rowIndex) => {
-        const rowClass = rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50';
-        bodyHtml += `<tr class="${rowClass} hover:bg-blue-50 transition-colors">`;
-        
-        headers.forEach((_, colIndex) => {
-            const cellValue = row[colIndex] !== undefined && row[colIndex] !== null ? row[colIndex] : '';
-            const cellStr = String(cellValue);
-            const displayValue = cellStr.length > 100 ? cellStr.substring(0, 100) + '...' : cellStr;
-            const isEmpty = cellStr.trim() === '';
-            
-            bodyHtml += `
-                <td 
-                    class="px-4 py-3 text-sm text-gray-700 border-r border-gray-200 whitespace-nowrap" 
-                    title="${cellStr}"
-                >
-                    ${isEmpty ? '<span class="text-gray-400 italic">пусто</span>' : displayValue}
-                </td>
-            `;
-        });
-        
-        bodyHtml += '</tr>';
-    });
-    
-    // ============================================
-    // ADD FOOTER ROW with TOTAL COUNT
-    // ============================================
-    const totalRows = data.length - 1; // Exclude header row
-    bodyHtml += `
-        <tr class="bg-gradient-to-r from-green-50 to-blue-50 border-t-4 border-green-400">
-            <td colspan="${headers.length}" class="px-4 py-4 text-center">
-                <span class="text-sm font-bold text-gray-700">
-                    📊 Всього рядків для імпорту: 
-                </span>
-                <span class="text-lg font-extrabold text-green-700">
-                    ${totalRows}
-                </span>
-            </td>
-        </tr>
-    `;
-    
-    body.innerHTML = bodyHtml;
-    
-    // Reinitialize icons if available
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
+    // Add all options with selected state
+    for (let j = 0; j < fieldMappings.length; j++) {
+      const field = fieldMappings[j];
+      const selected = (field.value === autoMapping) ? ' selected' : '';
+      selectHtml += '<option value="' + field.value + '"' + selected + '>' + field.label + '</option>';
     }
     
-    console.log('✅ Preview table rendered successfully');
+    selectHtml += '</select>';
+    
+    // Build complete <th>
+    tableHeaderHTML += 
+      '<th class="whitespace-nowrap px-4 py-2 border border-gray-300 min-w-[200px] bg-gradient-to-b from-gray-100 to-gray-50">' +
+        '<div class="space-y-2">' +
+          '<div class="font-bold text-gray-700 text-xs uppercase tracking-wide flex items-center gap-2">' +
+            '<span class="text-blue-600">📊</span>' +
+            '<span>' + headerName + '</span>' +
+          '</div>' +
+          selectHtml +
+        '</div>' +
+      '</th>';
+  }
+  
+  console.log('✅ Header HTML generated for', headers.length, 'columns');
+
+  // ============================================
+  // STEP 3: Build Body Rows
+  // ============================================
+  let tableBodyHTML = '';
+  
+  for (let rowIdx = 0; rowIdx < previewData.length; rowIdx++) {
+    const row = previewData[rowIdx];
+    tableBodyHTML += '<tr class="hover:bg-blue-50 transition-colors">';
+    
+    for (let colIdx = 0; colIdx < headers.length; colIdx++) {
+      const cellValue = row[colIdx] || '';
+      const displayValue = cellValue ? cellValue : '<span class="text-gray-400 italic">порожньо</span>';
+      
+      tableBodyHTML += 
+        '<td class="whitespace-nowrap px-4 py-2 border border-gray-200 min-w-[200px] text-sm text-gray-700">' +
+          displayValue +
+        '</td>';
+    }
+    
+    tableBodyHTML += '</tr>';
+  }
+  
+  console.log('✅ Body HTML generated for', previewData.length, 'rows');
+
+  // ============================================
+  // STEP 4: Build Complete Modal HTML
+  // ============================================
+  const modalHTML = 
+    '<div id="import-preview-modal" class="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">' +
+      '<div class="w-[98vw] h-[95vh] bg-white rounded-lg shadow-2xl flex flex-col">' +
+        
+        '<!-- Modal Header -->' +
+        '<div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50 flex justify-between items-center flex-shrink-0">' +
+          '<div class="flex items-center gap-4">' +
+            '<div class="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">' +
+              '<span class="text-2xl">📊</span>' +
+            '</div>' +
+            '<div>' +
+              '<h3 class="text-2xl font-bold text-gray-900">Попередній перегляд імпорту</h3>' +
+              '<p class="text-sm text-gray-600">' +
+                'Знайдено: <strong>' + headers.length + ' колонок</strong>, ' +
+                'показано <strong>' + previewData.length + ' рядків</strong> для перегляду' +
+              '</p>' +
+            '</div>' +
+          '</div>' +
+          '<button onclick="window.closeImportPreview()" class="p-2 hover:bg-white hover:bg-opacity-80 rounded-full transition-colors">' +
+            '<i data-lucide="x" class="w-6 h-6 text-gray-600"></i>' +
+          '</button>' +
+        '</div>' +
+        
+        '<!-- Instructions Banner -->' +
+        '<div class="px-6 py-3 bg-blue-50 border-b border-blue-200 flex items-center gap-3 flex-shrink-0">' +
+          '<i data-lucide="info" class="w-5 h-5 text-blue-600 flex-shrink-0"></i>' +
+          '<p class="text-sm text-blue-800">' +
+            '<strong>Інструкція:</strong> Виберіть у випадаючих списках (зверху кожної колонки), які поля Firestore відповідають колонкам вашого файлу. ' +
+            'Поля <strong>Назва</strong> та <strong>Ціна</strong> обов\'язкові. Прокручуйте таблицю → щоб побачити всі колонки.' +
+          '</p>' +
+        '</div>' +
+        
+        '<!-- Table Wrapper (Scrollable Area) -->' +
+        '<div class="flex-1 overflow-auto border-t border-gray-300 relative">' +
+          '<table class="min-w-max border-collapse table-auto w-full">' +
+            '<thead class="sticky top-0 bg-gray-100 z-10 shadow-sm">' +
+              '<tr>' +
+                tableHeaderHTML +
+              '</tr>' +
+            '</thead>' +
+            '<tbody class="bg-white divide-y divide-gray-200">' +
+              tableBodyHTML +
+            '</tbody>' +
+          '</table>' +
+        '</div>' +
+        
+        '<!-- Scroll Hint -->' +
+        '<div class="px-6 py-2 bg-yellow-50 border-t border-yellow-200 flex items-center justify-between flex-shrink-0">' +
+          '<div class="flex items-center gap-2 text-sm text-yellow-800">' +
+            '<i data-lucide="alert-triangle" class="w-4 h-4"></i>' +
+            '<span>Рядки без назви або ціни будуть пропущені під час імпорту</span>' +
+          '</div>' +
+          '<div class="flex items-center gap-2 text-sm text-blue-700 font-semibold">' +
+            '<i data-lucide="arrow-left-right" class="w-4 h-4"></i>' +
+            '<span>Прокручуйте таблицю →</span>' +
+          '</div>' +
+        '</div>' +
+        
+        '<!-- Modal Footer -->' +
+        '<div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex gap-3 flex-shrink-0">' +
+          '<button onclick="window.closeImportPreview()" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-bold transition-colors">' +
+            'Скасувати' +
+          '</button>' +
+          '<button onclick="window.executeImportWithMappings()" class="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center gap-2">' +
+            '<i data-lucide="upload" class="w-5 h-5"></i>' +
+            '<span>Імпортувати товари (' + previewData.length + '+ рядків)</span>' +
+          '</button>' +
+        '</div>' +
+        
+      '</div>' +
+    '</div>';
+
+  console.log('✅ Modal HTML constructed');
+
+  // Remove existing modal if present
+  const existingModal = document.getElementById('import-preview-modal');
+  if (existingModal) {
+    existingModal.remove();
+  }
+
+  // Inject modal into DOM
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  console.log('✅ Modal injected into DOM');
+
+  // Re-initialize Lucide icons for the new modal
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+  }
+
+  // Store mappings globally for later use
+  window.currentColumnMappings = columnMappings;
+  window.currentHeaders = headers;
+  window.currentPreviewData = previewData;
+  
+  console.log('✅ renderImportPreview completed successfully');
 }
+
+/**
+ * Update column mapping when dropdown changes
+ */
+window.updateColumnMapping = function(columnIndex, newValue) {
+  if (!window.currentColumnMappings) {
+    window.currentColumnMappings = [];
+  }
+  window.currentColumnMappings[columnIndex] = newValue;
+  console.log(`Column ${columnIndex} mapped to: ${newValue}`);
+};
+
+/**
+ * Close the import preview modal
+ */
+window.closeImportPreview = function() {
+  const modal = document.getElementById('import-preview-modal');
+  if (modal) {
+    modal.remove();
+  }
+  // Clean up global variables
+  delete window.currentColumnMappings;
+  delete window.currentHeaders;
+  delete window.currentPreviewData;
+};
+
+/**
+ * Execute import with current column mappings - FINAL FIRESTORE UPLOAD
+ * Uses cached data from window.cachedImportData and window.cachedHeaders
+ */
+window.executeImportWithMappings = async function() {
+  try {
+    console.log('🚀 Starting executeImportWithMappings...');
+    
+    // ============================================
+    // STEP 1: RETRIEVE CACHED DATA WITH SAFETY CHECKS
+    // ============================================
+    const data = window.cachedImportData;
+    const headers = window.cachedHeaders;
+    
+    console.log('📦 Retrieved cached data:', data ? data.length : 'undefined', 'rows');
+    console.log('📦 Retrieved cached headers:', headers ? headers.length : 'undefined', 'columns');
+    
+    // CRITICAL SAFETY CHECK
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      alert('❌ Помилка: Дані втрачено. Спробуйте завантажити файл знову.');
+      console.error('❌ No cached data found!');
+      return;
+    }
+    
+    if (!headers || !Array.isArray(headers) || headers.length === 0) {
+      alert('❌ Помилка: Заголовки втрачено. Спробуйте завантажити файл знову.');
+      console.error('❌ No cached headers found!');
+      return;
+    }
+    
+    // ============================================
+    // STEP 2: GET COLUMN MAPPINGS FROM DROPDOWNS
+    // ============================================
+    const selects = document.querySelectorAll('#import-preview-modal select[data-col-index]');
+    const columnMappings = [];
+    
+    selects.forEach(select => {
+      const colIndex = parseInt(select.getAttribute('data-col-index'));
+      const fieldName = select.value;
+      columnMappings[colIndex] = fieldName;
+    });
+    
+    console.log('📊 Column Mappings:', columnMappings);
+    
+    // Validate required fields
+    const hasName = columnMappings.includes('name');
+    const hasPrice = columnMappings.includes('price');
+    
+    if (!hasName || !hasPrice) {
+      alert('❌ Помилка: Необхідно вказати поля "Назва товару" та "Ціна"');
+      return;
+    }
+    
+    // Close preview modal
+    window.closeImportPreview();
+    
+    // ============================================
+    // STEP 3: SHOW PROGRESS MODAL
+    // ============================================
+    const progressHtml = 
+      '<div id="import-progress-modal" class="fixed inset-0 z-[200] bg-black/70 flex items-center justify-center p-4">' +
+        '<div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">' +
+          '<div class="text-center">' +
+            '<div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center animate-pulse">' +
+              '<span class="text-4xl">📦</span>' +
+            '</div>' +
+            '<h3 class="text-2xl font-bold text-gray-900 mb-2">Імпорт товарів</h3>' +
+            '<p class="text-gray-600 mb-6">Завантаження даних до Firestore...</p>' +
+            '<div class="relative pt-1">' +
+              '<div class="flex mb-2 items-center justify-between">' +
+                '<div>' +
+                  '<span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-green-600 bg-green-200">' +
+                    'В процесі' +
+                  '</span>' +
+                '</div>' +
+                '<div class="text-right">' +
+                  '<span id="progress-text" class="text-xs font-semibold inline-block text-green-600">' +
+                    '0%' +
+                  '</span>' +
+                '</div>' +
+              '</div>' +
+              '<div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-green-200">' +
+                '<div id="progress-bar" style="width:0%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500 transition-all duration-300"></div>' +
+              '</div>' +
+            '</div>' +
+            '<p id="progress-status" class="text-sm text-gray-500"></p>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    
+    document.body.insertAdjacentHTML('beforeend', progressHtml);
+    
+    // ============================================
+    // STEP 4: MAP DATA TO PRODUCTS (WITH NULL CHECKS)
+    // ============================================
+    const productsToImport = [];
+    
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      
+      // SKIP EMPTY OR NULL ROWS
+      if (!row || !Array.isArray(row)) {
+        console.warn(`⚠️ Row ${i+2} skipped: Row is null or not an array`);
+        continue;
+      }
+      
+      const product = {};
+      
+      // Map each column to Firestore field
+      for (let colIdx = 0; colIdx < columnMappings.length; colIdx++) {
+        const fieldName = columnMappings[colIdx];
+        const cellValue = row[colIdx] || '';
+        
+        if (fieldName && cellValue) {
+          product[fieldName] = cellValue;
+        }
+      }
+      
+      // Validate required fields
+      if (!product.name || !product.price) {
+        console.warn(`⚠️ Row ${i+2} skipped: Missing name or price`);
+        continue;
+      }
+      
+      // Parse price (remove currency symbols, commas)
+      product.price = parseFloat(String(product.price).replace(/[^\d.]/g, ''));
+      
+      if (isNaN(product.price) || product.price <= 0) {
+        console.warn(`⚠️ Row ${i+2} skipped: Invalid price`);
+        continue;
+      }
+      
+      // Set defaults
+      product.createdAt = serverTimestamp();
+      product.stock = product.stock ? parseInt(product.stock) : 100;
+      product.spiciness = product.spiciness ? parseInt(product.spiciness) : 1;
+      product.featured = product.isHot === 'так' || product.isHot === 'yes';
+      
+      productsToImport.push(product);
+    }
+    
+    console.log(`✅ Prepared ${productsToImport.length} products for import`);
+    
+    if (productsToImport.length === 0) {
+      document.getElementById('import-progress-modal').remove();
+      alert('❌ Жоден товар не відповідає мінімальним вимогам (назва + ціна)');
+      return;
+    }
+    
+    // ============================================
+    // STEP 5: UPLOAD TO FIRESTORE IN BATCHES
+    // ============================================
+    const BATCH_SIZE = 500; // Firestore batch limit
+    let totalUploaded = 0;
+    
+    for (let i = 0; i < productsToImport.length; i += BATCH_SIZE) {
+      const batch = writeBatch(db);
+      const batchProducts = productsToImport.slice(i, Math.min(i + BATCH_SIZE, productsToImport.length));
+      
+      for (const product of batchProducts) {
+        const productRef = doc(collection(db, 'products'));
+        batch.set(productRef, product);
+      }
+      
+      await batch.commit();
+      totalUploaded += batchProducts.length;
+      
+      // Update progress
+      const progress = Math.round((totalUploaded / productsToImport.length) * 100);
+      const progressBar = document.getElementById('progress-bar');
+      const progressText = document.getElementById('progress-text');
+      const progressStatus = document.getElementById('progress-status');
+      
+      if (progressBar) progressBar.style.width = progress + '%';
+      if (progressText) progressText.textContent = progress + '%';
+      if (progressStatus) progressStatus.textContent = `Завантажено ${totalUploaded} з ${productsToImport.length} товарів`;
+      
+      console.log(`✅ Batch uploaded: ${totalUploaded}/${productsToImport.length}`);
+    }
+    
+    // ============================================
+    // STEP 6: SUCCESS!
+    // ============================================
+    setTimeout(() => {
+      document.getElementById('import-progress-modal').remove();
+      
+      alert(`✅ Імпорт завершено!\n\nЗавантажено: ${totalUploaded} товарів\nПропущено: ${data.length - totalUploaded} рядків`);
+      
+      // Reload products list
+      if (typeof loadProducts === 'function') {
+        loadProducts();
+      }
+      
+      // Clean up cached data
+      delete window.cachedImportData;
+      delete window.cachedHeaders;
+      
+      console.log('✅ Import completed, cached data cleaned up');
+      
+    }, 500);
+    
+  } catch (error) {
+    console.error('❌ Import error:', error);
+    
+    // Remove progress modal
+    const progressModal = document.getElementById('import-progress-modal');
+    if (progressModal) progressModal.remove();
+    
+    alert(`❌ Помилка імпорту: ${error.message}`);
+  }
+};
 
 // Format file size
 function formatFileSize(bytes) {
