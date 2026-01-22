@@ -460,7 +460,7 @@ window.loadProducts = async function() {
 /**
  * Open product modal for creating a NEW product
  */
-window.openProductModal = function() {
+window.openProductModal = async function() {
     const modal = document.getElementById('product-modal');
     const title = document.getElementById('product-modal-title');
     const form = document.getElementById('product-form');
@@ -469,6 +469,9 @@ window.openProductModal = function() {
         console.error('❌ Product modal not found');
         return;
     }
+    
+    // ✅ LOAD CATEGORIES FIRST
+    await loadCategoriesIntoDropdown();
     
     // Reset form for CREATE mode
     form.reset();
@@ -525,6 +528,62 @@ window.closeProductModal = function() {
 };
 
 /**
+ * Load categories into product form dropdown
+ * 🔥 NEW: Ensures categories are available before editing products
+ */
+async function loadCategoriesIntoDropdown() {
+    try {
+        const categorySelect = document.getElementById('product-category');
+        if (!categorySelect) {
+            console.warn('⚠️ product-category select not found');
+            return false;
+        }
+        
+        // Skip if already loaded (has more than placeholder option)
+        if (categorySelect.options.length > 1) {
+            console.log('ℹ️ Categories already loaded');
+            return true;
+        }
+        
+        console.log('📂 Loading categories into dropdown...');
+        
+        // Fetch categories from Firestore
+        const categoriesQuery = query(
+            collection(db, 'categories'),
+            where('isActive', '==', true)
+        );
+        const categoriesSnapshot = await getDocs(categoriesQuery);
+        
+        // Clear existing options except placeholder
+        categorySelect.innerHTML = '<option value="">Оберіть категорію...</option>';
+        
+        if (categoriesSnapshot.empty) {
+            console.warn('⚠️ No categories found in Firestore');
+            categorySelect.innerHTML += '<option value="" disabled>Немає категорій</option>';
+            return false;
+        }
+        
+        // Add categories as options
+        let count = 0;
+        categoriesSnapshot.forEach(doc => {
+            const category = doc.data();
+            const option = document.createElement('option');
+            option.value = category.slug || doc.id;
+            option.textContent = category.name;
+            categorySelect.appendChild(option);
+            count++;
+        });
+        
+        console.log(`✅ Loaded ${count} categories into dropdown`);
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Error loading categories:', error);
+        return false;
+    }
+}
+
+/**
  * Open product modal for EDITING an existing product
  * 🔥 FIX: Fetches latest data from Firestore and updates image preview
  */
@@ -548,11 +607,27 @@ window.startEditProduct = async function(productId) {
         
         const product = productSnap.data();
         
-        // ✅ STEP 2: POPULATE FORM FIELDS WITH NULL-SAFE HELPER
+        // 🔥 DEBUG: Log product data to verify it's not empty
+        console.log('📦 Loading product into modal:', {
+            id: productId,
+            name: product.name,
+            price: product.price,
+            sku: product.sku,
+            category: product.category,
+            description: product.description,
+            image: product.image,
+            stock: product.stock,
+            spiciness: product.spiciness
+        });
+        
+        // ✅ STEP 2: ENSURE CATEGORIES ARE LOADED FIRST
+        await loadCategoriesIntoDropdown();
+        
+        // ✅ STEP 3: POPULATE FORM FIELDS WITH NULL-SAFE HELPER
         /**
          * Null-safe helper: finds element or creates if missing
          */
-        const setValueSafely = (elementId, value, isCheckbox = false) => {
+        const setValueSafely = (elementId, value, isCheckbox = false, isTextarea = false) => {
             let element = document.getElementById(elementId);
             
             if (!element) {
@@ -562,8 +637,14 @@ window.startEditProduct = async function(productId) {
                 const form = document.getElementById('product-form');
                 if (form && elementId.startsWith('product-')) {
                     // Create missing input dynamically
-                    element = document.createElement('input');
-                    element.type = isCheckbox ? 'checkbox' : 'hidden';
+                    if (isTextarea) {
+                        element = document.createElement('textarea');
+                        element.rows = 3;
+                        element.className = 'w-full border rounded-lg p-2';
+                    } else {
+                        element = document.createElement('input');
+                        element.type = isCheckbox ? 'checkbox' : 'text';
+                    }
                     element.id = elementId;
                     form.appendChild(element);
                     console.log(`✅ Created missing element: ${elementId}`);
@@ -576,23 +657,62 @@ window.startEditProduct = async function(productId) {
             // Set value based on type
             if (isCheckbox) {
                 element.checked = value;
+                console.log(`  ✓ ${elementId}: ${value ? 'checked' : 'unchecked'}`);
             } else {
-                element.value = value;
+                element.value = value || '';
+                console.log(`  ✓ ${elementId}: "${value}"`);
             }
             
             return true;
         };
         
-        // Populate all form fields safely
+        // Populate all form fields safely with logging
+        console.log('📝 Populating form fields:');
         setValueSafely('product-id', productId);
         setValueSafely('product-name', product.name || '');
         setValueSafely('product-price', product.price || 0);
         setValueSafely('product-sku', product.sku || '');
-        setValueSafely('product-category', product.category || '');
         setValueSafely('product-spiciness', product.spiciness || 1);
-        setValueSafely('product-description', product.description || '');
+        setValueSafely('product-description', product.description || '', false, true);
         setValueSafely('product-stock', product.stock || 0);
         setValueSafely('product-active', product.isVisible !== false, true);
+        
+        // ✅ STEP 4: SET CATEGORY VALUE - WAIT FOR DROPDOWN TO BE POPULATED
+        const categorySelect = document.getElementById('product-category');
+        if (categorySelect && product.category) {
+            // Double-check dropdown has options
+            if (categorySelect.options.length > 1) {
+                // Try to find matching option
+                let found = false;
+                for (let i = 0; i < categorySelect.options.length; i++) {
+                    if (categorySelect.options[i].value === product.category) {
+                        categorySelect.selectedIndex = i;
+                        found = true;
+                        console.log(`  ✓ product-category: "${product.category}" (option found)`);
+                        break;
+                    }
+                }
+                
+                if (!found) {
+                    console.warn(`⚠️ Category "${product.category}" not found in dropdown options`);
+                    console.log(`   Available options:`, Array.from(categorySelect.options).map(o => o.value));
+                }
+            } else {
+                console.error('❌ Category dropdown is empty! Retrying in 500ms...');
+                
+                // Retry after short delay (fallback)
+                setTimeout(() => {
+                    if (categorySelect.options.length > 1) {
+                        categorySelect.value = product.category;
+                        console.log(`  ✓ product-category: "${product.category}" (set after delay)`);
+                    } else {
+                        console.error('❌ Category dropdown still empty after retry');
+                    }
+                }, 500);
+            }
+        } else if (!categorySelect) {
+            console.error('❌ product-category select element not found');
+        }
         
         // ✅ STEP 3: PRESERVE EXISTING IMAGE URL - FIND OR CREATE
         let existingImageInput = document.getElementById('product-existing-image');
