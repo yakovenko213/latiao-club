@@ -1,94 +1,7 @@
 // ============================================
-// BULK IMAGE UPLOAD BY SKU - Standalone Module
+// BULK IMAGE UPLOAD BY SKU - Core Logic
 // ============================================
-// This file should be imported in admin.js or included as a module
-
-/**
- * Opens the Bulk Image Upload modal
- */
-window.openBulkImageUploadModal = function() {
-    const modal = document.getElementById('bulk-image-upload-modal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        
-        // Reset UI
-        document.getElementById('bulkImageInput').value = '';
-        document.getElementById('file-count').textContent = '';
-        document.getElementById('upload-progress-section').classList.add('hidden');
-        document.getElementById('log-console').innerHTML = '<div class="text-gray-400 text-center py-4">Логи з\'являться тут після початку завантаження...</div>';
-        document.getElementById('start-bulk-upload-btn').disabled = false;
-        
-        console.log('📸 Bulk Image Upload modal opened');
-    }
-};
-
-/**
- * Closes the Bulk Image Upload modal
- */
-window.closeBulkImageUploadModal = function() {
-    const modal = document.getElementById('bulk-image-upload-modal');
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-        console.log('✅ Bulk Image Upload modal closed');
-    }
-};
-
-/**
- * Logs a message to the console UI
- * @param {string} message - The message to log
- * @param {string} type - 'success', 'error', 'warning', 'info'
- */
-function logToConsole(message, type = 'info') {
-    const logConsole = document.getElementById('log-console');
-    if (!logConsole) return;
-    
-    // Remove placeholder if exists
-    const placeholder = logConsole.querySelector('.text-gray-400');
-    if (placeholder) placeholder.remove();
-    
-    const icons = {
-        success: '✅',
-        error: '❌',
-        warning: '⚠️',
-        info: '📝'
-    };
-    
-    const colors = {
-        success: 'text-green-600',
-        error: 'text-red-600',
-        warning: 'text-yellow-600',
-        info: 'text-blue-600'
-    };
-    
-    const logEntry = document.createElement('div');
-    logEntry.className = `${colors[type]} py-1`;
-    logEntry.textContent = `${icons[type]} ${message}`;
-    
-    logConsole.appendChild(logEntry);
-    
-    // Auto-scroll to bottom
-    logConsole.scrollTop = logConsole.scrollHeight;
-}
-
-/**
- * Updates the progress bar
- * @param {number} current - Current progress
- * @param {number} total - Total items
- */
-function updateProgress(current, total) {
-    const progressBar = document.getElementById('progress-bar');
-    const progressText = document.getElementById('progress-text');
-    const progressSection = document.getElementById('upload-progress-section');
-    
-    if (progressSection) progressSection.classList.remove('hidden');
-    
-    const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
-    
-    if (progressBar) progressBar.style.width = `${percentage}%`;
-    if (progressText) progressText.textContent = `${current} / ${total}`;
-}
+// This file contains the upload logic that works with UI injected by admin.js
 
 /**
  * Extracts SKU from filename (removes extension)
@@ -145,31 +58,31 @@ async function uploadSingleImage(file) {
         const filename = file.name;
         const sku = extractSkuFromFilename(filename);
         
-        logToConsole(`Обробка файлу: ${filename} (SKU: "${sku}")`, 'info');
+        window.logToBulkConsole(`Обробка файлу: ${filename} (SKU: "${sku}")`, 'info');
         
         // Step 1: Find product by SKU
         const product = await findProductBySku(sku);
         
         if (!product) {
             const msg = `Товар не знайдено для SKU="${sku}"`;
-            logToConsole(`${filename} → ${msg}`, 'error');
+            window.logToBulkConsole(`${filename} → ${msg}`, 'error');
             return { success: false, message: msg };
         }
         
-        logToConsole(`Знайдено товар: ${product.data.name || 'Без назви'} (ID: ${product.id})`, 'success');
+        window.logToBulkConsole(`Знайдено товар: ${product.data.name || 'Без назви'} (ID: ${product.id})`, 'success');
         
         // Step 2: Upload image to Firebase Storage
         const { storage, ref, uploadBytes, getDownloadURL, doc, updateDoc, serverTimestamp } = window.firebaseInstances;
         
         const storageRef = ref(storage, `product_images/${filename}`);
         
-        logToConsole(`Завантаження в Storage: product_images/${filename}...`, 'info');
+        window.logToBulkConsole(`Завантаження в Storage: product_images/${filename}...`, 'info');
         const snapshot = await uploadBytes(storageRef, file);
         
         // Step 3: Get download URL
         const downloadURL = await getDownloadURL(snapshot.ref);
         
-        logToConsole(`Отримано URL: ${downloadURL.substring(0, 50)}...`, 'info');
+        window.logToBulkConsole(`Отримано URL: ${downloadURL.substring(0, 50)}...`, 'info');
         
         // Step 4: Update Firestore document
         const productRef = doc(window.firebaseInstances.db, 'products', product.id);
@@ -179,13 +92,13 @@ async function uploadSingleImage(file) {
         });
         
         const successMsg = `${filename} → Оновлено! (${product.data.name})`;
-        logToConsole(successMsg, 'success');
+        window.logToBulkConsole(successMsg, 'success');
         
         return { success: true, message: successMsg };
         
     } catch (error) {
         const errorMsg = `${file.name} → Помилка: ${error.message}`;
-        logToConsole(errorMsg, 'error');
+        window.logToBulkConsole(errorMsg, 'error');
         console.error('❌ Upload error:', error);
         return { success: false, message: errorMsg };
     }
@@ -203,8 +116,8 @@ async function processBulkUpload(files, concurrency = 5) {
     let successCount = 0;
     let errorCount = 0;
     
-    logToConsole(`Початок обробки: ${total} файлів (макс. ${concurrency} одночасно)`, 'info');
-    updateProgress(0, total);
+    window.logToBulkConsole(`Початок обробки: ${total} файлів (макс. ${concurrency} одночасно)`, 'info');
+    window.updateBulkProgress(0, total);
     
     // Process files in batches
     const results = [];
@@ -221,7 +134,7 @@ async function processBulkUpload(files, concurrency = 5) {
         
         // Update progress
         current += batch.length;
-        updateProgress(current, total);
+        window.updateBulkProgress(current, total);
         
         // Count successes/errors
         batchResults.forEach(result => {
@@ -229,12 +142,12 @@ async function processBulkUpload(files, concurrency = 5) {
             else errorCount++;
         });
         
-        logToConsole(`Оброблено батч: ${current}/${total} (успіх: ${successCount}, помилки: ${errorCount})`, 'info');
+        window.logToBulkConsole(`Оброблено батч: ${current}/${total} (успіх: ${successCount}, помилки: ${errorCount})`, 'info');
     }
     
     // Final summary
     const summaryMsg = `🎉 Завершено! Успішно: ${successCount} | Помилки: ${errorCount} | Всього: ${total}`;
-    logToConsole(summaryMsg, successCount > 0 ? 'success' : 'warning');
+    window.logToBulkConsole(summaryMsg, successCount > 0 ? 'success' : 'warning');
     
     return {
         total,
@@ -258,14 +171,15 @@ window.handleBulkImageUpload = async function() {
         }
         
         // Disable button during upload
-        const uploadBtn = document.getElementById('start-bulk-upload-btn');
+        const uploadBtn = document.getElementById('bulkStartUploadBtn');
         if (uploadBtn) {
             uploadBtn.disabled = true;
             uploadBtn.textContent = '⏳ Завантаження...';
         }
         
         // Clear previous logs
-        document.getElementById('log-console').innerHTML = '';
+        const logConsole = document.getElementById('bulkLogConsole');
+        if (logConsole) logConsole.innerHTML = '';
         
         // Start processing
         const result = await processBulkUpload(files, 5); // Max 5 concurrent uploads
@@ -286,7 +200,7 @@ window.handleBulkImageUpload = async function() {
         
         // Reload products if any were updated
         if (result.successCount > 0 && typeof window.loadProducts === 'function') {
-            logToConsole('Оновлення списку товарів...', 'info');
+            window.logToBulkConsole('Оновлення списку товарів...', 'info');
             await window.loadProducts();
         }
         
@@ -294,30 +208,12 @@ window.handleBulkImageUpload = async function() {
         console.error('❌ Bulk upload error:', error);
         alert(`❌ Помилка завантаження: ${error.message}`);
         
-        const uploadBtn = document.getElementById('start-bulk-upload-btn');
+        const uploadBtn = document.getElementById('bulkStartUploadBtn');
         if (uploadBtn) {
             uploadBtn.disabled = false;
             uploadBtn.textContent = '🚀 Почати завантаження';
         }
     }
 };
-
-// File input change handler - show file count
-document.addEventListener('DOMContentLoaded', function() {
-    const fileInput = document.getElementById('bulkImageInput');
-    const fileCountDiv = document.getElementById('file-count');
-    
-    if (fileInput && fileCountDiv) {
-        fileInput.addEventListener('change', function(e) {
-            const count = e.target.files.length;
-            if (count > 0) {
-                fileCountDiv.textContent = `📁 Вибрано файлів: ${count}`;
-                fileCountDiv.className = 'mt-2 text-sm font-semibold text-blue-600';
-            } else {
-                fileCountDiv.textContent = '';
-            }
-        });
-    }
-});
 
 console.log('✅ Bulk Image Upload module loaded');

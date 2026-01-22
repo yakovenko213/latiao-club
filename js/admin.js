@@ -2703,4 +2703,268 @@ window.fixMissingAvatars = async function() {
     }
 };
 
+// ============================================
+// BULK IMAGE UPLOAD UI - DYNAMIC INJECTION
+// ============================================
+
+/**
+ * Initializes the Bulk Image Upload UI dynamically
+ * Creates button and modal if they don't exist
+ */
+function initBulkImageUI() {
+    console.log('🎨 Initializing Bulk Image Upload UI...');
+    
+    // STEP 1: Inject the Button into Products Toolbar
+    // Look for the products view header with action buttons
+    const productsView = document.getElementById('products-view');
+    if (!productsView) {
+        console.warn('⚠️ Products view not found, skipping Bulk Image UI');
+        return;
+    }
+    
+    // Find the toolbar (look for the header with buttons)
+    const toolbar = productsView.querySelector('.px-6.py-4.border-b');
+    if (!toolbar) {
+        console.warn('⚠️ Products toolbar not found');
+        return;
+    }
+    
+    // Check if button already exists
+    if (document.getElementById('bulk-image-upload-btn')) {
+        console.log('✅ Bulk Image button already exists');
+        return;
+    }
+    
+    // Find the button container (usually the right side with flex/gap)
+    let buttonContainer = toolbar.querySelector('.flex.items-center.gap-3');
+    
+    // If no container with gap-3, look for any flex container
+    if (!buttonContainer) {
+        buttonContainer = toolbar.querySelector('.flex.items-center');
+    }
+    
+    // If still no container, create one
+    if (!buttonContainer) {
+        buttonContainer = document.createElement('div');
+        buttonContainer.className = 'flex items-center gap-3';
+        toolbar.appendChild(buttonContainer);
+    }
+    
+    // Create the Bulk Images button
+    const bulkImageBtn = document.createElement('button');
+    bulkImageBtn.id = 'bulk-image-upload-btn';
+    bulkImageBtn.className = 'flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition';
+    bulkImageBtn.innerHTML = `
+        <span>📸</span>
+        <span>Bulk Images</span>
+    `;
+    bulkImageBtn.onclick = function() {
+        openBulkImageModal();
+    };
+    
+    // Insert button BEFORE the "Add Product" button
+    const addProductBtn = buttonContainer.querySelector('button');
+    if (addProductBtn) {
+        buttonContainer.insertBefore(bulkImageBtn, addProductBtn);
+    } else {
+        buttonContainer.appendChild(bulkImageBtn);
+    }
+    
+    console.log('✅ Bulk Image button injected');
+    
+    // STEP 2: Inject the Modal HTML (if it doesn't exist)
+    if (document.getElementById('bulkImageModal')) {
+        console.log('✅ Bulk Image modal already exists');
+        return;
+    }
+    
+    const modalHTML = `
+        <div id="bulkImageModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] hidden flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
+                <!-- Header -->
+                <div class="sticky top-0 bg-gradient-to-r from-purple-600 to-purple-700 p-6 flex justify-between items-center z-10 rounded-t-2xl">
+                    <div class="flex items-center gap-3">
+                        <span class="text-4xl">📸</span>
+                        <div>
+                            <h3 class="text-2xl font-bold text-white">Масове завантаження зображень</h3>
+                            <p class="text-purple-100 text-sm mt-1">Завантажте зображення товарів за SKU</p>
+                        </div>
+                    </div>
+                    <button onclick="closeBulkImageModal()" class="p-2 hover:bg-white/10 rounded-full transition">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Instructions -->
+                <div class="p-6 bg-purple-50 border-b border-purple-100">
+                    <div class="flex gap-3">
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="text-sm text-gray-700">
+                            <h4 class="font-bold text-purple-900 mb-2">Як це працює:</h4>
+                            <ol class="space-y-1 list-decimal list-inside">
+                                <li>Назвіть файли зображень як <strong>SKU товару</strong> (наприклад: <code class="bg-purple-100 px-2 py-0.5 rounded">9840.jpg</code>, <code class="bg-purple-100 px-2 py-0.5 rounded">1520.png</code>)</li>
+                                <li>Виберіть усі зображення (можна кілька одночасно)</li>
+                                <li>Система автоматично знайде товари та оновить їх фото</li>
+                                <li>Максимум <strong>5 файлів одночасно</strong> обробляються для безпеки</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File Input -->
+                <div class="p-6 border-b border-gray-200">
+                    <label class="block text-sm font-bold text-gray-900 mb-3">Виберіть зображення</label>
+                    <div class="relative">
+                        <input type="file" id="bulkImageInput" multiple accept="image/*" 
+                               class="w-full border-2 border-dashed border-gray-300 rounded-xl p-6 text-center cursor-pointer hover:border-purple-500 transition file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                        <div id="bulkFileCount" class="mt-2 text-sm text-gray-600"></div>
+                    </div>
+                </div>
+
+                <!-- Progress Section -->
+                <div id="bulkUploadProgress" class="hidden p-6 border-b border-gray-200 bg-gray-50">
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-semibold text-gray-700">Прогрес:</span>
+                            <span id="bulkProgressText" class="text-sm font-bold text-purple-600">0 / 0</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                            <div id="bulkProgressBar" class="bg-gradient-to-r from-purple-500 to-purple-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Log Console -->
+                <div id="bulkLogConsole" class="p-6 bg-white max-h-[300px] overflow-y-auto font-mono text-xs space-y-1">
+                    <div class="text-gray-400 text-center py-4">Логи з'являться тут після початку завантаження...</div>
+                </div>
+
+                <!-- Actions -->
+                <div class="p-6 bg-gray-50 flex gap-3 sticky bottom-0 rounded-b-2xl">
+                    <button type="button" onclick="closeBulkImageModal()" class="flex-1 py-3 bg-gray-200 rounded-xl font-bold text-gray-700 hover:bg-gray-300 transition">
+                        Закрити
+                    </button>
+                    <button type="button" id="bulkStartUploadBtn" onclick="handleBulkImageUpload()" class="flex-1 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-bold hover:from-purple-700 hover:to-purple-800 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        🚀 Почати завантаження
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    console.log('✅ Bulk Image modal injected');
+    
+    // STEP 3: Setup file input change listener
+    const fileInput = document.getElementById('bulkImageInput');
+    const fileCountDiv = document.getElementById('bulkFileCount');
+    
+    if (fileInput && fileCountDiv) {
+        fileInput.addEventListener('change', function(e) {
+            const count = e.target.files.length;
+            if (count > 0) {
+                fileCountDiv.textContent = `📁 Вибрано файлів: ${count}`;
+                fileCountDiv.className = 'mt-2 text-sm font-semibold text-purple-600';
+            } else {
+                fileCountDiv.textContent = '';
+            }
+        });
+    }
+}
+
+// Modal control functions
+window.openBulkImageModal = function() {
+    const modal = document.getElementById('bulkImageModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        // Reset UI
+        const fileInput = document.getElementById('bulkImageInput');
+        const fileCount = document.getElementById('bulkFileCount');
+        const progressSection = document.getElementById('bulkUploadProgress');
+        const logConsole = document.getElementById('bulkLogConsole');
+        const uploadBtn = document.getElementById('bulkStartUploadBtn');
+        
+        if (fileInput) fileInput.value = '';
+        if (fileCount) fileCount.textContent = '';
+        if (progressSection) progressSection.classList.add('hidden');
+        if (logConsole) logConsole.innerHTML = '<div class="text-gray-400 text-center py-4">Логи з\'являться тут після початку завантаження...</div>';
+        if (uploadBtn) uploadBtn.disabled = false;
+        
+        console.log('📸 Bulk Image Upload modal opened');
+    }
+};
+
+window.closeBulkImageModal = function() {
+    const modal = document.getElementById('bulkImageModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        console.log('✅ Bulk Image Upload modal closed');
+    }
+};
+
+// Helper functions for bulk upload
+window.logToBulkConsole = function(message, type = 'info') {
+    const logConsole = document.getElementById('bulkLogConsole');
+    if (!logConsole) return;
+    
+    // Remove placeholder if exists
+    const placeholder = logConsole.querySelector('.text-gray-400');
+    if (placeholder) placeholder.remove();
+    
+    const icons = {
+        success: '✅',
+        error: '❌',
+        warning: '⚠️',
+        info: '📝'
+    };
+    
+    const colors = {
+        success: 'text-green-600',
+        error: 'text-red-600',
+        warning: 'text-yellow-600',
+        info: 'text-blue-600'
+    };
+    
+    const logEntry = document.createElement('div');
+    logEntry.className = `${colors[type]} py-1`;
+    logEntry.textContent = `${icons[type]} ${message}`;
+    
+    logConsole.appendChild(logEntry);
+    
+    // Auto-scroll to bottom
+    logConsole.scrollTop = logConsole.scrollHeight;
+};
+
+window.updateBulkProgress = function(current, total) {
+    const progressBar = document.getElementById('bulkProgressBar');
+    const progressText = document.getElementById('bulkProgressText');
+    const progressSection = document.getElementById('bulkUploadProgress');
+    
+    if (progressSection) progressSection.classList.remove('hidden');
+    
+    const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
+    
+    if (progressBar) progressBar.style.width = `${percentage}%`;
+    if (progressText) progressText.textContent = `${current} / ${total}`;
+};
+
+// Initialize UI when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBulkImageUI);
+} else {
+    // DOM already loaded
+    initBulkImageUI();
+}
+
 console.log('✅ admin.js loaded successfully (with Shopify import support)');
