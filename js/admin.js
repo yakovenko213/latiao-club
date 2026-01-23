@@ -330,7 +330,6 @@ window.loadProducts = async function() {
             return;
         }
 
-        // ✅ FIXED: Using backticks for template literals
         let html = `
             <div class="overflow-x-auto">
                 <table class="w-full" id="products-table">
@@ -348,6 +347,7 @@ window.loadProducts = async function() {
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Ціна</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Категорія</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Залишок</th>
+                            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Дії</th>
                         </tr>
                     </thead>
@@ -355,21 +355,18 @@ window.loadProducts = async function() {
         `;
 
         snapshot.forEach(docSnap => {
-            const p = docSnap.data();
+            const product = docSnap.data();
             const productId = docSnap.id;
             
-            // Safe image URL extraction
-            const img = p.images?.[0] || p.image || p.imageUrl || 'https://placehold.co/50';
+            const img = product.images?.[0] || product.image || product.imageUrl || 'https://placehold.co/50';
             
-            // Sale badge and price display logic
-            const isOnSale = p.isOnSale === true;
-            const originalPrice = p.originalPrice || null;
+            const isOnSale = product.isOnSale === true;
+            const originalPrice = product.originalPrice || null;
             const priceDisplay = isOnSale && originalPrice 
-                ? `<span class="line-through text-gray-400 text-xs mr-1">₴${originalPrice}</span><span class="text-red-600">₴${p.price || 0}</span>`
-                : `₴${p.price || 0}`;
+                ? `<span class="line-through text-gray-400 text-xs mr-1">₴${originalPrice}</span><span class="text-red-600">₴${product.price || 0}</span>`
+                : `₴${product.price || 0}`;
             const saleBadge = isOnSale ? '<span class="ml-2 px-1.5 py-0.5 bg-red-100 text-red-600 rounded text-xs font-semibold">SALE</span>' : '';
             
-            // ✅ FIXED: Using backticks for template literals
             html += `
                 <tr class="hover:bg-gray-50 product-row" data-product-id="${productId}">
                     <td class="px-4 py-3 text-center">
@@ -381,12 +378,19 @@ window.loadProducts = async function() {
                     <td class="px-4 py-3">
                         <img src="${img}" class="w-12 h-12 object-cover rounded-lg" onerror="this.src='https://placehold.co/50'">
                     </td>
-                    <td class="px-4 py-3 text-sm font-medium text-gray-900">${p.name || 'Без назви'}${saleBadge}</td>
-                    <td class="px-4 py-3 text-sm text-gray-600">${p.sku || '-'}</td>
+                    <td class="px-4 py-3 text-sm font-medium text-gray-900">${product.name || 'Без назви'}${saleBadge}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600">${product.sku || '-'}</td>
                     <td class="px-4 py-3 text-sm font-semibold text-gray-900">${priceDisplay}</td>
-                    <td class="px-4 py-3 text-sm text-gray-700">${p.category || '-'}</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">${product.category || '-'}</td>
                     <td class="px-4 py-3">
                         <span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold">В наявності</span>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" class="sr-only peer" ${product.isVisible !== false ? 'checked' : ''} 
+                                   onchange="updateProductVisibility('${productId}', this.checked)">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                        </label>
                     </td>
                     <td class="px-4 py-3 text-right">
                         <button onclick="window.startEditProduct('${productId}')" class="p-2 hover:bg-blue-50 rounded-lg text-blue-600 mr-1">
@@ -408,7 +412,6 @@ window.loadProducts = async function() {
         
         list.innerHTML = html;
         
-        // Reinitialize Lucide icons
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
@@ -861,6 +864,42 @@ function showToast(message, type = 'info') {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
+
+// ============================================
+// TOGGLE PRODUCT VISIBILITY
+// ============================================
+// UPDATE PRODUCT VISIBILITY
+// ============================================
+
+/**
+ * Update product visibility on the live website
+ * @param {string} productId - The product document ID
+ * @param {boolean} isVisible - New visibility state from checkbox
+ */
+window.updateProductVisibility = async function(productId, isVisible) {
+    try {
+        console.log(`👁️ Updating visibility for product ${productId} to: ${isVisible}`);
+        
+        // Update Firestore
+        const productRef = doc(db, 'products', productId);
+        await updateDoc(productRef, {
+            isVisible: isVisible
+        });
+        
+        const statusText = isVisible ? 'видимий' : 'прихований';
+        console.log(`✅ SUCCESS: Product ${productId} is now ${statusText}`);
+        
+        // Show toast notification
+        showToast(`✅ Товар тепер ${statusText} на сайті`, 'success');
+        
+    } catch (error) {
+        console.error('❌ ERROR updating product visibility:', error);
+        showToast(`❌ Помилка: ${error.message}`, 'error');
+        
+        // Reload products to restore correct state
+        await window.loadProducts();
+    }
+};
 
 // ============================================
 // RENDER WAREHOUSE (FIXED WITH BACKTICKS)

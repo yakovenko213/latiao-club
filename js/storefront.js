@@ -220,7 +220,8 @@ async function renderHotProducts() {
     try {
         const productsQuery = query(
             collection(db, 'products'),
-            where('isHot', '==', true)
+            where('isHot', '==', true),
+            where('isVisible', '==', true)
         );
         
         const snapshot = await getDocs(productsQuery);
@@ -391,7 +392,11 @@ async function renderCategories() {
 // ============================================
 async function renderAllProducts(container) {
     try {
-        const snapshot = await getDocs(collection(db, 'products'));
+        const productsQuery = query(
+            collection(db, 'products'),
+            where('isVisible', '==', true)
+        );
+        const snapshot = await getDocs(productsQuery);
         
         if (snapshot.empty) {
             container.innerHTML = '<p class="text-gray-500 text-center py-8">Товари скоро з\'являться!</p>';
@@ -406,10 +411,7 @@ async function renderAllProducts(container) {
         
         snapshot.forEach(doc => {
             const product = doc.data();
-            // Filter out hidden products (default to visible if field missing)
-            if (product.isVisible !== false) {
-                html += createProductCard(product, doc.id);
-            }
+            html += createProductCard(product, doc.id);
         });
         
         html += '</div></div>';
