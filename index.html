@@ -380,63 +380,69 @@
     </div>
   </div>
 
-  <section id="about" class="py-10 lg:py-24">
+  <section id="about" class="py-10 lg:py-24 bg-gradient-to-b from-white via-orange-50/30 to-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center mb-10 lg:mb-16">
-        <h2 class="text-3xl lg:text-5xl font-bold text-gray-900 mb-4">🌶️ Чому обирають <span class="text-spicy">Latiao Snack</span></h2>
+      <div class="text-center mb-10 lg:mb-16 animate-fade-in">
+        <h2 class="text-3xl lg:text-5xl font-bold text-gray-900 mb-4">🌶️ Чому обирають <span class="bg-gradient-to-r from-spicy to-fire bg-clip-text text-transparent">Latiao Snack</span></h2>
       </div>
       
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
         
         <!-- Card 1: 30,000+ packages -->
-        <div class="bg-white p-6 lg:p-8 rounded-2xl border border-gray-100 shadow-md hover:-translate-y-1 hover:shadow-xl transition-all duration-300 text-center fade-in">
-          <div class="text-5xl mb-4">📦</div>
-          <div class="text-4xl font-extrabold text-spicy mb-2">30 000+</div>
-          <p class="text-gray-700 font-medium">пачок продано по всій Україні 🇺🇦</p>
+        <div class="group bg-gradient-to-br from-white to-blue-50 p-6 lg:p-8 rounded-2xl border border-blue-100 shadow-lg hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-200/50 transition-all duration-500 text-center fade-in">
+          <div class="text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">📦</div>
+          <div class="text-4xl font-extrabold bg-gradient-to-r from-spicy to-fire bg-clip-text text-transparent mb-2 group-hover:scale-105 transition-transform duration-300">30 000+</div>
+          <p class="text-gray-700 font-semibold flex items-center justify-center gap-1.5">
+            пачок продано по всій Україні 
+            <svg class="w-5 h-5 inline-block" viewBox="0 0 24 24" fill="none">
+              <rect width="24" height="24" rx="2" fill="#0057B7"/>
+              <rect y="12" width="24" height="12" rx="0" fill="#FFD700"/>
+            </svg>
+          </p>
         </div>
         
         <!-- Card 2: 6,000+ customers -->
-        <div class="bg-white p-6 lg:p-8 rounded-2xl border border-gray-100 shadow-md hover:-translate-y-1 hover:shadow-xl transition-all duration-300 text-center fade-in" style="transition-delay: 0.1s;">
-          <div class="text-5xl mb-4">👥</div>
-          <div class="text-4xl font-extrabold text-spicy mb-2">6 000+</div>
-          <p class="text-gray-700 font-medium">постійних клієнтів, які повертаються знову</p>
+        <div class="group bg-gradient-to-br from-white to-purple-50 p-6 lg:p-8 rounded-2xl border border-purple-100 shadow-lg hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-200/50 transition-all duration-500 text-center fade-in" style="transition-delay: 0.1s;">
+          <div class="text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">👥</div>
+          <div class="text-4xl font-extrabold bg-gradient-to-r from-spicy to-fire bg-clip-text text-transparent mb-2 group-hover:scale-105 transition-transform duration-300">6 000+</div>
+          <p class="text-gray-700 font-semibold">постійних клієнтів, які повертаються знову</p>
         </div>
         
         <!-- Card 3: №1 (Special Highlight) -->
-        <div class="bg-gradient-to-br from-orange-50 to-red-50 p-6 lg:p-8 rounded-2xl border-2 border-spicy shadow-lg hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 text-center fade-in relative overflow-hidden" style="transition-delay: 0.2s;">
-          <div class="absolute top-0 right-0 bg-spicy text-white text-xs font-bold px-3 py-1 rounded-bl-lg">ТОП</div>
-          <div class="text-5xl mb-4">🏆</div>
-          <p class="text-lg font-bold text-gray-900 leading-snug">Ми — №1 серед любителів Латяо в Україні 🔥</p>
+        <div class="group bg-gradient-to-br from-orange-100 via-red-50 to-yellow-50 p-6 lg:p-8 rounded-2xl border-2 border-spicy shadow-2xl hover:-translate-y-3 hover:shadow-3xl hover:shadow-spicy/30 transition-all duration-500 text-center fade-in relative overflow-hidden" style="transition-delay: 0.2s;">
+          <div class="absolute top-0 right-0 bg-gradient-to-r from-spicy to-fire text-white text-xs font-bold px-3 py-1 rounded-bl-lg shadow-lg">ТОП</div>
+          <div class="text-5xl mb-4 group-hover:scale-125 group-hover:rotate-12 transition-all duration-300">🏆</div>
+          <p class="text-lg font-bold bg-gradient-to-r from-gray-900 via-spicy to-fire bg-clip-text text-transparent leading-snug">Ми — №1 серед любителів Латяо в Україні 🔥</p>
         </div>
         
         <!-- Card 4: Fast delivery -->
-        <div class="bg-white p-6 lg:p-8 rounded-2xl border border-gray-100 shadow-md hover:-translate-y-1 hover:shadow-xl transition-all duration-300 text-center fade-in" style="transition-delay: 0.3s;">
-          <div class="text-5xl mb-4">🚚</div>
-          <p class="text-gray-700 font-medium leading-relaxed">Відправляємо щодня 2 рази на день — без очікувань</p>
+        <div class="group bg-gradient-to-br from-white to-emerald-50 p-6 lg:p-8 rounded-2xl border border-emerald-100 shadow-lg hover:-translate-y-2 hover:shadow-2xl hover:shadow-emerald-200/50 transition-all duration-500 text-center fade-in" style="transition-delay: 0.3s;">
+          <div class="text-5xl mb-4 group-hover:scale-110 group-hover:translate-x-2 transition-all duration-300">🚚</div>
+          <p class="text-gray-700 font-semibold leading-relaxed">Відправляємо щодня 2 рази на день — без очікувань</p>
         </div>
         
         <!-- Card 5: Direct from manufacturers -->
-        <div class="bg-white p-6 lg:p-8 rounded-2xl border border-gray-100 shadow-md hover:-translate-y-1 hover:shadow-xl transition-all duration-300 text-center fade-in" style="transition-delay: 0.4s;">
-          <div class="text-5xl mb-4">🤝</div>
-          <p class="text-gray-700 font-medium leading-relaxed">Працюємо напряму з китайськими виробниками</p>
+        <div class="group bg-gradient-to-br from-white to-cyan-50 p-6 lg:p-8 rounded-2xl border border-cyan-100 shadow-lg hover:-translate-y-2 hover:shadow-2xl hover:shadow-cyan-200/50 transition-all duration-500 text-center fade-in" style="transition-delay: 0.4s;">
+          <div class="text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">🤝</div>
+          <p class="text-gray-700 font-semibold leading-relaxed">Працюємо напряму з китайськими виробниками</p>
         </div>
         
         <!-- Card 6: Certificates (Trust Signal) -->
-        <div class="bg-white p-6 lg:p-8 rounded-2xl border border-green-200 shadow-md hover:-translate-y-1 hover:shadow-xl transition-all duration-300 text-center fade-in" style="transition-delay: 0.5s;">
-          <div class="text-5xl mb-4">✅</div>
-          <p class="text-gray-700 font-medium leading-relaxed">Маємо сертифікати якості та контроль смаку</p>
+        <div class="group bg-gradient-to-br from-white to-green-50 p-6 lg:p-8 rounded-2xl border-2 border-green-200 shadow-lg hover:-translate-y-2 hover:shadow-2xl hover:shadow-green-200/60 transition-all duration-500 text-center fade-in" style="transition-delay: 0.5s;">
+          <div class="text-5xl mb-4 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">✅</div>
+          <p class="text-gray-700 font-semibold leading-relaxed">Маємо сертифікати якості та контроль смаку</p>
         </div>
         
         <!-- Card 7: B2B Supply -->
-        <div class="bg-white p-6 lg:p-8 rounded-2xl border border-gray-100 shadow-md hover:-translate-y-1 hover:shadow-xl transition-all duration-300 text-center fade-in" style="transition-delay: 0.6s;">
-          <div class="text-5xl mb-4">🏪</div>
-          <p class="text-gray-700 font-medium leading-relaxed">Постачаємо у великі магазини по країні</p>
+        <div class="group bg-gradient-to-br from-white to-pink-50 p-6 lg:p-8 rounded-2xl border border-pink-100 shadow-lg hover:-translate-y-2 hover:shadow-2xl hover:shadow-pink-200/50 transition-all duration-500 text-center fade-in" style="transition-delay: 0.6s;">
+          <div class="text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">🏪</div>
+          <p class="text-gray-700 font-semibold leading-relaxed">Постачаємо у великі магазини по країні</p>
         </div>
         
         <!-- Card 8: New flavors -->
-        <div class="bg-white p-6 lg:p-8 rounded-2xl border border-gray-100 shadow-md hover:-translate-y-1 hover:shadow-xl transition-all duration-300 text-center fade-in" style="transition-delay: 0.7s;">
-          <div class="text-5xl mb-4">✨</div>
-          <p class="text-gray-700 font-medium leading-relaxed">Щомісяця додаємо нові смаки та формати</p>
+        <div class="group bg-gradient-to-br from-white to-amber-50 p-6 lg:p-8 rounded-2xl border border-amber-100 shadow-lg hover:-translate-y-2 hover:shadow-2xl hover:shadow-amber-200/50 transition-all duration-500 text-center fade-in" style="transition-delay: 0.7s;">
+          <div class="text-5xl mb-4 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">✨</div>
+          <p class="text-gray-700 font-semibold leading-relaxed">Щомісяця додаємо нові смаки та формати</p>
         </div>
         
       </div>

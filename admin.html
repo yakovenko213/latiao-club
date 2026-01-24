@@ -96,16 +96,51 @@
     /* Merchandising card styles */
     .merch-card {
       position: relative;
-      transition: all 0.2s ease;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: grab;
+    }
+    
+    .merch-card:active {
+      cursor: grabbing;
     }
     
     .merch-card.sortable-ghost {
-      opacity: 0.4;
+      opacity: 0.3;
+      transform: scale(0.95);
+      background: linear-gradient(135deg, #fff3e8 0%, #ffe0b2 100%);
     }
     
     .merch-card.sortable-chosen {
       transform: scale(1.05);
-      box-shadow: 0 20px 40px rgba(255, 107, 0, 0.3);
+      box-shadow: 0 25px 50px rgba(255, 107, 0, 0.4);
+      border-color: #ff6b00 !important;
+      z-index: 1000;
+    }
+    
+    .merch-card.sortable-drag {
+      opacity: 0.9;
+      transform: rotate(3deg) scale(1.05);
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Pulse animation for drag handle */
+    @keyframes pulse-drag {
+      0%, 100% { opacity: 0.9; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.05); }
+    }
+    
+    .merch-card:hover .drag-handle-icon {
+      animation: pulse-drag 2s infinite;
+    }
+    
+    /* Modal animations */
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .animate-fade-in {
+      animation: fade-in 0.2s ease-out;
     }
     
     /* Kanban card styles */
@@ -2156,16 +2191,34 @@
           </div>
           
           <!-- Info Banner -->
-          <div class="px-6 py-3 bg-blue-50 border-b border-blue-100 flex items-center gap-3">
-            <i data-lucide="info" class="w-5 h-5 text-blue-600"></i>
-            <p class="text-sm text-blue-800">
-              <strong>Drag & Drop:</strong> Перетягуйте картки товарів, щоб змінити їх порядок. Товар зверху буде показаний клієнтам першим.
-            </p>
+          <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200">
+            <div class="flex items-start gap-4">
+              <div class="flex-shrink-0 mt-0.5">
+                <i data-lucide="info" class="w-6 h-6 text-blue-600"></i>
+              </div>
+              <div class="flex-1">
+                <h4 class="text-sm font-bold text-blue-900 mb-2">📋 Як працювати з мерчандайзингом:</h4>
+                <ul class="text-sm text-blue-800 space-y-1.5">
+                  <li class="flex items-start gap-2">
+                    <span class="text-blue-600 font-bold flex-shrink-0">1.</span>
+                    <span><strong>Перетягуйте картки:</strong> Зажміть картку товару і перетягніть у потрібну позицію. Товар зверху буде показаний клієнтам першим.</span>
+                  </li>
+                  <li class="flex items-start gap-2">
+                    <span class="text-blue-600 font-bold flex-shrink-0">2.</span>
+                    <span><strong>Авто-стратегії:</strong> Використайте кнопки вище для швидкого сортування (за ціною, знижками, новинками тощо).</span>
+                  </li>
+                  <li class="flex items-start gap-2">
+                    <span class="text-blue-600 font-bold flex-shrink-0">3.</span>
+                    <span><strong>Збережіть порядок:</strong> Після зміни натисніть <span class="px-2 py-0.5 bg-green-100 text-green-800 rounded font-semibold">Зберегти порядок</span> щоб застосувати зміни на сайті.</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
           
           <!-- Grid Container -->
-          <div id="merch-products-grid" class="p-6 min-h-[400px]">
-            <div class="flex flex-col items-center justify-center py-16 text-gray-400">
+          <div id="merch-products-grid" class="p-6 min-h-[400px] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+            <div class="col-span-full flex flex-col items-center justify-center py-16 text-gray-400">
               <i data-lucide="layout-grid" class="w-16 h-16 mb-4 opacity-50"></i>
               <p class="text-lg font-medium">Оберіть категорію для початку</p>
               <p class="text-sm">Товари з'являться тут для сортування</p>
@@ -13217,22 +13270,183 @@
     let merchOrderChanged = false
 
     // Load categories for merchandising dropdown
+    // Global category mapping for flexible search
+    let categoryMapping = {}
+
+    // Helper: Normalize string for flexible matching
+    function normalizeString(str) {
+      if (!str) return ''
+      return str
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, ' ')  // Multiple spaces → single space
+        .replace(/-/g, ' ')    // Dashes → spaces
+    }
+
+    // Helper: Check if product belongs to category (supports multiple categories)
+    function productBelongsToCategory(product, targetCategoryId) {
+      if (!product || !targetCategoryId) return false
+      
+      const categoryField = product.category || product.categories
+      
+      // Case 1: No category assigned
+      if (!categoryField) return false
+      
+      // Case 2: Array of categories
+      if (Array.isArray(categoryField)) {
+        return categoryField.includes(targetCategoryId)
+      }
+      
+      // Case 3: Comma-separated string
+      if (typeof categoryField === 'string') {
+        // Check exact match first
+        if (categoryField === targetCategoryId) return true
+        
+        // Check if it's comma-separated
+        if (categoryField.includes(',')) {
+          const categories = categoryField.split(',').map(c => c.trim())
+          return categories.includes(targetCategoryId)
+        }
+        
+        // Single category string
+        return categoryField === targetCategoryId
+      }
+      
+      return false
+    }
+
+    // Helper: Check if product category matches the search criteria
+    function doesCategoryMatch(productCategory, searchSlug, categoryData) {
+      if (!productCategory || !searchSlug) return false
+      
+      const prodCat = productCategory.trim()
+      const prodCatNorm = normalizeString(prodCat)
+      const searchNorm = normalizeString(searchSlug)
+      
+      // Strategy 1: Exact match (case-sensitive)
+      if (prodCat === searchSlug) return true
+      
+      // Strategy 2: Exact match (case-insensitive)
+      if (prodCat.toLowerCase() === searchSlug.toLowerCase()) return true
+      
+      // Strategy 3: Normalized match (spaces/dashes handled)
+      if (prodCatNorm === searchNorm) return true
+      
+      // Strategy 4: Match against category name
+      if (categoryData?.name) {
+        const nameNorm = normalizeString(categoryData.name)
+        if (prodCatNorm === nameNorm) return true
+        if (prodCat.toLowerCase() === categoryData.name.toLowerCase()) return true
+      }
+      
+      // Strategy 5: Match against category slug normalized
+      if (categoryData?.slugNormalized) {
+        if (prodCatNorm === categoryData.slugNormalized) return true
+      }
+      
+      return false
+    }
+
     async function loadMerchCategories() {
       const select = document.getElementById('merch-category-select')
       if (!select) return
       
       try {
+        console.log('📁 [DEBUG] Loading categories from Firestore...')
+        
         const snapshot = await getDocs(collection(db, 'categories'))
         const categories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
         
-        select.innerHTML = '<option value="">Оберіть категорію...</option>'
+        // Build mapping: slug → { name, id, slug }
+        categoryMapping = {}
         categories.forEach(cat => {
-          select.innerHTML += `<option value="${cat.slug || cat.id}">${cat.name}</option>`
+          const slug = cat.slug || cat.id
+          categoryMapping[slug] = {
+            name: cat.name,
+            id: cat.id,
+            slug: slug,
+            nameLower: (cat.name || '').toLowerCase(),
+            slugNormalized: slug.toLowerCase().replace(/-/g, ' ')
+          }
+        })
+        
+        console.log('📁 [DEBUG] Category mapping built:')
+        console.table(Object.entries(categoryMapping).map(([key, val]) => ({
+          Slug: key,
+          Name: val.name,
+          'Name (lower)': val.nameLower,
+          'Slug normalized': val.slugNormalized
+        })))
+        
+        select.innerHTML = '<option value="">Оберіть категорію...</option>'
+        
+        // Add special "Unassigned" category
+        select.innerHTML += '<option value="__unassigned__" class="bg-yellow-50">🔄 Нерозподілені (Unassigned)</option>'
+        
+        categories.forEach(cat => {
+          const value = cat.slug || cat.id
+          select.innerHTML += `<option value="${value}">${cat.name}</option>`
         })
         
         console.log('📁 Loaded categories for merchandising:', categories.length)
       } catch (error) {
-        console.error('Error loading categories:', error)
+        console.error('❌ [ERROR] Error loading categories:', error)
+      }
+    }
+
+    // Load ALL active products (ignore category)
+    window.loadAllActiveProducts = async function() {
+      const grid = document.getElementById('merch-products-grid')
+      const countEl = document.getElementById('merch-products-count')
+      const saveBtn = document.getElementById('save-merch-layout-btn')
+      
+      console.log('📦 [ALL ACTIVE] Loading all active products...')
+      
+      grid.innerHTML = `
+        <div class="flex items-center justify-center py-16">
+          <div class="animate-spin w-10 h-10 border-4 border-spicy border-t-transparent rounded-full"></div>
+        </div>
+      `
+      
+      try {
+        const snapshot = await getDocs(collection(db, 'products'))
+        const allProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        
+        // Filter only active products (you can add status check here if needed)
+        merchProducts = allProducts.filter(p => {
+          // Add your "active" logic here. For now, assume all are active
+          return true
+        })
+        
+        merchProducts.sort((a, b) => (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999))
+        
+        console.log('📦 [ALL ACTIVE] Loaded:', merchProducts.length, 'products')
+        
+        // Show info banner
+        const infoBanner = `
+          <div class="mb-4 p-4 bg-blue-50 border-l-4 border-blue-400 rounded-lg">
+            <div class="flex items-start">
+              <i data-lucide="info" class="w-5 h-5 text-blue-600 mr-3 flex-shrink-0 mt-0.5"></i>
+              <div>
+                <h4 class="text-sm font-bold text-blue-800">Показано всі товари</h4>
+                <p class="text-sm text-blue-700 mt-1">
+                  Відображається ${merchProducts.length} товарів незалежно від категорії.
+                  Виберіть товари та використайте інструмент перенесення нижче.
+                </p>
+              </div>
+            </div>
+          </div>
+        `
+        grid.insertAdjacentHTML('beforebegin', infoBanner)
+        
+        renderMerchGrid()
+        countEl.textContent = `${merchProducts.length} товарів`
+        saveBtn.disabled = true
+        merchOrderChanged = false
+        
+      } catch (error) {
+        console.error('❌ Error loading all products:', error)
+        grid.innerHTML = `<div class="text-red-500 text-center py-10">Помилка: ${error.message}</div>`
       }
     }
 
@@ -13255,6 +13469,19 @@
         return
       }
       
+      // Handle special "Unassigned" category
+      if (categorySlug === '__unassigned__') {
+        await loadUnassignedProducts()
+        return
+      }
+      
+      // Get category data from mapping
+      const categoryData = categoryMapping[categorySlug]
+      
+      console.log('🔍 [MULTI-CATEGORY SEARCH] ========================================')
+      console.log('🔍 Target Category ID:', categorySlug)
+      console.log('🔍 Category Data:', categoryData)
+      
       grid.innerHTML = `
         <div class="flex items-center justify-center py-16">
           <div class="animate-spin w-10 h-10 border-4 border-spicy border-t-transparent rounded-full"></div>
@@ -13262,21 +13489,155 @@
       `
       
       try {
-        const q = query(collection(db, 'products'), where('category', '==', categorySlug))
-        const snapshot = await getDocs(q)
+        merchProducts = []
         
-        merchProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        // ========================================
+        // APPROACH 1: Try array-contains query (for array categories)
+        // ========================================
+        console.log('🔍 [APPROACH 1] Trying array-contains query...')
+        try {
+          const arrayQuery = query(
+            collection(db, 'products'), 
+            where('category', 'array-contains', categorySlug)
+          )
+          let snapshot = await getDocs(arrayQuery)
+          console.log('✅ [APPROACH 1] Array-contains returned:', snapshot.size, 'products')
+          
+          if (snapshot.size > 0) {
+            merchProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+          }
+        } catch (e) {
+          console.log('⚠️ [APPROACH 1] Array-contains failed (field might not be array):', e.message)
+        }
         
-        // Sort by existing sortOrder (if exists)
-        merchProducts.sort((a, b) => (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999))
+        // ========================================
+        // APPROACH 2: Try with 'categories' field (plural)
+        // ========================================
+        if (merchProducts.length === 0) {
+          console.log('🔍 [APPROACH 2] Trying array-contains on "categories" field...')
+          try {
+            const categoriesQuery = query(
+              collection(db, 'products'), 
+              where('categories', 'array-contains', categorySlug)
+            )
+            let snapshot = await getDocs(categoriesQuery)
+            console.log('✅ [APPROACH 2] Categories array-contains returned:', snapshot.size, 'products')
+            
+            if (snapshot.size > 0) {
+              merchProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+            }
+          } catch (e) {
+            console.log('⚠️ [APPROACH 2] Categories array-contains failed:', e.message)
+          }
+        }
         
-        console.log('📦 Loaded products for merchandising:', merchProducts.length)
+        // ========================================
+        // APPROACH 3: Fetch all and filter client-side (most flexible)
+        // ========================================
+        if (merchProducts.length === 0) {
+          console.log('🔍 [APPROACH 3] Fetching all products for client-side filtering...')
+          const allSnapshot = await getDocs(collection(db, 'products'))
+          console.log('📊 [APPROACH 3] Total products in database:', allSnapshot.size)
+          
+          const allProducts = allSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+          
+          // Debug: Show category field structures
+          console.log('📊 [DEBUG] Sample category fields:')
+          allProducts.slice(0, 5).forEach(p => {
+            const catField = p.category || p.categories
+            console.log({
+              productId: p.id,
+              name: p.name,
+              categoryField: catField,
+              type: Array.isArray(catField) ? 'array' : typeof catField
+            })
+          })
+          
+          // Filter using new helper
+          merchProducts = allProducts.filter(p => {
+            const belongs = productBelongsToCategory(p, categorySlug)
+            if (belongs) {
+              console.log('✅ [MATCH]', {
+                productId: p.id,
+                productName: p.name,
+                categoryField: p.category || p.categories
+              })
+            }
+            return belongs
+          })
+          
+          console.log('📦 [APPROACH 3] Products after filtering:', merchProducts.length)
+        }
+        
+        // ========================================
+        // APPROACH 4: Try by category ID (your specific IDs)
+        // ========================================
+        if (merchProducts.length === 0) {
+          console.log('🔍 [APPROACH 4] Trying to match your specific category IDs...')
+          console.log('   Checking against:', categorySlug)
+          
+          // Your specific IDs
+          const knownCategoryIds = [
+            '3Es8uBfMstunwTVZK5Xb',
+            '6Xz9Vj7J0D7u72eb7KY8',
+            '9W1r1JNip5H8uo1AbVJc',
+            'J8Pt3oIajjBNXeMMvLOt',
+            'iGyLhs2JMfO5CuS0nKoD'
+          ]
+          
+          if (knownCategoryIds.includes(categorySlug)) {
+            const allSnapshot = await getDocs(collection(db, 'products'))
+            const allProducts = allSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+            
+            merchProducts = allProducts.filter(p => productBelongsToCategory(p, categorySlug))
+            console.log('✅ [APPROACH 4] Found', merchProducts.length, 'products for ID:', categorySlug)
+          }
+        }
+        
+        // Final logging
+        console.log('📦 [FINAL] Total products loaded:', merchProducts.length)
+        console.log('🔍 [MULTI-CATEGORY SEARCH] ========================================')
+        
+        // Sort by sortOrder (primary) or createdAt (fallback)
+        merchProducts.sort((a, b) => {
+          // Use sortOrder if both have it
+          if (a.sortOrder !== undefined && b.sortOrder !== undefined) {
+            return a.sortOrder - b.sortOrder
+          }
+          // If only one has sortOrder, it goes first
+          if (a.sortOrder !== undefined) return -1
+          if (b.sortOrder !== undefined) return 1
+          
+          // Fallback to createdAt
+          const aTime = a.createdAt?.toMillis?.() || a.createdAt?.seconds * 1000 || 0
+          const bTime = b.createdAt?.toMillis?.() || b.createdAt?.seconds * 1000 || 0
+          return bTime - aTime // Newest first if no sortOrder
+        })
+        
+        console.log('📦 [FINAL] Total products loaded:', merchProducts.length)
+        console.log('📦 [SORT] Applied sortOrder → createdAt fallback')
+        console.log('🔍 [FLEXIBLE SEARCH] ========================================')
         
         if (merchProducts.length === 0) {
           grid.innerHTML = `
             <div class="flex flex-col items-center justify-center py-16 text-gray-400">
               <i data-lucide="package-x" class="w-16 h-16 mb-4 opacity-50"></i>
-              <p class="text-lg font-medium">Немає товарів в цій категорії</p>
+              <p class="text-lg font-medium text-gray-700">Немає товарів у цій категорії</p>
+              <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 text-sm text-gray-600 max-w-md">
+                <p class="font-semibold mb-2">📋 Категорія: <span class="text-spicy">${categoryData?.name || categorySlug}</span></p>
+                <p class="mb-1"><strong>Slug:</strong> <code class="px-2 py-0.5 bg-white border rounded text-xs">${categorySlug}</code></p>
+                <p class="text-xs text-gray-500 mt-3">Додайте товари з пулу нерозподілених або створіть нові товари</p>
+              </div>
+              <div class="mt-6 flex flex-col sm:flex-row gap-3">
+                <button onclick="window.openAddProductsModal('${categorySlug}')" class="px-6 py-3 bg-gradient-to-r from-spicy to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 font-semibold transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl">
+                  <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                  Додати товари з пулу
+                </button>
+                <button onclick="window.debugAllProducts()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                  <i data-lucide="search" class="w-4 h-4"></i>
+                  Debug Database
+                </button>
+              </div>
             </div>
           `
           lucide.createIcons()
@@ -13291,8 +13652,14 @@
         merchOrderChanged = false
         
       } catch (error) {
-        console.error('Error loading products for merchandising:', error)
-        grid.innerHTML = `<div class="text-red-500 text-center py-10">Помилка: ${error.message}</div>`
+        console.error('❌ [FATAL ERROR]:', error)
+        console.error('❌ Stack:', error.stack)
+        grid.innerHTML = `
+          <div class="text-red-500 text-center py-10">
+            <p class="font-bold">Помилка: ${error.message}</p>
+            <p class="text-sm mt-2">Перевірте консоль для деталей</p>
+          </div>
+        `
       }
     }
 
@@ -13301,7 +13668,36 @@
       const grid = document.getElementById('merch-products-grid')
       
       grid.innerHTML = `
-        <div id="merch-sortable-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <!-- Batch Transfer Tool -->
+        <div class="col-span-full mb-4 p-4 bg-gradient-to-r from-orange-50 to-red-50 border-2 border-spicy/30 rounded-xl">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div class="flex items-center gap-2">
+              <input type="checkbox" id="select-all-products" 
+                     onchange="toggleSelectAllProducts(this.checked)"
+                     class="w-5 h-5 text-spicy rounded border-gray-300 focus:ring-spicy">
+              <label for="select-all-products" class="text-sm font-semibold text-gray-700">
+                Вибрати всі (<span id="selected-count">0</span>)
+              </label>
+            </div>
+            
+            <div class="flex-1 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <select id="transfer-target-category" 
+                      class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-spicy focus:border-spicy">
+                <option value="">Оберіть цільову категорію...</option>
+              </select>
+              
+              <button onclick="batchTransferProducts()" 
+                      id="batch-transfer-btn"
+                      disabled
+                      class="px-6 py-2 bg-spicy text-white rounded-lg font-semibold text-sm hover:bg-spicy-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 whitespace-nowrap">
+                <i data-lucide="arrow-right-circle" class="w-4 h-4"></i>
+                Перенести вибрані
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div id="merch-sortable-grid" class="col-span-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           ${merchProducts.map((p, index) => {
             const img = p.images?.[0] || p.image || 'https://placehold.co/150x150/fff3e8/ff6b00?text=Latiao'
             const stock = p.stock ?? 0
@@ -13313,9 +13709,18 @@
             const oosBadge = isOOS ? '<div class="absolute bottom-2 left-2 z-10 px-2 py-0.5 bg-gray-700 text-white text-xs font-bold rounded-full">OOS</div>' : ''
             
             return `
-              <div class="merch-card ${oosClasses} border-2 ${isOOS ? 'border-gray-300' : 'border-gray-200'} rounded-xl overflow-hidden cursor-move hover:border-spicy hover:shadow-lg transition-all group" data-product-id="${p.id}">
+              <div class="merch-card ${oosClasses} border-2 ${isOOS ? 'border-gray-300' : 'border-gray-200'} rounded-xl overflow-hidden cursor-move hover:border-spicy hover:shadow-lg transition-all group relative" data-product-id="${p.id}">
+                
+                <!-- Selection Checkbox -->
+                <div class="absolute top-2 left-2 z-20">
+                  <input type="checkbox" 
+                         class="product-select-checkbox w-5 h-5 text-spicy rounded border-gray-300 focus:ring-spicy shadow-lg"
+                         data-product-id="${p.id}"
+                         onchange="updateSelectedCount()">
+                </div>
+                
                 <!-- Position Badge -->
-                <div class="absolute top-2 left-2 z-10 w-7 h-7 ${isOOS ? 'bg-gray-500' : 'bg-spicy'} text-white rounded-full flex items-center justify-center font-bold text-sm shadow-lg">
+                <div class="absolute top-2 right-2 z-10 w-7 h-7 ${isOOS ? 'bg-gray-500' : 'bg-spicy'} text-white rounded-full flex items-center justify-center font-bold text-sm shadow-lg">
                   ${index + 1}
                 </div>
                 
@@ -13325,12 +13730,18 @@
                 <!-- OOS Badge -->
                 ${oosBadge}
                 
+                <!-- Drag Handle -->
+                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-all pointer-events-none drag-handle-icon">
+                  <div class="bg-spicy/90 text-white p-3 rounded-lg shadow-2xl flex flex-col items-center gap-1">
+                    <i data-lucide="grip-vertical" class="w-6 h-6"></i>
+                    <span class="text-xs font-bold whitespace-nowrap">Drag</span>
+                  </div>
+                </div>
+                
                 <!-- Image -->
                 <div class="relative aspect-square bg-gray-100">
                   <img src="${img}" class="w-full h-full object-cover ${isOOS ? 'grayscale' : ''}" onerror="this.src='https://placehold.co/150x150/fff3e8/ff6b00?text=Latiao'">
-                  <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                    <i data-lucide="move" class="w-8 h-8 text-white opacity-0 group-hover:opacity-70 transition-opacity drop-shadow-lg"></i>
-                  </div>
+                  <div class="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors"></div>
                 </div>
                 
                 <!-- Info -->
@@ -13348,7 +13759,110 @@
       `
       
       lucide.createIcons()
+      populateTransferCategoryDropdown()
       initMerchSortable()
+    }
+
+    // Populate transfer category dropdown
+    function populateTransferCategoryDropdown() {
+      const select = document.getElementById('transfer-target-category')
+      if (!select) return
+      
+      select.innerHTML = '<option value="">Оберіть цільову категорію...</option>'
+      
+      Object.entries(categoryMapping).forEach(([slug, data]) => {
+        select.innerHTML += `<option value="${slug}">${data.name}</option>`
+      })
+    }
+
+    // Toggle select all products
+    window.toggleSelectAllProducts = function(checked) {
+      const checkboxes = document.querySelectorAll('.product-select-checkbox')
+      checkboxes.forEach(cb => cb.checked = checked)
+      updateSelectedCount()
+    }
+
+    // Update selected count
+    window.updateSelectedCount = function() {
+      const checkboxes = document.querySelectorAll('.product-select-checkbox:checked')
+      const count = checkboxes.length
+      
+      document.getElementById('selected-count').textContent = count
+      document.getElementById('batch-transfer-btn').disabled = count === 0
+    }
+
+    // Batch transfer products to new category
+    window.batchTransferProducts = async function() {
+      const targetSlug = document.getElementById('transfer-target-category').value
+      const selectedCheckboxes = document.querySelectorAll('.product-select-checkbox:checked')
+      
+      if (!targetSlug) {
+        alert('Оберіть цільову категорію!')
+        return
+      }
+      
+      if (selectedCheckboxes.length === 0) {
+        alert('Оберіть хоча б один товар!')
+        return
+      }
+      
+      const targetCategory = categoryMapping[targetSlug]
+      const productIds = Array.from(selectedCheckboxes).map(cb => cb.dataset.productId)
+      
+      const confirmed = confirm(
+        `Перенести ${productIds.length} товарів в категорію "${targetCategory.name}"?\n\n` +
+        `Поле category буде змінено на: "${targetSlug}"`
+      )
+      
+      if (!confirmed) return
+      
+      console.log('🔄 [BATCH TRANSFER] Starting transfer...')
+      console.log('🔄 Target slug:', targetSlug)
+      console.log('🔄 Target name:', targetCategory.name)
+      console.log('🔄 Products:', productIds)
+      
+      const btn = document.getElementById('batch-transfer-btn')
+      const originalText = btn.innerHTML
+      btn.innerHTML = '<div class="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>'
+      btn.disabled = true
+      
+      try {
+        let successCount = 0
+        let failCount = 0
+        
+        for (const productId of productIds) {
+          try {
+            const productRef = doc(db, 'products', productId)
+            await updateDoc(productRef, {
+              category: targetSlug,
+              updatedAt: new Date()
+            })
+            successCount++
+            console.log('✅ Updated:', productId)
+          } catch (error) {
+            console.error('❌ Failed to update:', productId, error)
+            failCount++
+          }
+        }
+        
+        console.log(`✅ [BATCH TRANSFER] Complete: ${successCount} success, ${failCount} failed`)
+        
+        alert(
+          `✅ Перенесено успішно: ${successCount}\n` +
+          (failCount > 0 ? `❌ Помилка: ${failCount}` : '')
+        )
+        
+        // Reload products
+        await window.loadMerchProducts()
+        
+      } catch (error) {
+        console.error('❌ [BATCH TRANSFER ERROR]:', error)
+        alert('Помилка при перенесенні: ' + error.message)
+      } finally {
+        btn.innerHTML = originalText
+        btn.disabled = false
+        lucide.createIcons()
+      }
     }
 
     // Initialize SortableJS
@@ -13361,10 +13875,12 @@
       }
       
       merchSortableInstance = new Sortable(sortableEl, {
-        animation: 200,
-        ghostClass: 'opacity-40',
-        chosenClass: 'ring-2 ring-spicy scale-105',
-        dragClass: 'shadow-2xl',
+        animation: 250,
+        easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+        ghostClass: 'opacity-30 scale-95',
+        chosenClass: 'ring-4 ring-spicy/50 scale-105 shadow-2xl',
+        dragClass: 'opacity-90 rotate-3 shadow-2xl',
+        forceFallback: false,
         onEnd: function(evt) {
           // Update products array order
           const cards = sortableEl.querySelectorAll('.merch-card')
@@ -13387,6 +13903,229 @@
       })
       
       console.log('✅ SortableJS initialized')
+    }
+
+    // DEBUG: Show all products with their categories
+    window.debugCategoryProducts = async function(categorySlug) {
+      console.log('🐛 [DEBUG TOOL] Analyzing all products for category:', categorySlug)
+      
+      try {
+        const allSnapshot = await getDocs(collection(db, 'products'))
+        const allProducts = allSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        
+        console.log('📊 [DEBUG] Total products in database:', allProducts.length)
+        console.table(allProducts.map(p => ({
+          ID: p.id,
+          Name: p.name,
+          Category: p.category,
+          'Category Type': typeof p.category,
+          Stock: p.stock,
+          Status: p.status
+        })))
+        
+        // Group by category
+        const byCategory = {}
+        allProducts.forEach(p => {
+          const cat = p.category || 'NO_CATEGORY'
+          if (!byCategory[cat]) byCategory[cat] = []
+          byCategory[cat].push(p.name)
+        })
+        
+        console.log('📁 [DEBUG] Products grouped by category:')
+        console.table(byCategory)
+        
+        // Find similar categories
+        const similar = allProducts.filter(p => {
+          const pCat = (p.category || '').toLowerCase()
+          const searchCat = categorySlug.toLowerCase()
+          return pCat.includes(searchCat) || searchCat.includes(pCat)
+        })
+        
+        console.log(`🔍 [DEBUG] Products with similar category names (${similar.length}):`, similar.map(p => p.name))
+        
+      } catch (error) {
+        console.error('❌ [DEBUG ERROR]:', error)
+      }
+    }
+
+    // DEBUG: Deep analysis of ALL products
+    window.debugAllProducts = async function() {
+      console.log('🔬 [DEEP DEBUG] ========================================')
+      console.log('🔬 [DEEP DEBUG] COMPLETE DATABASE ANALYSIS')
+      console.log('🔬 [DEEP DEBUG] ========================================')
+      
+      try {
+        const allSnapshot = await getDocs(collection(db, 'products'))
+        const allProducts = allSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        
+        console.log('📊 Total products:', allProducts.length)
+        
+        // Analyze category field variations
+        const categoryFields = new Set()
+        const categoryValues = {}
+        
+        allProducts.forEach(p => {
+          // Check all possible category field names
+          Object.keys(p).forEach(key => {
+            if (key.toLowerCase().includes('cat')) {
+              categoryFields.add(key)
+            }
+          })
+          
+          // Analyze 'category' field specifically
+          const cat = p.category
+          const catKey = `"${cat}"`
+          
+          if (!categoryValues[catKey]) {
+            categoryValues[catKey] = {
+              rawValue: cat,
+              trimmed: (cat || '').trim(),
+              length: (cat || '').length,
+              hasSpaces: cat !== (cat || '').trim(),
+              lowercase: (cat || '').toLowerCase(),
+              products: []
+            }
+          }
+          categoryValues[catKey].products.push({
+            id: p.id,
+            name: p.name,
+            stock: p.stock
+          })
+        })
+        
+        console.log('📋 Fields containing "cat":', Array.from(categoryFields))
+        console.log('📊 Unique category values with details:')
+        console.table(Object.entries(categoryValues).map(([key, val]) => ({
+          'Category Value': key,
+          'Trimmed': `"${val.trimmed}"`,
+          'Length': val.length,
+          'Has Spaces': val.hasSpaces ? '⚠️ YES' : 'No',
+          'Products Count': val.products.length,
+          'Sample Products': val.products.slice(0, 2).map(p => p.name).join(', ')
+        })))
+        
+        // Check for duplicate-looking categories
+        const normalized = {}
+        Object.entries(categoryValues).forEach(([key, val]) => {
+          const norm = val.trimmed.toLowerCase()
+          if (!normalized[norm]) {
+            normalized[norm] = []
+          }
+          normalized[norm].push(key)
+        })
+        
+        const duplicates = Object.entries(normalized).filter(([_, keys]) => keys.length > 1)
+        if (duplicates.length > 0) {
+          console.warn('⚠️ FOUND DUPLICATE CATEGORIES (different by spaces/case):')
+          duplicates.forEach(([norm, keys]) => {
+            console.warn(`   "${norm}" appears as:`, keys)
+            keys.forEach(key => {
+              console.warn(`      ${key} has ${categoryValues[key].products.length} products`)
+            })
+          })
+        }
+        
+        // Show all products for easy reference
+        console.log('📦 All products with full details:')
+        console.table(allProducts.map(p => ({
+          ID: p.id,
+          Name: p.name,
+          'Category (raw)': p.category,
+          'Category (length)': (p.category || '').length,
+          'Has trailing space': (p.category || '').endsWith(' ') ? '⚠️ YES' : 'No',
+          'Has leading space': (p.category || '').startsWith(' ') ? '⚠️ YES' : 'No',
+          Stock: p.stock,
+          Price: p.price
+        })))
+        
+        console.log('🔬 [DEEP DEBUG] Analysis complete. Check tables above.')
+        console.log('🔬 [DEEP DEBUG] ========================================')
+        
+      } catch (error) {
+        console.error('❌ [DEEP DEBUG ERROR]:', error)
+      }
+    }
+
+    // INSPECTION SCRIPT: List exact category values from products
+    window.inspectCategoryValues = async function() {
+      console.log('📋 [INSPECTION] ========================================')
+      console.log('📋 [INSPECTION] EXACT CATEGORY VALUES IN PRODUCTS')
+      console.log('📋 [INSPECTION] ========================================')
+      
+      try {
+        const snapshot = await getDocs(collection(db, 'products'))
+        const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        
+        console.log(`📊 Total products: ${products.length}`)
+        
+        // Group by exact category string
+        const categoryGroups = {}
+        products.forEach(p => {
+          const cat = p.category
+          const catKey = JSON.stringify(cat) // Show exact value including null/undefined
+          
+          if (!categoryGroups[catKey]) {
+            categoryGroups[catKey] = {
+              rawValue: cat,
+              type: typeof cat,
+              length: (cat || '').length,
+              normalized: normalizeString(cat),
+              products: []
+            }
+          }
+          categoryGroups[catKey].products.push({
+            id: p.id,
+            name: p.name
+          })
+        })
+        
+        console.log('📋 [GROUPS] Found', Object.keys(categoryGroups).length, 'unique category values:')
+        console.log('')
+        
+        Object.entries(categoryGroups).forEach(([key, data]) => {
+          console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
+          console.log(`Category: ${key}`)
+          console.log(`  Raw value: "${data.rawValue}"`)
+          console.log(`  Type: ${data.type}`)
+          console.log(`  Length: ${data.length}`)
+          console.log(`  Normalized: "${data.normalized}"`)
+          console.log(`  Product count: ${data.products.length}`)
+          console.log(`  Sample products:`, data.products.slice(0, 5).map(p => p.name).join(', '))
+          console.log('')
+        })
+        
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+        console.log('📋 [MAPPING] Current category mapping from Firestore:')
+        console.table(Object.entries(categoryMapping).map(([slug, data]) => ({
+          Slug: slug,
+          Name: data.name,
+          'Normalized Slug': normalizeString(slug),
+          'Normalized Name': normalizeString(data.name)
+        })))
+        
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+        console.log('🔍 [MATCHING TEST] Testing if product categories match category slugs:')
+        
+        Object.entries(categoryMapping).forEach(([slug, catData]) => {
+          const matchingProducts = products.filter(p => 
+            doesCategoryMatch(p.category, slug, catData)
+          )
+          
+          console.log(`Slug: "${slug}" → "${catData.name}"`)
+          console.log(`  ✅ Matches ${matchingProducts.length} products`)
+          if (matchingProducts.length > 0) {
+            console.log(`  Sample:`, matchingProducts.slice(0, 3).map(p => p.name).join(', '))
+          }
+        })
+        
+        console.log('📋 [INSPECTION] ========================================')
+        console.log('💡 TIP: Copy the "Raw value" from above and use it to update')
+        console.log('         the category field in your products if needed.')
+        console.log('📋 [INSPECTION] ========================================')
+        
+      } catch (error) {
+        console.error('❌ [INSPECTION ERROR]:', error)
+      }
     }
 
     // Apply smart merchandising strategy
@@ -13477,17 +14216,32 @@
       saveBtn.innerHTML = '<div class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div> Збереження...'
       
       try {
+        const currentCategorySlug = document.getElementById('merch-category-select').value
+        console.log('💾 [SAVE] Starting batch update for', merchProducts.length, 'products...')
+        console.log('💾 [SAVE] Current category slug:', currentCategorySlug)
+        console.log('⚠️ [SAVE] NOT updating category field to preserve multi-category assignments')
+        
         const batch = writeBatch(db)
+        const timestamp = new Date()
         
         merchProducts.forEach((product, index) => {
           const productRef = doc(db, 'products', product.id)
-          batch.update(productRef, { 
+          
+          // IMPORTANT: Only update sortOrder, NOT category!
+          // Products may belong to multiple categories (array or comma-separated)
+          // Updating category field would break multi-category assignments
+          const updateData = { 
             sortOrder: index,
-            sortUpdatedAt: new Date().toISOString()
-          })
+            sortUpdatedAt: timestamp
+          }
+          
+          console.log(`  [${index}] ${product.name} → sortOrder: ${index} (category preserved)`)
+          
+          batch.update(productRef, updateData)
         })
         
         await batch.commit()
+        console.log('✅ [SAVE] Batch commit successful!')
         
         merchOrderChanged = false
         showToast(`✅ Порядок збережено для ${merchProducts.length} товарів!`, 'success')
@@ -13506,6 +14260,366 @@
         alert('Помилка: ' + error.message)
         saveBtn.innerHTML = originalText
         saveBtn.disabled = false
+        lucide.createIcons()
+      }
+    }
+
+    // ============================================
+    // UNASSIGNED PRODUCTS & ADD TO CATEGORY
+    // ============================================
+    
+    // Load unassigned products (us-tovari or no category)
+    async function loadUnassignedProducts() {
+      const grid = document.getElementById('merch-products-grid')
+      const countEl = document.getElementById('merch-products-count')
+      const saveBtn = document.getElementById('save-merch-layout-btn')
+      
+      console.log('🔄 [UNASSIGNED] Loading unassigned products...')
+      
+      grid.innerHTML = `
+        <div class="flex items-center justify-center py-16">
+          <div class="animate-spin w-10 h-10 border-4 border-spicy border-t-transparent rounded-full"></div>
+        </div>
+      `
+      
+      try {
+        const snapshot = await getDocs(collection(db, 'products'))
+        const allProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        
+        // Filter unassigned: category is 'us-tovari', undefined, null, or empty
+        merchProducts = allProducts.filter(p => {
+          const cat = p.category
+          return !cat || cat === '' || cat === 'us-tovari'
+        })
+        
+        // Sort by createdAt (newest first)
+        merchProducts.sort((a, b) => {
+          const aTime = a.createdAt?.toMillis?.() || a.createdAt?.seconds * 1000 || 0
+          const bTime = b.createdAt?.toMillis?.() || b.createdAt?.seconds * 1000 || 0
+          return bTime - aTime
+        })
+        
+        console.log('🔄 [UNASSIGNED] Found:', merchProducts.length, 'unassigned products')
+        
+        // Show info banner
+        if (merchProducts.length > 0) {
+          const infoBanner = `
+            <div class="mb-4 p-4 bg-amber-50 border-l-4 border-amber-400 rounded-lg">
+              <div class="flex items-start">
+                <i data-lucide="alert-circle" class="w-5 h-5 text-amber-600 mr-3 flex-shrink-0 mt-0.5"></i>
+                <div>
+                  <h4 class="text-sm font-bold text-amber-800">Нерозподілені товари</h4>
+                  <p class="text-sm text-amber-700 mt-1">
+                    Знайдено ${merchProducts.length} товарів без конкретної категорії.
+                    Виберіть товари та перенесіть їх в потрібні категорії через інструмент перенесення нижче.
+                  </p>
+                </div>
+              </div>
+            </div>
+          `
+          grid.insertAdjacentHTML('beforebegin', infoBanner)
+        }
+        
+        renderMerchGrid()
+        countEl.textContent = `${merchProducts.length} товарів`
+        saveBtn.disabled = true
+        merchOrderChanged = false
+        
+        lucide.createIcons()
+        
+      } catch (error) {
+        console.error('❌ Error loading unassigned products:', error)
+        grid.innerHTML = `<div class="text-red-500 text-center py-10">Помилка: ${error.message}</div>`
+      }
+    }
+    
+    // Open modal to add products from unassigned pool to specific category
+    window.openAddProductsModal = async function(targetCategorySlug) {
+      console.log('🎯 [ADD MODAL] Opening for category:', targetCategorySlug)
+      
+      // Create modal backdrop
+      const modalHTML = `
+        <div id="add-products-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col animate-slide-up">
+            
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-spicy/10 to-orange-100">
+              <div>
+                <h2 class="text-xl font-bold text-gray-900">Додати товари до категорії</h2>
+                <p class="text-sm text-gray-600 mt-1">
+                  Категорія: <span class="font-semibold text-spicy">${categoryMapping[targetCategorySlug]?.name || targetCategorySlug}</span>
+                </p>
+              </div>
+              <button onclick="closeAddProductsModal()" class="p-2 hover:bg-white rounded-lg transition-colors">
+                <i data-lucide="x" class="w-6 h-6 text-gray-600"></i>
+              </button>
+            </div>
+            
+            <!-- Loading -->
+            <div id="modal-loading" class="flex-1 flex items-center justify-center py-20">
+              <div class="text-center">
+                <div class="animate-spin w-12 h-12 border-4 border-spicy border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p class="text-gray-600">Завантаження нерозподілених товарів...</p>
+              </div>
+            </div>
+            
+            <!-- Content (will be filled) -->
+            <div id="modal-content" class="hidden flex-1 overflow-y-auto p-6">
+              <!-- Products grid -->
+            </div>
+            
+            <!-- Footer -->
+            <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
+              <div class="text-sm text-gray-600">
+                Вибрано: <span id="modal-selected-count" class="font-bold text-spicy">0</span> товарів
+              </div>
+              <div class="flex gap-3">
+                <button onclick="closeAddProductsModal()" class="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold transition-colors">
+                  Скасувати
+                </button>
+                <button onclick="addSelectedProductsToCategory('${targetCategorySlug}')" id="modal-add-btn" disabled class="px-6 py-2.5 bg-gradient-to-r from-spicy to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                  <i data-lucide="check-circle" class="w-5 h-5"></i>
+                  Додати до категорії
+                </button>
+              </div>
+            </div>
+            
+          </div>
+        </div>
+      `
+      
+      document.body.insertAdjacentHTML('beforeend', modalHTML)
+      lucide.createIcons()
+      
+      // Load unassigned products
+      try {
+        const snapshot = await getDocs(collection(db, 'products'))
+        const allProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        
+        // Filter unassigned
+        const unassignedProducts = allProducts.filter(p => {
+          const cat = p.category
+          return !cat || cat === '' || cat === 'us-tovari'
+        })
+        
+        console.log('🔄 [MODAL] Found', unassignedProducts.length, 'unassigned products')
+        
+        const modalContent = document.getElementById('modal-content')
+        const modalLoading = document.getElementById('modal-loading')
+        
+        if (unassignedProducts.length === 0) {
+          modalLoading.innerHTML = `
+            <div class="text-center py-20">
+              <i data-lucide="package-check" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
+              <p class="text-lg font-medium text-gray-600">Всі товари розподілені</p>
+              <p class="text-sm text-gray-500 mt-2">Немає товарів у пулі нерозподілених</p>
+            </div>
+          `
+          lucide.createIcons()
+          return
+        }
+        
+        // Sort by createdAt
+        unassignedProducts.sort((a, b) => {
+          const aTime = a.createdAt?.toMillis?.() || 0
+          const bTime = b.createdAt?.toMillis?.() || 0
+          return bTime - aTime
+        })
+        
+        // Render products
+        modalContent.innerHTML = `
+          <div class="mb-4 flex items-center gap-4">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="modal-select-all" onchange="toggleModalSelectAll(this.checked)" class="w-5 h-5 text-spicy rounded border-gray-300">
+              <span class="font-semibold text-gray-700">Вибрати всі (${unassignedProducts.length})</span>
+            </label>
+          </div>
+          
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            ${unassignedProducts.map(p => {
+              const img = p.images?.[0] || p.image || 'https://placehold.co/150x150/fff3e8/ff6b00?text=Latiao'
+              const stock = p.stock ?? 0
+              const isOOS = stock === 0
+              
+              return `
+                <div class="bg-white border-2 border-gray-200 rounded-xl overflow-hidden hover:border-spicy hover:shadow-lg transition-all cursor-pointer group" onclick="toggleModalProductSelect('${p.id}')">
+                  <div class="relative aspect-square bg-gray-100">
+                    <img src="${img}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/150x150/fff3e8/ff6b00?text=Latiao'">
+                    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors"></div>
+                    
+                    <!-- Checkbox -->
+                    <div class="absolute top-2 left-2 z-10">
+                      <input type="checkbox" 
+                             class="modal-product-checkbox w-6 h-6 text-spicy rounded border-2 border-white shadow-lg"
+                             data-product-id="${p.id}"
+                             onchange="updateModalSelectedCount(event)"
+                             onclick="event.stopPropagation()">
+                    </div>
+                    
+                    ${isOOS ? '<div class="absolute bottom-2 right-2 px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded">OOS</div>' : ''}
+                  </div>
+                  
+                  <div class="p-3">
+                    <h4 class="text-sm font-semibold text-gray-900 line-clamp-1 mb-1">${p.name || 'Без назви'}</h4>
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm font-bold text-spicy">₴${p.price || 0}</span>
+                      <span class="text-xs ${stock > 0 ? 'text-green-600' : 'text-red-500'}">${stock > 0 ? stock + ' шт' : 'Немає'}</span>
+                    </div>
+                  </div>
+                </div>
+              `
+            }).join('')}
+          </div>
+        `
+        
+        modalLoading.classList.add('hidden')
+        modalContent.classList.remove('hidden')
+        lucide.createIcons()
+        
+      } catch (error) {
+        console.error('❌ Error loading products for modal:', error)
+        document.getElementById('modal-loading').innerHTML = `
+          <div class="text-center py-20">
+            <p class="text-red-500 font-semibold">Помилка: ${error.message}</p>
+          </div>
+        `
+      }
+    }
+    
+    // Close modal
+    window.closeAddProductsModal = function() {
+      const modal = document.getElementById('add-products-modal')
+      if (modal) {
+        modal.remove()
+      }
+    }
+    
+    // Toggle modal product selection
+    window.toggleModalProductSelect = function(productId) {
+      const checkbox = document.querySelector(`.modal-product-checkbox[data-product-id="${productId}"]`)
+      if (checkbox) {
+        checkbox.checked = !checkbox.checked
+        updateModalSelectedCount()
+      }
+    }
+    
+    // Toggle select all in modal
+    window.toggleModalSelectAll = function(checked) {
+      const checkboxes = document.querySelectorAll('.modal-product-checkbox')
+      checkboxes.forEach(cb => cb.checked = checked)
+      updateModalSelectedCount()
+    }
+    
+    // Update selected count in modal
+    window.updateModalSelectedCount = function(event) {
+      if (event) event.stopPropagation()
+      
+      const checkboxes = document.querySelectorAll('.modal-product-checkbox:checked')
+      const count = checkboxes.length
+      
+      document.getElementById('modal-selected-count').textContent = count
+      document.getElementById('modal-add-btn').disabled = count === 0
+    }
+    
+    // Add selected products to category
+    window.addSelectedProductsToCategory = async function(targetCategorySlug) {
+      const selectedCheckboxes = document.querySelectorAll('.modal-product-checkbox:checked')
+      const productIds = Array.from(selectedCheckboxes).map(cb => cb.dataset.productId)
+      
+      if (productIds.length === 0) {
+        alert('Оберіть хоча б один товар!')
+        return
+      }
+      
+      const targetCategory = categoryMapping[targetCategorySlug]
+      const confirmed = confirm(
+        `Додати ${productIds.length} товарів до категорії "${targetCategory?.name || targetCategorySlug}"?\n\n` +
+        `Поле category буде оновлено для цих товарів.`
+      )
+      
+      if (!confirmed) return
+      
+      console.log('➕ [ADD TO CATEGORY] Starting...')
+      console.log('   Target:', targetCategorySlug, '-', targetCategory?.name)
+      console.log('   Products:', productIds)
+      
+      const addBtn = document.getElementById('modal-add-btn')
+      const originalHTML = addBtn.innerHTML
+      addBtn.innerHTML = '<div class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div> Додавання...'
+      addBtn.disabled = true
+      
+      try {
+        // First, fetch current products to check their category structure
+        const productsToUpdate = []
+        for (const productId of productIds) {
+          const productDoc = await getDoc(doc(db, 'products', productId))
+          if (productDoc.exists()) {
+            productsToUpdate.push({ id: productId, data: productDoc.data() })
+          }
+        }
+        
+        console.log('📊 [ADD TO CATEGORY] Analyzing', productsToUpdate.length, 'products...')
+        
+        const batch = writeBatch(db)
+        
+        productsToUpdate.forEach((item, index) => {
+          const productRef = doc(db, 'products', item.id)
+          const currentData = item.data
+          const currentCategory = currentData.category || currentData.categories
+          
+          let newCategoryValue
+          
+          // Determine how to update category field
+          if (Array.isArray(currentCategory)) {
+            // Case 1: Already an array - add if not present
+            if (!currentCategory.includes(targetCategorySlug)) {
+              newCategoryValue = [...currentCategory, targetCategorySlug]
+              console.log(`  ✅ [${index}] Adding to array:`, item.id, newCategoryValue)
+            } else {
+              newCategoryValue = currentCategory
+              console.log(`  ℹ️ [${index}] Already in array:`, item.id)
+            }
+          } else if (typeof currentCategory === 'string' && currentCategory.includes(',')) {
+            // Case 2: Comma-separated string - convert to array and add
+            const existingCategories = currentCategory.split(',').map(c => c.trim())
+            if (!existingCategories.includes(targetCategorySlug)) {
+              existingCategories.push(targetCategorySlug)
+            }
+            newCategoryValue = existingCategories
+            console.log(`  ✅ [${index}] Converting comma-separated to array:`, item.id, newCategoryValue)
+          } else if (currentCategory && currentCategory !== 'us-tovari') {
+            // Case 3: Single category string - convert to array with both
+            newCategoryValue = [currentCategory, targetCategorySlug]
+            console.log(`  ✅ [${index}] Creating array from single:`, item.id, newCategoryValue)
+          } else {
+            // Case 4: No category or us-tovari - just assign new one
+            newCategoryValue = targetCategorySlug
+            console.log(`  ✅ [${index}] Setting new category:`, item.id, newCategoryValue)
+          }
+          
+          batch.update(productRef, {
+            category: newCategoryValue,
+            sortOrder: index,
+            updatedAt: new Date()
+          })
+        })
+        
+        await batch.commit()
+        console.log('✅ [ADD TO CATEGORY] Successfully updated', productsToUpdate.length, 'products')
+        
+        showToast(`✅ Додано ${productsToUpdate.length} товарів до категорії!`, 'success')
+        
+        // Close modal
+        closeAddProductsModal()
+        
+        // Reload the category to show new products
+        await window.loadMerchProducts()
+        
+      } catch (error) {
+        console.error('❌ [ADD TO CATEGORY ERROR]:', error)
+        alert('Помилка при додаванні: ' + error.message)
+        addBtn.innerHTML = originalHTML
+        addBtn.disabled = false
         lucide.createIcons()
       }
     }
