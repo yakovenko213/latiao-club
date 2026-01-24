@@ -11580,13 +11580,13 @@
         document.getElementById('setting-maintenance-toggle').checked = isMaintenanceMode
         console.log('🔴 Maintenance mode loaded:', isMaintenanceMode)
         
-        // Load AI Assistant setting from settings/checkout_config (default: false)
-        const checkoutConfigDoc = await getDoc(doc(db, 'settings', 'checkout_config'))
-        const isAiEnabled = checkoutConfigDoc.exists() 
-          ? (checkoutConfigDoc.data().aiEnabled === true) // default false
+        // Load AI Assistant setting from settings/checkout (CORRECTED PATH)
+        const checkoutDoc = await getDoc(doc(db, 'settings', 'checkout'))
+        const isAiEnabled = checkoutDoc.exists() 
+          ? (checkoutDoc.data().aiAssistantEnabled === true) // default false
           : false
         document.getElementById('toggle-ai-assistant').checked = isAiEnabled
-        console.log('🧠 AI Assistant setting loaded:', isAiEnabled)
+        console.log('🧠 AI Assistant setting loaded from settings/checkout:', isAiEnabled)
         
       } catch (e) {
         console.error('Error loading settings:', e)
@@ -12373,14 +12373,14 @@
           updatedAt: new Date().toISOString()
         }, { merge: true })
         
-        // Save AI Assistant setting to settings/checkout_config
-        console.log('🧠 Saving AI Assistant setting:', isAiAssistantEnabled)
-        await setDoc(doc(db, 'settings', 'checkout_config'), {
-          aiEnabled: isAiAssistantEnabled,
+        // Save AI Assistant setting to settings/checkout (CORRECTED PATH)
+        console.log('🧠 Saving AI Assistant setting to settings/checkout:', isAiAssistantEnabled)
+        await setDoc(doc(db, 'settings', 'checkout'), {
+          aiAssistantEnabled: isAiAssistantEnabled,
           updatedAt: new Date().toISOString()
         }, { merge: true })
 
-        console.log('✅ API credentials saved:', {
+        console.log('✅ All settings saved successfully:', {
           turboSmsToken: turboSmsToken ? '•••••' : '',
           monobankToken: monobankToken ? '•••••' : '',
           keycrmApiKey: keycrmApiKey ? '•••••' : '',

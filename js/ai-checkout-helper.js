@@ -482,29 +482,58 @@ Example output 2:
     }
 
     function attachEventListeners() {
+        console.log('🔗 Attaching event listeners to AI widget...');
+        
         // Toggle chat
-        document.getElementById('ai-checkout-toggle').addEventListener('click', () => {
-            const chatWindow = document.getElementById('ai-chat-window');
-            chatWindow.classList.toggle('show');
-            if (chatWindow.classList.contains('show')) {
-                document.getElementById('ai-input-text').focus();
-            }
-        });
+        const toggleBtn = document.getElementById('ai-checkout-toggle');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+                console.log('🖱️ AI toggle button CLICKED!');
+                const chatWindow = document.getElementById('ai-chat-window');
+                if (chatWindow) {
+                    chatWindow.classList.toggle('show');
+                    console.log('💬 Chat window toggled, show class:', chatWindow.classList.contains('show'));
+                    if (chatWindow.classList.contains('show')) {
+                        document.getElementById('ai-input-text').focus();
+                    }
+                } else {
+                    console.error('❌ Chat window not found!');
+                }
+            });
+            console.log('✅ Click listener attached to toggle button');
+        } else {
+            console.error('❌ Toggle button not found when attaching listeners!');
+        }
 
         // Close chat
-        document.querySelector('.ai-chat-close').addEventListener('click', () => {
-            document.getElementById('ai-chat-window').classList.remove('show');
-        });
+        const closeBtn = document.querySelector('.ai-chat-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                console.log('❌ Close button clicked');
+                document.getElementById('ai-chat-window').classList.remove('show');
+            });
+            console.log('✅ Click listener attached to close button');
+        }
 
         // Submit
-        document.getElementById('ai-submit-btn').addEventListener('click', handleSubmit);
+        const submitBtn = document.getElementById('ai-submit-btn');
+        if (submitBtn) {
+            submitBtn.addEventListener('click', handleSubmit);
+            console.log('✅ Click listener attached to submit button');
+        }
 
         // Ctrl+Enter to submit
-        document.getElementById('ai-input-text').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && e.ctrlKey) {
-                handleSubmit();
-            }
-        });
+        const inputText = document.getElementById('ai-input-text');
+        if (inputText) {
+            inputText.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    handleSubmit();
+                }
+            });
+            console.log('✅ Keydown listener attached to input field');
+        }
+        
+        console.log('✅ All AI widget event listeners attached successfully');
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -1522,25 +1551,78 @@ Example output 2:
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    // 🚀 AUTO-INITIALIZATION (WITH FIRESTORE CHECK)
+    // 🚀 AUTO-INITIALIZATION (WITH FIRESTORE CHECK & REAL-TIME UPDATES)
     // ═══════════════════════════════════════════════════════════════════
+    
+    let widgetInitialized = false;
+    let widgetElements = null;
+    
+    /**
+     * Initialize the AI widget UI
+     */
+    function initWidget() {
+        if (widgetInitialized) {
+            console.log('ℹ️ Widget already initialized');
+            return;
+        }
+        
+        init();
+        widgetInitialized = true;
+        
+        // Store references to widget elements for removal
+        widgetElements = {
+            toggle: document.getElementById('ai-checkout-toggle'),
+            window: document.getElementById('ai-chat-window')
+        };
+        
+        if (CONFIG.DEBUG) console.log('✅ AI Widget initialized and visible');
+    }
+    
+    /**
+     * Remove the AI widget from DOM completely
+     */
+    function destroyWidget() {
+        if (!widgetInitialized) {
+            console.log('ℹ️ Widget not initialized, nothing to destroy');
+            return;
+        }
+        
+        // Remove elements from DOM
+        const toggle = document.getElementById('ai-checkout-toggle');
+        const chatWindow = document.getElementById('ai-chat-window');
+        
+        if (toggle) {
+            toggle.remove();
+            console.log('🗑️ Removed AI toggle button');
+        }
+        
+        if (chatWindow) {
+            chatWindow.remove();
+            console.log('🗑️ Removed AI chat window');
+        }
+        
+        widgetInitialized = false;
+        widgetElements = null;
+        
+        if (CONFIG.DEBUG) console.log('✅ AI Widget destroyed and removed from DOM');
+    }
     
     /**
      * Check if AI Assistant is enabled in Firestore settings
-     * Defaults to TRUE (enabled) if document doesn't exist or Firebase fails
+     * Uses onSnapshot for real-time updates
+     * Handles flexible data types (boolean, string, number)
      */
     async function initAiAssistant() {
-        console.log('🔍 Checking AI Assistant status...');
+        console.log('🔍 Initializing AI Assistant with real-time listener...');
         
         try {
-            // Step 1: Wait for Firebase DB to be available
+            // Step 1: Wait for Firebase to be ready (no timeout - wait indefinitely)
             if (typeof db === 'undefined' || typeof window.getDoc === 'undefined' || typeof window.doc === 'undefined') {
                 console.log('⏳ Waiting for Firebase initialization...');
                 
                 let attempts = 0;
-                const maxAttempts = 100; // 10 seconds max
                 
-                await new Promise((resolve, reject) => {
+                await new Promise((resolve) => {
                     const checkFirebase = setInterval(() => {
                         attempts++;
                         
@@ -1550,59 +1632,132 @@ Example output 2:
                             resolve();
                         }
                         
-                        if (attempts >= maxAttempts) {
-                            clearInterval(checkFirebase);
-                            console.warn('⚠️ Firebase timeout - enabling AI Assistant by default');
-                            resolve(); // Continue anyway
+                        // Log progress every 50 attempts (5 seconds)
+                        if (attempts % 50 === 0) {
+                            console.log('⏳ Still waiting for Firebase... (' + (attempts * 100 / 1000) + 's)');
                         }
                     }, 100);
                 });
             }
 
             // Step 2: Check if Firebase methods are available
-            if (typeof window.getDoc === 'undefined' || typeof window.doc === 'undefined') {
-                console.warn('⚠️ Firestore methods not available - enabling AI Assistant by default');
-                init();
+            if (typeof window.onSnapshot === 'undefined' || typeof window.doc === 'undefined') {
+                console.error('❌ Firebase onSnapshot or doc not available');
                 return;
             }
 
-            // Step 3: Read Firestore setting
-            console.log('📖 Reading settings/checkout_config from Firestore...');
-            const { getDoc, doc } = window;
-            const configDoc = await getDoc(doc(db, 'settings', 'checkout_config'));
+            // Step 3: Setup real-time listener on settings/checkout
+            console.log('📖 Setting up real-time listener on settings/checkout...');
+            const { onSnapshot, doc } = window;
+            const checkoutSettingsRef = doc(db, 'settings', 'checkout');
             
-            if (!configDoc.exists()) {
-                console.log('⚠️ Document settings/checkout_config does not exist');
-                console.log('🪄 AI Assistant is ENABLED by default (no config found)');
-                init();
-                return;
-            }
+            // Real-time listener with flexible type handling
+            onSnapshot(checkoutSettingsRef, (snapshot) => {
+                console.log('🔄 Real-time update received from Firestore');
+                
+                if (!snapshot.exists()) {
+                    console.warn('⚠️ Document settings/checkout does not exist');
+                    console.log('❌ AI Assistant is DISABLED (no config found)');
+                    console.log('💡 Create it in Admin Panel → Settings → AI Assistant toggle');
+                    destroyWidget();
+                    return;
+                }
+                
+                const data = snapshot.data();
+                console.log('📊 Full Firestore data:', data);
+                console.log('🎯 AI Status from DB:', data.aiAssistantEnabled, '(Type:', typeof data.aiAssistantEnabled, ')');
+                
+                // Flexible type handling - handles boolean, string, number
+                const rawValue = data.aiAssistantEnabled;
+                let isEnabled = false;
+                
+                if (typeof rawValue === 'boolean') {
+                    isEnabled = rawValue;
+                    console.log('✅ Boolean type detected:', isEnabled);
+                } else if (typeof rawValue === 'string') {
+                    isEnabled = String(rawValue).toLowerCase() === 'true';
+                    console.log('✅ String type detected, converted to:', isEnabled);
+                } else if (typeof rawValue === 'number') {
+                    isEnabled = rawValue === 1;
+                    console.log('✅ Number type detected, converted to:', isEnabled);
+                } else {
+                    console.warn('⚠️ Unknown type:', typeof rawValue, ', value:', rawValue);
+                    isEnabled = false;
+                }
+                
+                console.log('🎬 Final AI Assistant state:', isEnabled ? 'ENABLED ✅' : 'DISABLED ❌');
+                
+                // Show/hide widget with direct DOM manipulation
+                if (isEnabled && !widgetInitialized) {
+                    console.log('🚀 Enabling AI Assistant widget...');
+                    initWidget();
+                    
+                    // Direct DOM control - show toggle button, but let CSS handle chat window
+                    setTimeout(() => {
+                        const toggleBtn = document.getElementById('ai-checkout-toggle');
+                        const chatWindow = document.getElementById('ai-chat-window');
+                        
+                        if (toggleBtn) {
+                            toggleBtn.style.setProperty('display', 'flex', 'important');
+                            console.log('✅ Toggle button shown with !important');
+                        }
+                        
+                        if (chatWindow) {
+                            // Remove inline styles to let CSS classes control visibility
+                            chatWindow.style.removeProperty('display');
+                            chatWindow.style.removeProperty('visibility');
+                            chatWindow.style.removeProperty('opacity');
+                            console.log('✅ Chat window inline styles removed - CSS classes now control it');
+                        }
+                    }, 100);
+                    
+                } else if (!isEnabled && widgetInitialized) {
+                    console.log('🛑 Disabling AI Assistant widget...');
+                    
+                    // Direct DOM control - hide first
+                    const toggleBtn = document.getElementById('ai-checkout-toggle');
+                    const chatWindow = document.getElementById('ai-chat-window');
+                    
+                    if (toggleBtn) {
+                        toggleBtn.style.setProperty('display', 'none', 'important');
+                        console.log('✅ Toggle button hidden with !important');
+                    }
+                    
+                    if (chatWindow) {
+                        chatWindow.style.setProperty('display', 'none', 'important');
+                        console.log('✅ Chat window hidden with !important');
+                    }
+                    
+                    // Then destroy
+                    setTimeout(() => {
+                        destroyWidget();
+                    }, 300);
+                } else if (!isEnabled && !widgetInitialized) {
+                    console.log('ℹ️ AI Assistant remains disabled');
+                } else {
+                    console.log('ℹ️ AI Assistant remains enabled');
+                }
+            }, (error) => {
+                console.error('❌ Real-time listener error:', error);
+                console.error('📍 Error details:', {
+                    name: error.name,
+                    message: error.message,
+                    code: error.code
+                });
+            });
             
-            const data = configDoc.data();
-            const aiEnabled = data.aiEnabled === true;
-            
-            console.log('📊 Firestore config loaded:', { aiEnabled, data });
-
-            if (aiEnabled) {
-                console.log('🪄 AI Assistant is ENABLED in Firebase settings');
-                console.log('🎬 Initializing widget...');
-                init();
-            } else {
-                console.log('❌ AI Assistant is DISABLED in Firebase settings');
-                console.log('💡 Enable it in Admin Panel → Settings → AI Assistant toggle');
-            }
+            console.log('✅ Real-time listener established successfully');
             
         } catch (error) {
-            console.error('❌ Error checking AI Assistant settings:', error);
-            console.error('📍 Error details:', {
+            console.error('❌ Error in initAiAssistant:', error);
+            console.error('📍 Full error:', {
                 name: error.name,
                 message: error.message,
                 stack: error.stack
             });
             
-            // Default to ENABLED on error
-            console.log('⚠️ Fallback: Enabling AI Assistant despite error');
-            init();
+            // On error, keep it disabled for security
+            console.log('⚠️ AI Assistant will remain disabled due to error');
         }
     }
     

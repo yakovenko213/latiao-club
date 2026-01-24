@@ -3124,6 +3124,161 @@
   <!-- Load Pop-up Manager -->
   <script type="module" src="./js/popup-manager.js"></script>
 
+  <!-- 🔥 NUCLEAR AI ASSISTANT TOGGLE - WITH AGGRESSIVE DEBUGGING -->
+  <script type="module">
+    console.log("🔥🔥🔥 ==========================================");
+    console.log("🔥 AI ASSISTANT INITIALIZATION STARTED");
+    console.log("🔥🔥🔥 ==========================================");
+
+    import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore, doc, onSnapshot, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    // Initialize Firebase (safe check to prevent duplicate-app error)
+    const firebaseConfig = {
+      apiKey: "AIzaSyCS3a6pn2Jok3bM9mSUMiP2DqiHeqrG2R4",
+      authDomain: "my-magazin-81c96.firebaseapp.com",
+      projectId: "my-magazin-81c96",
+      storageBucket: "my-magazin-81c96.firebasestorage.app",
+      messagingSenderId: "441200032717",
+      appId: "1:441200032717:web:a51eb14e5ebb2af7cef35f"
+    };
+
+    // Safe initialization - use existing app if already initialized
+    const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    
+    console.log("✅ Firebase app status:", getApps().length > 0 ? "Using existing app" : "New app initialized");
+
+    // ⚡ MAKE FIREBASE GLOBALLY AVAILABLE for ai-checkout-helper.js
+    window.db = db;
+    window.doc = doc;
+    window.getDoc = getDoc;
+    window.onSnapshot = onSnapshot;
+    console.log("✅ Firebase variables exposed globally for ai-checkout-helper.js");
+
+    console.log("✅ Firebase initialized for AI Assistant");
+
+    // Wait for DOM
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initAIAssistant);
+    } else {
+      initAIAssistant();
+    }
+
+    function initAIAssistant() {
+      console.log("🎬 DOM Ready - Starting AI Assistant initialization");
+
+      // Wait for AI button to be dynamically created by ai-checkout-helper.js
+      const waitForButton = () => {
+        const aiButton = document.getElementById('ai-checkout-toggle');
+        
+        if (!aiButton) {
+          console.log("⏳ Waiting for #ai-checkout-toggle button to be created...");
+          return null;
+        }
+        
+        console.log("✅ AI Assistant button found:", aiButton);
+        return aiButton;
+      };
+
+      // Use MutationObserver to detect when button is added to DOM
+      const observer = new MutationObserver((mutations, obs) => {
+        const aiButton = waitForButton();
+        if (aiButton) {
+          obs.disconnect(); // Stop observing once found
+          setupFirestoreListener(aiButton);
+        }
+      });
+
+      // Start observing body for childList changes
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+
+      // Also check immediately in case it already exists
+      const aiButton = waitForButton();
+      if (aiButton) {
+        observer.disconnect();
+        setupFirestoreListener(aiButton);
+      }
+
+      console.log("✅ MutationObserver set up to detect AI button");
+    }
+
+    function setupFirestoreListener(aiButton) {
+      console.log("📡 Setting up Firestore listener for AI toggle");
+
+      // Set up robust real-time listener for settings
+      const settingsRef = doc(db, 'settings', 'checkout');
+      console.log("📡 Setting up real-time listener on: settings/checkout");
+
+      const unsubscribe = onSnapshot(
+        settingsRef, 
+        (docSnapshot) => {
+          console.log("🔥🔥🔥 ==========================================");
+          console.log("📡 FIRESTORE UPDATE RECEIVED");
+          console.log("🔥🔥🔥 ==========================================");
+          
+          // Get button reference (in case it was recreated)
+          const btn = document.getElementById('ai-checkout-toggle');
+          if (!btn) {
+            console.warn("⚠️ Button #ai-checkout-toggle disappeared from DOM");
+            return;
+          }
+          
+          if (docSnapshot.exists()) {
+            const data = docSnapshot.data();
+            console.log("📦 Full settings document:", JSON.stringify(data, null, 2));
+            
+            const aiEnabledRaw = data.aiAssistantEnabled;
+            console.log("🎯 Raw aiAssistantEnabled value:", aiEnabledRaw);
+            console.log("🎯 Type:", typeof aiEnabledRaw);
+            
+            // Robust type conversion
+            const isEnabled = data && data.aiAssistantEnabled === true;
+            
+            console.log("🎬 Final computed state:", isEnabled);
+            console.log("🛠 AI Toggle changed to:", isEnabled);
+            
+            // NUCLEAR CSS INJECTION
+            if (isEnabled) {
+              console.log("✅✅✅ AI ASSISTANT ENABLED - SHOWING BUTTON");
+              btn.style.setProperty('display', 'flex', 'important');
+              btn.style.setProperty('visibility', 'visible', 'important');
+              btn.style.setProperty('opacity', '1', 'important');
+            } else {
+              console.log("🚫🚫🚫 AI ASSISTANT DISABLED - HIDING BUTTON");
+              btn.style.setProperty('display', 'none', 'important');
+              btn.style.setProperty('visibility', 'hidden', 'important');
+              btn.style.setProperty('opacity', '0', 'important');
+            }
+            
+            console.log("🔥 Current button styles:", {
+              display: btn.style.display,
+              visibility: btn.style.visibility,
+              opacity: btn.style.opacity
+            });
+            
+          } else {
+            console.warn("⚠️ settings/checkout document DOES NOT EXIST");
+            console.log("🚫 Hiding AI button by default");
+            btn.style.setProperty('display', 'none', 'important');
+          }
+          
+          console.log("🔥🔥🔥 ==========================================");
+        }, 
+        (error) => {
+          console.error("❌❌❌ FIRESTORE LISTENER ERROR:", error);
+          console.error("Error code:", error.code);
+          console.error("Error message:", error.message);
+        }
+      );
+      
+      console.log("✅ Real-time listener attached successfully");
+    }
+  </script>
+
   <!-- 🪄 AI Checkout Smart Filler v3.0 -->
   <script src="js/ai-checkout-helper.js"></script>
 

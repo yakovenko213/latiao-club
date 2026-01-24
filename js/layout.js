@@ -75,11 +75,8 @@ const footerTemplate = `
         
       </div>
       <div class="border-t border-gray-800 pt-8 text-center text-gray-500">
-        <p class="inline-flex items-center gap-2">
+        <p>
           © 2026 Latiao Snack. Всі права захищені.
-          <a href="/admin.html" title="Вхід для персоналу" class="text-gray-700 hover:text-spicy transition-colors">
-            <i data-lucide="lock" class="w-4 h-4"></i>
-          </a>
         </p>
       </div>
     </div>
