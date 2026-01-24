@@ -12,6 +12,48 @@ import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-
 const ADMIN_EMAIL = 'yakovenko7002@gmail.com';
 
 /**
+ * Check if user is admin through multiple methods:
+ * 1. Firestore document check (isAdmin field)
+ * 2. Email check against ADMIN_EMAIL
+ * 3. localStorage fallback
+ */
+async function isUserAdmin(user) {
+    if (!user) return false;
+    
+    try {
+        // Check 1: Email match (fastest)
+        if (user.email === ADMIN_EMAIL) {
+            console.log('✅ Admin detected by email:', user.email);
+            return true;
+        }
+        
+        // Check 2: localStorage fallback (for offline/quick access)
+        const localAdminFlag = localStorage.getItem('isAdmin');
+        if (localAdminFlag === 'true') {
+            console.log('✅ Admin detected from localStorage');
+            return true;
+        }
+        
+        // Check 3: Firestore check (most reliable for role-based access)
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        
+        if (userDocSnap.exists() && userDocSnap.data().isAdmin === true) {
+            console.log('✅ Admin detected from Firestore');
+            localStorage.setItem('isAdmin', 'true'); // Cache for next time
+            return true;
+        }
+        
+        return false;
+        
+    } catch (error) {
+        console.warn('⚠️ Error checking admin status:', error);
+        // Fallback: if Firestore fails, trust localStorage
+        return localStorage.getItem('isAdmin') === 'true';
+    }
+}
+
+/**
  * Check if maintenance mode is active.
  * ADMIN BYPASS: Waits for Firebase Auth to confirm if user is admin.
  * Regular users see the maintenance screen, admins get access with a badge.
@@ -36,10 +78,10 @@ export async function checkMaintenanceMode() {
         
         const currentUser = await waitForAuthState();
         
-        // Step 3: Determine access based on user
-        const isAdmin = currentUser && currentUser.email === ADMIN_EMAIL;
+        // Step 3: Check if user is admin (multiple methods)
+        const adminAccess = await isUserAdmin(currentUser);
         
-        if (isAdmin) {
+        if (adminAccess) {
             // ALLOW ACCESS FOR ADMIN WITH WARNING BADGE
             console.warn('⚠️ Maintenance Mode is ON, but you have Admin access.');
             showAdminMaintenanceBadge();
@@ -270,12 +312,15 @@ function showAdminMaintenanceBadge() {
     
     const badge = document.createElement('div');
     badge.id = 'admin-maintenance-badge';
-    badge.className = 'fixed bottom-4 right-4 z-50 bg-red-600 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 animate-pulse';
+    badge.className = 'fixed bottom-4 right-4 z-50 bg-red-600 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-3 animate-pulse';
     badge.innerHTML = `
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
         </svg>
-        <span class="text-sm font-semibold">🔧 Режим: Технічні роботи (Ви бачите сайт як Адмін)</span>
+        <div class="flex flex-col gap-1">
+            <span class="text-sm font-bold">🔧 Режим: Технічні роботи</span>
+            <span class="text-xs opacity-90">Ви маєте права адміністратора</span>
+        </div>
     `;
     
     // Insert badge into body (after it's loaded)

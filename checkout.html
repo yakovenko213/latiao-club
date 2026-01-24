@@ -377,33 +377,36 @@
               </p>
             </div>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1.5 lg:mb-2">Область <span
-                  class="text-red-500">*</span></label>
-              <input type="text" id="up-region-input" placeholder="Наприклад: Київська"
-                class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300">
-            </div>
+            <!-- Two-column grid for Oblast/Raion and City/Postcode -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
+              <div>
+                <label class="block text-xs lg:text-sm font-medium text-gray-700 mb-1.5">Область <span
+                    class="text-red-500">*</span></label>
+                <input type="text" id="up-region-input" placeholder="Київська"
+                  class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-sm lg:text-base text-gray-900 placeholder-gray-400 transition-all duration-300 focus:border-orange-400 focus:ring-2 focus:ring-orange-200">
+              </div>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1.5 lg:mb-2">Район <span
-                  class="text-red-500">*</span></label>
-              <input type="text" id="up-district-input" placeholder="Наприклад: Броварський"
-                class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300">
-            </div>
+              <div>
+                <label class="block text-xs lg:text-sm font-medium text-gray-700 mb-1.5">Район <span
+                    class="text-red-500">*</span></label>
+                <input type="text" id="up-district-input" placeholder="Броварський"
+                  class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-sm lg:text-base text-gray-900 placeholder-gray-400 transition-all duration-300 focus:border-orange-400 focus:ring-2 focus:ring-orange-200">
+              </div>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1.5 lg:mb-2">Місто / Населений пункт <span
-                  class="text-red-500">*</span></label>
-              <input type="text" id="up-city-input" placeholder="Наприклад: Бровари"
-                class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300">
-            </div>
+              <div>
+                <label class="block text-xs lg:text-sm font-medium text-gray-700 mb-1.5">Місто / Населений пункт <span
+                    class="text-red-500">*</span></label>
+                <input type="text" id="up-city-input" placeholder="Бровари"
+                  class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-sm lg:text-base text-gray-900 placeholder-gray-400 transition-all duration-300 focus:border-orange-400 focus:ring-2 focus:ring-orange-200">
+              </div>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1.5 lg:mb-2">Поштовий індекс <span
-                  class="text-red-500">*</span></label>
-              <input type="text" id="up-postcode-input" placeholder="Наприклад: 07400" maxlength="5"
-                class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300">
-              <p class="mt-1.5 text-xs text-gray-500">5-значний індекс відділення Укрпошти</p>
+              <div>
+                <label class="block text-xs lg:text-sm font-medium text-gray-700 mb-1.5">Поштовий індекс <span
+                    class="text-red-500">*</span></label>
+                <input type="text" id="up-postcode-input" placeholder="07400" maxlength="5" inputmode="numeric"
+                  class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-sm lg:text-base text-gray-900 placeholder-gray-400 transition-all duration-300 focus:border-orange-400 focus:ring-2 focus:ring-orange-200">
+                <p class="mt-1 text-xs text-gray-500">5 цифр</p>
+              </div>
             </div>
           </div>
         </div>
@@ -1114,6 +1117,19 @@
       }
       if (submitBtnMobile) {
         submitBtnMobile.addEventListener('click', submitOrder)
+      }
+
+      // 6. UKRPOSHTA POSTCODE - Allow only numeric input (5 digits)
+      const postcodeInput = document.getElementById('up-postcode-input')
+      if (postcodeInput) {
+        postcodeInput.addEventListener('input', function(e) {
+          // Remove non-numeric characters
+          this.value = this.value.replace(/\D/g, '')
+          // Limit to 5 digits
+          if (this.value.length > 5) {
+            this.value = this.value.slice(0, 5)
+          }
+        })
       }
 
       // 6. ALL FORM INPUTS - Auto-save abandoned cart when any field changes
@@ -2543,46 +2559,17 @@
     }
 
     // ============================================
-    // HELPER: Show Success Message
+    // HELPER: Redirect to Thank You Page (NEW V2.0)
     // ============================================
     function showSuccessMessage(orderId) {
-      console.log('🎉 Displaying success message for order:', orderId)
+      console.log('🎉 Order successful! Redirecting to thank-you page:', orderId)
       
-      // Hide checkout form and order summary
-      const checkoutFormColumn = document.getElementById('checkout-form-column')
-      if (checkoutFormColumn) {
-        checkoutFormColumn.style.display = 'none'
-      }
+      // Clear cart before redirect
+      localStorage.removeItem('latiao_cart')
       
-      const orderSummaryColumn = document.getElementById('order-summary-column')
-      if (orderSummaryColumn) {
-        orderSummaryColumn.style.display = 'none'
-      }
-      
-      // Hide mobile sticky bar
-      const mobileBar = document.querySelector('.fixed.bottom-0')
-      if (mobileBar) {
-        mobileBar.style.display = 'none'
-      }
-      
-      // Show success message
-      const successMessage = document.getElementById('order-success-message')
-      if (successMessage) {
-        successMessage.classList.remove('hidden')
-        document.getElementById('success-order-id').textContent = '#' + orderId
-        
-        // Scroll to success message
-        setTimeout(() => {
-          successMessage.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        }, 100)
-        
-        // Reinitialize Lucide icons
-        if (typeof lucide !== 'undefined') {
-          lucide.createIcons()
-        }
-      }
-      
-      console.log('✅ Success message displayed')
+      // Redirect to thank-you.html with orderId parameter
+      console.log('🔄 Redirecting to thank-you.html?orderId=' + orderId)
+      window.location.href = 'thank-you.html?orderId=' + orderId
     }
 
     // ============================================
@@ -3028,17 +3015,17 @@
             // CONDITIONAL: PREPAYMENT DISABLED - SKIP PAYMENT
             // ============================================
             if (!isPrepaymentEnabled) {
-              console.log('✅ Prepayment DISABLED - skipping payment, showing success message...')
+              console.log('✅ Prepayment DISABLED - skipping payment, redirecting to thank-you page...')
               
               // Clear cart
               localStorage.removeItem('latiao_cart')
               
-              // Show success message
-              showSuccessMessage(orderId)
+              // Wait for cleanup to complete (non-blocking background task)
+              console.log('🧹 Smart cleanup completed')
               
-              // Reset button state
-              btn.textContent = originalText
-              btn.disabled = false
+              // Redirect to thank-you page with orderId
+              console.log('🔄 Redirecting to thank-you.html?orderId=' + orderId)
+              window.location.href = 'thank-you.html?orderId=' + orderId
               
               return
             }
