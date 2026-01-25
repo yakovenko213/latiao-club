@@ -19,7 +19,8 @@ import {
     where, 
     orderBy, 
     limit,
-    serverTimestamp
+    serverTimestamp,
+    Timestamp
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
@@ -67,8 +68,24 @@ window.firebaseInit = {
     where,
     orderBy,
     limit,
-    serverTimestamp
+    serverTimestamp,
+    Timestamp
 };
+
+// Export to global scope for admin-chat.js and others
+window.db = db;
+window.collection = collection;
+window.doc = doc;
+window.addDoc = addDoc;
+window.setDoc = setDoc;
+window.getDoc = getDoc;
+window.getDocs = getDocs;
+window.updateDoc = updateDoc;
+window.onSnapshot = onSnapshot;
+window.query = query;
+window.orderBy = orderBy;
+window.Timestamp = Timestamp;
+window.serverTimestamp = serverTimestamp;
 
 // ============================================
 // MODULE EXPORTS FOR ES6 IMPORTS
@@ -78,22 +95,45 @@ export {
     auth, 
     functions, 
     storage,
-    collection,
-    addDoc,
-    serverTimestamp,
-    getDocs,
-    getDoc,
-    doc,
-    updateDoc,
-    deleteDoc,
-    query,
-    where,
-    orderBy,
-    limit,
-    setDoc,
-    onSnapshot,
+    Timestamp,
     httpsCallable
 };
 
-console.log("🔥 Firebase initialized successfully (Clean Mode)");
+// ============================================
+// CREATE DEFAULT CHAT CONFIG IF NOT EXISTS
+// ============================================
+async function initializeChatConfig() {
+    try {
+        const chatConfigRef = doc(db, 'settings', 'chat_config');
+        const chatConfigDoc = await getDoc(chatConfigRef);
+        
+        if (!chatConfigDoc.exists()) {
+            console.log('💬 Creating default chat config...');
+            await setDoc(chatConfigRef, {
+                enabled: true,
+                aiEnabled: true,
+                enabledPages: [
+                    '/',
+                    '/index.html',
+                    '/category.html',
+                    '/product.html',
+                    '/checkout.html',
+                    '/cart.html'
+                ],
+                welcomeMessage: 'Привіт! 👋 Чим можу допомогти?',
+                offlineMessage: 'Зараз всі адміністратори офлайн. Залиште повідомлення!',
+                createdAt: serverTimestamp()
+            });
+            console.log('✅ Chat config created successfully');
+        } else {
+            console.log('💬 Chat config already exists');
+        }
+    } catch (error) {
+        console.error('❌ Error initializing chat config:', error);
+    }
+}
 
+// Initialize chat config on load
+initializeChatConfig();
+
+console.log("🔥 Firebase initialized successfully (Clean Mode)");

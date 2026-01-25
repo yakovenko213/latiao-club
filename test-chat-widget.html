@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест віджета чату</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #1f2937;
+            margin-top: 0;
+        }
+        .info-box {
+            background: #f3f4f6;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border-left: 4px solid #ff6b00;
+        }
+        .info-box h3 {
+            margin-top: 0;
+            color: #ff6b00;
+        }
+        .feature {
+            padding: 15px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .feature:last-child {
+            border-bottom: none;
+        }
+        .feature strong {
+            color: #374151;
+        }
+        code {
+            background: #e5e7eb;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Тестова сторінка Live Chat Widget</h1>
+        
+        <div class="info-box">
+            <h3>✨ Функціонал віджета:</h3>
+            <div class="feature">
+                <strong>📍 Умовне завантаження:</strong> Віджет з'являється тільки на сторінках, включених в <code>settings/chat_config.enabledPages</code>
+            </div>
+            <div class="feature">
+                <strong>🎨 Іконка:</strong> Використовує <code>images/chat-icon.png</code> з анімацією bounce
+            </div>
+            <div class="feature">
+                <strong>💬 Реальний час:</strong> Повідомлення синхронізуються миттєво через Firestore <code>onSnapshot</code>
+            </div>
+            <div class="feature">
+                <strong>📱 Адаптивність:</strong> Повноекранний режим на мобільних пристроях
+            </div>
+            <div class="feature">
+                <strong>🔔 Сповіщення:</strong> Червоний значок при непрочитаних повідомленнях від адміна
+            </div>
+            <div class="feature">
+                <strong>🆔 Device ID:</strong> Унікальний ідентифікатор користувача зберігається в localStorage
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>🎯 Як працює:</h3>
+            <ol style="margin: 10px 0; padding-left: 20px;">
+                <li>Віджет перевіряє <code>settings/chat_config</code> в Firestore</li>
+                <li>Порівнює <code>window.location.pathname</code> з масивом <code>enabledPages</code></li>
+                <li>Якщо збігається І <code>enabled: true</code> - показує іконку чату</li>
+                <li>При кліку створює сесію в колекції <code>chats</code></li>
+                <li>Повідомлення зберігаються в підколекції <code>messages</code></li>
+            </ol>
+        </div>
+
+        <div class="info-box">
+            <h3>👀 Очікувані дії:</h3>
+            <p style="margin: 10px 0;">
+                Подивіться в правий нижній кут екрану 👉<br>
+                Ви повинні побачити помаранчеву кнопку чату з легкою анімацією bounce!
+            </p>
+        </div>
+
+        <div class="info-box">
+            <h3>🔧 Налаштування в адмін-панелі:</h3>
+            <p style="margin: 10px 0;">
+                Відкрийте <strong>admin.html → 💬 Онлайн чат | ШІ → ⚙️ Налаштування</strong><br>
+                Там ви можете вибрати на яких сторінках показувати віджет.
+            </p>
+        </div>
+    </div>
+
+    <!-- Live Chat Widget -->
+    <script type="module" src="./js/chat-widget.js"></script>
+</body>
+</html>

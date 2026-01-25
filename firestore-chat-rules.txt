@@ -1,0 +1,127 @@
+// ═══════════════════════════════════════════════════════════════════
+// 🔥 FIRESTORE SECURITY RULES - LIVE CHAT SYSTEM
+// ═══════════════════════════════════════════════════════════════════
+// Copy this entire content and paste into Firebase Console:
+// https://console.firebase.google.com/project/my-magazin-81c96/firestore/rules
+//
+// Then deploy with: firebase deploy --only firestore:rules
+// ═══════════════════════════════════════════════════════════════════
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ═══════════════════════════════════════════════════════════════
+    // 🛡️ ADMIN AUTHENTICATION
+    // ═══════════════════════════════════════════════════════════════
+    // Replace with your actual admin UID from get-my-uid.html
+    function isAdmin() {
+      return request.auth != null && request.auth.uid == 'YOUR_ADMIN_UID_HERE';
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // 💬 CHAT SESSIONS
+    // ═══════════════════════════════════════════════════════════════
+    match /chats/{chatId} {
+      // Clients can create their own chat session and read it
+      allow create: if request.auth == null || 
+                       request.resource.data.userId == request.auth.uid;
+      
+      // Clients can read their own chat
+      allow read: if resource.data.userId == request.auth.uid ||
+                     isAdmin();
+      
+      // Clients can update their own chat (status, lastMessage, etc.)
+      allow update: if resource.data.userId == request.auth.uid ||
+                       isAdmin();
+      
+      // Only admin can delete chats
+      allow delete: if isAdmin();
+      
+      // Admin can list all chats
+      allow list: if isAdmin();
+      
+      // ═══════════════════════════════════════════════════════════
+      // 📨 MESSAGES SUB-COLLECTION
+      // ═══════════════════════════════════════════════════════════
+      match /messages/{messageId} {
+        // Anyone can create a message in their chat
+        allow create: if true;
+        
+        // Can read messages if you're the chat owner or admin
+        allow read: if get(/databases/$(database)/documents/chats/$(chatId)).data.userId == request.auth.uid ||
+                       isAdmin();
+        
+        // Only admin can update messages (mark as read, etc.)
+        allow update: if isAdmin();
+        
+        // Only admin can delete messages
+        allow delete: if isAdmin();
+      }
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // ⚙️ CHAT SETTINGS
+    // ═══════════════════════════════════════════════════════════════
+    match /settings/chat_config {
+      // Everyone can read chat config (to know if widget is enabled)
+      allow read: if true;
+      
+      // Only admin can write
+      allow write: if isAdmin();
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // 🛍️ EXISTING COLLECTIONS (KEEP YOUR CURRENT RULES)
+    // ═══════════════════════════════════════════════════════════════
+    
+    // Products - Read-only for everyone, write for admin
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Orders - Users can create, admin can read all
+    match /orders/{orderId} {
+      allow create: if true;
+      allow read: if isAdmin();
+      allow update: if isAdmin();
+    }
+    
+    // Promo codes - Read for all, write for admin
+    match /promo_codes/{promoId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Analytics - Admin only
+    match /analytics/{document=**} {
+      allow read, write: if isAdmin();
+    }
+    
+    // Settings - Read for all (for checkout, etc.), write for admin
+    match /settings/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Abandoned carts - Create for anyone, read/write for admin
+    match /abandoned_carts/{cartId} {
+      allow create: if true;
+      allow read, write: if isAdmin();
+    }
+    
+    // User sessions - Read/write for authenticated users and admin
+    match /user_sessions/{sessionId} {
+      allow create: if true;
+      allow read: if request.auth != null && 
+                     (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if isAdmin();
+    }
+    
+    // Default deny all other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
