@@ -20,7 +20,7 @@ const CONFIG = {
     DEBUG: true,
     STORAGE_KEY: 'latiao_chat_session',
     USER_ID_KEY: 'latiao_user_id',
-    CHAT_ICON: './images/chat-icon.png',
+    CHAT_ICON: 'images/chat-icon.png',
     MAX_WAIT_TIME: 10000, // 10 seconds max wait for Firebase
     CHECK_INTERVAL: 100    // Check every 100ms
 };
@@ -108,94 +108,129 @@ function injectStyles() {
     
     const styles = `
         /* ═══════════════════════════════════════════════════════════════
-           CHAT WIDGET - PREMIUM DESIGN v4.0
+           CHAT WIDGET - PREMIUM DESIGN v4.0 - MOBILE OPTIMIZED
            ═══════════════════════════════════════════════════════════════ */
 
         #chat-widget-container {
             position: fixed !important;
-            bottom: 24px !important;
-            right: 24px !important;
+            bottom: 20px !important;
+            right: 20px !important;
             z-index: 9999 !important;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
         }
 
-        @media (max-width: 640px) {
-            #chat-widget-container {
-                bottom: 16px !important;
-                right: 16px !important;
-            }
-        }
-
         /* ═══════════════════════════════════════════════════════════════
-           FLOATING ACTION BUTTON (FAB) - CHAT ICON
+           FLOATING ACTION BUTTON (FAB) - HIGH VISIBILITY
            ═══════════════════════════════════════════════════════════════ */
 
         #chat-toggle-btn {
-            width: 60px;
-            height: 60px;
+            width: 64px;
+            height: 64px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 50%, #FFA55C 100%);
-            border: none;
-            box-shadow: 0 8px 24px rgba(255, 107, 53, 0.35),
-                        0 2px 8px rgba(255, 107, 53, 0.25);
+            /* High contrast white background */
+            background: #FFFFFF !important;
+            /* Vibrant orange border for brand identity */
+            border: 3px solid #FF6B35 !important;
+            /* Strong floating shadow for depth */
+            box-shadow: 
+                0 8px 24px rgba(0, 0, 0, 0.25),
+                0 4px 8px rgba(255, 107, 53, 0.3),
+                0 0 0 4px rgba(255, 255, 255, 0.9) !important;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            overflow: hidden;
+            /* Padding so image doesn't touch borders */
+            padding: 4px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
             position: relative;
-            animation: fabEnter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
-                       subtlePulse 3s ease-in-out 1s infinite;
+            /* Ensure always visible */
+            opacity: 1 !important;
+            visibility: visible !important;
+            /* Entry + attention pulse animation */
+            animation: 
+                fabEnter 0.5s ease-out,
+                fabAttentionPulse 8s ease-in-out 3s infinite;
+            /* Touch-friendly */
+            min-width: 44px;
+            min-height: 44px;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        /* Subtle attention-grabbing pulse every 8 seconds */
+        @keyframes fabAttentionPulse {
+            0%, 90%, 100% {
+                transform: scale(1);
+                box-shadow: 
+                    0 8px 24px rgba(0, 0, 0, 0.25),
+                    0 4px 8px rgba(255, 107, 53, 0.3),
+                    0 0 0 4px rgba(255, 255, 255, 0.9);
+            }
+            93% {
+                transform: scale(1.08);
+                box-shadow: 
+                    0 12px 32px rgba(0, 0, 0, 0.3),
+                    0 6px 16px rgba(255, 107, 53, 0.5),
+                    0 0 0 6px rgba(255, 107, 53, 0.3);
+            }
+            96% {
+                transform: scale(1.05);
+                box-shadow: 
+                    0 10px 28px rgba(0, 0, 0, 0.28),
+                    0 5px 12px rgba(255, 107, 53, 0.4),
+                    0 0 0 5px rgba(255, 107, 53, 0.2);
+            }
+        }
+
+        /* Touch/Active state for mobile */
+        #chat-toggle-btn:active {
+            transform: scale(0.92);
+            box-shadow: 
+                0 4px 12px rgba(0, 0, 0, 0.2),
+                0 2px 4px rgba(255, 107, 53, 0.3),
+                0 0 0 3px rgba(255, 255, 255, 0.9) !important;
+            animation: none; /* Stop pulse on interaction */
         }
 
         @keyframes fabEnter {
             0% { 
-                transform: scale(0) rotate(-180deg); 
+                transform: scale(0); 
                 opacity: 0; 
             }
-            60% { 
-                transform: scale(1.15) rotate(20deg); 
-            }
             100% { 
-                transform: scale(1) rotate(0); 
+                transform: scale(1); 
                 opacity: 1; 
             }
         }
 
-        @keyframes subtlePulse {
-            0%, 100% { 
-                transform: scale(1); 
-                box-shadow: 0 8px 24px rgba(255, 107, 53, 0.35),
-                            0 2px 8px rgba(255, 107, 53, 0.25);
+        /* Desktop hover - only on non-touch devices */
+        @media (hover: hover) and (pointer: fine) {
+            #chat-toggle-btn:hover {
+                transform: scale(1.08);
+                box-shadow: 
+                    0 12px 32px rgba(0, 0, 0, 0.3),
+                    0 6px 16px rgba(255, 107, 53, 0.4),
+                    0 0 0 5px rgba(255, 107, 53, 0.2) !important;
+                animation: none; /* Stop pulse on hover */
             }
-            50% { 
-                transform: scale(1.08); 
-                box-shadow: 0 12px 32px rgba(255, 107, 53, 0.45),
-                            0 4px 12px rgba(255, 107, 53, 0.35);
+            
+            #chat-toggle-btn:hover img {
+                transform: scale(1.05);
             }
-        }
-
-        #chat-toggle-btn:hover {
-            transform: scale(1.1) rotate(10deg);
-            box-shadow: 0 12px 36px rgba(255, 107, 53, 0.5),
-                        0 4px 16px rgba(255, 107, 53, 0.4);
-        }
-
-        #chat-toggle-btn:active {
-            transform: scale(0.95) rotate(-5deg);
-            box-shadow: 0 4px 16px rgba(255, 107, 53, 0.3);
         }
 
         #chat-toggle-btn img {
-            width: 32px;
-            height: 32px;
+            width: 100%;
+            height: 100%;
             object-fit: contain;
-            filter: brightness(0) invert(1) drop-shadow(0 2px 4px rgba(0,0,0,0.2));
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        #chat-toggle-btn:hover img {
-            transform: scale(1.15) rotate(-10deg);
+            border-radius: 50%;
+            transition: transform 0.2s ease;
+            /* High quality rendering */
+            image-rendering: auto;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
         }
 
         /* ═══ NOTIFICATION BADGE ═══ */
@@ -244,7 +279,7 @@ function injectStyles() {
         }
 
         /* ═══════════════════════════════════════════════════════════════
-           CHAT WINDOW - PREMIUM CARD
+           CHAT WINDOW - RESPONSIVE DESIGN
            ═══════════════════════════════════════════════════════════════ */
 
         #chat-window {
@@ -262,13 +297,28 @@ function injectStyles() {
             display: none;
             flex-direction: column;
             overflow: hidden;
-            transform: translateY(30px) scale(0.9);
+            transform: translateY(20px);
             opacity: 0;
-            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: transform 0.25s ease-out, opacity 0.25s ease-out;
             z-index: 9998 !important;
         }
 
-        @media (max-width: 640px) {
+        /* Mobile: Near full-screen centered */
+        @media (max-width: 768px) {
+            #chat-window {
+                bottom: 5% !important;
+                right: 2.5% !important;
+                left: 2.5% !important;
+                top: auto !important;
+                width: 95% !important;
+                height: 85vh !important;
+                max-height: 85vh !important;
+                border-radius: 16px !important;
+            }
+        }
+
+        /* Very small screens: Full screen */
+        @media (max-width: 480px) {
             #chat-window {
                 bottom: 0 !important;
                 right: 0 !important;
@@ -283,8 +333,16 @@ function injectStyles() {
 
         #chat-window.show {
             display: flex !important;
-            transform: translateY(0) scale(1);
+            transform: translateY(0);
             opacity: 1;
+        }
+
+        /* Body scroll lock when chat is open on mobile */
+        body.chat-open {
+            overflow: hidden !important;
+            position: fixed !important;
+            width: 100% !important;
+            height: 100% !important;
         }
 
         /* ═══════════════════════════════════════════════════════════════
@@ -381,28 +439,37 @@ function injectStyles() {
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.3);
             color: white;
-            width: 36px;
-            height: 36px;
+            /* Touch-friendly: 44x44px minimum hit area */
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            min-height: 44px;
             border-radius: 50%;
             cursor: pointer;
-            font-size: 20px;
-            font-weight: 300;
+            font-size: 22px;
+            font-weight: 400;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: transform 0.2s ease, background 0.2s ease;
             position: relative;
             z-index: 1;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
-        .chat-close:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: rotate(90deg) scale(1.1);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        /* Desktop hover */
+        @media (hover: hover) and (pointer: fine) {
+            .chat-close:hover {
+                background: rgba(255, 255, 255, 0.35);
+                transform: scale(1.1);
+            }
         }
 
+        /* Touch/Active state */
         .chat-close:active {
-            transform: rotate(90deg) scale(0.95);
+            transform: scale(0.9);
+            background: rgba(255, 255, 255, 0.4);
         }
 
         /* ═══════════════════════════════════════════════════════════════
@@ -435,14 +502,14 @@ function injectStyles() {
             background: rgba(0, 0, 0, 0.2);
         }
 
-        /* ═══ WELCOME MESSAGE ═══ */
+        /* ═══ WELCOME MESSAGE - MINIMAL ═══ */
         .chat-welcome {
-            background: white;
+            background: #FFFFFF;
             padding: 24px;
             border-radius: 16px;
             text-align: center;
-            border: 2px dashed #E5E7EB;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            border: 1px solid #F3F4F6;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
             animation: welcomeEnter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
@@ -458,17 +525,41 @@ function injectStyles() {
         }
 
         .chat-welcome h4 {
-            margin: 0 0 12px 0;
+            margin: 0 0 16px 0;
             color: #1F2937;
             font-size: 20px;
             font-weight: 700;
         }
 
+        .chat-welcome h4 strong {
+            color: #EA580C;
+        }
+
         .chat-welcome p {
-            margin: 0;
-            color: #6B7280;
+            margin: 0 0 16px 0;
+            color: #4B5563;
             font-size: 14px;
-            line-height: 1.6;
+            line-height: 1.7;
+            text-align: left;
+        }
+
+        .chat-welcome p:last-child {
+            margin-bottom: 0;
+        }
+
+        .chat-welcome strong {
+            color: #EA580C;
+            font-weight: 600;
+        }
+
+        .chat-welcome .cta {
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
+            border-radius: 10px;
+            font-size: 13px;
+            color: #9A3412;
+            font-weight: 500;
         }
 
         /* ═══════════════════════════════════════════════════════════════
@@ -643,46 +734,102 @@ function injectStyles() {
         }
 
         /* ═══════════════════════════════════════════════════════════════
-           TYPING INDICATOR - ENHANCED
+           TYPING INDICATOR - SPICY LATIAO THEME 🌶️
            ═══════════════════════════════════════════════════════════════ */
 
         .typing-indicator {
             display: flex;
             gap: 12px;
+            align-items: flex-start;
             margin-bottom: 20px;
-            animation: messageSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            animation: typingSlideIn 0.3s ease-out;
+        }
+
+        @keyframes typingSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .typing-indicator .message-avatar {
+            background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+            border-color: #FED7AA;
+        }
+
+        .typing-indicator .typing-content {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
 
         .typing-indicator .message-bubble {
-            background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
-            border: 1px solid #D1D5DB;
-            padding: 16px 20px;
+            background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
+            border: 1px solid #FB923C;
+            border-radius: 16px;
+            border-bottom-left-radius: 4px;
+            padding: 14px 18px;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(251, 146, 60, 0.15);
+        }
+
+        .typing-dots {
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
         .typing-dot {
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
-            animation: typingBounce 1.4s infinite ease-in-out;
+            background: linear-gradient(135deg, #FF6B35 0%, #EA580C 100%);
+            animation: spicyBounce 1.2s infinite ease-in-out;
+            box-shadow: 0 2px 4px rgba(234, 88, 12, 0.3);
         }
 
         .typing-dot:nth-child(1) { animation-delay: 0s; }
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.3s; }
 
-        @keyframes typingBounce {
+        @keyframes spicyBounce {
             0%, 60%, 100% {
                 transform: translateY(0) scale(1);
-                opacity: 0.7;
+                opacity: 0.5;
             }
             30% {
-                transform: translateY(-12px) scale(1.2);
+                transform: translateY(-8px) scale(1.15);
                 opacity: 1;
+                background: linear-gradient(135deg, #FF8C42 0%, #FF6B35 100%);
             }
+        }
+
+        .typing-label {
+            font-size: 12px;
+            color: #9A3412;
+            font-weight: 500;
+            margin-left: 4px;
+            opacity: 0.9;
+        }
+
+        .typing-indicator .typing-status {
+            font-size: 11px;
+            color: #C2410C;
+            padding-left: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .typing-indicator .typing-status::before {
+            content: '🌶️';
+            font-size: 10px;
         }
 
         /* ═══════════════════════════════════════════════════════════════
@@ -820,39 +967,90 @@ function injectStyles() {
         }
 
         /* ═══════════════════════════════════════════════════════════════
-           RESPONSIVE ADJUSTMENTS
+           RESPONSIVE & MOBILE OPTIMIZATIONS
            ═══════════════════════════════════════════════════════════════ */
 
-        @media (max-width: 640px) {
+        /* Container safe area padding */
+        #chat-widget-container {
+            position: fixed !important;
+            bottom: 20px !important;
+            right: 20px !important;
+            z-index: 9999 !important;
+        }
+
+        @media (max-width: 768px) {
+            #chat-widget-container {
+                bottom: 20px !important;
+                right: 20px !important;
+            }
+
+            /* Larger FAB on mobile for maximum visibility */
             #chat-toggle-btn {
-                width: 56px;
-                height: 56px;
+                width: 65px;
+                height: 65px;
+                padding: 5px;
+                border-width: 3px;
+                /* Even stronger shadow on mobile */
+                box-shadow: 
+                    0 10px 28px rgba(0, 0, 0, 0.3),
+                    0 5px 10px rgba(255, 107, 53, 0.35),
+                    0 0 0 4px rgba(255, 255, 255, 1) !important;
             }
 
             .chat-header {
-                padding: 16px 20px;
+                padding: 16px 16px;
+            }
+
+            .chat-header h3 {
+                font-size: 18px;
+                gap: 8px;
             }
 
             .chat-messages {
-                padding: 20px 16px;
+                padding: 16px 12px;
             }
 
             .message-content {
-                max-width: 80%;
+                max-width: 85%;
             }
 
             .chat-input-area {
-                padding: 16px;
-                gap: 10px;
+                padding: 12px;
+                gap: 8px;
+            }
+
+            .chat-input {
+                padding: 12px 14px;
+                font-size: 16px; /* Prevents iOS zoom on focus */
             }
 
             .chat-send-btn {
                 padding: 12px 16px;
-                font-size: 0; /* Hide text on mobile */
+                min-width: 44px;
+                min-height: 44px;
+            }
+
+            .chat-send-btn span {
+                display: none; /* Hide text on mobile */
             }
 
             .chat-send-btn::before {
-                font-size: 20px;
+                content: '➔';
+                font-size: 18px;
+            }
+        }
+
+        /* Safe area for devices with notch/home indicator */
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            @media (max-width: 768px) {
+                .chat-input-area {
+                    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+                }
+
+                #chat-widget-container {
+                    bottom: calc(20px + env(safe-area-inset-bottom)) !important;
+                    right: calc(20px + env(safe-area-inset-right)) !important;
+                }
             }
         }
     `;
@@ -1068,8 +1266,9 @@ function createChatUI() {
             
             <div class="chat-messages" id="chat-messages">
                 <div class="chat-welcome">
-                    <h4>👋 Вітаємо в чаті!</h4>
-                    <p>Є питання? Напишіть нам і ми вам допоможемо!</p>
+                    <h4><strong>Latiao Snack</strong> 🌶️</h4>
+                    <p>Вітаємо! Я ваш <strong>ШІ-помічник</strong>. Допоможу зорієнтуватися по сайту, розповім про умови доставки або відповім на ваші запитання щодо замовлень.</p>
+                    <div class="cta">⚡ Напишіть ваше запитання нижче, і я миттєво вам допоможу!</div>
                 </div>
             </div>
             
@@ -1112,6 +1311,26 @@ function setupEventListeners() {
         return;
     }
 
+    // Helper: Check if mobile device
+    const isMobile = () => window.innerWidth <= 768;
+
+    // Helper: Lock body scroll on mobile
+    const lockBodyScroll = () => {
+        if (isMobile()) {
+            document.body.classList.add('chat-open');
+            document.body.dataset.scrollY = window.scrollY;
+        }
+    };
+
+    // Helper: Unlock body scroll
+    const unlockBodyScroll = () => {
+        document.body.classList.remove('chat-open');
+        const scrollY = document.body.dataset.scrollY;
+        if (scrollY) {
+            window.scrollTo(0, parseInt(scrollY));
+        }
+    };
+
     // Toggle chat window
     toggleBtn.addEventListener('click', () => {
         console.log('🖱️ Toggle button clicked');
@@ -1119,8 +1338,17 @@ function setupEventListeners() {
         console.log('   Window now:', isShowing ? 'VISIBLE' : 'HIDDEN');
         
         if (isShowing) {
-            input.focus();
+            lockBodyScroll();
+            // Focus input after animation (slight delay for mobile keyboard)
+            setTimeout(() => input.focus(), 300);
             toggleBtn.classList.remove('has-unread');
+            // Scroll messages to bottom
+            const messagesContainer = document.getElementById('chat-messages');
+            if (messagesContainer) {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        } else {
+            unlockBodyScroll();
         }
     });
 
@@ -1128,6 +1356,15 @@ function setupEventListeners() {
     closeBtn.addEventListener('click', () => {
         console.log('🖱️ Close button clicked');
         chatWindow.classList.remove('show');
+        unlockBodyScroll();
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && chatWindow.classList.contains('show')) {
+            chatWindow.classList.remove('show');
+            unlockBodyScroll();
+        }
     });
 
     // Send message on button click
@@ -1250,6 +1487,9 @@ async function sendMessage() {
             pendingMessage.removeAttribute('id');
         }
         
+        // Show typing indicator while waiting for AI response
+        showTypingIndicator();
+        
         console.log('✅ Message sent successfully');
 
     } catch (error) {
@@ -1298,17 +1538,12 @@ function linkify(text) {
 // ═══════════════════════════════════════════════════════════════════
 
 function getUserId() {
-    let userId = localStorage.getItem(CONFIG.USER_ID_KEY);
-    
-    if (!userId) {
-        userId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem(CONFIG.USER_ID_KEY, userId);
-        console.log('🆔 Generated new user ID:', userId);
-    } else {
-        console.log('🆔 Retrieved existing user ID:', userId);
-    }
-    
-    return userId;
+    // Always generate a new session ID on page load
+    // This ensures chat history is cleared for the client on refresh
+    // but all messages are still saved in Firestore for admin panel
+    const sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    console.log('🆔 Generated new session ID:', sessionId);
+    return sessionId;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1412,34 +1647,59 @@ function scrollToBottom(smooth = true) {
 
 let typingIndicatorElement = null;
 
-function showTypingIndicator(senderType = 'admin') {
+function showTypingIndicator() {
     // Don't show multiple indicators
     if (typingIndicatorElement) return;
     
     const messagesContainer = document.getElementById('chat-messages');
+    if (!messagesContainer) return;
     
     typingIndicatorElement = document.createElement('div');
     typingIndicatorElement.className = 'typing-indicator';
     typingIndicatorElement.id = 'typing-indicator';
     
-    // 👤 Avatar
+    // 🤖 AI Avatar
     const avatar = document.createElement('div');
     avatar.className = 'message-avatar';
-    avatar.innerHTML = senderType === 'ai' ? '🤖' : '👨‍💼';
-    
+    avatar.innerHTML = '🤖';
     typingIndicatorElement.appendChild(avatar);
     
+    // Content wrapper
+    const content = document.createElement('div');
+    content.className = 'typing-content';
+    
+    // Message bubble with dots and label
     const bubble = document.createElement('div');
     bubble.className = 'message-bubble';
+    
+    // Dots container
+    const dotsContainer = document.createElement('div');
+    dotsContainer.className = 'typing-dots';
     
     // Create three bouncing dots
     for (let i = 0; i < 3; i++) {
         const dot = document.createElement('span');
         dot.className = 'typing-dot';
-        bubble.appendChild(dot);
+        dotsContainer.appendChild(dot);
     }
     
-    typingIndicatorElement.appendChild(bubble);
+    bubble.appendChild(dotsContainer);
+    
+    // Label
+    const label = document.createElement('span');
+    label.className = 'typing-label';
+    label.textContent = 'ШІ-помічник готує відповідь...';
+    bubble.appendChild(label);
+    
+    content.appendChild(bubble);
+    
+    // Status text
+    const status = document.createElement('div');
+    status.className = 'typing-status';
+    status.textContent = 'Зазвичай відповідає за кілька секунд';
+    content.appendChild(status);
+    
+    typingIndicatorElement.appendChild(content);
     messagesContainer.appendChild(typingIndicatorElement);
     
     // Smooth scroll to show indicator

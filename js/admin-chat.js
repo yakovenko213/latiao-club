@@ -203,64 +203,142 @@
     // ═══════════════════════════════════════════════════════════════════
     
     function loadMessages(chatId) {
+        if (CONFIG.DEBUG) console.log('💬 Loading messages for chat:', chatId);
+        
+        // Unsubscribe from previous listener
         if (messagesUnsubscribe) {
             messagesUnsubscribe();
+            messagesUnsubscribe = null;
         }
 
-        const messagesRef = window.collection(window.db, 'chats', chatId, 'messages');
-        const q = window.query(messagesRef, window.orderBy('timestamp', 'asc'));
+        const messagesContainer = document.getElementById('chat-messages-container');
+        if (!messagesContainer) {
+            console.error('💬 Messages container not found!');
+            return;
+        }
 
-        messagesUnsubscribe = window.onSnapshot(q, (snapshot) => {
-            const messagesContainer = document.getElementById('chat-messages-container');
-            messagesContainer.innerHTML = '';
+        // Show loading state
+        messagesContainer.innerHTML = `
+            <div class="text-center py-8 text-gray-500">
+                <i data-lucide="loader" class="w-8 h-8 mx-auto mb-2 animate-spin"></i>
+                <p>Завантаження повідомлень...</p>
+            </div>
+        `;
+        if (window.lucide) window.lucide.createIcons();
 
-            snapshot.forEach((doc) => {
-                const message = doc.data();
-                appendMessage(message);
+        try {
+            const messagesRef = window.collection(window.db, 'chats', chatId, 'messages');
+            const q = window.query(messagesRef, window.orderBy('timestamp', 'asc'));
+
+            messagesUnsubscribe = window.onSnapshot(q, (snapshot) => {
+                if (CONFIG.DEBUG) console.log('💬 Messages snapshot received:', snapshot.size, 'messages');
+                
+                messagesContainer.innerHTML = '';
+
+                if (snapshot.empty) {
+                    messagesContainer.innerHTML = `
+                        <div class="text-center py-8 text-gray-500">
+                            <i data-lucide="message-square" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
+                            <p>Поки що немає повідомлень</p>
+                            <p class="text-sm mt-1">Клієнт ще не написав</p>
+                        </div>
+                    `;
+                    if (window.lucide) window.lucide.createIcons();
+                    return;
+                }
+
+                snapshot.forEach((doc) => {
+                    const message = { id: doc.id, ...doc.data() };
+                    appendMessage(message);
+                });
+
+                // Auto-scroll to bottom with slight delay for DOM update
+                requestAnimationFrame(() => {
+                    messagesContainer.scrollTo({
+                        top: messagesContainer.scrollHeight,
+                        behavior: 'smooth'
+                    });
+                });
+                
+            }, (error) => {
+                console.error('💬 Error listening to messages:', error);
+                messagesContainer.innerHTML = `
+                    <div class="text-center py-8 text-red-500">
+                        <i data-lucide="alert-circle" class="w-12 h-12 mx-auto mb-3"></i>
+                        <p>Помилка завантаження повідомлень</p>
+                        <p class="text-sm mt-1">${error.message}</p>
+                        <button onclick="loadMessages('${chatId}')" class="mt-3 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+                            Спробувати знову
+                        </button>
+                    </div>
+                `;
+                if (window.lucide) window.lucide.createIcons();
             });
-
-            // Scroll to bottom
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        });
+        } catch (error) {
+            console.error('💬 Error setting up messages listener:', error);
+        }
     }
+
+    // Expose loadMessages globally for retry button
+    window.loadMessages = loadMessages;
 
     function appendMessage(message) {
         const messagesContainer = document.getElementById('chat-messages-container');
+        if (!messagesContainer) return;
+        
         const messageDiv = document.createElement('div');
         
         const isClient = message.sender === 'client';
+        const isAdmin = message.sender === 'admin';
         const isAI = message.sender === 'ai';
         
-        messageDiv.className = `flex ${isClient ? 'justify-end' : 'justify-start'} mb-4`;
+        // From admin perspective: client messages on LEFT, admin/AI messages on RIGHT
+        const isOurMessage = isAdmin || isAI;
+        
+        messageDiv.className = `flex ${isOurMessage ? 'justify-end' : 'justify-start'} mb-4`;
         
         const time = message.timestamp?.toDate?.() || new Date();
         const timeStr = time.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
 
         let senderLabel = '';
         let bubbleClass = '';
+        let roundedCorner = '';
         
         if (isClient) {
+            // Client messages: LEFT side, blue bubble
+            senderLabel = `<div class="text-xs text-blue-600 mb-1 flex items-center gap-1">
+                <i data-lucide="user" class="w-3 h-3"></i> ${message.senderName || 'Клієнт'}
+            </div>`;
             bubbleClass = 'bg-blue-500 text-white';
+            roundedCorner = 'rounded-bl-sm';
         } else if (isAI) {
+            // AI messages: RIGHT side, purple bubble
             senderLabel = '<div class="text-xs text-purple-600 mb-1 flex items-center gap-1"><i data-lucide="bot" class="w-3 h-3"></i> AI Помічник</div>';
             bubbleClass = 'bg-purple-100 text-gray-900 border border-purple-200';
+            roundedCorner = 'rounded-br-sm';
         } else {
-            senderLabel = '<div class="text-xs text-gray-600 mb-1">Ви</div>';
+            // Admin messages: RIGHT side, orange bubble
+            senderLabel = '<div class="text-xs text-orange-600 mb-1 flex items-center gap-1"><i data-lucide="shield" class="w-3 h-3"></i> Ви</div>';
             bubbleClass = 'bg-orange-500 text-white';
+            roundedCorner = 'rounded-br-sm';
         }
+
+        // Safely escape and format message text
+        const messageText = message.text || '';
+        const formattedText = linkify(escapeHtml(messageText));
 
         messageDiv.innerHTML = `
             <div class="max-w-[70%]">
                 ${senderLabel}
-                <div class="${bubbleClass} rounded-2xl px-4 py-2.5 ${isClient ? 'rounded-br-sm' : 'rounded-bl-sm'}">
-                    <p class="text-sm leading-relaxed">${linkify(escapeHtml(message.text))}</p>
+                <div class="${bubbleClass} rounded-2xl px-4 py-2.5 ${roundedCorner} shadow-sm">
+                    <p class="text-sm leading-relaxed">${formattedText}</p>
                 </div>
-                <div class="text-xs text-gray-400 mt-1 ${isClient ? 'text-right' : 'text-left'}">${timeStr}</div>
+                <div class="text-xs text-gray-400 mt-1 ${isOurMessage ? 'text-right' : 'text-left'}">${timeStr}</div>
             </div>
         `;
 
         messagesContainer.appendChild(messageDiv);
-        window.lucide.createIcons();
+        if (window.lucide) window.lucide.createIcons();
     }
 
     window.sendAdminMessage = async function() {
@@ -810,9 +888,17 @@
     }
 
     function escapeHtml(text) {
+        if (!text) return '';
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML.replace(/\n/g, '<br>');
+    }
+
+    // Convert URLs in text to clickable links
+    function linkify(text) {
+        if (!text) return '';
+        const urlPattern = /(https?:\/\/[^\s<]+[^\s<.,;:!?"'\]\)])/gi;
+        return text.replace(urlPattern, '<a href="$1" target="_blank" class="underline hover:opacity-80">$1</a>');
     }
 
 })();

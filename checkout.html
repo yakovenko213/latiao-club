@@ -2586,6 +2586,359 @@
     }
 
     // ============================================
+    // 🔗 KEYCRM INTEGRATION - Customer Management
+    // ============================================
+    
+    /**
+     * Check if customer exists in KeyCRM by phone
+     * @returns {Object|null} Customer data if found, null otherwise
+     */
+    async function findKeyCrmCustomer(phone, keyCrmApiKey) {
+      try {
+        console.log('🔍 Searching for customer by phone:', phone)
+        
+        const response = await fetch(`https://openapi.keycrm.app/v1/buyer?phone=${encodeURIComponent(phone)}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${keyCrmApiKey}`
+          }
+        })
+        
+        if (!response.ok) {
+          console.warn('⚠️ Customer search failed:', response.status)
+          return null
+        }
+        
+        const data = await response.json()
+        
+        if (data && data.id) {
+          console.log('✅ Customer found in KeyCRM:', data.id)
+          return data
+        }
+        
+        console.log('ℹ️ Customer not found in KeyCRM')
+        return null
+        
+      } catch (error) {
+        console.error('❌ Error searching customer:', error)
+        return null
+      }
+    }
+    
+    /**
+     * Create new customer in KeyCRM
+     * @returns {Object} Created customer data with ID
+     */
+    async function createKeyCrmCustomer(buyerData, shippingData, keyCrmApiKey) {
+      try {
+        console.log('👤 Creating new customer in KeyCRM...')
+        
+        const payload = {
+          full_name: buyerData.full_name,
+          phone: buyerData.phone,
+          email: buyerData.email || '',
+          comment: buyerData.comment || '',
+          shipping: [{
+            city: shippingData.shipping_city || '',
+            region: shippingData.shipping_region || '',
+            address: shippingData.shipping_address || '',
+            postcode: shippingData.shipping_postcode || '',
+            warehouse_ref: shippingData.warehouse_ref || ''
+          }]
+        }
+        
+        console.log('📦 Customer payload:', payload)
+        
+        const response = await fetch('https://openapi.keycrm.app/v1/buyer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${keyCrmApiKey}`
+          },
+          body: JSON.stringify(payload)
+        })
+        
+        const responseData = await response.json()
+        
+        if (!response.ok) {
+          throw new Error(`Customer creation failed: ${response.status} - ${JSON.stringify(responseData)}`)
+        }
+        
+        console.log('✅ Customer created successfully:', responseData.id)
+        return responseData
+        
+      } catch (error) {
+        console.error('❌ Error creating customer:', error)
+        throw error
+      }
+    }
+    
+    /**
+     * Update existing customer in KeyCRM
+     * @returns {Object} Updated customer data
+     */
+    async function updateKeyCrmCustomer(customerId, buyerData, shippingData, keyCrmApiKey) {
+      try {
+        console.log('🔄 Updating customer in KeyCRM...', customerId)
+        
+        const payload = {
+          full_name: buyerData.full_name,
+          phone: buyerData.phone,
+          email: buyerData.email || '',
+          comment: buyerData.comment || '',
+          shipping: [{
+            city: shippingData.shipping_city || '',
+            region: shippingData.shipping_region || '',
+            address: shippingData.shipping_address || '',
+            postcode: shippingData.shipping_postcode || '',
+            warehouse_ref: shippingData.warehouse_ref || ''
+          }]
+        }
+        
+        console.log('📦 Customer update payload:', payload)
+        
+        const response = await fetch(`https://openapi.keycrm.app/v1/buyer/${customerId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${keyCrmApiKey}`
+          },
+          body: JSON.stringify(payload)
+        })
+        
+        const responseData = await response.json()
+        
+        if (!response.ok) {
+          throw new Error(`Customer update failed: ${response.status} - ${JSON.stringify(responseData)}`)
+        }
+        
+        console.log('✅ Customer updated successfully')
+        return responseData
+        
+      } catch (error) {
+        console.error('❌ Error updating customer:', error)
+        throw error
+      }
+    }
+
+    // ============================================
+    // 🔗 KEYCRM INTEGRATION - Send Order to KeyCRM (V2 with Customer Management)
+    // ============================================
+    async function sendToKeyCRM(orderData, orderId) {
+      console.log('🔗 Sending order to KeyCRM (V2 with Customer Management)...', orderId)
+      
+      try {
+        // STEP 1: Fetch KeyCRM API credentials from Firestore
+        const adminSettingsRef = doc(db, 'settings', 'admin')
+        const adminSettingsDoc = await getDoc(adminSettingsRef)
+        
+        if (!adminSettingsDoc.exists()) {
+          throw new Error('Admin settings not found in Firestore')
+        }
+        
+        const adminSettings = adminSettingsDoc.data()
+        const keyCrmApiKey = adminSettings.keyCrmApiKey
+        const keyCrmSourceId = adminSettings.keyCrmSourceId || 1 // Default source ID
+        
+        if (!keyCrmApiKey) {
+          throw new Error('KeyCRM API key not configured in settings/admin')
+        }
+        
+        if (!keyCrmSourceId) {
+          throw new Error('KeyCRM Source ID not configured in settings/admin')
+        }
+        
+        console.log('✅ KeyCRM API credentials loaded', { sourceId: keyCrmSourceId })
+        
+        // STEP 2: Map buyer data
+        const buyer = {
+          full_name: orderData.customer.fullName,
+          phone: orderData.customer.phone,
+          email: orderData.customer.email || '',
+          comment: orderData.customer.telegram ? `Telegram: ${orderData.customer.telegram}` : ''
+        }
+        
+        // STEP 3: Map shipping data (for customer profile)
+        const shipping = {
+          shipping_method_id: orderData.delivery.method === 'Нова Пошта' ? 1 : 2,
+          shipping_address: orderData.delivery.address || '',
+          shipping_city: orderData.delivery.city || '',
+          shipping_region: orderData.delivery.region || '',
+          shipping_postcode: orderData.delivery.postcode || '',
+          warehouse_ref: orderData.delivery.warehouse || '',
+          shipping_receive_point: orderData.delivery.warehouse || orderData.delivery.address || ''
+        }
+        
+        // STEP 4: Customer Management - Find or Create
+        let keyCrmCustomerId = null
+        
+        try {
+          // Search for existing customer by phone
+          const existingCustomer = await findKeyCrmCustomer(buyer.phone, keyCrmApiKey)
+          
+          if (existingCustomer) {
+            // Customer exists - update their info
+            keyCrmCustomerId = existingCustomer.id
+            await updateKeyCrmCustomer(keyCrmCustomerId, buyer, shipping, keyCrmApiKey)
+            console.log('✅ Customer updated:', keyCrmCustomerId)
+          } else {
+            // Customer doesn't exist - create new
+            const newCustomer = await createKeyCrmCustomer(buyer, shipping, keyCrmApiKey)
+            keyCrmCustomerId = newCustomer.id
+            console.log('✅ Customer created:', keyCrmCustomerId)
+          }
+        } catch (customerError) {
+          console.error('⚠️ Customer management error (non-critical):', customerError)
+          // Continue with order creation even if customer sync fails
+        }
+        
+        // STEP 5: Map products
+        const products = orderData.items.map(item => ({
+          sku: item.sku || item.id || '',
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          discount: 0
+        }))
+        
+        // STEP 6: Determine payment status
+        let paymentStatus = 'not_paid'
+        let paymentMethodId = 1 // Default: COD
+        
+        if (orderData.payment.method === 'online') {
+          paymentMethodId = 2 // Online payment
+          paymentStatus = 'not_paid' // Will be updated to 'paid' via webhook
+        } else {
+          paymentMethodId = 1 // Cash on Delivery
+          paymentStatus = 'not_paid'
+        }
+        
+        // STEP 7: Get current timestamp in KeyCRM format
+        const now = new Date()
+        const orderedAt = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
+        
+        // STEP 8: Construct KeyCRM order payload (COMPLETE)
+        const keyCrmPayload = {
+          source_id: keyCrmSourceId, // MANDATORY
+          source_uuid: orderId,
+          ordered_at: orderedAt, // YYYY-MM-DD HH:MM:SS
+          buyer: {
+            full_name: buyer.full_name,
+            phone: buyer.phone,
+            email: buyer.email || ''
+          },
+          shipping: {
+            shipping_method_id: shipping.shipping_method_id,
+            shipping_address: shipping.shipping_address,
+            shipping_city: shipping.shipping_city,
+            shipping_region: shipping.shipping_region,
+            shipping_postcode: shipping.shipping_postcode,
+            warehouse_ref: shipping.warehouse_ref,
+            shipping_receive_point: shipping.shipping_receive_point
+          },
+          products: products,
+          payments: [{
+            payment_method_id: paymentMethodId,
+            status: paymentStatus,
+            amount: orderData.summary.total
+          }],
+          discount: orderData.summary.discountAmount || 0,
+          total_price: orderData.summary.total,
+          comment: orderData.comment || '',
+          manager_comment: orderData.promoCode 
+            ? `Promo: ${orderData.promoCode.code} (-${orderData.promoCode.discountAmount} грн)` 
+            : `Order ID: ${orderId}`
+        }
+        
+        // Add buyer_id if customer was synced
+        if (keyCrmCustomerId) {
+          keyCrmPayload.buyer_id = keyCrmCustomerId
+        }
+        
+        console.log('📦 KeyCRM order payload:', keyCrmPayload)
+        
+        // STEP 9: Send order to KeyCRM API
+        const response = await fetch('https://openapi.keycrm.app/v1/order', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${keyCrmApiKey}`
+          },
+          body: JSON.stringify(keyCrmPayload)
+        })
+        
+        const responseData = await response.json()
+        
+        // STEP 10: Handle API errors with specific status codes
+        if (!response.ok) {
+          const errorMsg = `KeyCRM API error: ${response.status} - ${JSON.stringify(responseData)}`
+          
+          // Alert admin for critical errors
+          if (response.status === 422) {
+            console.error('❌ VALIDATION ERROR (422):', responseData)
+            alert(`⚠️ KeyCRM Validation Error:\n\n${JSON.stringify(responseData, null, 2)}\n\nPlease check the order data and KeyCRM settings.`)
+          } else if (response.status === 401) {
+            console.error('❌ UNAUTHORIZED (401): Invalid API Key')
+            alert('⚠️ KeyCRM Authorization Error:\n\nAPI Key is invalid or expired.\n\nPlease update the API key in Admin Settings.')
+          } else if (response.status === 400) {
+            console.error('❌ BAD REQUEST (400):', responseData)
+            alert(`⚠️ KeyCRM Bad Request:\n\n${JSON.stringify(responseData, null, 2)}\n\nCheck source_id and required fields.`)
+          }
+          
+          throw new Error(errorMsg)
+        }
+        
+        console.log('✅ Order sent to KeyCRM successfully:', responseData)
+        
+        // STEP 11: Save KeyCRM order ID to Firestore
+        if (responseData.id) {
+          await updateDoc(doc(db, 'orders', orderId), {
+            keyCrmOrderId: responseData.id,
+            keyCrmCustomerId: keyCrmCustomerId,
+            keyCrmSyncedAt: serverTimestamp(),
+            keyCrmSyncSuccess: true
+          })
+          console.log('✅ KeyCRM order ID saved to Firestore:', responseData.id)
+        }
+        
+        return { success: true, keyCrmOrderId: responseData.id, keyCrmCustomerId: keyCrmCustomerId }
+        
+      } catch (error) {
+        console.error('❌ KeyCRM integration error:', error)
+        
+        // STEP 12: Log error to Firestore
+        try {
+          await setDoc(doc(db, 'errors', `keycrm_${Date.now()}`), {
+            type: 'keycrm_integration',
+            orderId: orderId,
+            error: error.message,
+            stack: error.stack || '',
+            orderData: orderData,
+            timestamp: serverTimestamp()
+          })
+          console.log('📝 KeyCRM error logged to Firestore')
+        } catch (logError) {
+          console.error('⚠️ Failed to log KeyCRM error:', logError)
+        }
+        
+        // STEP 13: Update order with sync failure status
+        try {
+          await updateDoc(doc(db, 'orders', orderId), {
+            keyCrmSyncSuccess: false,
+            keyCrmSyncError: error.message,
+            keyCrmSyncAttemptedAt: serverTimestamp()
+          })
+        } catch (updateError) {
+          console.error('⚠️ Failed to update order with KeyCRM sync status:', updateError)
+        }
+        
+        // Don't throw - allow order to continue even if KeyCRM fails
+        return { success: false, error: error.message }
+      }
+    }
+
+    // ============================================
     // ⭐ UPDATED SUBMIT ORDER FUNCTION WITH MONOBANK INTEGRATION
     // ============================================
     async function submitOrder() {
@@ -2896,7 +3249,22 @@
         console.log('✅ Order saved successfully! Order ID:', orderId)
 
         // ============================================
-        // STEP 8.1: Mini-CRM - Sync Customer Profile
+        // STEP 8.2: 🔗 KEYCRM INTEGRATION - Send Order to KeyCRM
+        // ============================================
+        // Send order to KeyCRM immediately after saving to Firestore
+        // This runs in parallel and won't block user flow
+        sendToKeyCRM(orderData, orderId).then(result => {
+          if (result.success) {
+            console.log('✅ Order synced to KeyCRM successfully:', result.keyCrmOrderId)
+          } else {
+            console.warn('⚠️ KeyCRM sync failed (non-blocking):', result.error)
+          }
+        }).catch(err => {
+          console.error('⚠️ KeyCRM sync error (non-blocking):', err)
+        })
+
+        // ============================================
+        // STEP 8.3: Mini-CRM - Sync Customer Profile
         // ============================================
         // ============================================
         // STEP 8.25: Smart Cleanup (Abandoned Carts + Old Pending Orders)
