@@ -253,7 +253,7 @@
             <div class="max-w-[70%]">
                 ${senderLabel}
                 <div class="${bubbleClass} rounded-2xl px-4 py-2.5 ${isClient ? 'rounded-br-sm' : 'rounded-bl-sm'}">
-                    <p class="text-sm leading-relaxed">${escapeHtml(message.text)}</p>
+                    <p class="text-sm leading-relaxed">${linkify(escapeHtml(message.text))}</p>
                 </div>
                 <div class="text-xs text-gray-400 mt-1 ${isClient ? 'text-right' : 'text-left'}">${timeStr}</div>
             </div>

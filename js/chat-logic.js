@@ -227,6 +227,11 @@ async function generateAIResponse(chatId, userMessage, aiSettings) {
     if (CONFIG.DEBUG) console.log(`🤖 AI Chat Logic: Generating response for ${chatId}...`);
 
     try {
+        // 🎬 Show typing indicator in chat widget
+        if (typeof window.showChatTypingIndicator === 'function') {
+            window.showChatTypingIndicator('ai');
+        }
+        
         // Simulate typing delay (2-3 seconds)
         const typingDelay = CONFIG.AI_RESPONSE_DELAY + Math.random() * 1000; // 2.5-3.5 sec
         await new Promise(resolve => setTimeout(resolve, typingDelay));
@@ -239,16 +244,24 @@ async function generateAIResponse(chatId, userMessage, aiSettings) {
 
         if (!aiResponse) {
             console.error('❌ AI Chat Logic: Failed to generate response');
+            // Hide typing indicator on error
+            if (typeof window.hideChatTypingIndicator === 'function') {
+                window.hideChatTypingIndicator();
+            }
             return;
         }
 
-        // Save AI response to Firestore
+        // Save AI response to Firestore (typing indicator will be hidden by realtime listener)
         await saveAIResponse(chatId, aiResponse);
 
         if (CONFIG.DEBUG) console.log(`✅ AI Chat Logic: Response saved for ${chatId}`);
 
     } catch (error) {
         console.error('❌ Error generating AI response:', error);
+        // Hide typing indicator on error
+        if (typeof window.hideChatTypingIndicator === 'function') {
+            window.hideChatTypingIndicator();
+        }
     }
 }
 
