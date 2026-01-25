@@ -10930,8 +10930,14 @@
         // ============================================
         // PRE-CHECK CATEGORIES (Multiple Support)
         // ============================================
-        // Wait for categories to be loaded, then check the appropriate boxes
-        await window.loadCategoriesIntoForm()
+        // Show loading state for categories
+        const categoriesGrid = document.getElementById('p-categories-grid')
+        categoriesGrid.innerHTML = `
+          <div class="text-center py-8 text-gray-400 col-span-2">
+            <div class="animate-spin w-6 h-6 border-2 border-gray-300 border-t-spicy rounded-full mx-auto mb-2"></div>
+            <p class="text-sm">Завантаження категорій...</p>
+          </div>
+        `
         
         // Determine which categories to check
         let categoriesToCheck = []
@@ -10943,15 +10949,10 @@
           categoriesToCheck = [product.category]
         }
         
-        // Check the appropriate checkboxes
-        categoriesToCheck.forEach(catId => {
-          const checkbox = document.querySelector(`input[name="product-category"][value="${catId}"]`)
-          if (checkbox) {
-            checkbox.checked = true
-          }
-        })
+        console.log('✅ Loading categories with pre-selection:', categoriesToCheck)
         
-        console.log('✅ Pre-checked categories:', categoriesToCheck)
+        // Load categories into form with pre-selected ones
+        await window.loadCategoriesIntoForm(categoriesToCheck)
 
         // ============================================
         // 🎨 NEW: Load existing images into Gallery Manager
@@ -10986,7 +10987,8 @@
         submitBtn.innerHTML = '<i data-lucide="save" class="w-4 h-4 inline mr-2"></i>Оновити товар'
         lucide.createIcons()
 
-        openProductModal()
+        // Open modal WITHOUT reloading categories (skipCategoryLoad = true)
+        openProductModal(true)
         window.scrollTo({ top: 0, behavior: 'smooth' })
 
         console.log('✅ Edit mode activated')
@@ -11867,7 +11869,7 @@
     // ============================================
     // LOAD CATEGORIES AS CHECKBOXES (Multiple Selection)
     // ============================================
-    window.loadCategoriesIntoForm = async function() {
+    window.loadCategoriesIntoForm = async function(preSelectedCategories = []) {
       const gridContainer = document.getElementById('p-categories-grid')
       
       if (!gridContainer) {
@@ -11876,7 +11878,7 @@
       }
 
       try {
-        console.log('📂 Loading categories as checkboxes...')
+        console.log('📂 Loading categories as checkboxes...', preSelectedCategories.length > 0 ? `Pre-selecting: ${preSelectedCategories.join(', ')}` : '')
         const snap = await getDocs(collection(db, 'categories'))
         
         if (snap.empty) {
@@ -11900,6 +11902,7 @@
           checkboxWrapper.className = 'flex items-center gap-2 p-2 border border-gray-200 rounded-lg hover:bg-white hover:border-spicy transition-all cursor-pointer'
           
           const checkboxId = `cat-checkbox-${cat.slug}`
+          const isChecked = preSelectedCategories.includes(cat.slug)
           
           checkboxWrapper.innerHTML = `
             <input 
@@ -11908,6 +11911,7 @@
               name="product-category" 
               value="${cat.slug}"
               class="w-5 h-5 text-spicy rounded border-gray-300 focus:ring-spicy cursor-pointer"
+              ${isChecked ? 'checked' : ''}
             >
             <label 
               for="${checkboxId}" 
@@ -11941,8 +11945,12 @@
     }
 
     const originalOpenProductModal = window.openProductModal
-    window.openProductModal = async () => {
-      await window.loadCategoriesIntoForm() // Use new checkbox loader
+    window.openProductModal = async (skipCategoryLoad = false) => {
+      // Only load categories if not skipped (e.g., when editing, categories are already loaded)
+      if (!skipCategoryLoad) {
+        await window.loadCategoriesIntoForm()
+      }
+      
       if (originalOpenProductModal) originalOpenProductModal()
       else {
         document.getElementById('product-modal').classList.remove('hidden')
