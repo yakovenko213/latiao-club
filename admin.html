@@ -3046,6 +3046,12 @@
 
           </div>
 
+          <div>
+            <label class="block text-sm font-medium mb-1">📦 Залишок на складі</label>
+            <input type="number" id="p-stock-quantity" min="0" class="w-full border rounded-lg p-2" value="0" placeholder="0">
+            <p class="text-xs text-gray-500 mt-1">Кількість товару в наявності</p>
+          </div>
+
         </div>
 
         <div>
@@ -10355,19 +10361,31 @@
           }
           
           // ============================================
-          // STOCK ARRIVAL DATE DISPLAY
+          // STOCK STATUS DISPLAY (Based ONLY on stock_quantity)
           // ============================================
-          let stockHtml = '<span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold">В наявності</span>'
+          const stockQuantity = product.stock_quantity ?? product.stock ?? 0
+          let stockHtml = ''
           
-          if (product.is_expected && product.arrival_date) {
-            const arrivalDate = new Date(product.arrival_date)
-            const formattedDate = arrivalDate.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' })
-            stockHtml = `
-              <div class="space-y-1">
-                <span class="block px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-semibold">📦 Очікується</span>
-                <span class="block px-2 py-1 bg-yellow-50 text-yellow-700 rounded text-xs">📅 ${formattedDate}</span>
-              </div>
-            `
+          if (stockQuantity > 0) {
+            // IN STOCK
+            stockHtml = `<span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold">✅ В наявності (${stockQuantity})</span>`
+          } else {
+            // OUT OF STOCK
+            if (product.is_expected && product.arrival_date) {
+              // Out of stock BUT expected
+              const arrivalDate = new Date(product.arrival_date)
+              const formattedDate = arrivalDate.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' })
+              stockHtml = `
+                <div class="space-y-1">
+                  <span class="block px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-semibold">⛔ Немає (0)</span>
+                  <span class="block px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">📦 Очікується</span>
+                  <span class="block px-2 py-1 bg-yellow-50 text-yellow-700 rounded text-xs">📅 ${formattedDate}</span>
+                </div>
+              `
+            } else {
+              // Out of stock, no expected date
+              stockHtml = `<span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-semibold">⛔ Немає (0)</span>`
+            }
           }
           
           html += `<tr class="hover:bg-gray-50 product-row" data-product-id="${productId}">
@@ -10857,6 +10875,9 @@
       document.getElementById('product-modal').classList.add('hidden')
       productForm.reset()
       
+      // Reset stock quantity to 0
+      document.getElementById('p-stock-quantity').value = '0'
+      
       // Uncheck all category checkboxes
       const categoryCheckboxes = document.querySelectorAll('input[name="product-category"]')
       categoryCheckboxes.forEach(checkbox => checkbox.checked = false)
@@ -10898,6 +10919,7 @@
         document.getElementById('p-price').value = product.price || ''
         document.getElementById('p-sku').value = product.sku || ''
         document.getElementById('p-spiciness').value = product.spiciness || 1
+        document.getElementById('p-stock-quantity').value = product.stock_quantity ?? product.stock ?? 0
         document.getElementById('p-description').value = product.description || ''
         document.getElementById('p-full-description').value = product.fullDescription || ''
         document.getElementById('p-specs').value = product.specs || ''
@@ -11346,6 +11368,8 @@
           categories: selectedCategories, // NEW: Array of categories
           category: selectedCategories[0] || '', // Keep first category for backward compatibility
           spiciness: Number(document.getElementById('p-spiciness').value),
+          stock_quantity: Number(document.getElementById('p-stock-quantity').value) || 0,
+          stock: Number(document.getElementById('p-stock-quantity').value) || 0, // Backward compatibility
           description: document.getElementById('p-description').value,
           fullDescription: document.getElementById('p-full-description').value,
           specs: document.getElementById('p-specs').value,
@@ -11353,9 +11377,13 @@
           isHot: document.getElementById('p-hot').checked,
           is_expected: document.getElementById('p-expected').checked,
           arrival_date: document.getElementById('p-expected').checked ? calculateArrivalDate() : null,
-          stock: 100,
           updatedAt: new Date().toISOString()
         }
+
+        // ============================================
+        // STOCK HANDLING - REMOVED AUTO-SET LOGIC
+        // Stock now comes directly from the form field above
+        // ============================================
 
         // Helper function to create full date from day/month
         function calculateArrivalDate() {
