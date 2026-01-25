@@ -1551,6 +1551,8 @@
     // ============================================
 
     function selectDelivery(element, method) {
+      console.log('🕒 Dispatch update triggered for:', method)
+      
       // Remove 'selected' class from all delivery cards
       document.querySelectorAll('[data-delivery]').forEach(card => {
         card.classList.remove('selected')
@@ -1564,6 +1566,9 @@
 
       // Update payment availability based on selected delivery method
       updatePaymentAvailability()
+      
+      // Update dispatch times when switching delivery methods
+      updateDispatchTimes()
     }
 
     // Toggle visibility of delivery details based on selected method
@@ -1708,8 +1713,10 @@
       return ''
     }
 
-    // Update dispatch times on page load
+    // Update dispatch times on page load and when delivery method changes
     function updateDispatchTimes() {
+      console.log('🕒 Dispatch update triggered')
+      
       const novaDispatch = document.getElementById('dispatch-nova')
       const ukrDispatch = document.getElementById('dispatch-ukr')
 
@@ -1718,13 +1725,19 @@
       if (novaDispatch) {
         const novaTime = getDispatchTime('novaposhta')
         novaDispatch.textContent = novaTime
+        novaDispatch.style.display = 'inline-block' // Ensure visible
         console.log('⏰ Nova Poshta dispatch:', novaTime)
+      } else {
+        console.error('❌ dispatch-nova element not found!')
       }
 
       if (ukrDispatch) {
         const ukrTime = getDispatchTime('ukrposhta')
         ukrDispatch.textContent = ukrTime
+        ukrDispatch.style.display = 'inline-block' // Ensure visible
         console.log('⏰ Ukrposhta dispatch:', ukrTime)
+      } else {
+        console.error('❌ dispatch-ukr element not found!')
       }
     }
 
