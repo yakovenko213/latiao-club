@@ -3123,6 +3123,9 @@
         // STEP 7: Construct Order Object
         // ============================================
         const orderData = {
+          // 🔒 SECURITY: userId for future Firebase Auth integration
+          userId: null,  // Will be populated below if available
+          
           // Customer Information
           customer: {
             fullName: fullName,
@@ -3269,6 +3272,33 @@
         }
         
         console.log('💾 Saving order to Firestore...', { orderId, orderData })
+        
+        // ============================================
+        // 🔒 SECURITY: Link order to authenticated user (if available)
+        // ============================================
+        try {
+          // Check if Firebase Auth is initialized and has a current user
+          if (window.firebaseInit && window.firebaseInit.auth) {
+            const { auth } = window.firebaseInit;
+            const currentUser = auth.currentUser;
+            
+            if (currentUser) {
+              orderData.userId = currentUser.uid;
+              console.log('✅ Order linked to Firebase Auth userId:', currentUser.uid);
+            }
+          }
+          
+          // ALTERNATIVE: Use phone-based ID if Firebase Auth not available
+          // This ensures backward compatibility with existing system
+          if (!orderData.userId && phone) {
+            // Create consistent userId from phone (remove all non-digits)
+            orderData.userId = phone.replace(/\D/g, '');
+            console.log('📱 Order linked to phone-based userId:', orderData.userId);
+          }
+        } catch (userIdError) {
+          console.warn('⚠️ Could not link userId to order:', userIdError);
+          // Continue anyway - userId is optional for now
+        }
         
         // Use setDoc with custom ID instead of addDoc
         // This forces Firestore to use our short ID as the Document ID

@@ -6,14 +6,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Категорія | LATIAO SNACK</title>
   
-  <!-- Anti-Flash Style: Hide body until maintenance check completes -->
-  <style id="anti-flash-style">
-    body { 
-      visibility: hidden; 
-      opacity: 0; 
-      transition: opacity 0.3s ease; 
+  <!-- Skeleton Loader for instant render -->
+  <style id="skeleton-loader">
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
     }
+    .page-skeleton { min-height: 100vh; background: #fff; }
+    .skeleton-bar {
+      height: 20px;
+      background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+    .content-loaded .page-skeleton { display: none; }
   </style>
+  
+  <script>
+    // Show content immediately when DOM ready
+    document.addEventListener('DOMContentLoaded', () => {
+      document.body.classList.add('content-loaded');
+    });
+  </script>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>

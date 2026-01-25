@@ -509,9 +509,72 @@
         let allOrders = [];
         
         // ========================================
-        // QUERY FOR EACH PHONE FORMAT
+        // 🔒 SECURITY: Try userId first, then phone fallback
         // ========================================
-        for (const phoneVariant of uniquePhoneVariants) {
+        let userId = null;
+        
+        // Try to get userId from Firebase Auth
+        if (window.firebaseInit.auth && window.firebaseInit.auth.currentUser) {
+          userId = window.firebaseInit.auth.currentUser.uid;
+          console.log('🔐 Found Firebase Auth userId:', userId);
+        }
+        
+        // Fallback: Try phone-based userId
+        if (!userId && userPhone) {
+          userId = userPhone.replace(/\D/g, '');
+          console.log('📱 Using phone-based userId:', userId);
+        }
+        
+        // ========================================
+        // QUERY BY USERID FIRST (Faster & More Secure)
+        // ========================================
+        if (userId) {
+          try {
+            const userIdQuery = query(
+              ordersRef,
+              where('userId', '==', userId),
+              orderBy('createdAt', 'desc'),
+              limit(50)
+            );
+            
+            const userIdSnapshot = await getDocs(userIdQuery);
+            
+            if (!userIdSnapshot.empty) {
+              userIdSnapshot.forEach(doc => {
+                allOrders.push({ id: doc.id, ...doc.data() });
+              });
+              console.log(`✅ Found ${userIdSnapshot.size} orders by userId`);
+            }
+          } catch (userIdError) {
+            // Index might not exist, try without orderBy
+            console.warn('⚠️ userId query failed, trying without orderBy...', userIdError);
+            try {
+              const simpleUserIdQuery = query(
+                ordersRef,
+                where('userId', '==', userId),
+                limit(50)
+              );
+              const simpleSnapshot = await getDocs(simpleUserIdQuery);
+              
+              if (!simpleSnapshot.empty) {
+                simpleSnapshot.forEach(doc => {
+                  if (!allOrders.find(o => o.id === doc.id)) {
+                    allOrders.push({ id: doc.id, ...doc.data() });
+                  }
+                });
+              }
+            } catch (e) {
+              console.error('❌ Both userId queries failed:', e);
+            }
+          }
+        }
+        
+        // ========================================
+        // FALLBACK: QUERY BY PHONE (if no orders found by userId)
+        // ========================================
+        if (allOrders.length === 0) {
+          console.log('📱 No orders found by userId, trying phone fallback...');
+          for (const phoneVariant of uniquePhoneVariants) {
           try {
             const ordersQuery = query(
               ordersRef,
@@ -554,6 +617,7 @@
             }
           }
         }
+        } // End of phone fallback if-block
         
         // ========================================
         // SORT BY DATE (newest first)

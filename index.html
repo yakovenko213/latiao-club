@@ -5,13 +5,58 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Latiao Snack — Гострі снеки з Китаю</title>
   
-  <!-- Anti-Flash Style: Hide body until maintenance check completes -->
-  <style id="anti-flash-style">
-    body { 
-      visibility: hidden; 
-      opacity: 0; 
-      transition: opacity 0.3s ease; 
+  <!-- Skeleton Loader: Lightweight placeholder for instant render -->
+  <style id="skeleton-loader">
+    /* Skeleton animation */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
     }
+    
+    .page-skeleton {
+      min-height: 100vh;
+      background: #ffffff;
+    }
+    
+    .skeleton-header {
+      height: 80px;
+      background: #ffffff;
+      border-bottom: 1px solid #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+    }
+    
+    .skeleton-logo {
+      width: 120px;
+      height: 40px;
+      background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 8px;
+    }
+    
+    .skeleton-nav {
+      display: flex;
+      gap: 1rem;
+    }
+    
+    .skeleton-nav-item {
+      width: 80px;
+      height: 20px;
+      background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 4px;
+    }
+    
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    
+    .content-loaded .page-skeleton { display: none; }
   </style>
   
   <script src="https://cdn.tailwindcss.com"></script>
@@ -154,6 +199,25 @@
   </style>
 </head>
 <body class="bg-white text-gray-900 overflow-x-hidden">
+
+  <!-- Skeleton Loader: Shown instantly while content loads -->
+  <div class="page-skeleton">
+    <div class="skeleton-header">
+      <div class="skeleton-logo"></div>
+      <div class="skeleton-nav">
+        <div class="skeleton-nav-item"></div>
+        <div class="skeleton-nav-item"></div>
+        <div class="skeleton-nav-item"></div>
+      </div>
+    </div>
+    <div style="padding: 4rem 2rem; text-align: center;">
+      <div style="max-width: 600px; margin: 0 auto;">
+        <div style="height: 60px; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; margin-bottom: 1rem;"></div>
+        <div style="height: 40px; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; margin-bottom: 1rem;"></div>
+        <div style="height: 40px; width: 60%; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; margin: 0 auto;"></div>
+      </div>
+    </div>
+  </div>
 
   <main>
   <!-- ============================================
@@ -940,14 +1004,23 @@
   <!-- Load Firebase Initialization (Must be first!) -->
   <script type="module" src="./js/firebase-init.js"></script>
 
-  <!-- Load Shared Layout (Header, Mobile Menu, Cart) -->
+  <!-- Load Shared Layout (Header, Mobile Menu, Cart) - CRITICAL -->
   <script type="module" src="./js/layout.js"></script>
 
-  <!-- Load Storefront (Products & Categories) -->
+  <!-- Load Storefront (Products & Categories) - CRITICAL -->
   <script type="module" src="./js/storefront.js"></script>
 
-  <!-- Load Pop-up Manager -->
-  <script type="module" src="./js/popup-manager.js"></script>
+  <!-- Load Pop-up Manager - DEFERRED -->
+  <script type="module" defer src="./js/popup-manager.js"></script>
+
+  <!-- Quick Content Show Script -->
+  <script>
+    // Show content immediately after DOM loads (don't wait for Firebase)
+    document.addEventListener('DOMContentLoaded', () => {
+      document.body.classList.add('content-loaded');
+      console.log('✅ Content visible');
+    });
+  </script>
 
   <!-- ============================================
        PHONE AUTHENTICATION MODAL
@@ -1538,6 +1611,7 @@
   </script>
 
   <!-- Live Chat Widget -->
-  <script type="module" src="./js/chat-widget.js"></script>
+  <!-- Chat Widget - Load asynchronously after page is interactive -->
+  <script type="module" async src="./js/chat-widget.js"></script>
 </body>
 </html>

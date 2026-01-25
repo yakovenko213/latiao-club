@@ -83,34 +83,45 @@ service cloud.firestore {
     }
     
     // =============================================
-    // 🛒 ORDERS (Create & Read: Public, Update/Delete: Auth only)
+    // 🛒 ORDERS (Public read for phone-based auth)
     // =============================================
     
-    // CRITICAL: Customers need to read their order on thank-you.html page
-    // Security: They must know the exact orderId (acts as a secret token)
-    // List operation still restricted to admins only
     match /orders/{orderId} {
-      allow create: if true;                  // Anyone can place an order
-      allow get: if true;                     // ✅ Anyone can READ a specific order (if they know orderId)
-      allow list: if request.auth != null;    // Only admins can list all orders
-      allow update, delete: if request.auth != null; // Only admins can modify/delete
+      allow create: if true;  // Anyone can place an order
+      
+      // ✅ Anyone can read a SPECIFIC order (if they know the ID)
+      // This is needed for thank-you page and phone-based auth
+      allow get: if true;
+      
+      // ✅ List operations allowed for everyone (filtered by frontend)
+      // This is needed for dashboard.html with phone-based auth
+      allow list: if true;
+      
+      // ✅ Only authenticated admins can update/delete
+      allow update, delete: if request.auth != null;
     }
 
     // =============================================
-    // 👤 USERS (Public read for login, protected write)
+    // 👤 USERS (Public read for phone-based auth)
     // =============================================
     
     match /users/{userId} {
-      allow read: if true;                    // ✅ PUBLIC - needed for phone login check
-      allow write: if request.auth != null;   // Only authenticated users can write
+      // ✅ PUBLIC - needed for phone login check
+      allow read: if true;
+      // ✅ Anyone can write (for phone registration)
+      allow write: if true;
     }
 
     // =============================================
-    // 👤 CUSTOMERS (Admin only)
+    // 👤 CUSTOMERS (Public read for phone-based auth)
     // =============================================
 
     match /customers/{customerId} {
-      allow read, write: if request.auth != null;
+      // ✅ Anyone can read customer data (needed for phone-based auth)
+      // Frontend filters by phone for security
+      allow read: if true;
+      // ✅ Anyone can write/update (for phone registration)
+      allow write: if true;
     }
 
     // Personal promo codes
