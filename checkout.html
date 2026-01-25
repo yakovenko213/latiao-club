@@ -2725,23 +2725,44 @@
     // ============================================
     // 🔗 KEYCRM INTEGRATION - Send Order to KeyCRM (V2 with Customer Management)
     // ============================================
+    // ============================================
+    // KEYCRM INTEGRATION FUNCTION
+    // Defined BEFORE submitOrder to ensure it's available
+    // ============================================
     async function sendToKeyCRM(orderData, orderId) {
-      console.log('🔗 Sending order to KeyCRM (V2 with Customer Management)...', orderId)
+      console.log('🔗 ═══════════════════════════════════════════════')
+      console.log('🔗 KEYCRM SYNC STARTED')
+      console.log('🔗 ═══════════════════════════════════════════════')
+      console.log('🔗 Order ID:', orderId)
+      console.log('🔗 Order Data:', orderData)
       
       try {
         // STEP 1: Fetch KeyCRM API credentials from Firestore
+        console.log('🔗 Step 1: Fetching settings/admin from Firestore...')
         const adminSettingsRef = doc(db, 'settings', 'admin')
         const adminSettingsDoc = await getDoc(adminSettingsRef)
+        console.log('🔗 Settings document exists:', adminSettingsDoc.exists())
+        console.log('🔗 Settings document exists:', adminSettingsDoc.exists())
         
         if (!adminSettingsDoc.exists()) {
+          console.error('❌ Admin settings document NOT FOUND in Firestore')
+          console.error('❌ Path: settings/admin')
+          console.error('💡 SOLUTION: Open Admin Panel → Settings → Save KeyCRM credentials')
           throw new Error('Admin settings not found in Firestore')
         }
         
         const adminSettings = adminSettingsDoc.data()
+        console.log('🔗 Settings data loaded:', { 
+          hasApiKey: !!adminSettings.keyCrmApiKey,
+          sourceId: adminSettings.keyCrmSourceId 
+        })
+        
         const keyCrmApiKey = adminSettings.keyCrmApiKey
         const keyCrmSourceId = adminSettings.keyCrmSourceId || 1 // Default source ID
         
         if (!keyCrmApiKey) {
+          console.error('❌ KeyCRM API key is EMPTY or MISSING')
+          console.error('💡 SOLUTION: Open Admin Panel → Settings → Add KeyCRM API Key → Save')
           throw new Error('KeyCRM API key not configured in settings/admin')
         }
         
@@ -2905,7 +2926,14 @@
         return { success: true, keyCrmOrderId: responseData.id, keyCrmCustomerId: keyCrmCustomerId }
         
       } catch (error) {
-        console.error('❌ KeyCRM integration error:', error)
+        console.error('❌ ═══════════════════════════════════════════════')
+        console.error('❌ KEYCRM SYNC ERROR')
+        console.error('❌ ═══════════════════════════════════════════════')
+        console.error('❌ Error type:', error.name)
+        console.error('❌ Error message:', error.message)
+        console.error('❌ Full error:', error)
+        console.error('❌ Stack trace:', error.stack)
+        console.error('❌ ═══════════════════════════════════════════════')
         
         // STEP 12: Log error to Firestore
         try {
@@ -3249,21 +3277,6 @@
         console.log('✅ Order saved successfully! Order ID:', orderId)
 
         // ============================================
-        // STEP 8.2: 🔗 KEYCRM INTEGRATION - Send Order to KeyCRM
-        // ============================================
-        // Send order to KeyCRM immediately after saving to Firestore
-        // This runs in parallel and won't block user flow
-        sendToKeyCRM(orderData, orderId).then(result => {
-          if (result.success) {
-            console.log('✅ Order synced to KeyCRM successfully:', result.keyCrmOrderId)
-          } else {
-            console.warn('⚠️ KeyCRM sync failed (non-blocking):', result.error)
-          }
-        }).catch(err => {
-          console.error('⚠️ KeyCRM sync error (non-blocking):', err)
-        })
-
-        // ============================================
         // STEP 8.3: Mini-CRM - Sync Customer Profile
         // ============================================
         // ============================================
@@ -3396,7 +3409,22 @@
             // CONDITIONAL: PREPAYMENT DISABLED - SKIP PAYMENT
             // ============================================
             if (!isPrepaymentEnabled) {
-              console.log('✅ Prepayment DISABLED - skipping payment, redirecting to thank-you page...')
+              console.log('✅ Prepayment DISABLED - skipping payment, will sync to KeyCRM first...')
+              
+              // ============================================
+              // CRITICAL: Sync to KeyCRM BEFORE redirect
+              // ============================================
+              console.log('🔗 Syncing order to KeyCRM before redirect...')
+              try {
+                const keyCrmResult = await sendToKeyCRM(orderData, orderId)
+                if (keyCrmResult.success) {
+                  console.log('✅ Order synced to KeyCRM successfully:', keyCrmResult.keyCrmOrderId)
+                } else {
+                  console.warn('⚠️ KeyCRM sync failed (non-blocking):', keyCrmResult.error)
+                }
+              } catch (keyCrmError) {
+                console.error('⚠️ KeyCRM sync error (non-blocking):', keyCrmError)
+              }
               
               // Clear cart
               localStorage.removeItem('latiao_cart')

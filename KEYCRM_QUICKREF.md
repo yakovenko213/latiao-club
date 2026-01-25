@@ -1,53 +1,77 @@
 # 🔗 KeyCRM Integration - Quick Reference
 
+## ✅ Стан інтеграції: ПОВНІСТЮ РЕАЛІЗОВАНО
+
+### 🎉 Що вже працює:
+- ✅ Автоматична передача замовлень в KeyCRM
+- ✅ Створення/оновлення клієнтів
+- ✅ Синхронізація даних доставки (Нова Пошта, Укрпошта)
+- ✅ Передача товарів, цін, знижок
+- ✅ Обробка помилок та логування
+- ✅ UI в адмін-панелі для налаштувань
+
+---
+
 ## ⚡ Quick Setup (3 Steps)
 
-### 1️⃣ Get API Key
-KeyCRM → Settings → Integrations → API → Copy Key
+### 1️⃣ Get API Key from KeyCRM
+**KeyCRM** → **Settings** → **Integrations** → **API** → Copy Key
 
-### 2️⃣ Add to Firestore
+Права: `orders.create`, `orders.read`, `buyer.read`, `buyer.write`
+
+### 2️⃣ Find Source ID
+**KeyCRM** → **Settings** → **Order Sources** → Знайдіть "Website" → Запишіть ID (зазвичай **1**)
+
+### 3️⃣ Add to Admin Panel
+**Admin Panel** (`admin.html`) → **⚙️ Налаштування** → Заповніть:
+- 🔑 **KeyCRM API Key**: [ваш ключ]
+- 🔢 **KeyCRM Source ID**: [1]
+
+Натисніть **💾 Зберегти налаштування**
+
+---
+
+## 🧪 Testing
+
+### 1. Make Test Order
+- Додайте товар → Checkout → Оформіть замовлення
+
+### 2. Check Browser Console (F12)
 ```
-Collection: settings
-Document: admin
-Fields:
-  keyCrmApiKey: "YOUR_KEY"
-  keyCrmSourceId: 1
+✅ Order synced to KeyCRM successfully: 12345  // ✅ Success
+⚠️ KeyCRM sync failed: error message          // ❌ Failed
 ```
 
-### 3️⃣ Test
-Make test order → Check KeyCRM Orders
+### 3. Check KeyCRM
+**KeyCRM** → **Orders** → Знайдіть ваше замовлення
 
 ---
 
 ## 🔍 Quick Debug
 
-### Check Sync Status:
+### Check Sync Status in Firestore:
 ```javascript
-// In Firestore orders/{orderId}
-keyCrmOrderId: 12345  // ✅ Success
-keyCrmSyncSuccess: true
+// In Firestore: orders/{orderId}
+keyCrmOrderId: 12345          // ✅ Success
+keyCrmCustomerId: 67890       // ✅ Customer synced
+keyCrmSyncSuccess: true       // ✅ All good
+keyCrmSyncedAt: [timestamp]   // ✅ When synced
 
-// OR
-keyCrmSyncSuccess: false  // ❌ Failed
-keyCrmSyncError: "message"
-```
-
-### Console Logs:
-```
-✅ Order synced to KeyCRM successfully: 12345  // Success
-⚠️ KeyCRM sync failed (non-blocking): error    // Failed
+// OR (if failed)
+keyCrmSyncSuccess: false      // ❌ Failed
+keyCrmSyncError: "error msg"  // ❌ Error details
 ```
 
-### Error Logs:
+### Error Logs Location:
 ```
-Firestore → errors → type: "keycrm_integration"
+Firestore → errors collection → type: "keycrm_integration"
 ```
 
 ---
 
-## 📊 Data Map
+## 📊 Data Mapping
 
-| Field | KeyCRM | Website |
+| Field | KeyCRM API | Website Data |
 |-------|--------|---------|
 | **Buyer** | full_name | customer.fullName |
 | | phone | customer.phone |

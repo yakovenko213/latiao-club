@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📦 Check Order - KeyCRM Status</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 700px;
+      width: 100%;
+      padding: 40px;
+    }
+    
+    h1 {
+      font-size: 28px;
+      margin-bottom: 30px;
+      color: #333;
+      text-align: center;
+    }
+    
+    .input-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #333;
+    }
+    
+    input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+      margin-bottom: 20px;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+    }
+    
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .result {
+      margin-top: 30px;
+      padding: 20px;
+      border-radius: 12px;
+      display: none;
+    }
+    
+    .result.success {
+      background: #d4edda;
+      border: 2px solid #28a745;
+      display: block;
+    }
+    
+    .result.error {
+      background: #f8d7da;
+      border: 2px solid #dc3545;
+      display: block;
+    }
+    
+    .result.warning {
+      background: #fff3cd;
+      border: 2px solid #ffc107;
+      display: block;
+    }
+    
+    .result h2 {
+      font-size: 20px;
+      margin-bottom: 15px;
+    }
+    
+    .result.success h2 { color: #155724; }
+    .result.error h2 { color: #721c24; }
+    .result.warning h2 { color: #856404; }
+    
+    .detail {
+      margin: 10px 0;
+      padding: 12px;
+      background: rgba(0,0,0,0.05);
+      border-radius: 6px;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 14px;
+    }
+    
+    .detail strong {
+      display: inline-block;
+      min-width: 180px;
+    }
+    
+    .json {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin-top: 15px;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    
+    .icon {
+      font-size: 48px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">📦</div>
+    <h1>Check Order Status</h1>
+    
+    <div class="input-group">
+      <label for="order-id">Order ID</label>
+      <input 
+        type="text" 
+        id="order-id" 
+        placeholder="JQ4A6W"
+        value=""
+      >
+    </div>
+    
+    <button onclick="checkOrder()" id="check-btn">
+      🔍 Check KeyCRM Status
+    </button>
+    
+    <div id="result" class="result"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'
+    import { getFirestore, doc, getDoc, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCwD0vUGIzkEcH3_8aq6SxU14yG8YFH-Bc",
+      authDomain: "my-magazin-81c96.firebaseapp.com",
+      projectId: "my-magazin-81c96",
+      storageBucket: "my-magazin-81c96.firebasestorage.app",
+      messagingSenderId: "367796892180",
+      appId: "1:367796892180:web:9ac2e27a3ceac488e90c25"
+    }
+
+    const app = initializeApp(firebaseConfig)
+    const db = getFirestore(app)
+
+    window.checkOrder = async function() {
+      const orderId = document.getElementById('order-id').value.trim().toUpperCase()
+      const resultDiv = document.getElementById('result')
+      const btn = document.getElementById('check-btn')
+      
+      if (!orderId) {
+        resultDiv.className = 'result error'
+        resultDiv.innerHTML = '<h2>❌ Error</h2><p>Please enter an Order ID</p>'
+        return
+      }
+      
+      btn.disabled = true
+      btn.textContent = '⏳ Checking...'
+      resultDiv.style.display = 'none'
+      
+      try {
+        // Get order from Firestore
+        const orderRef = doc(db, 'orders', orderId)
+        const orderDoc = await getDoc(orderRef)
+        
+        if (!orderDoc.exists()) {
+          resultDiv.className = 'result error'
+          resultDiv.innerHTML = `
+            <h2>❌ Order Not Found</h2>
+            <p>Order ID <strong>${orderId}</strong> does not exist in database.</p>
+            <p style="margin-top: 10px; font-size: 14px;">Check if the Order ID is correct.</p>
+          `
+          btn.disabled = false
+          btn.textContent = '🔍 Check KeyCRM Status'
+          return
+        }
+        
+        const orderData = orderDoc.data()
+        
+        // Check KeyCRM sync status
+        const hasKeyCrmOrderId = !!orderData.keyCrmOrderId
+        const syncSuccess = orderData.keyCrmSyncSuccess
+        const syncError = orderData.keyCrmSyncError
+        const keyCrmOrderId = orderData.keyCrmOrderId
+        const keyCrmCustomerId = orderData.keyCrmCustomerId
+        
+        let html = ''
+        
+        if (hasKeyCrmOrderId && syncSuccess !== false) {
+          // SUCCESS
+          resultDiv.className = 'result success'
+          html = `
+            <h2>✅ Successfully Synced to KeyCRM</h2>
+            <div class="detail">
+              <strong>Order ID:</strong> ${orderId}
+            </div>
+            <div class="detail">
+              <strong>KeyCRM Order ID:</strong> ${keyCrmOrderId}
+            </div>
+            ${keyCrmCustomerId ? `
+            <div class="detail">
+              <strong>KeyCRM Customer ID:</strong> ${keyCrmCustomerId}
+            </div>
+            ` : ''}
+            <div class="detail">
+              <strong>Customer:</strong> ${orderData.customer?.fullName || 'N/A'}
+            </div>
+            <div class="detail">
+              <strong>Phone:</strong> ${orderData.customer?.phone || 'N/A'}
+            </div>
+            <div class="detail">
+              <strong>Total:</strong> ${orderData.summary?.total || 0} грн
+            </div>
+            <div class="detail">
+              <strong>Status:</strong> ${orderData.status || 'N/A'}
+            </div>
+            <p style="margin-top: 20px; color: #155724; font-weight: 600;">
+              🎉 Order successfully transmitted to KeyCRM!
+            </p>
+            <p style="margin-top: 10px; font-size: 14px; color: #155724;">
+              Check KeyCRM → Orders → Order ID: ${keyCrmOrderId}
+            </p>
+          `
+        } else if (syncSuccess === false) {
+          // ERROR
+          resultDiv.className = 'result error'
+          html = `
+            <h2>❌ KeyCRM Sync Failed</h2>
+            <div class="detail">
+              <strong>Order ID:</strong> ${orderId}
+            </div>
+            <div class="detail">
+              <strong>Error:</strong> ${syncError || 'Unknown error'}
+            </div>
+            <div class="detail">
+              <strong>Customer:</strong> ${orderData.customer?.fullName || 'N/A'}
+            </div>
+            <div class="detail">
+              <strong>Total:</strong> ${orderData.summary?.total || 0} грн
+            </div>
+            <p style="margin-top: 20px; color: #721c24; font-weight: 600;">
+              ⚠️ Order saved in database but NOT sent to KeyCRM
+            </p>
+            <p style="margin-top: 10px; font-size: 14px; color: #721c24;">
+              <strong>Possible causes:</strong><br>
+              • KeyCRM API Key invalid or expired<br>
+              • KeyCRM Source ID incorrect<br>
+              • Network error during sync<br>
+              • Required field missing in order
+            </p>
+          `
+        } else {
+          // WARNING - No KeyCRM data
+          resultDiv.className = 'result warning'
+          html = `
+            <h2>⚠️ No KeyCRM Sync Attempted</h2>
+            <div class="detail">
+              <strong>Order ID:</strong> ${orderId}
+            </div>
+            <div class="detail">
+              <strong>Customer:</strong> ${orderData.customer?.fullName || 'N/A'}
+            </div>
+            <div class="detail">
+              <strong>Total:</strong> ${orderData.summary?.total || 0} грн
+            </div>
+            <div class="detail">
+              <strong>Created:</strong> ${orderData.createdAt?.toDate?.()?.toLocaleString?.('uk-UA') || 'N/A'}
+            </div>
+            <p style="margin-top: 20px; color: #856404; font-weight: 600;">
+              ⚠️ No KeyCRM sync fields found in order
+            </p>
+            <p style="margin-top: 10px; font-size: 14px; color: #856404;">
+              <strong>This means:</strong><br>
+              • The sendToKeyCRM function was NOT called<br>
+              • KeyCRM settings might be missing (settings/admin)<br>
+              • The function failed before logging started
+            </p>
+            <p style="margin-top: 15px; font-size: 14px; color: #856404;">
+              <strong>Check:</strong><br>
+              1. settings/admin document exists in Firestore<br>
+              2. keyCrmApiKey field is not empty<br>
+              3. Browser console during checkout (enable "Preserve log")
+            </p>
+          `
+        }
+        
+        // Check for error logs
+        const errorsQuery = query(
+          collection(db, 'errors'), 
+          where('orderId', '==', orderId),
+          where('type', '==', 'keycrm_integration')
+        )
+        const errorDocs = await getDocs(errorsQuery)
+        
+        if (!errorDocs.empty) {
+          html += `
+            <div style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.1); border-radius: 8px;">
+              <strong style="color: #721c24;">Error Log Found:</strong>
+              <div class="json">${JSON.stringify(errorDocs.docs[0].data(), null, 2)}</div>
+            </div>
+          `
+        }
+        
+        resultDiv.innerHTML = html
+        
+      } catch (error) {
+        resultDiv.className = 'result error'
+        resultDiv.innerHTML = `
+          <h2>❌ Error</h2>
+          <p>${error.message}</p>
+          <div class="json">${error.stack}</div>
+        `
+      }
+      
+      btn.disabled = false
+      btn.textContent = '🔍 Check KeyCRM Status'
+    }
+
+    // Auto-fill from URL
+    const urlParams = new URLSearchParams(window.location.search)
+    const orderIdParam = urlParams.get('orderId')
+    if (orderIdParam) {
+      document.getElementById('order-id').value = orderIdParam
+      window.checkOrder()
+    }
+  </script>
+</body>
+</html>

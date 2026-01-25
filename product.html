@@ -578,6 +578,17 @@
                 Цим товаром цікавилися <span id="view-count" class="text-gray-500">0</span> разів за цей тиждень
               </p>
             </div>
+
+            <!-- Arrival Date Message (Hidden by default, shown conditionally) -->
+            <div id="arrival-date-message" class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl px-3 md:px-4 py-2.5 md:py-3 mt-3 md:mt-4 shadow-sm hover:shadow-md transition-all duration-200 hidden">
+              <p class="text-xs md:text-sm font-medium text-gray-700 flex items-center gap-2">
+                <span class="text-lg md:text-xl flex-shrink-0">✈️</span>
+                <span class="flex-1">
+                  Очікуємо поставку 
+                  <span id="arrival-date-text" class="text-[#ff6b00] font-bold block md:inline mt-0.5 md:mt-0"></span>
+                </span>
+              </p>
+            </div>
           </div>
         </section>
 
@@ -1053,6 +1064,32 @@
       }
 
       // ============================================
+      // ARRIVAL DATE UTILITY FUNCTIONS
+      // ============================================
+      function formatUkrainianDate(dateString) {
+        if (!dateString) return ''
+        
+        const date = new Date(dateString)
+        const months = [
+          'січня', 'лютого', 'березня', 'квітня', 'травня', 'червня',
+          'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня'
+        ]
+        
+        const day = date.getDate()
+        const month = months[date.getMonth()]
+        
+        return `${day} ${month}`
+      }
+
+      function isDateInFuture(dateString) {
+        if (!dateString) return false
+        const arrivalDate = new Date(dateString)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        return arrivalDate >= today
+      }
+
+      // ============================================
       // STOCK HANDLING (Critical Section)
       // ============================================
       maxStock = product.stock ?? product.quantity ?? 0
@@ -1118,6 +1155,25 @@
 
         if (quantityContainer) {
           quantityContainer.classList.remove('opacity-50', 'pointer-events-none')
+        }
+      }
+
+      // ============================================
+      // ARRIVAL DATE DISPLAY
+      // ============================================
+      const arrivalMessageEl = document.getElementById('arrival-date-message')
+      const arrivalDateTextEl = document.getElementById('arrival-date-text')
+      
+      // Show arrival date if: out of stock + expected + future date
+      if (!inStock && product.is_expected && product.arrival_date && isDateInFuture(product.arrival_date)) {
+        const formattedDate = formatUkrainianDate(product.arrival_date)
+        if (arrivalMessageEl && arrivalDateTextEl) {
+          arrivalDateTextEl.textContent = formattedDate
+          arrivalMessageEl.classList.remove('hidden')
+        }
+      } else {
+        if (arrivalMessageEl) {
+          arrivalMessageEl.classList.add('hidden')
         }
       }
 

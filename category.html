@@ -611,6 +611,33 @@
       renderProducts(filteredProducts)
     }
 
+    // ============================================
+    // DATE FORMATTING UTILITIES
+    // ============================================
+
+    function formatUkrainianDate(dateString) {
+      if (!dateString) return ''
+      
+      const date = new Date(dateString)
+      const months = [
+        'січня', 'лютого', 'березня', 'квітня', 'травня', 'червня',
+        'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня'
+      ]
+      
+      const day = date.getDate()
+      const month = months[date.getMonth()]
+      
+      return `${day} ${month}`
+    }
+
+    function isDateInFuture(dateString) {
+      if (!dateString) return false
+      const arrivalDate = new Date(dateString)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      return arrivalDate >= today
+    }
+
     function renderProducts(products) {
       const grid = document.getElementById('products-grid')
       document.getElementById('products-count').textContent = products.length
@@ -691,6 +718,21 @@
                     <div class="mb-3 flex items-center gap-1 text-xs md:text-sm font-semibold ${inStock ? 'text-green-600' : 'text-red-500'}">
                       ${inStock ? '✅ Готово до відправки' : '⛔ Немає в наявності'}
                     </div>
+
+                    <!-- Arrival Date Message (Conditional) -->
+                    ${(stockAmount === 0 && product.is_expected && product.arrival_date && isDateInFuture(product.arrival_date))
+                      ? `<div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg px-2.5 md:px-3 py-2 mb-3 shadow-sm hover:shadow-md transition-shadow duration-200">
+                           <p class="text-[10px] md:text-sm font-medium text-gray-700 flex items-center gap-1 md:gap-1.5">
+                             <span class="text-sm md:text-base flex-shrink-0">✈️</span>
+                             <span class="flex-1">
+                               <span class="hidden md:inline">Очікуємо поставку</span>
+                               <span class="md:hidden">Поставка</span>
+                               <span class="text-[#ff6b00] font-semibold ml-1">${formatUkrainianDate(product.arrival_date)}</span>
+                             </span>
+                           </p>
+                         </div>`
+                      : ''
+                    }
                   </div>
 
                   <button 
