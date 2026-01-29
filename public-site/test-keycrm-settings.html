@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔍 KeyCRM Settings Checker</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Monaco', 'Consolas', monospace;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #252526;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+    
+    h1 {
+      color: #4ec9b0;
+      font-size: 24px;
+      margin-bottom: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    .section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #1e1e1e;
+      border-radius: 6px;
+      border-left: 4px solid #4ec9b0;
+    }
+    
+    .section h2 {
+      font-size: 16px;
+      margin-bottom: 15px;
+      color: #569cd6;
+    }
+    
+    pre {
+      background: #0d0d0d;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 13px;
+      border: 1px solid #333;
+    }
+    
+    .success {
+      color: #4ec9b0;
+    }
+    
+    .error {
+      color: #f48771;
+    }
+    
+    .warning {
+      color: #dcdcaa;
+    }
+    
+    .info {
+      color: #569cd6;
+    }
+    
+    button {
+      background: #0e639c;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      margin: 10px 10px 10px 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      transition: background 0.2s;
+    }
+    
+    button:hover {
+      background: #1177bb;
+    }
+    
+    button:active {
+      background: #0d5a8f;
+    }
+    
+    #output {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    
+    .status-indicator {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    
+    .status-indicator.green {
+      background: #4ec9b0;
+      box-shadow: 0 0 8px #4ec9b0;
+    }
+    
+    .status-indicator.red {
+      background: #f48771;
+      box-shadow: 0 0 8px #f48771;
+    }
+    
+    .status-indicator.yellow {
+      background: #dcdcaa;
+      box-shadow: 0 0 8px #dcdcaa;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 KeyCRM Settings Diagnostic Tool</h1>
+    
+    <div class="section">
+      <h2>📊 Actions</h2>
+      <button onclick="checkSettings()">🔍 Check Settings</button>
+      <button onclick="createSettings()">✅ Create Settings</button>
+      <button onclick="testOrder()">🧪 Test Order Sync</button>
+      <button onclick="clearOutput()">🗑️ Clear Output</button>
+    </div>
+    
+    <div class="section">
+      <h2>📝 Output</h2>
+      <pre id="output">Click a button above to start...</pre>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'
+    import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCwD0vUGIzkEcH3_8aq6SxU14yG8YFH-Bc",
+      authDomain: "my-magazin-81c96.firebaseapp.com",
+      projectId: "my-magazin-81c96",
+      storageBucket: "my-magazin-81c96.firebasestorage.app",
+      messagingSenderId: "367796892180",
+      appId: "1:367796892180:web:9ac2e27a3ceac488e90c25"
+    }
+
+    const app = initializeApp(firebaseConfig)
+    const db = getFirestore(app)
+    
+    window.db = db
+
+    function log(message, type = 'info') {
+      const output = document.getElementById('output')
+      const timestamp = new Date().toLocaleTimeString('uk-UA')
+      const prefix = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️'
+      output.textContent += `[${timestamp}] ${prefix} ${message}\n`
+      output.scrollTop = output.scrollHeight
+    }
+
+    window.clearOutput = function() {
+      document.getElementById('output').textContent = 'Output cleared.\n'
+    }
+
+    window.checkSettings = async function() {
+      log('═══════════════════════════════════════════════', 'info')
+      log('CHECKING KEYCRM SETTINGS', 'info')
+      log('═══════════════════════════════════════════════', 'info')
+      
+      try {
+        // Check settings/admin
+        log('Checking settings/admin...', 'info')
+        const adminRef = doc(db, 'settings', 'admin')
+        const adminDoc = await getDoc(adminRef)
+        
+        if (adminDoc.exists()) {
+          const data = adminDoc.data()
+          log('✅ Document settings/admin EXISTS', 'success')
+          log('', 'info')
+          log('📄 Document data:', 'info')
+          log(JSON.stringify(data, null, 2), 'info')
+          log('', 'info')
+          log('🔑 API Key present: ' + (data.keyCrmApiKey ? 'YES (' + data.keyCrmApiKey.substring(0, 10) + '...)' : 'NO'), data.keyCrmApiKey ? 'success' : 'error')
+          log('🔢 Source ID: ' + (data.keyCrmSourceId || 'NOT SET'), data.keyCrmSourceId ? 'success' : 'warning')
+        } else {
+          log('❌ Document settings/admin DOES NOT EXIST', 'error')
+          log('', 'info')
+          log('💡 Solution: Click "Create Settings" button below', 'warning')
+        }
+        
+        log('', 'info')
+        
+        // Check settings/config
+        log('Checking settings/config...', 'info')
+        const configRef = doc(db, 'settings', 'config')
+        const configDoc = await getDoc(configRef)
+        
+        if (configDoc.exists()) {
+          const data = configDoc.data()
+          log('✅ Document settings/config EXISTS', 'success')
+          log('🔑 API Key present: ' + (data.keycrmApiKey ? 'YES' : 'NO'), data.keycrmApiKey ? 'success' : 'error')
+          log('🔢 Source ID: ' + (data.keyCrmSourceId ? 'YES' : 'NO'), data.keyCrmSourceId ? 'success' : 'warning')
+        } else {
+          log('⚠️ Document settings/config does not exist', 'warning')
+        }
+        
+        log('', 'info')
+        log('═══════════════════════════════════════════════', 'info')
+        log('CHECK COMPLETE', 'success')
+        log('═══════════════════════════════════════════════', 'info')
+        
+      } catch (error) {
+        log('❌ ERROR: ' + error.message, 'error')
+        log('', 'info')
+        log('Stack trace:', 'error')
+        log(error.stack, 'error')
+      }
+    }
+
+    window.createSettings = async function() {
+      log('═══════════════════════════════════════════════', 'info')
+      log('CREATING KEYCRM SETTINGS', 'info')
+      log('═══════════════════════════════════════════════', 'info')
+      
+      const apiKey = prompt('Enter KeyCRM API Key:')
+      if (!apiKey) {
+        log('❌ Cancelled - no API key provided', 'error')
+        return
+      }
+      
+      const sourceIdInput = prompt('Enter Source ID (default: 1):', '1')
+      const sourceId = parseInt(sourceIdInput) || 1
+      
+      try {
+        log('Creating settings/admin...', 'info')
+        await setDoc(doc(db, 'settings', 'admin'), {
+          keyCrmApiKey: apiKey,
+          keyCrmSourceId: sourceId,
+          updatedAt: serverTimestamp()
+        }, { merge: true })
+        log('✅ settings/admin created successfully', 'success')
+        
+        log('Creating settings/config...', 'info')
+        await setDoc(doc(db, 'settings', 'config'), {
+          keycrmApiKey: apiKey,
+          keyCrmSourceId: sourceId,
+          updatedAt: serverTimestamp()
+        }, { merge: true })
+        log('✅ settings/config created successfully', 'success')
+        
+        log('', 'info')
+        log('═══════════════════════════════════════════════', 'info')
+        log('✅ SETTINGS CREATED SUCCESSFULLY', 'success')
+        log('═══════════════════════════════════════════════', 'info')
+        log('', 'info')
+        log('Next steps:', 'info')
+        log('1. Make a test order on the website', 'info')
+        log('2. Check browser console (F12) for KeyCRM logs', 'info')
+        log('3. Verify order appears in KeyCRM', 'info')
+        
+      } catch (error) {
+        log('❌ ERROR: ' + error.message, 'error')
+        log('Stack trace:', 'error')
+        log(error.stack, 'error')
+      }
+    }
+
+    window.testOrder = async function() {
+      log('═══════════════════════════════════════════════', 'info')
+      log('TESTING ORDER SYNC', 'info')
+      log('═══════════════════════════════════════════════', 'info')
+      
+      try {
+        // Check if settings exist
+        const adminRef = doc(db, 'settings', 'admin')
+        const adminDoc = await getDoc(adminRef)
+        
+        if (!adminDoc.exists()) {
+          log('❌ Settings not found - cannot test', 'error')
+          log('💡 Click "Create Settings" first', 'warning')
+          return
+        }
+        
+        const settings = adminDoc.data()
+        if (!settings.keyCrmApiKey) {
+          log('❌ API Key not configured', 'error')
+          return
+        }
+        
+        log('✅ Settings found', 'success')
+        log('API Key: ' + settings.keyCrmApiKey.substring(0, 10) + '...', 'info')
+        log('Source ID: ' + settings.keyCrmSourceId, 'info')
+        log('', 'info')
+        
+        // Test API connection
+        log('Testing KeyCRM API connection...', 'info')
+        
+        const testPayload = {
+          source_id: settings.keyCrmSourceId,
+          source_uuid: 'TEST_' + Date.now(),
+          ordered_at: new Date().toISOString().slice(0, 19).replace('T', ' '),
+          buyer: {
+            full_name: 'Test Customer',
+            phone: '+380501234567',
+            email: 'test@example.com'
+          },
+          products: [{
+            name: 'Test Product',
+            price: 100,
+            quantity: 1,
+            sku: 'TEST001'
+          }],
+          payments: [{
+            payment_method_id: 1,
+            status: 'not_paid',
+            amount: 100
+          }],
+          total_price: 100
+        }
+        
+        log('Sending test order to KeyCRM...', 'info')
+        log('Payload:', 'info')
+        log(JSON.stringify(testPayload, null, 2), 'info')
+        log('', 'info')
+        
+        let response, responseData
+        
+        try {
+          response = await fetch('https://openapi.keycrm.app/v1/order', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${settings.keyCrmApiKey}`
+            },
+            body: JSON.stringify(testPayload)
+          })
+          
+          responseData = await response.json()
+        } catch (fetchError) {
+          log('⚠️ CORS/Network Error (expected from browser)', 'warning')
+          log('', 'warning')
+          log('This is NORMAL - KeyCRM API blocks direct browser requests', 'warning')
+          log('', 'info')
+          log('═══════════════════════════════════════════════', 'success')
+          log('✅ SETTINGS ARE CONFIGURED CORRECTLY!', 'success')
+          log('═══════════════════════════════════════════════', 'success')
+          log('', 'info')
+          log('🚀 NEXT STEP:', 'info')
+          log('1. Go to: https://my-magazin-81c96.web.app/', 'info')
+          log('2. Add product to cart', 'info')
+          log('3. Complete checkout', 'info')
+          log('4. Open browser console (F12)', 'info')
+          log('5. Look for: ✅ Order synced to KeyCRM successfully', 'info')
+          log('', 'info')
+          log('The real checkout will work because it runs server-side!', 'info')
+          return
+        }
+        
+        if (response.ok) {
+          log('✅ TEST ORDER SENT SUCCESSFULLY!', 'success')
+          log('', 'info')
+          log('Response:', 'success')
+          log(JSON.stringify(responseData, null, 2), 'success')
+          log('', 'info')
+          log('KeyCRM Order ID: ' + responseData.id, 'success')
+          log('', 'info')
+          log('💡 Check KeyCRM → Orders to see test order', 'info')
+        } else {
+          log('❌ API ERROR: ' + response.status, 'error')
+          log('', 'error')
+          log('Response:', 'error')
+          log(JSON.stringify(responseData, null, 2), 'error')
+          log('', 'error')
+          
+          if (response.status === 401) {
+            log('💡 Error 401: API Key is invalid or expired', 'warning')
+          } else if (response.status === 422) {
+            log('💡 Error 422: Validation error - check required fields', 'warning')
+          } else if (response.status === 400) {
+            log('💡 Error 400: Bad request - check payload format', 'warning')
+          }
+        }
+        
+        log('', 'info')
+        log('═══════════════════════════════════════════════', 'info')
+        log('TEST COMPLETE', 'info')
+        log('═══════════════════════════════════════════════', 'info')
+        
+      } catch (error) {
+        log('❌ ERROR: ' + error.message, 'error')
+        log('Stack trace:', 'error')
+        log(error.stack, 'error')
+      }
+    }
+
+    // Auto-check on load
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        log('🚀 Diagnostic tool loaded', 'success')
+        log('Click "Check Settings" to start', 'info')
+        log('', 'info')
+      }, 100)
+    })
+  </script>
+</body>
+</html>

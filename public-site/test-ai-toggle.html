@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Toggle Test - Diagnostic Tool</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #ff6b00;
+      margin-bottom: 20px;
+    }
+    .test-section {
+      background: #f9f9f9;
+      border: 2px solid #e0e0e0;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+    .status {
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    .success {
+      background: #d4edda;
+      border: 2px solid #28a745;
+      color: #155724;
+    }
+    .error {
+      background: #f8d7da;
+      border: 2px solid #dc3545;
+      color: #721c24;
+    }
+    .info {
+      background: #d1ecf1;
+      border: 2px solid #17a2b8;
+      color: #0c5460;
+    }
+    button {
+      background: #ff6b00;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      margin: 5px;
+    }
+    button:hover {
+      background: #e55f00;
+    }
+    .toggle-demo {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 34px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #9333ea;
+    }
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔬 AI Toggle Diagnostic Tool</h1>
+    <p>Цей інструмент перевіряє та налаштовує AI Checkout Assistant toggle.</p>
+
+    <div class="test-section">
+      <h3>📊 Поточний статус</h3>
+      <div id="current-status" class="status info">Завантаження...</div>
+    </div>
+
+    <div class="test-section">
+      <h3>🎛️ Тестовий Toggle</h3>
+      <div class="toggle-demo">
+        <label class="switch">
+          <input type="checkbox" id="test-toggle">
+          <span class="slider"></span>
+        </label>
+        <span id="toggle-label">Вимкнено</span>
+      </div>
+      <button onclick="saveTestToggle()">💾 Зберегти в Firestore</button>
+      <button onclick="readFromFirestore()">📖 Прочитати з Firestore</button>
+    </div>
+
+    <div class="test-section">
+      <h3>🧪 Тести</h3>
+      <button onclick="testBooleanTrue()">Test: Boolean TRUE</button>
+      <button onclick="testBooleanFalse()">Test: Boolean FALSE</button>
+      <button onclick="testStringTrue()">Test: String "true"</button>
+      <button onclick="testStringFalse()">Test: String "false"</button>
+      <button onclick="testNumber1()">Test: Number 1</button>
+      <button onclick="testNumber0()">Test: Number 0</button>
+      <div id="test-results" style="margin-top: 15px;"></div>
+    </div>
+
+    <div class="test-section">
+      <h3>📝 Real-Time Updates Log</h3>
+      <div id="realtime-log" style="max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px; background: #000; color: #0f0; padding: 15px; border-radius: 8px;"></div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAmC7rAl_2GkUIRCqYkjZiC-1oB0j2WqaY",
+      authDomain: "my-magazin-81c96.firebaseapp.com",
+      projectId: "my-magazin-81c96",
+      storageBucket: "my-magazin-81c96.firebasestorage.app",
+      messagingSenderId: "1033421033066",
+      appId: "1:1033421033066:web:f88a9ef19e6f9d5f6d4b89"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const checkoutRef = doc(db, 'settings', 'checkout');
+
+    function addLog(message, type = 'info') {
+      const log = document.getElementById('realtime-log');
+      const timestamp = new Date().toLocaleTimeString();
+      const color = type === 'success' ? '#0f0' : type === 'error' ? '#f00' : '#0ff';
+      log.innerHTML += `<div style="color: ${color};">[${timestamp}] ${message}</div>`;
+      log.scrollTop = log.scrollHeight;
+      console.log(message);
+    }
+
+    // Toggle UI update
+    const toggle = document.getElementById('test-toggle');
+    const label = document.getElementById('toggle-label');
+    
+    toggle.addEventListener('change', () => {
+      label.textContent = toggle.checked ? 'Увімкнено ✅' : 'Вимкнено ❌';
+      label.style.color = toggle.checked ? '#28a745' : '#dc3545';
+    });
+
+    // Save to Firestore
+    window.saveTestToggle = async function() {
+      const isEnabled = toggle.checked;
+      addLog(`💾 Saving to Firestore: aiAssistantEnabled = ${isEnabled}`, 'info');
+      
+      try {
+        await setDoc(checkoutRef, {
+          aiAssistantEnabled: isEnabled,
+          updatedAt: new Date().toISOString(),
+          testMode: true
+        }, { merge: true });
+        
+        addLog(`✅ Successfully saved: ${isEnabled}`, 'success');
+        alert('✅ Збережено в settings/checkout!');
+      } catch (error) {
+        addLog(`❌ Error saving: ${error.message}`, 'error');
+        alert('❌ Помилка: ' + error.message);
+      }
+    };
+
+    // Read from Firestore
+    window.readFromFirestore = async function() {
+      addLog('📖 Reading from settings/checkout...', 'info');
+      
+      try {
+        const docSnap = await getDoc(checkoutRef);
+        
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          addLog(`📊 Full data: ${JSON.stringify(data)}`, 'info');
+          addLog(`🎯 aiAssistantEnabled = ${data.aiAssistantEnabled} (Type: ${typeof data.aiAssistantEnabled})`, 'info');
+          
+          document.getElementById('current-status').innerHTML = `
+            <strong>Поле:</strong> aiAssistantEnabled<br>
+            <strong>Значення:</strong> ${data.aiAssistantEnabled}<br>
+            <strong>Тип:</strong> ${typeof data.aiAssistantEnabled}<br>
+            <strong>Оновлено:</strong> ${data.updatedAt || 'N/A'}
+          `;
+          document.getElementById('current-status').className = 'status success';
+        } else {
+          addLog('⚠️ Document does not exist!', 'error');
+          document.getElementById('current-status').innerHTML = '❌ Документ settings/checkout не існує!';
+          document.getElementById('current-status').className = 'status error';
+        }
+      } catch (error) {
+        addLog(`❌ Error reading: ${error.message}`, 'error');
+      }
+    };
+
+    // Test functions
+    window.testBooleanTrue = async function() {
+      addLog('🧪 Testing: Boolean TRUE', 'info');
+      await setDoc(checkoutRef, { aiAssistantEnabled: true }, { merge: true });
+      addLog('✅ Set to: true (boolean)', 'success');
+    };
+
+    window.testBooleanFalse = async function() {
+      addLog('🧪 Testing: Boolean FALSE', 'info');
+      await setDoc(checkoutRef, { aiAssistantEnabled: false }, { merge: true });
+      addLog('✅ Set to: false (boolean)', 'success');
+    };
+
+    window.testStringTrue = async function() {
+      addLog('🧪 Testing: String "true"', 'info');
+      await setDoc(checkoutRef, { aiAssistantEnabled: "true" }, { merge: true });
+      addLog('✅ Set to: "true" (string)', 'success');
+    };
+
+    window.testStringFalse = async function() {
+      addLog('🧪 Testing: String "false"', 'info');
+      await setDoc(checkoutRef, { aiAssistantEnabled: "false" }, { merge: true });
+      addLog('✅ Set to: "false" (string)', 'success');
+    };
+
+    window.testNumber1 = async function() {
+      addLog('🧪 Testing: Number 1', 'info');
+      await setDoc(checkoutRef, { aiAssistantEnabled: 1 }, { merge: true });
+      addLog('✅ Set to: 1 (number)', 'success');
+    };
+
+    window.testNumber0 = async function() {
+      addLog('🧪 Testing: Number 0', 'info');
+      await setDoc(checkoutRef, { aiAssistantEnabled: 0 }, { merge: true });
+      addLog('✅ Set to: 0 (number)', 'success');
+    };
+
+    // Real-time listener
+    addLog('👂 Setting up real-time listener...', 'info');
+    onSnapshot(checkoutRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        addLog(`🔄 Real-time update: ${JSON.stringify(data)}`, 'success');
+        addLog(`🎯 aiAssistantEnabled = ${data.aiAssistantEnabled} (${typeof data.aiAssistantEnabled})`, 'info');
+        
+        // Update UI
+        toggle.checked = data.aiAssistantEnabled === true || data.aiAssistantEnabled === "true" || data.aiAssistantEnabled === 1;
+        toggle.dispatchEvent(new Event('change'));
+        
+        document.getElementById('current-status').innerHTML = `
+          <strong>Поле:</strong> aiAssistantEnabled<br>
+          <strong>Значення:</strong> ${data.aiAssistantEnabled}<br>
+          <strong>Тип:</strong> ${typeof data.aiAssistantEnabled}<br>
+          <strong>Оновлено:</strong> ${data.updatedAt || 'N/A'}<br>
+          <strong>Real-time:</strong> ✅ Активний
+        `;
+        document.getElementById('current-status').className = 'status success';
+      }
+    });
+
+    // Initial load
+    readFromFirestore();
+  </script>
+</body>
+</html>

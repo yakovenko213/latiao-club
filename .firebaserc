@@ -1,5 +1,18 @@
 {
   "projects": {
     "default": "my-magazin-81c96"
-  }
+  },
+  "targets": {
+    "my-magazin-81c96": {
+      "hosting": {
+        "main": [
+          "my-magazin-81c96"
+        ],
+        "adminpanel": [
+          "admin-store-latio"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

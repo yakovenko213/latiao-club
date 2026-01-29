@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Категорія | LATIAO SNACK</title>
+  
+  <!-- Skeleton Loader for instant render -->
+  <style id="skeleton-loader">
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .page-skeleton { min-height: 100vh; background: #fff; }
+    .skeleton-bar {
+      height: 20px;
+      background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+    .content-loaded .page-skeleton { display: none; }
+  </style>
+  
+  <script>
+    // Show content immediately when DOM ready
+    document.addEventListener('DOMContentLoaded', () => {
+      document.body.classList.add('content-loaded');
+    });
+  </script>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            spicy: '#ff6b00',
+            'spicy-orange': '#ff6b00',
+            'flame-red': '#e53e3e',
+            orange: {
+              500: '#ff6b00',
+              600: '#e55f00',
+              100: '#fff3e8'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .hero-blob {
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      background: linear-gradient(135deg, rgba(255, 107, 0, 0.1) 0%, rgba(255, 107, 0, 0.05) 100%);
+      border-radius: 50%;
+      filter: blur(60px);
+      z-index: 0;
+    }
+
+    .chili-decoration {
+      position: absolute;
+      font-size: 2rem;
+      opacity: 0.15;
+      z-index: 0;
+    }
+
+    .card-hover {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card-hover:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-press:active {
+      transform: scale(0.95);
+    }
+
+    .out-of-stock {
+      filter: saturate(0.5);
+    }
+
+    .qty-controls {
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .card-hover:hover .qty-controls {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 768px) {
+      .qty-controls {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .loading-spinner {
+      border: 4px solid #f3f4f6;
+      border-top: 4px solid #ff6b00;
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Toast animations */
+    .toast-enter {
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .toast-exit {
+      animation: slideOut 0.3s ease-in;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+
+      to {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+    }
+
+    /* Cart animations */
+    .cart-item-enter {
+      animation: fadeSlideIn 0.3s ease-out;
+    }
+
+    .cart-item-exit {
+      animation: fadeSlideOut 0.28s ease-in;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeSlideOut {
+      from {
+        opacity: 1;
+        transform: translateX(0);
+      }
+
+      to {
+        opacity: 0;
+        transform: translateX(100%);
+      }
+    }
+
+    /* Progress bar animation */
+    .progress-bar-fill {
+      transition: width 0.5s ease-out;
+    }
+
+    /* Product card animation */
+    @keyframes fadeSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .product-card {
+      animation: fadeSlideUp 0.6s ease-out forwards;
+    }
+
+    /* Filter Drawer Styles */
+    .filter-drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 40;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .filter-drawer-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .filter-drawer {
+      position: fixed;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+      max-width: 400px;
+      background: white;
+      z-index: 50;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      overflow-y: auto;
+      box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .filter-drawer.active {
+      transform: translateX(0);
+    }
+
+    /* Mobile: Bottom sheet style */
+    @media (max-width: 768px) {
+      .filter-drawer {
+        top: auto;
+        right: 0;
+        left: 0;
+        max-width: 100%;
+        max-height: 85vh;
+        border-radius: 24px 24px 0 0;
+        transform: translateY(100%);
+      }
+
+      .filter-drawer.active {
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-white text-gray-900 min-h-screen">
+
+  <!-- Layout.js буде автоматично завантажувати Header, Mobile Menu, Cart, Toast тут -->
+
+  <main class="pt-20">
+    <!-- Hero Section -->
+    <section class="relative overflow-hidden py-12 md:py-20 px-4">
+      <div class="hero-blob top-0 left-1/4"></div>
+      <div class="hero-blob bottom-0 right-1/4"></div>
+      <span class="chili-decoration top-10 left-10">🌶️</span>
+      <span class="chili-decoration top-20 right-20 rotate-45">🌶️</span>
+      <span class="chili-decoration bottom-10 left-1/3 -rotate-12">🌶️</span>
+
+      <div class="max-w-7xl mx-auto relative z-10">
+        <nav class="mb-6">
+          <ol class="flex items-center gap-2 text-sm text-gray-500">
+            <li><a href="index.html" class="hover:text-orange-500 transition-colors">Головна</a></li>
+            <li>/</li>
+            <li><a href="index.html#shop" class="hover:text-orange-500 transition-colors">Категорії</a></li>
+            <li>/</li>
+            <li id="breadcrumb-current" class="text-orange-500 font-medium">Завантаження...</li>
+          </ol>
+        </nav>
+
+        <h1 id="category-title" class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 mb-4">
+          Завантаження...
+        </h1>
+        <p id="category-desc" class="text-lg md:text-xl text-gray-600 max-w-2xl">
+          Будь ласка, зачекайте...
+        </p>
+      </div>
+    </section>
+
+    <!-- Filters Section -->
+    <section class="px-4 pb-8">
+      <div class="max-w-7xl mx-auto">
+        <div class="bg-gray-50 rounded-3xl p-4 md:p-6 flex items-center justify-between">
+          <!-- Filter Toggle Button -->
+          <button onclick="window.toggleFilterDrawer()"
+            class="flex items-center gap-2 bg-white px-4 py-2.5 rounded-2xl shadow-sm hover:shadow-md transition-all font-medium hover:bg-orange-50 active:scale-95">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            <span>Фільтри</span>
+          </button>
+
+          <div class="text-gray-600 font-medium">
+            Знайдено: <span class="text-orange-500 font-bold" id="products-count">0</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Loading State -->
+    <div id="loading-state" class="flex justify-center items-center py-20">
+      <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Filter Drawer Overlay -->
+    <div id="filter-overlay" class="filter-drawer-overlay" onclick="window.toggleFilterDrawer()"></div>
+
+    <!-- Filter Drawer Panel -->
+    <div id="filter-drawer" class="filter-drawer">
+      <div class="p-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            Фільтри
+          </h3>
+          <button onclick="window.toggleFilterDrawer()" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Price Range Filter -->
+        <div class="mb-6">
+          <h4 class="text-sm font-semibold text-gray-700 mb-3">💰 Ціна (грн)</h4>
+          <div class="space-y-3">
+            <input type="number" id="filter-price-min" placeholder="Від" min="0"
+              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none">
+            <input type="number" id="filter-price-max" placeholder="До" min="0"
+              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none">
+          </div>
+        </div>
+
+        <!-- Spiciness Filter -->
+        <div class="mb-6">
+          <h4 class="text-sm font-semibold text-gray-700 mb-3">🌶️ Гострота</h4>
+          <div class="space-y-2">
+            <label class="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-3 rounded-xl transition-colors">
+              <input type="checkbox"
+                class="spiciness-filter w-5 h-5 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                value="0">
+              <span class="text-sm font-medium text-gray-700">Не гострий</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-3 rounded-xl transition-colors">
+              <input type="checkbox"
+                class="spiciness-filter w-5 h-5 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                value="1">
+              <span class="text-sm font-medium text-gray-700">🌶️ 1</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-3 rounded-xl transition-colors">
+              <input type="checkbox"
+                class="spiciness-filter w-5 h-5 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                value="2">
+              <span class="text-sm font-medium text-gray-700">🌶️🌶️ 2</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-3 rounded-xl transition-colors">
+              <input type="checkbox"
+                class="spiciness-filter w-5 h-5 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                value="3">
+              <span class="text-sm font-medium text-gray-700">🌶️🌶️🌶️ 3</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-3 rounded-xl transition-colors">
+              <input type="checkbox"
+                class="spiciness-filter w-5 h-5 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                value="4">
+              <span class="text-sm font-medium text-gray-700">🌶️🌶️🌶️🌶️ 4</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-3 rounded-xl transition-colors">
+              <input type="checkbox"
+                class="spiciness-filter w-5 h-5 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                value="5">
+              <span class="text-sm font-medium text-gray-700">🌶️🌶️🌶️🌶️🌶️ 5</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="space-y-3 sticky bottom-0 bg-white pt-4 border-t border-gray-100">
+          <button onclick="window.applyFiltersAndClose()"
+            class="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold py-3.5 rounded-xl hover:shadow-lg transition-all active:scale-95">
+            Застосувати
+          </button>
+          <button onclick="window.resetFilters()"
+            class="w-full bg-gray-100 text-gray-700 font-semibold py-3.5 rounded-xl hover:bg-gray-200 transition-all active:scale-95">
+            Скинути
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Products Grid -->
+    <section class="px-4 pb-16">
+      <div class="max-w-7xl mx-auto">
+        <div id="products-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer Placeholder - динамічно рендериться через layout.js -->
+  <div id="footer-placeholder"></div>
+
+  <!-- ✅ ВАЖЛИВО: Підключаємо Firebase та layout.js -->
+  <script type="module" src="./js/maintenance-check.js"></script>
+  <script type="module" src="./js/firebase-init.js"></script>
+  <script type="module" src="./js/layout.js"></script>
+
+  <!-- Логіка сторінки категорії -->
+  <script type="module">
+    console.log('[v0] Category page script starting...')
+
+    // CRITICAL: Check maintenance mode FIRST
+    import './js/maintenance-check.js'
+    
+    // Import Firebase - use same pattern as storefront.js for consistency
+    import { db } from './js/firebase-init.js'
+    import { collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
+
+    console.log('[v0] Imports loaded, db:', db ? 'exists' : 'null')
+
+    // ============================================
+    // GLOBAL UI HELPERS
+    // ============================================
+
+    // Toggle Filter Drawer
+    window.toggleFilterDrawer = function () {
+      const drawer = document.getElementById('filter-drawer')
+      const overlay = document.getElementById('filter-overlay')
+
+      if (drawer && overlay) {
+        drawer.classList.toggle('active')
+        overlay.classList.toggle('active')
+
+        // Prevent body scroll when drawer is open
+        if (drawer.classList.contains('active')) {
+          document.body.style.overflow = 'hidden'
+        } else {
+          document.body.style.overflow = ''
+        }
+      }
+    }
+
+    // Apply filters and close drawer
+    window.applyFiltersAndClose = function () {
+      window.applyFilters()
+      window.toggleFilterDrawer()
+    }
+
+    // ============================================
+    // MAIN PAGE LOGIC
+    // ============================================
+
+    // Global state for products and filters
+    let allProducts = []
+    let filteredProducts = []
+
+    async function initPage() {
+      const urlParams = new URLSearchParams(window.location.search)
+      const categorySlug = urlParams.get('slug')
+
+      console.log('🔍 Сторінка категорії завантажена')
+      console.log('📌 URL slug:', categorySlug)
+
+      if (!categorySlug) {
+        document.getElementById('loading-state').style.display = 'none'
+        document.getElementById('products-grid').innerHTML = '<div class="col-span-full text-center py-10 text-gray-500">❌ Категорію не вказано в URL</div>'
+        return
+      }
+
+      try {
+        console.log('🔄 Завантаження категорії та товарів...')
+
+        // Parallel fetch: Category info + Products
+        const [catSnap, prodSnap] = await Promise.all([
+          getDocs(query(collection(db, 'categories'), where('slug', '==', categorySlug))),
+          getDocs(collection(db, 'products'))
+        ])
+
+        // Process category metadata
+        if (!catSnap.empty) {
+          const catData = catSnap.docs[0].data()
+          console.log('✅ Категорія знайдена:', catData)
+
+          document.title = `${catData.name} | Latiao`
+          document.getElementById('category-title').textContent = catData.name
+          document.getElementById('category-desc').textContent = catData.description || 'Найкращі снеки в цій категорії'
+          document.getElementById('breadcrumb-current').textContent = catData.name
+        } else {
+          console.warn('⚠️ Категорію не знайдено в базі')
+          document.getElementById('category-title').textContent = "Категорію не знайдено"
+          document.getElementById('category-desc').textContent = "Спробуйте іншу категорію"
+        }
+
+        // ⭐ NEW: Filter products by multiple categories support
+        allProducts = prodSnap.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter(product => {
+            // Check if product has categories array (new format)
+            if (product.categories && Array.isArray(product.categories)) {
+              return product.categories.includes(categorySlug);
+            }
+            // Fallback to single category (old format)
+            return product.category === categorySlug;
+          })
+        
+        // Filter out hidden products (default to visible if field missing)
+        allProducts = allProducts.filter(p => p.isVisible !== false)
+        
+        // Sort by sortOrder (merchandising order) - client-side sorting
+        allProducts.sort((a, b) => (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999))
+        
+        console.log(`📦 Знайдено товарів: ${allProducts.length}`)
+        console.log('📋 Дані товарів:', allProducts)
+
+        // Initialize filtered products (show all by default)
+        filteredProducts = [...allProducts]
+        renderProducts(filteredProducts)
+
+        // Setup filter event listeners
+        setupFilterListeners()
+
+      } catch (err) {
+        console.error('❌ Помилка завантаження:', err)
+        document.getElementById('products-grid').innerHTML = `
+          <div class="col-span-full text-center py-10">
+            <p class="text-red-500 font-bold mb-2">Помилка завантаження</p>
+            <p class="text-gray-500 text-sm">${err.message}</p>
+          </div>
+        `
+      } finally {
+        document.getElementById('loading-state').style.display = 'none'
+      }
+    }
+
+    // ============================================
+    // FILTER FUNCTIONS
+    // ============================================
+
+    function setupFilterListeners() {
+      // Apply on Enter key in price inputs
+      document.getElementById('filter-price-min')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') window.applyFiltersAndClose()
+      })
+      document.getElementById('filter-price-max')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') window.applyFiltersAndClose()
+      })
+    }
+
+    window.applyFilters = function () {
+      console.log('🔍 Applying filters...')
+
+      // Get filter values
+      const minPrice = parseFloat(document.getElementById('filter-price-min').value) || null
+      const maxPrice = parseFloat(document.getElementById('filter-price-max').value) || null
+
+      // Get selected spiciness levels
+      const spicinessCheckboxes = document.querySelectorAll('.spiciness-filter:checked')
+      const selectedSpiciness = Array.from(spicinessCheckboxes).map(cb => parseInt(cb.value))
+
+      console.log('💰 Price range:', { min: minPrice, max: maxPrice })
+      console.log('🌶️ Selected spiciness levels:', selectedSpiciness)
+
+      // Filter products
+      filteredProducts = allProducts.filter(product => {
+        // Price filter
+        if (minPrice !== null && product.price < minPrice) return false
+        if (maxPrice !== null && product.price > maxPrice) return false
+
+        // Spiciness filter (multi-select)
+        // If no checkboxes selected, show all spiciness levels
+        if (selectedSpiciness.length > 0) {
+          const productSpiciness = parseInt(product.spiciness) || 0
+          if (!selectedSpiciness.includes(productSpiciness)) return false
+        }
+
+        return true
+      })
+
+      console.log(`✅ Filtered products: ${filteredProducts.length} of ${allProducts.length}`)
+      renderProducts(filteredProducts)
+    }
+
+    window.resetFilters = function () {
+      console.log('🔄 Resetting filters...')
+
+      // Clear price inputs
+      document.getElementById('filter-price-min').value = ''
+      document.getElementById('filter-price-max').value = ''
+
+      // Uncheck all spiciness checkboxes
+      document.querySelectorAll('.spiciness-filter').forEach(cb => cb.checked = false)
+
+      // Show all products
+      filteredProducts = [...allProducts]
+      renderProducts(filteredProducts)
+    }
+
+    // ============================================
+    // DATE FORMATTING UTILITIES
+    // ============================================
+
+    function formatUkrainianDate(dateString) {
+      if (!dateString) return ''
+      
+      const date = new Date(dateString)
+      const months = [
+        'січня', 'лютого', 'березня', 'квітня', 'травня', 'червня',
+        'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня'
+      ]
+      
+      const day = date.getDate()
+      const month = months[date.getMonth()]
+      
+      return `${day} ${month}`
+    }
+
+    function isDateInFuture(dateString) {
+      if (!dateString) return false
+      const arrivalDate = new Date(dateString)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      return arrivalDate >= today
+    }
+
+    function renderProducts(products) {
+      const grid = document.getElementById('products-grid')
+      document.getElementById('products-count').textContent = products.length
+
+      if (products.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full text-center py-10">
+            <div class="text-6xl mb-4">📭</div>
+            <h3 class="text-xl font-bold text-gray-700 mb-2">Товарів поки немає</h3>
+            <p class="text-gray-500">Слідкуйте за оновленнями!</p>
+          </div>
+        `
+        return
+      }
+
+      // Helper function to render spiciness (5 chilies with proper opacity)
+      const renderSpiciness = (level) => {
+        const maxChilies = 5
+        const spicyLevel = Math.min(level || 1, maxChilies)
+        let html = ''
+        for (let i = 1; i <= maxChilies; i++) {
+          html += `<span class="${i <= spicyLevel ? '' : 'opacity-30'}">🌶️</span>`
+        }
+        return html
+      }
+
+      try {
+        grid.innerHTML = products.map((product, index) => {
+          try {
+            // Stock logic: check stock or quantity field
+            const stockAmount = product.stock ?? product.quantity ?? 0
+            const inStock = stockAmount > 0
+
+            // Handle both new 'images' array and legacy 'image' field
+            const images = product.images && product.images.length > 0 ? product.images : []
+            const img = images[0] || product.image || product.imageUrl || 'https://placehold.co/400x400/fff3e8/ff6b00?text=Latiao'
+
+            // Generate spiciness HTML
+            const spicinessHTML = renderSpiciness(product.spiciness)
+
+            return `
+              <article class="product-card opacity-0 bg-white rounded-3xl shadow-lg overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl group flex flex-col h-full" style="animation-delay: ${index * 0.1}s">
+                <!-- Clickable Image & Title Area -->
+                <a href="product.html?id=${product.id}" class="block">
+                  <div class="relative overflow-hidden aspect-square bg-gray-100">
+                    <img 
+                      src="${img}" 
+                      class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 ${!inStock ? 'grayscale opacity-50' : ''}" 
+                      alt="${product.name}"
+                      onerror="this.src='https://placehold.co/400x400/fff3e8/ff6b00?text=Latiao'"
+                    >
+                    
+                    <span class="absolute top-2 left-2 md:top-3 md:left-3 text-white text-[10px] md:text-xs font-semibold px-2 md:px-3 py-0.5 md:py-1 rounded-full shadow-md ${inStock ? 'bg-green-500' : 'bg-red-500'}">
+                      ${inStock ? 'В наявності' : 'Немає в наявності'}
+                    </span>
+                  </div>
+                </a>
+
+                <div class="p-3 md:p-5 flex flex-col flex-1">
+                  <div class="flex-1">
+                    <a href="product.html?id=${product.id}" class="block hover:text-orange-600 transition-colors">
+                      <h3 class="text-sm md:text-lg font-bold text-gray-900 mb-1 md:mb-2 line-clamp-2">${product.name}</h3>
+                    </a>
+                    ${(product.originalPrice && product.originalPrice > product.price)
+                      ? `<div class="flex items-center gap-2 mb-2 md:mb-3">
+                           <span class="text-red-500 line-through text-sm md:text-base">₴ ${product.originalPrice}</span>
+                           <span class="text-xl md:text-2xl font-extrabold text-green-600">₴ ${product.price}</span>
+                           <span class="bg-red-100 text-red-600 text-[10px] md:text-xs font-bold px-1.5 py-0.5 rounded-full">-${Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%</span>
+                         </div>`
+                      : `<p class="text-xl md:text-2xl font-extrabold text-[#ff6b00] mb-2 md:mb-3">₴ ${product.price} <span class="text-xs md:text-sm font-normal text-gray-500">грн</span></p>`
+                    }
+                    
+                    <div class="flex items-center gap-0.5 md:gap-1 mb-2 md:mb-3 text-sm md:text-lg">
+                      ${spicinessHTML}
+                    </div>
+                    
+                    <!-- Stock Status -->
+                    <div class="mb-3 flex items-center gap-1 text-xs md:text-sm font-semibold ${inStock ? 'text-green-600' : 'text-red-500'}">
+                      ${inStock ? '✅ Готово до відправки' : '⛔ Немає в наявності'}
+                    </div>
+
+                    <!-- Arrival Date Message (Conditional) -->
+                    ${(stockAmount === 0 && product.is_expected && product.arrival_date && isDateInFuture(product.arrival_date))
+                      ? `<div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg px-2.5 md:px-3 py-2 mb-3 shadow-sm hover:shadow-md transition-shadow duration-200">
+                           <p class="text-[10px] md:text-sm font-medium text-gray-700 flex items-center gap-1 md:gap-1.5">
+                             <span class="text-sm md:text-base flex-shrink-0">✈️</span>
+                             <span class="flex-1">
+                               <span class="hidden md:inline">Очікуємо поставку</span>
+                               <span class="md:hidden">Поставка</span>
+                               <span class="text-[#ff6b00] font-semibold ml-1">${formatUkrainianDate(product.arrival_date)}</span>
+                             </span>
+                           </p>
+                         </div>`
+                      : ''
+                    }
+                  </div>
+
+                  <button 
+                    class="add-to-cart-btn w-full font-bold text-xs md:text-base py-2 md:py-3 px-3 md:px-4 rounded-xl md:rounded-2xl transition-all duration-200 hover:shadow-lg active:scale-95 ${inStock ? 'bg-gradient-to-r from-[#ff6b00] to-[#e53e3e] text-white hover:shadow-orange-300/50' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}"
+                    data-id="${product.id}"
+                    data-name="${product.name.replace(/"/g, '&quot;')}"
+                    data-price="${product.price}"
+                    data-image="${img}"
+                    data-stock="${stockAmount}"
+                    data-spiciness="${product.spiciness || 1}"
+                    data-sku="${product.sku || product.id}"
+                    ${!inStock ? 'disabled' : ''}
+                  >
+                    ${inStock ? 'Додати в кошик' : 'Немає в наявності'}
+                  </button>
+                </div>
+              </article>
+            `
+          } catch (productError) {
+            console.error('❌ Error rendering product:', product.id, productError)
+            // Return empty string to skip this product but continue rendering others
+            return ''
+          }
+        }).join('')
+
+        // Re-init Lucide icons for new product cards
+        setTimeout(() => {
+          if (typeof lucide !== 'undefined') {
+            lucide.createIcons()
+          }
+        }, 100)
+
+      } catch (error) {
+        console.error('❌ Critical error rendering products:', error)
+        grid.innerHTML = `
+          <div class="col-span-full text-center py-10">
+            <div class="text-6xl mb-4">⚠️</div>
+            <h3 class="text-xl font-bold text-red-600 mb-2">Помилка завантаження</h3>
+            <p class="text-gray-500">Спробуйте оновити сторінку</p>
+          </div>
+        `
+      }
+    }
+
+    // ============================================
+    // AUTO-START
+    // ============================================
+
+    // Simple initialization - db is already imported from module
+    async function startPage() {
+      console.log('[v0] startPage called')
+      console.log('[v0] db object:', db)
+
+      try {
+        await initPage()
+      } catch (err) {
+        console.error('[v0] startPage error:', err)
+        document.getElementById('loading-state').style.display = 'none'
+        document.getElementById('products-grid').innerHTML = `
+          <div class="col-span-full text-center py-10">
+            <div class="text-6xl mb-4">&#128293;</div>
+            <h3 class="text-xl font-bold text-red-600 mb-2">Помилка завантаження</h3>
+            <p class="text-gray-500">${err.message}</p>
+          </div>
+        `
+      }
+    }
+
+    // ============================================
+    // GLOBAL EVENT DELEGATION FOR ADD TO CART BUTTONS
+    // ============================================
+    // This handles clicks on dynamically rendered buttons
+    document.addEventListener('click', (e) => {
+      // Check if clicked element or its parent is an add-to-cart button
+      const btn = e.target.closest('.add-to-cart-btn');
+      
+      if (btn && !btn.disabled) {
+        e.preventDefault();
+        
+        // Extract product data from data attributes
+        const product = {
+          id: btn.dataset.id,
+          name: btn.dataset.name,
+          price: parseFloat(btn.dataset.price),
+          image: btn.dataset.image,
+          stock: parseInt(btn.dataset.stock) || 0,
+          spiciness: parseInt(btn.dataset.spiciness) || 1,
+          sku: btn.dataset.sku
+        };
+        
+        // Call the global addToCart function from layout.js
+        if (window.addToCart) {
+          window.addToCart(product, 'category');
+          console.log('✅ Item added via delegated click:', product.name);
+        } else {
+          console.error('❌ window.addToCart function not found!');
+        }
+      }
+    });
+
+    // Start when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', startPage)
+    } else {
+      startPage()
+    }
+  </script>
+
+  <!-- Live Chat Widget -->
+  <script type="module" src="./js/chat-widget.js"></script>
+</body>
+
+</html>

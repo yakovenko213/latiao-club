@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Адмін-панель Latiao CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { spicy: '#ff6b00' } } }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        * { font-family: 'Inter', sans-serif; }
+        .view { display: none; }
+        .view.active { display: block; }
+        .sidebar-link { transition: all 0.2s; }
+        .sidebar-link:hover { background: rgba(255, 107, 0, 0.1); }
+        .sidebar-link.active { background: rgba(255, 107, 0, 0.15); color: #ff6b00; font-weight: 600; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-900">
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-4 border-spicy border-t-transparent mx-auto mb-4"></div>
+            <p class="text-lg font-semibold text-gray-700">Завантаження системи...</p>
+        </div>
+    </div>
+
+    <!-- Login View -->
+    <div id="login-view" class="hidden fixed inset-0 bg-gray-100 z-40 flex items-center justify-center px-4">
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
+            <div class="text-center mb-6">
+                <span class="text-5xl">🌶️</span>
+                <h1 class="text-2xl font-bold mt-4">Latiao CRM</h1>
+                <p class="text-gray-600 text-sm mt-2">Увійдіть для продовження</p>
+            </div>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" id="email" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-spicy outline-none" placeholder="admin@latiao.ua" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Пароль</label>
+                    <input type="password" id="password" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-spicy outline-none" placeholder="••••••" required>
+                </div>
+                <div id="login-error" class="text-red-500 text-sm hidden"></div>
+                <button type="submit" class="w-full bg-spicy text-white py-3 rounded-lg font-bold hover:bg-orange-700 transition">Увійти</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app" class="hidden">
+        <!-- Sidebar -->
+        <aside class="fixed top-0 left-0 h-screen w-64 bg-white border-r border-gray-200 z-30 flex flex-col">
+            <!-- Logo -->
+            <div class="p-6 border-b border-gray-200 flex-shrink-0">
+                <div class="flex items-center gap-2">
+                    <span class="text-3xl">🌶️</span>
+                    <div>
+                        <h1 class="text-xl font-bold">Latiao</h1>
+                        <p class="text-xs text-gray-500">Admin Panel</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Navigation -->
+            <nav class="flex-1 overflow-y-auto p-4 space-y-1 scrollbar-hide">
+                <a href="#dashboard" id="nav-dashboard" class="sidebar-link active flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                    <span>Дашборд</span>
+                </a>
+                <a href="#orders" id="nav-orders" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+                    <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+                    <span>Замовлення</span>
+                </a>
+                <a href="#products" id="nav-products" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+                    <i data-lucide="package" class="w-5 h-5"></i>
+                    <span>Товари</span>
+                </a>
+                <a href="#categories" id="nav-categories" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+                    <i data-lucide="folder" class="w-5 h-5"></i>
+                    <span>Категорії</span>
+                </a>
+                <a href="#promos" id="nav-promos" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+                    <i data-lucide="ticket" class="w-5 h-5"></i>
+                    <span>Промокоди</span>
+                </a>
+                <a href="#abandoned" id="nav-abandoned" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+                    <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                    <span>Покинуті кошики</span>
+                </a>
+                <a href="#inventory" id="nav-inventory" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+                    <i data-lucide="warehouse" class="w-5 h-5"></i>
+                    <span>Склад</span>
+                </a>
+                <a href="#settings" id="nav-settings" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+                    <i data-lucide="settings" class="w-5 h-5"></i>
+                    <span>Налаштування</span>
+                </a>
+            </nav>
+
+            <!-- Logout -->
+            <div class="flex-shrink-0 p-4 border-t border-gray-200 bg-white">
+                <button id="logout-btn" class="w-full flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition">
+                    <i data-lucide="log-out" class="w-5 h-5"></i>
+                    <span>Вийти</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="ml-64 min-h-screen bg-gray-50">
+            <!-- Header -->
+            <header class="bg-white border-b border-gray-200 px-8 py-4 sticky top-0 z-20">
+                <div class="flex items-center justify-between">
+                    <h2 id="page-title" class="text-2xl font-bold text-gray-900">Дашборд</h2>
+                    <div class="flex items-center gap-4">
+                        <button class="p-2 hover:bg-gray-100 rounded-lg">
+                            <i data-lucide="bell" class="w-5 h-5 text-gray-600"></i>
+                        </button>
+                        <div class="w-10 h-10 bg-spicy rounded-full flex items-center justify-center text-white font-bold">A</div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard View -->
+            <div id="dashboard-view" class="view active p-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="p-3 bg-green-100 rounded-lg">
+                                <i data-lucide="trending-up" class="w-6 h-6 text-green-600"></i>
+                            </div>
+                        </div>
+                        <h3 id="stat-revenue" class="text-2xl font-bold text-gray-900">₴0</h3>
+                        <p class="text-sm text-gray-600 mt-1">Виручка за день</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="p-3 bg-blue-100 rounded-lg">
+                                <i data-lucide="shopping-cart" class="w-6 h-6 text-blue-600"></i>
+                            </div>
+                        </div>
+                        <h3 id="stat-orders" class="text-2xl font-bold text-gray-900">0</h3>
+                        <p class="text-sm text-gray-600 mt-1">Нові замовлення</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="p-3 bg-purple-100 rounded-lg">
+                                <i data-lucide="users" class="w-6 h-6 text-purple-600"></i>
+                            </div>
+                        </div>
+                        <h3 id="stat-customers" class="text-2xl font-bold text-gray-900">0</h3>
+                        <p class="text-sm text-gray-600 mt-1">Клієнти</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="p-3 bg-orange-100 rounded-lg">
+                                <i data-lucide="package" class="w-6 h-6 text-orange-600"></i>
+                            </div>
+                        </div>
+                        <h3 id="stat-products" class="text-2xl font-bold text-gray-900">0</h3>
+                        <p class="text-sm text-gray-600 mt-1">Товарів на складі</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders View -->
+            <div id="orders-view" class="view p-8">
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+                    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                        <h3 class="text-lg font-bold text-gray-900">Всі замовлення</h3>
+                        <button onclick="loadOrders()" class="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold transition">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                            <span>Оновити</span>
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ID</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Клієнт</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Товари</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Сума</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Статус</th>
+                                    <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Дії</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-table-body" class="divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="6" class="text-center py-10 text-gray-500">Завантаження замовлень...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Products View -->
+            <div id="products-view" class="view p-8">
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+                    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                        <h3 class="text-lg font-bold text-gray-900">Товари</h3>
+                        <button onclick="openProductModal()" class="flex items-center gap-2 px-4 py-2 bg-spicy text-white rounded-lg font-semibold hover:bg-orange-700 transition">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Додати товар</span>
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Фото</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Назва</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Ціна</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Категорія</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Залишок</th>
+                                    <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Дії</th>
+                                </tr>
+                            </thead>
+                            <tbody id="products-table-body" class="divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="6" class="text-center py-10 text-gray-500">Завантаження товарів...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Categories View -->
+            <div id="categories-view" class="view p-8">
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+                    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                        <h3 class="text-lg font-bold text-gray-900">Категорії</h3>
+                        <button onclick="openCategoryModal()" class="flex items-center gap-2 px-4 py-2 bg-spicy text-white rounded-lg font-semibold hover:bg-orange-700 transition">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Додати категорію</span>
+                        </button>
+                    </div>
+                    <div id="categories-list" class="p-6">
+                        <div class="text-center py-10 text-gray-500">Завантаження категорій...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Promo Codes View -->
+            <div id="promos-view" class="view p-8">
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+                    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                        <h3 class="text-lg font-bold text-gray-900">Промокоди</h3>
+                        <button onclick="openPromoModal()" class="flex items-center gap-2 px-4 py-2 bg-spicy text-white rounded-lg font-semibold hover:bg-orange-700 transition">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Створити промокод</span>
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Код</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Знижка</th>
+                                    <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Використано</th>
+                                    <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
+                                    <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Дії</th>
+                                </tr>
+                            </thead>
+                            <tbody id="promos-table-body" class="divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="5" class="text-center py-10 text-gray-500">Завантаження промокодів...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Abandoned Carts View -->
+            <div id="abandoned-view" class="view p-8">
+                <div class="bg-gradient-to-r from-orange-50 to-red-50 rounded-xl border border-orange-200 shadow-sm mb-6 p-6">
+                    <div class="flex items-start gap-4">
+                        <div class="p-3 bg-orange-100 rounded-lg">
+                            <i data-lucide="shopping-cart" class="w-6 h-6 text-orange-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-bold text-gray-900 mb-2">🛒 Покинуті кошики</h3>
+                            <p class="text-sm text-gray-600">Клієнти, які заповнили контактні дані, але не завершили замовлення.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+                    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                        <h3 class="text-lg font-bold text-gray-900">Покинуті кошики</h3>
+                        <button onclick="loadAbandonedCarts()" class="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold transition">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                            <span>Оновити</span>
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Дата</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Клієнт</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Кошик</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Сума</th>
+                                    <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Дії</th>
+                                </tr>
+                            </thead>
+                            <tbody id="abandoned-table-body" class="divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="5" class="text-center py-10 text-gray-500">Завантаження...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory View -->
+            <div id="inventory-view" class="view p-8">
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-bold text-gray-900">📦 Управління складом</h3>
+                    </div>
+                    <div id="inventory-list" class="p-6">
+                        <div class="text-center py-10 text-gray-500">Завантаження товарів...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div id="settings-view" class="view p-8">
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-bold text-gray-900">⚙️ Налаштування</h3>
+                    </div>
+                    <form id="settings-form" class="p-6 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">TurboSMS API Token</label>
+                            <input type="password" id="setting-turbosms" class="w-full border rounded-lg p-2" placeholder="Вставте ключ тут...">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Monobank API Token</label>
+                            <input type="password" id="setting-monobank" class="w-full border rounded-lg p-2" placeholder="Вставте токен тут...">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">KeyCRM API Key</label>
+                            <input type="password" id="setting-keycrm" class="w-full border rounded-lg p-2" placeholder="Вставте KeyCRM API Key">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Ім'я відправника SMS</label>
+                            <input type="text" id="setting-sender" class="w-full border rounded-lg p-2" placeholder="Latiao">
+                        </div>
+                        <div class="pt-4">
+                            <button type="submit" class="px-6 py-3 bg-spicy text-white rounded-xl font-bold hover:bg-orange-700 transition">Зберегти налаштування</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Product Modal -->
+    <div id="product-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b flex justify-between items-center sticky top-0 bg-white z-10">
+                <h3 class="text-xl font-bold" id="product-modal-title">Новий товар</h3>
+                <button onclick="closeProductModal()" class="p-2 hover:bg-gray-100 rounded-full">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="product-form" class="p-6 space-y-4">
+                <input type="hidden" id="product-id">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Назва</label>
+                    <input type="text" id="product-name" class="w-full border rounded-lg p-2" required>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Ціна (₴)</label>
+                        <input type="number" id="product-price" class="w-full border rounded-lg p-2" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Артикул (SKU)</label>
+                        <input type="text" id="product-sku" class="w-full border rounded-lg p-2" placeholder="LT-001">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Категорія</label>
+                    <select id="product-category" class="w-full border rounded-lg p-2" required>
+                        <option value="">Оберіть категорію...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Гострота (1-5)</label>
+                    <input type="number" id="product-spiciness" min="0" max="5" class="w-full border rounded-lg p-2" value="1">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Фото товару</label>
+                    <input type="file" id="product-images" class="w-full border rounded-lg p-2" multiple accept="image/*">
+                    <div id="image-preview" class="mt-3 grid grid-cols-4 gap-2 hidden"></div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Опис</label>
+                    <textarea id="product-description" class="w-full border rounded-lg p-2" rows="3"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Залишок на складі</label>
+                    <input type="number" id="product-stock" class="w-full border rounded-lg p-2" value="0" min="0">
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="product-active" class="w-5 h-5 text-spicy rounded" checked>
+                    <label for="product-active" class="font-medium">Активний товар</label>
+                </div>
+                <div class="pt-4 flex gap-3">
+                    <button type="button" onclick="closeProductModal()" class="flex-1 py-3 bg-gray-100 rounded-xl font-bold text-gray-600">Скасувати</button>
+                    <button type="submit" class="flex-1 py-3 bg-spicy text-white rounded-xl font-bold">Зберегти товар</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Category Modal -->
+    <div id="category-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b flex justify-between items-center sticky top-0 bg-white z-10">
+                <h3 class="text-xl font-bold" id="category-modal-title">Нова категорія</h3>
+                <button onclick="closeCategoryModal()" class="p-2 hover:bg-gray-100 rounded-full">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="category-form" class="p-6 space-y-4">
+                <input type="hidden" id="category-id">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Назва категорії</label>
+                    <input type="text" id="category-name" class="w-full border rounded-lg p-2" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Slug (ID)</label>
+                    <input type="text" id="category-slug" class="w-full border rounded-lg p-2" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Опис</label>
+                    <textarea id="category-description" class="w-full border rounded-lg p-2" rows="3"></textarea>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="category-active" class="w-5 h-5 text-spicy rounded" checked>
+                    <label for="category-active" class="font-medium">Активна</label>
+                </div>
+                <div class="pt-4 flex gap-3">
+                    <button type="button" onclick="closeCategoryModal()" class="flex-1 py-3 bg-gray-100 rounded-xl font-bold text-gray-600">Скасувати</button>
+                    <button type="submit" class="flex-1 py-3 bg-spicy text-white rounded-xl font-bold">Зберегти</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Promo Modal -->
+    <div id="promo-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b flex justify-between items-center sticky top-0 bg-white z-10">
+                <h3 class="text-xl font-bold" id="promo-modal-title">Новий промокод</h3>
+                <button onclick="closePromoModal()" class="p-2 hover:bg-gray-100 rounded-full">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="promo-form" class="p-6 space-y-4">
+                <input type="hidden" id="promo-id">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Код промокоду</label>
+                    <input type="text" id="promo-code" class="w-full border rounded-lg p-2 uppercase" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Тип знижки</label>
+                    <select id="promo-type" class="w-full border rounded-lg p-2">
+                        <option value="percent">Відсотки (%)</option>
+                        <option value="fixed">Фіксована сума (₴)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Значення знижки</label>
+                    <input type="number" id="promo-value" class="w-full border rounded-lg p-2" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Ліміт використань</label>
+                    <input type="number" id="promo-limit" class="w-full border rounded-lg p-2" value="0" min="0">
+                    <p class="text-xs text-gray-500 mt-1">0 = без обмежень</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="promo-active" class="w-5 h-5 text-spicy rounded" checked>
+                    <label for="promo-active" class="font-medium">Активний</label>
+                </div>
+                <div class="pt-4 flex gap-3">
+                    <button type="button" onclick="closePromoModal()" class="flex-1 py-3 bg-gray-100 rounded-xl font-bold text-gray-600">Скасувати</button>
+                    <button type="submit" class="flex-1 py-3 bg-spicy text-white rounded-xl font-bold">Зберегти</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div id="order-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div class="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-white sticky top-0 z-10">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-900" id="modal-order-id">Замовлення</h3>
+                        <p class="text-sm text-gray-600 mt-1" id="modal-order-date">Дата: -</p>
+                    </div>
+                    <button onclick="closeOrderModal()" class="p-2 hover:bg-white rounded-full transition-colors">
+                        <i data-lucide="x" class="w-6 h-6 text-gray-600"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <!-- Customer Info -->
+                    <div class="bg-blue-50 rounded-xl p-5">
+                        <h4 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <i data-lucide="user" class="w-5 h-5 text-blue-600"></i>
+                            Клієнт
+                        </h4>
+                        <div class="space-y-2">
+                            <p><span class="text-gray-600">ПІБ:</span> <span id="modal-customer-name" class="font-semibold">-</span></p>
+                            <p><span class="text-gray-600">Телефон:</span> <span id="modal-customer-phone" class="font-semibold">-</span></p>
+                            <p><span class="text-gray-600">Telegram:</span> <span id="modal-customer-telegram" class="font-semibold">-</span></p>
+                        </div>
+                    </div>
+                    <!-- Delivery Info -->
+                    <div class="bg-green-50 rounded-xl p-5">
+                        <h4 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <i data-lucide="truck" class="w-5 h-5 text-green-600"></i>
+                            Доставка
+                        </h4>
+                        <div class="space-y-2">
+                            <p><span class="text-gray-600">Метод:</span> <span id="modal-delivery-method" class="font-semibold">-</span></p>
+                            <p><span class="text-gray-600">Місто:</span> <span id="modal-delivery-city" class="font-semibold">-</span></p>
+                            <p><span class="text-gray-600">Відділення:</span> <span id="modal-delivery-address" class="font-semibold">-</span></p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Order Items -->
+                <div class="bg-gray-50 rounded-xl p-5 mb-6">
+                    <h4 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <i data-lucide="shopping-bag" class="w-5 h-5 text-orange-600"></i>
+                        Товари
+                    </h4>
+                    <div id="modal-order-items" class="space-y-3">
+                        <!-- Items will be populated here -->
+                    </div>
+                </div>
+                <!-- Order Summary -->
+                <div class="bg-orange-50 rounded-xl p-5">
+                    <div class="flex justify-between items-center">
+                        <span class="text-lg font-bold text-gray-900">Загальна сума:</span>
+                        <span id="modal-order-total" class="text-2xl font-extrabold text-orange-600">₴0</span>
+                    </div>
+                </div>
+                <!-- Actions -->
+                <div class="mt-6 flex gap-3">
+                    <select id="modal-order-status" class="flex-1 border rounded-lg p-3 font-semibold">
+                        <option value="new">🆕 Нове</option>
+                        <option value="paid">✅ Оплачено</option>
+                        <option value="shipped">📦 Передано в доставку</option>
+                        <option value="delivered">✔️ Доставлено</option>
+                        <option value="cancelled">❌ Скасовано</option>
+                    </select>
+                    <button onclick="updateOrderStatus()" class="px-6 py-3 bg-spicy text-white rounded-lg font-bold hover:bg-orange-700 transition">
+                        Зберегти статус
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Admin Script -->
+    <script type="module" src="./js/admin.js"></script>
+
+</body>
+</html>
