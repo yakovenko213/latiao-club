@@ -2360,6 +2360,8 @@
             quantity: item.quantity,
             subtotal: item.price * item.quantity,
             image: item.image || '',
+            spiciness: item.spiciness || 0,
+            sku: item.sku || item.id,
             isGift: item.isGift === true
           })),
           total: total,
