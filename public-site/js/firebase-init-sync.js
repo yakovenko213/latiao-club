@@ -28,7 +28,7 @@
         Timestamp
     } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
     
-    const { getAuth } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+    const { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
     const { getFunctions } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js');
     const { getStorage } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js');
 
@@ -69,6 +69,9 @@
     window.limit = limit;
     window.serverTimestamp = serverTimestamp;
     window.Timestamp = Timestamp;
+    window.onAuthStateChanged = onAuthStateChanged;
+    window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+    window.signOut = signOut;
 
     // Also keep the firebaseInit object for compatibility
     window.firebaseInit = {

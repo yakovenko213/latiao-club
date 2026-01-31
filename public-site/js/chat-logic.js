@@ -211,7 +211,7 @@ async function getAISettings() {
 
         const data = settingsDoc.data();
         return {
-            enabled: data.aiEnabled || false,
+            enabled: data.aiEnabled || data.enabled || false,
             systemPrompt: data.aiSystemPrompt || 'Ти корисний асистент інтернет-магазину. Відповідай дружньо українською мовою.'
         };
     } catch (error) {

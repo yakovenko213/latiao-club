@@ -5,14 +5,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Категорія | LATIAO SNACK</title>
-  
+
   <!-- Skeleton Loader for instant render -->
   <style id="skeleton-loader">
     @keyframes shimmer {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
+      0% {
+        background-position: 200% 0;
+      }
+
+      100% {
+        background-position: -200% 0;
+      }
     }
-    .page-skeleton { min-height: 100vh; background: #fff; }
+
+    .page-skeleton {
+      min-height: 100vh;
+      background: #fff;
+    }
+
     .skeleton-bar {
       height: 20px;
       background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
@@ -21,20 +31,24 @@
       border-radius: 4px;
       margin-bottom: 1rem;
     }
-    .content-loaded .page-skeleton { display: none; }
+
+    .content-loaded .page-skeleton {
+      display: none;
+    }
   </style>
-  
+
   <script>
     // Show content immediately when DOM ready
     document.addEventListener('DOMContentLoaded', () => {
       document.body.classList.add('content-loaded');
     });
   </script>
-  
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
@@ -51,6 +65,8 @@
       }
     }
   </script>
+  <!-- Dark Mode Module -->
+  <script src="./js/dark-mode.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -443,7 +459,7 @@
 
     // CRITICAL: Check maintenance mode FIRST
     import './js/maintenance-check.js'
-    
+
     // Import Firebase - use same pattern as storefront.js for consistency
     import { db } from './js/firebase-init.js'
     import { collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
@@ -486,6 +502,11 @@
     let allProducts = []
     let filteredProducts = []
 
+    // Cache key helper
+    function getCacheKey(slug) {
+      return `category_cache_${slug}`
+    }
+
     async function initPage() {
       const urlParams = new URLSearchParams(window.location.search)
       const categorySlug = urlParams.get('slug')
@@ -502,54 +523,107 @@
       try {
         console.log('🔄 Завантаження категорії та товарів...')
 
-        // Parallel fetch: Category info + Products
-        const [catSnap, prodSnap] = await Promise.all([
+        // ⚡ Check cache first for instant loading
+        const cacheKey = getCacheKey(categorySlug)
+        const cached = sessionStorage.getItem(cacheKey)
+        let usedCache = false
+
+        if (cached) {
+          try {
+            const { categoryData, products, cachedAt } = JSON.parse(cached)
+            const cacheAge = Date.now() - cachedAt
+
+            // Use cache if less than 5 minutes old
+            if (cacheAge < 5 * 60 * 1000) {
+              console.log('⚡ Використовуємо кеш (вік:', Math.round(cacheAge / 1000), 'сек)')
+
+              // Instantly show cached data
+              if (categoryData) {
+                document.title = `${categoryData.name} | Latiao`
+                document.getElementById('category-title').textContent = categoryData.name
+                document.getElementById('category-desc').textContent = categoryData.description || 'Найкращі снеки в цій категорії'
+                document.getElementById('breadcrumb-current').textContent = categoryData.name
+              }
+
+              allProducts = products
+              filteredProducts = [...allProducts]
+              renderProducts(filteredProducts)
+              setupFilterListeners()
+              document.getElementById('loading-state').style.display = 'none'
+              usedCache = true
+
+              // Continue loading fresh data in background
+              console.log('🔄 Оновлюємо дані у фоні...')
+            }
+          } catch (e) {
+            console.warn('⚠️ Помилка читання кешу:', e)
+          }
+        }
+
+        // ⚡ OPTIMIZED: Server-side category filtering (no index required)
+        // Note: isVisible will be filtered on client to avoid needing composite index
+        const [catSnap, newFormatSnap, oldFormatSnap] = await Promise.all([
           getDocs(query(collection(db, 'categories'), where('slug', '==', categorySlug))),
-          getDocs(collection(db, 'products'))
+          getDocs(query(collection(db, 'products'), where('categories', 'array-contains', categorySlug))),
+          getDocs(query(collection(db, 'products'), where('category', '==', categorySlug)))
         ])
 
         // Process category metadata
+        let categoryData = null
         if (!catSnap.empty) {
-          const catData = catSnap.docs[0].data()
-          console.log('✅ Категорія знайдена:', catData)
+          categoryData = catSnap.docs[0].data()
+          console.log('✅ Категорія знайдена:', categoryData)
 
-          document.title = `${catData.name} | Latiao`
-          document.getElementById('category-title').textContent = catData.name
-          document.getElementById('category-desc').textContent = catData.description || 'Найкращі снеки в цій категорії'
-          document.getElementById('breadcrumb-current').textContent = catData.name
+          document.title = `${categoryData.name} | Latiao`
+          document.getElementById('category-title').textContent = categoryData.name
+          document.getElementById('category-desc').textContent = categoryData.description || 'Найкращі снеки в цій категорії'
+          document.getElementById('breadcrumb-current').textContent = categoryData.name
         } else {
           console.warn('⚠️ Категорію не знайдено в базі')
           document.getElementById('category-title').textContent = "Категорію не знайдено"
           document.getElementById('category-desc').textContent = "Спробуйте іншу категорію"
         }
 
-        // ⭐ NEW: Filter products by multiple categories support
-        allProducts = prodSnap.docs
-          .map(doc => ({ id: doc.id, ...doc.data() }))
-          .filter(product => {
-            // Check if product has categories array (new format)
-            if (product.categories && Array.isArray(product.categories)) {
-              return product.categories.includes(categorySlug);
-            }
-            // Fallback to single category (old format)
-            return product.category === categorySlug;
-          })
-        
-        // Filter out hidden products (default to visible if field missing)
+        // ⚡ Combine server-filtered results (Firestore filtered by category)
+        const newProducts = newFormatSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        const oldProducts = oldFormatSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+
+        // Merge and deduplicate
+        const productMap = new Map()
+        newProducts.concat(oldProducts).forEach(p => productMap.set(p.id, p))
+        allProducts = Array.from(productMap.values())
+
+        // Filter hidden products (client-side to avoid needing composite index)
         allProducts = allProducts.filter(p => p.isVisible !== false)
-        
-        // Sort by sortOrder (merchandising order) - client-side sorting
+
+        // Sort by sortOrder
         allProducts.sort((a, b) => (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999))
-        
-        console.log(`📦 Знайдено товарів: ${allProducts.length}`)
-        console.log('📋 Дані товарів:', allProducts)
 
-        // Initialize filtered products (show all by default)
-        filteredProducts = [...allProducts]
-        renderProducts(filteredProducts)
+        console.log(`📦 Знайдено товарів: ${allProducts.length} (${newProducts.length + oldProducts.length} from server, ${newProducts.length + oldProducts.length - allProducts.length} hidden filtered)`)
 
-        // Setup filter event listeners
-        setupFilterListeners()
+        // Save to cache for next visit
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify({
+            categoryData,
+            products: allProducts,
+            cachedAt: Date.now()
+          }))
+          console.log('💾 Дані збережено в кеш')
+        } catch (e) {
+          console.warn('⚠️ Не вдалось зберегти кеш:', e)
+        }
+
+        // If we didn't use cache, show products now
+        if (!usedCache) {
+          filteredProducts = [...allProducts]
+          renderProducts(filteredProducts)
+          setupFilterListeners()
+        } else {
+          // Update with fresh data (in case something changed)
+          filteredProducts = [...allProducts]
+          renderProducts(filteredProducts)
+          console.log('✅ Дані оновлено')
+        }
 
       } catch (err) {
         console.error('❌ Помилка завантаження:', err)
@@ -633,16 +707,16 @@
 
     function formatUkrainianDate(dateString) {
       if (!dateString) return ''
-      
+
       const date = new Date(dateString)
       const months = [
         'січня', 'лютого', 'березня', 'квітня', 'травня', 'червня',
         'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня'
       ]
-      
+
       const day = date.getDate()
       const month = months[date.getMonth()]
-      
+
       return `${day} ${month}`
     }
 
@@ -718,13 +792,13 @@
                       <h3 class="text-sm md:text-lg font-bold text-gray-900 mb-1 md:mb-2 line-clamp-2">${product.name}</h3>
                     </a>
                     ${(product.originalPrice && product.originalPrice > product.price)
-                      ? `<div class="flex items-center gap-2 mb-2 md:mb-3">
+                ? `<div class="flex items-center gap-2 mb-2 md:mb-3">
                            <span class="text-red-500 line-through text-sm md:text-base">₴ ${product.originalPrice}</span>
                            <span class="text-xl md:text-2xl font-extrabold text-green-600">₴ ${product.price}</span>
                            <span class="bg-red-100 text-red-600 text-[10px] md:text-xs font-bold px-1.5 py-0.5 rounded-full">-${Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%</span>
                          </div>`
-                      : `<p class="text-xl md:text-2xl font-extrabold text-[#ff6b00] mb-2 md:mb-3">₴ ${product.price} <span class="text-xs md:text-sm font-normal text-gray-500">грн</span></p>`
-                    }
+                : `<p class="text-xl md:text-2xl font-extrabold text-[#ff6b00] mb-2 md:mb-3">₴ ${product.price} <span class="text-xs md:text-sm font-normal text-gray-500">грн</span></p>`
+              }
                     
                     <div class="flex items-center gap-0.5 md:gap-1 mb-2 md:mb-3 text-sm md:text-lg">
                       ${spicinessHTML}
@@ -737,7 +811,7 @@
 
                     <!-- Arrival Date Message (Conditional) -->
                     ${(stockAmount === 0 && product.is_expected && product.arrival_date && isDateInFuture(product.arrival_date))
-                      ? `<div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg px-2.5 md:px-3 py-2 mb-3 shadow-sm hover:shadow-md transition-shadow duration-200">
+                ? `<div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg px-2.5 md:px-3 py-2 mb-3 shadow-sm hover:shadow-md transition-shadow duration-200">
                            <p class="text-[10px] md:text-sm font-medium text-gray-700 flex items-center gap-1 md:gap-1.5">
                              <span class="text-sm md:text-base flex-shrink-0">✈️</span>
                              <span class="flex-1">
@@ -747,8 +821,8 @@
                              </span>
                            </p>
                          </div>`
-                      : ''
-                    }
+                : ''
+              }
                   </div>
 
                   <button 
@@ -797,13 +871,31 @@
     // AUTO-START
     // ============================================
 
-    // Simple initialization - db is already imported from module
+    // Instant Firebase check - no delays if already ready
     async function startPage() {
       console.log('[v0] startPage called')
-      console.log('[v0] db object:', db)
 
       try {
-        await initPage()
+        // ⚡ Check if Firebase is ALREADY ready (synchronous check)
+        if (db && typeof db === 'object') {
+          // Firebase is ready! Start immediately with ZERO delay
+          console.log('⚡ Firebase already ready - starting instantly!')
+          await initPage()
+          return
+        }
+
+        // Fallback: If Firebase not ready yet (rare), wait for it
+        console.log('[Firebase] Waiting for Firebase initialization...')
+        for (let i = 0; i < 20; i++) {
+          if (db && typeof db === 'object') {
+            console.log('✅ Firebase ready after', i, 'retries')
+            await initPage()
+            return
+          }
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+
+        throw new Error('Firebase initialization timeout')
       } catch (err) {
         console.error('[v0] startPage error:', err)
         document.getElementById('loading-state').style.display = 'none'
@@ -812,6 +904,9 @@
             <div class="text-6xl mb-4">&#128293;</div>
             <h3 class="text-xl font-bold text-red-600 mb-2">Помилка завантаження</h3>
             <p class="text-gray-500">${err.message}</p>
+            <button onclick="location.reload()" class="mt-4 px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+              Оновити сторінку
+            </button>
           </div>
         `
       }
@@ -824,10 +919,10 @@
     document.addEventListener('click', (e) => {
       // Check if clicked element or its parent is an add-to-cart button
       const btn = e.target.closest('.add-to-cart-btn');
-      
+
       if (btn && !btn.disabled) {
         e.preventDefault();
-        
+
         // Extract product data from data attributes
         const product = {
           id: btn.dataset.id,
@@ -838,7 +933,7 @@
           spiciness: parseInt(btn.dataset.spiciness) || 1,
           sku: btn.dataset.sku
         };
-        
+
         // Call the global addToCart function from layout.js
         if (window.addToCart) {
           window.addToCart(product, 'category');

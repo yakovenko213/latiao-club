@@ -4,20 +4,20 @@
 // Simple, stable Firebase initialization without persistence or analytics
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { 
-    getFirestore, 
-    collection, 
-    doc, 
-    addDoc, 
-    setDoc, 
-    getDoc, 
-    getDocs, 
-    updateDoc, 
-    deleteDoc, 
-    onSnapshot, 
-    query, 
-    where, 
-    orderBy, 
+import {
+    getFirestore,
+    collection,
+    doc,
+    addDoc,
+    setDoc,
+    getDoc,
+    getDocs,
+    updateDoc,
+    deleteDoc,
+    onSnapshot,
+    query,
+    where,
+    orderBy,
     limit,
     serverTimestamp,
     Timestamp
@@ -30,12 +30,12 @@ import { getStorage } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-s
 // FIREBASE CONFIG
 // ============================================
 const firebaseConfig = {
-  apiKey: "AIzaSyDyQvItRyL4IKl9NmEItswwPOEiKAbWkMw",
-  authDomain: "my-magazin-81c96.firebaseapp.com",
-  projectId: "my-magazin-81c96",
-  storageBucket: "my-magazin-81c96.firebasestorage.app",
-  messagingSenderId: "129061757346",
-  appId: "1:129061757346:web:3e7bc5838cc5f7bda992fb"
+    apiKey: "AIzaSyDyQvItRyL4IKl9NmEItswwPOEiKAbWkMw",
+    authDomain: "my-magazin-81c96.firebaseapp.com",
+    projectId: "my-magazin-81c96",
+    storageBucket: "my-magazin-81c96.firebasestorage.app",
+    messagingSenderId: "129061757346",
+    appId: "1:129061757346:web:3e7bc5838cc5f7bda992fb"
 };
 
 // ============================================
@@ -74,6 +74,8 @@ window.firebaseInit = {
 
 // Export to global scope for admin-chat.js and others
 window.db = db;
+window.functions = functions;
+window.httpsCallable = httpsCallable;
 window.collection = collection;
 window.doc = doc;
 window.addDoc = addDoc;
@@ -90,10 +92,10 @@ window.serverTimestamp = serverTimestamp;
 // ============================================
 // MODULE EXPORTS FOR ES6 IMPORTS
 // ============================================
-export { 
-    db, 
-    auth, 
-    functions, 
+export {
+    db,
+    auth,
+    functions,
     storage,
     collection,
     doc,
@@ -120,7 +122,7 @@ async function initializeChatConfig() {
     try {
         const chatConfigRef = doc(db, 'settings', 'chat_config');
         const chatConfigDoc = await getDoc(chatConfigRef);
-        
+
         if (!chatConfigDoc.exists()) {
             console.log('💬 Creating default chat config...');
             await setDoc(chatConfigRef, {

@@ -11,12 +11,23 @@
   
   <title>Дякуємо за замовлення! | Latiao Snack</title>
   
+  <!-- CRITICAL: Apply theme immediately to prevent flash -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('latiao-theme');
+      if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
+  
   <!-- Tailwind CSS with Cache Busting -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
@@ -28,6 +39,8 @@
       }
     }
   </script>
+  <!-- Dark Mode Module -->
+  <script src="./js/dark-mode.js"></script>
   
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -66,27 +79,27 @@
     }
   </style>
 </head>
-<body class="bg-gray-50 overflow-x-hidden">
+<body class="bg-gray-50 dark:bg-gray-900 overflow-x-hidden transition-colors duration-300">
 
   <!-- Loading State -->
-  <div id="loading-state" class="min-h-screen flex items-center justify-center bg-gray-50">
+  <div id="loading-state" class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
     <div class="text-center max-w-md px-4">
       <div class="w-20 h-20 mx-auto mb-6 border-4 border-spicy border-t-transparent rounded-full spinner"></div>
-      <p class="text-gray-600 text-lg font-medium mb-2">Завантажуємо дані замовлення...</p>
-      <p class="text-gray-400 text-sm mt-2">FINAL VERSION WITH LOGOS</p>
-      <p class="text-gray-500 text-xs mt-4">Це може зайняти кілька секунд...</p>
+      <p class="text-gray-600 dark:text-gray-300 text-lg font-medium mb-2">Завантажуємо дані замовлення...</p>
+      <p class="text-gray-400 dark:text-gray-500 text-sm mt-2">FINAL VERSION WITH LOGOS</p>
+      <p class="text-gray-500 dark:text-gray-400 text-xs mt-4">Це може зайняти кілька секунд...</p>
     </div>
   </div>
 
   <!-- Error State (No Order ID) -->
-  <div id="error-state" class="hidden min-h-screen flex items-center justify-center bg-gray-50 px-4">
+  <div id="error-state" class="hidden min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
     <div class="max-w-md w-full text-center">
       <div class="text-6xl mb-6">😢</div>
-      <h1 class="text-3xl font-bold text-gray-900 mb-4">Замовлення не знайдено</h1>
-      <p class="text-gray-600 mb-4">Можливо, посилання застаріло або замовлення було видалено.</p>
-      <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
-        <p class="text-sm text-yellow-800">
-          Перенаправлення на головну через <span id="countdown-timer" class="countdown-text text-yellow-900">5</span> сек...
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Замовлення не знайдено</h1>
+      <p class="text-gray-600 dark:text-gray-400 mb-4">Можливо, посилання застаріло або замовлення було видалено.</p>
+      <div class="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-xl p-4 mb-6">
+        <p class="text-sm text-yellow-800 dark:text-yellow-300">
+          Перенаправлення на головну через <span id="countdown-timer" class="countdown-text text-yellow-900 dark:text-yellow-200">5</span> сек...
         </p>
       </div>
       <a href="index.html" class="inline-block bg-gradient-to-r from-spicy to-fire text-white px-8 py-4 rounded-2xl font-bold text-lg hover:scale-105 transition-transform shadow-lg">
@@ -99,7 +112,7 @@
   <div id="success-state" class="hidden">
     
     <!-- Header - Text-Only Logo -->
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+    <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 shadow-sm">
       <div class="flex justify-center items-center py-8">
         <a href="index.html" class="text-3xl font-black tracking-tighter uppercase bg-gradient-to-r from-[#ff6b00] to-[#ff4444] bg-clip-text text-transparent hover:opacity-80 transition-opacity">
           Latiao Snack
@@ -117,13 +130,13 @@
           alt="Success" 
           class="w-40 h-40 mx-auto mb-6 object-contain bounce-animation"
         />
-        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 mb-4">
+        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 dark:text-white mb-4">
           Оплата успішна! Ваше замовлення вже в надійних руках ✨
         </h1>
-        <p class="text-base lg:text-lg text-slate-600 font-medium leading-relaxed mb-6 max-w-3xl mx-auto mt-2">
+        <p class="text-base lg:text-lg text-slate-600 dark:text-gray-300 font-medium leading-relaxed mb-6 max-w-3xl mx-auto mt-2">
           Ми вже почали готувати ваш пакунок. Детальну інформацію про дату та точний час відправки саме вашого замовлення ви знайдете нижче у розділі «Доставка».
         </p>
-        <p class="text-base lg:text-lg text-slate-600 font-medium leading-relaxed mb-8 max-w-3xl mx-auto">
+        <p class="text-base lg:text-lg text-slate-600 dark:text-gray-300 font-medium leading-relaxed mb-8 max-w-3xl mx-auto">
           Бажаєте тримати все під контролем? Переглянути деталі замовлення або відстежити рух посилки можна у вашому особистому кабінеті. Щойно посилка виїде до вас, ми також надішлемо SMS із номером ТТН.
         </p>
         
@@ -145,15 +158,15 @@
         <!-- Left Column: Order Items (2 columns width) -->
         <div class="lg:col-span-2">
           <!-- Order Summary Card -->
-          <div class="bg-white rounded-3xl shadow-lg overflow-hidden fade-in">
-            <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-4 sm:px-6 py-4 border-b border-gray-200">
+          <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-lg overflow-hidden fade-in">
+            <div class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
               <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <h2 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
+                <h2 class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                   <span class="text-xl sm:text-2xl">🛍️</span>
                   Ваше замовлення
                 </h2>
                 <div class="flex items-center gap-2 flex-wrap">
-                  <span class="text-xs sm:text-sm text-gray-600 font-semibold">Номер замовлення:</span>
+                  <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-semibold">Номер замовлення:</span>
                   <span id="order-id-display" class="text-base sm:text-lg font-black text-spicy">
                     #LOADING...
                   </span>
@@ -171,23 +184,23 @@
               </div>
 
               <!-- Totals -->
-              <div class="border-t border-gray-200 pt-4 space-y-2 text-sm sm:text-base">
-                <div class="flex justify-between text-gray-700">
-                  <span class="text-gray-500">Товари (<span id="total-quantity">0</span> шт.):</span>
+              <div class="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-2 text-sm sm:text-base">
+                <div class="flex justify-between text-gray-700 dark:text-gray-300">
+                  <span class="text-gray-500 dark:text-gray-400">Товари (<span id="total-quantity">0</span> шт.):</span>
                   <span id="subtotal-display" class="font-semibold">0 грн</span>
                 </div>
                 
-                <div id="discount-row" class="hidden flex justify-between text-green-600">
+                <div id="discount-row" class="hidden flex justify-between text-green-600 dark:text-green-400">
                   <span>Знижка:</span>
                   <span id="discount-display" class="font-semibold">-0 грн</span>
                 </div>
 
-                <div class="flex justify-between items-start text-gray-700 pb-3 gap-2">
-                  <span class="text-gray-500 flex-shrink-0">Доставка:</span>
+                <div class="flex justify-between items-start text-gray-700 dark:text-gray-300 pb-3 gap-2">
+                  <span class="text-gray-500 dark:text-gray-400 flex-shrink-0">Доставка:</span>
                   <span id="delivery-cost-display" class="font-semibold text-right text-xs sm:text-sm leading-tight">За тарифами перевізника</span>
                 </div>
 
-                <div class="flex justify-between items-center text-xl sm:text-2xl font-black text-gray-900 pt-3 border-t-2 border-gray-300">
+                <div class="flex justify-between items-center text-xl sm:text-2xl font-black text-gray-900 dark:text-white pt-3 border-t-2 border-gray-300 dark:border-gray-600">
                   <span>Разом:</span>
                   <span id="total-display" class="text-spicy">0 грн</span>
                 </div>
@@ -200,44 +213,44 @@
         <div class="space-y-6">
           
           <!-- Delivery Info Card -->
-          <div class="bg-white rounded-3xl shadow-lg p-6 fade-in card-hover">
-            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 fade-in card-hover">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <span class="text-2xl">🚚</span>
               Доставка
             </h3>
             <div class="space-y-3 text-sm">
               <div>
-                <p class="text-gray-500 text-xs uppercase font-semibold mb-1">Служба доставки</p>
+                <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold mb-1">Служба доставки</p>
                 <div class="flex items-center gap-2">
                   <img id="delivery-logo" src="" alt="" class="hidden h-5 object-contain">
-                  <span id="delivery-method" class="text-gray-900 font-semibold">—</span>
+                  <span id="delivery-method" class="text-gray-900 dark:text-white font-semibold">—</span>
                 </div>
               </div>
               <div>
-                <p id="delivery-city-label" class="text-gray-500 text-xs uppercase font-semibold mb-1">Місто</p>
-                <div id="delivery-city" class="text-gray-900 flex flex-col gap-1">—</div>
+                <p id="delivery-city-label" class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold mb-1">Місто</p>
+                <div id="delivery-city" class="text-gray-900 dark:text-white flex flex-col gap-1">—</div>
               </div>
               <div id="delivery-branch-section">
-                <p class="text-gray-500 text-xs uppercase font-semibold mb-1">Відділення</p>
-                <p id="delivery-branch" class="text-gray-900">—</p>
+                <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold mb-1">Відділення</p>
+                <p id="delivery-branch" class="text-gray-900 dark:text-white">—</p>
               </div>
             </div>
             
             <!-- Premium Dispatch Time Badge -->
             <div id="dispatch-info-badge" class="hidden mt-4">
-              <div class="bg-slate-50 border border-dashed border-blue-200 rounded-2xl p-4">
+              <div class="bg-slate-50 dark:bg-gray-700 border border-dashed border-blue-200 dark:border-blue-600 rounded-2xl p-4">
                 <div class="flex items-center gap-3">
                   <!-- Icon with glow effect -->
-                  <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center shadow-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600">
+                  <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600 dark:text-blue-400">
                       <circle cx="12" cy="12" r="10"></circle>
                       <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
                   </div>
                   <!-- Text content -->
                   <div class="flex-1">
-                    <p class="text-[10px] uppercase tracking-widest text-blue-500 font-bold mb-0.5">Інформація про відправку</p>
-                    <p id="dispatch-time-text" class="text-sm text-slate-700 font-semibold">—</p>
+                    <p class="text-[10px] uppercase tracking-widest text-blue-500 dark:text-blue-400 font-bold mb-0.5">Інформація про відправку</p>
+                    <p id="dispatch-time-text" class="text-sm text-slate-700 dark:text-slate-200 font-semibold">—</p>
                   </div>
                 </div>
               </div>
@@ -245,37 +258,37 @@
           </div>
 
           <!-- Payment Info Card -->
-          <div class="bg-white rounded-3xl shadow-lg p-6 fade-in card-hover">
-            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 fade-in card-hover">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <span class="text-2xl">💳</span>
               Оплата
             </h3>
             <div class="space-y-3 text-sm">
               <div>
-                <p class="text-gray-500 text-xs uppercase font-semibold mb-1">Спосіб оплати</p>
-                <p id="payment-method" class="text-gray-800 font-medium">—</p>
+                <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold mb-1">Спосіб оплати</p>
+                <p id="payment-method" class="text-gray-800 dark:text-gray-200 font-medium">—</p>
               </div>
               
               <!-- Prepayment Breakdown (Hidden by default) -->
-              <div id="prepayment-breakdown" class="hidden mt-4 pt-4 border-t border-gray-200">
-                <p class="text-gray-700 font-medium mb-3">💰 Деталі оплати:</p>
+              <div id="prepayment-breakdown" class="hidden mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <p class="text-gray-700 dark:text-gray-300 font-medium mb-3">💰 Деталі оплати:</p>
                 <div class="space-y-2">
-                  <div class="flex justify-between text-gray-600">
+                  <div class="flex justify-between text-gray-600 dark:text-gray-400">
                     <span>Загальна сума:</span>
                     <span id="prepayment-total" class="font-semibold">0 грн</span>
                   </div>
                   <!-- Free Delivery Notice (conditional) -->
-                  <div id="free-delivery-notice" class="hidden flex justify-between items-center text-green-600 gap-2">
+                  <div id="free-delivery-notice" class="hidden flex justify-between items-center text-green-600 dark:text-green-400 gap-2">
                     <span class="flex-shrink-0">🎉 Доставка:</span>
                     <span class="font-bold text-right">Безкоштовно</span>
                   </div>
-                  <div class="flex justify-between text-green-600">
+                  <div class="flex justify-between text-green-600 dark:text-green-400">
                     <span>Вже сплачено (передоплата):</span>
                     <span class="font-bold">100 грн</span>
                   </div>
-                  <div class="flex justify-between text-lg font-bold text-blue-700 pt-2 border-t border-gray-200 bg-blue-50 px-3 py-2 rounded-lg">
+                  <div class="flex justify-between text-lg font-bold text-blue-700 dark:text-blue-400 pt-2 border-t border-gray-200 dark:border-gray-600 bg-blue-50 dark:bg-blue-900/30 px-3 py-2 rounded-lg">
                     <span>До сплати при отриманні:</span>
-                    <span id="prepayment-remaining" class="text-blue-900">0 грн</span>
+                    <span id="prepayment-remaining" class="text-blue-900 dark:text-blue-300">0 грн</span>
                   </div>
                 </div>
               </div>
@@ -283,23 +296,23 @@
           </div>
 
           <!-- Contact Info Card -->
-          <div class="bg-white rounded-3xl shadow-lg p-6 fade-in card-hover">
-            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 fade-in card-hover">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <span class="text-2xl">👤</span>
               Контакти
             </h3>
             <div class="space-y-3 text-sm">
               <div>
-                <p class="text-gray-500 text-xs uppercase font-semibold mb-1">Отримувач</p>
-                <p id="customer-name" class="text-gray-900">—</p>
+                <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold mb-1">Отримувач</p>
+                <p id="customer-name" class="text-gray-900 dark:text-white">—</p>
               </div>
               <div>
-                <p class="text-gray-500 text-xs uppercase font-semibold mb-1">Телефон</p>
-                <p id="customer-phone" class="text-gray-900 font-semibold">—</p>
+                <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold mb-1">Телефон</p>
+                <p id="customer-phone" class="text-gray-900 dark:text-white font-semibold">—</p>
               </div>
               <div id="customer-telegram-block" class="hidden">
-                <p class="text-gray-500 text-xs uppercase font-semibold mb-1">Telegram</p>
-                <p id="customer-telegram" class="text-gray-900">—</p>
+                <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold mb-1">Telegram</p>
+                <p id="customer-telegram" class="text-gray-900 dark:text-white">—</p>
               </div>
             </div>
           </div>
@@ -313,16 +326,16 @@
           <span class="text-xl">🛍️</span>
           <span>Продовжити покупки</span>
         </a>
-        <a href="index.html" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white border-2 border-gray-200 text-gray-900 px-8 py-4 rounded-2xl font-bold text-lg hover:border-spicy hover:text-spicy transition-colors shadow">
+        <a href="index.html" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white px-8 py-4 rounded-2xl font-bold text-lg hover:border-spicy hover:text-spicy dark:hover:border-spicy transition-colors shadow">
           <span class="text-xl">🏠</span>
           <span>На головну</span>
         </a>
       </div>
 
       <!-- Help Section -->
-      <div class="bg-white rounded-3xl shadow-lg p-8 text-center fade-in">
-        <h3 class="text-2xl font-bold text-gray-900 mb-4">Потрібна допомога?</h3>
-        <p class="text-gray-600 mb-6">
+      <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 text-center fade-in">
+        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Потрібна допомога?</h3>
+        <p class="text-gray-600 dark:text-gray-400 mb-6">
           Якщо у вас виникли питання щодо замовлення, зв'яжіться з нами!
         </p>
         <a href="https://t.me/sales_latiao" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-3 bg-[#229ED9] text-white py-3 px-8 rounded-xl transition-transform hover:scale-105 shadow-md">

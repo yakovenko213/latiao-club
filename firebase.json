@@ -2,7 +2,69 @@
   "hosting": [
     {
       "target": "main",
-      "public": "public-site", 
+      "public": "public-site",
+      "cleanUrls": false,
+      "trailingSlash": false,
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**",
+        "admin.html",
+        "admin-*.html",
+        "admin-site/**"
+      ],
+      "headers": [
+        {
+          "source": "**/*.@(jpg|jpeg|gif|png|webp|svg|ico|woff|woff2|ttf|eot)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
+          "source": "**/*.@(js|css)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
+          "source": "**/*.html",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=3600, must-revalidate"
+            }
+          ]
+        },
+        {
+          "source": "**",
+          "headers": [
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "SAMEORIGIN"
+            },
+            {
+              "key": "X-XSS-Protection",
+              "value": "1; mode=block"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "site": "admin-store-latio",
+      "public": "admin-site",
+      "cleanUrls": false,
+      "trailingSlash": false,
       "ignore": [
         "firebase.json",
         "**/.*",
@@ -12,27 +74,36 @@
         {
           "source": "**/*.@(jpg|jpeg|gif|png|webp|svg|ico|woff|woff2|ttf|eot)",
           "headers": [
-            { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
           ]
         },
         {
           "source": "**/*.@(js|css)",
           "headers": [
-            { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-          ]
-        },
-        {
-          "source": "**/*.html",
-          "headers": [
-            { "key": "Cache-Control", "value": "public, max-age=3600, must-revalidate" }
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, must-revalidate"
+            }
           ]
         },
         {
           "source": "**",
           "headers": [
-            { "key": "X-Content-Type-Options", "value": "nosniff" },
-            { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
-            { "key": "X-XSS-Protection", "value": "1; mode=block" }
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "SAMEORIGIN"
+            },
+            {
+              "key": "X-XSS-Protection",
+              "value": "1; mode=block"
+            }
           ]
         }
       ]
@@ -50,7 +121,10 @@
         {
           "source": "**",
           "headers": [
-            { "key": "Cache-Control", "value": "no-store" } 
+            {
+              "key": "Cache-Control",
+              "value": "no-store"
+            }
           ]
         }
       ]

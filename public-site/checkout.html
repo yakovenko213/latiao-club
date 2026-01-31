@@ -6,10 +6,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Оформлення замовлення | LATIAO SNACK</title>
 
+  <!-- CRITICAL: Apply theme immediately to prevent flash -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('latiao-theme');
+      if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script>
     tailwindcss.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
@@ -17,12 +28,15 @@
               500: '#ff6b00',
               600: '#e55f00',
               100: '#fff3eb'
-            }
+            },
+            spicy: '#ff6b00'
           }
         }
       }
     }
   </script>
+  <!-- Dark Mode Module -->
+  <script src="./js/dark-mode.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 

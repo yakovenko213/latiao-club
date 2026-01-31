@@ -6,9 +6,13 @@
  * Manages customer chats with AI assistance
  * Real-time message sync with Firestore
  * 
- * @version 1.0.0
+ * @version 2.0.0 - SAFE START EDITION
  * @created 2026-01-24
+ * @updated 2026-01-28 - Added comprehensive error handling
  */
+
+console.log('🚀 Admin Chat Script Started - File loaded successfully');
+console.log('⏰ Load time:', new Date().toISOString());
 
 // NOTE: This file assumes Firebase is already initialized in admin.html
 // Uses global variables: db, auth, onSnapshot, collection, doc, etc.
@@ -16,12 +20,15 @@
 (function() {
     'use strict';
 
+    console.log('🚀 Admin Chat IIFE executing...');
+
     // ═══════════════════════════════════════════════════════════════════
     // 🔧 CONFIG
     // ═══════════════════════════════════════════════════════════════════
     
     const CONFIG = {
         DEBUG: true,
+        LOAD_TIMEOUT: 8000, // 8 seconds timeout
         GEMINI_API_KEY: 'AIzaSyA11Wu1XUxEXXeCz3t_NfOr0ygoEblvbhY',
         GEMINI_MODEL: 'gemini-2.0-flash-exp',
         GEMINI_ENDPOINT: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent'
@@ -35,20 +42,101 @@
     let currentChatId = null;
     let messagesUnsubscribe = null;
     let chatsUnsubscribe = null;
+    let loadingTimeoutId = null;
+    let isAuthenticated = false;
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 🛡️ ERROR DISPLAY HELPER
+    // ═══════════════════════════════════════════════════════════════════
+    
+    function showErrorInUI(errorMessage, errorCode = null) {
+        console.error('💬 UI Error:', errorMessage, errorCode);
+        const chatListContainer = document.getElementById('chat-list-container');
+        if (!chatListContainer) return;
+        
+        chatListContainer.innerHTML = `
+            <div class="text-center py-8 px-4">
+                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="alert-triangle" class="w-8 h-8 text-red-500"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Помилка завантаження</h3>
+                <p class="text-sm text-gray-600 mb-2">${errorMessage}</p>
+                ${errorCode ? `<p class="text-xs text-red-500 font-mono mb-4">Код: ${errorCode}</p>` : ''}
+                <button onclick="window.retryLoadChats()" 
+                        class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 inline mr-2"></i>
+                    Спробувати знову
+                </button>
+                <p class="text-xs text-gray-400 mt-4">Перевірте консоль (F12) для деталей</p>
+            </div>
+        `;
+        if (window.lucide) window.lucide.createIcons();
+    }
+    
+    function showLoadingWithTimeout() {
+        const chatListContainer = document.getElementById('chat-list-container');
+        if (!chatListContainer) return;
+        
+        chatListContainer.innerHTML = `
+            <div class="text-center py-12" id="chat-loading-indicator">
+                <div class="animate-spin w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p class="text-gray-500">Завантаження чатів...</p>
+                <p class="text-xs text-gray-400 mt-2" id="loading-status">Очікування Firebase...</p>
+            </div>
+        `;
+        
+        // Set timeout for loading
+        if (loadingTimeoutId) clearTimeout(loadingTimeoutId);
+        loadingTimeoutId = setTimeout(() => {
+            console.error('💬 Loading timeout after', CONFIG.LOAD_TIMEOUT, 'ms');
+            showErrorInUI('Таймаут завантаження. Перевірте підключення до інтернету або авторизацію.', 'TIMEOUT');
+        }, CONFIG.LOAD_TIMEOUT);
+    }
+    
+    function updateLoadingStatus(status) {
+        const statusEl = document.getElementById('loading-status');
+        if (statusEl) statusEl.textContent = status;
+    }
 
     // ═══════════════════════════════════════════════════════════════════
     // 🎬 INITIALIZATION
     // ═══════════════════════════════════════════════════════════════════
     
     window.initLiveChat = async function() {
+        console.log('💬 initLiveChat() called');
+        
         if (CONFIG.DEBUG) console.log('💬 Initializing Live Chat Management...');
         
-        // Wait for Firebase to be available
-        await waitForFirebase();
+        showLoadingWithTimeout();
         
-        loadChats();
-        loadChatSettings();
-        setupEventListeners();
+        try {
+            // Step 1: Wait for Firebase
+            updateLoadingStatus('Очікування Firebase...');
+            await waitForFirebase();
+            
+            // Step 2: Wait for Authentication
+            updateLoadingStatus('Перевірка авторизації...');
+            await waitForAuth();
+            
+            // Step 3: Load chats (only after auth confirmed)
+            updateLoadingStatus('Завантаження чатів...');
+            loadChats();
+            
+            loadChatSettings();
+            setupEventListeners();
+            
+        } catch (error) {
+            console.error('💬 Initialization failed:', error);
+            showErrorInUI(error.message, error.code || 'INIT_FAILED');
+        }
+    };
+    
+    // Retry function exposed globally
+    window.retryLoadChats = function() {
+        console.log('💬 Retrying chat load...');
+        if (loadingTimeoutId) clearTimeout(loadingTimeoutId);
+        if (chatsUnsubscribe) chatsUnsubscribe();
+        window.initLiveChat();
     };
 
     // Wait for Firebase initialization
@@ -56,7 +144,8 @@
         let attempts = 0;
         const maxAttempts = 100; // 10 seconds max
         
-        if (CONFIG.DEBUG) console.log('💬 Waiting for Firebase initialization...');
+        console.log('💬 Waiting for Firebase initialization...');
+        console.log('💬 Current state - window.db:', typeof window.db, 'window.collection:', typeof window.collection);
         
         while (typeof window.db === 'undefined' && attempts < maxAttempts) {
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -71,11 +160,54 @@
         
         if (typeof window.db === 'undefined') {
             console.error('💬 Firebase initialization timeout after', attempts * 100, 'ms');
-            console.error('💬 Available globals:', Object.keys(window).filter(k => k.startsWith('firebase') || k === 'db').join(', '));
-            throw new Error('Firebase not available');
+            console.error('💬 Available globals:', Object.keys(window).filter(k => 
+                k.startsWith('firebase') || k === 'db' || k === 'auth' || k === 'collection'
+            ).join(', '));
+            throw new Error('Firebase не ініціалізовано. Оновіть сторінку.');
         }
         
-        if (CONFIG.DEBUG) console.log('✅ Firebase ready after', attempts * 100, 'ms');
+        console.log('✅ Firebase ready after', attempts * 100, 'ms');
+        return true;
+    }
+    
+    // Wait for Authentication
+    async function waitForAuth() {
+        console.log('💬 Checking authentication...');
+        
+        return new Promise((resolve, reject) => {
+            // Check if auth is available
+            if (typeof window.auth === 'undefined') {
+                console.error('💬 window.auth is undefined');
+                reject(new Error('Firebase Auth не доступний'));
+                return;
+            }
+            
+            // Check current auth state
+            const unsubscribe = window.onAuthStateChanged(window.auth, (user) => {
+                unsubscribe(); // Only need to check once
+                
+                if (user) {
+                    console.log('✅ User authenticated:', user.email);
+                    isAuthenticated = true;
+                    resolve(true);
+                } else {
+                    console.warn('⚠️ User NOT authenticated - chats may fail to load');
+                    // Still try to load, but warn
+                    isAuthenticated = false;
+                    resolve(false);
+                }
+            }, (error) => {
+                console.error('💬 Auth error:', error);
+                reject(error);
+            });
+            
+            // Timeout for auth check
+            setTimeout(() => {
+                unsubscribe();
+                console.warn('💬 Auth check timeout, proceeding anyway...');
+                resolve(false);
+            }, 5000);
+        });
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -83,35 +215,96 @@
     // ═══════════════════════════════════════════════════════════════════
     
     function loadChats() {
+        console.log('💬 loadChats() called');
+        console.log('💬 isAuthenticated:', isAuthenticated);
+        
         if (typeof window.db === 'undefined') {
             console.error('💬 Firebase not initialized yet');
+            showErrorInUI('Firebase не ініціалізовано', 'NO_FIREBASE');
             return;
         }
-
-        const chatsRef = window.collection(window.db, 'chats');
-        const q = window.query(chatsRef, window.orderBy('lastMessageTime', 'desc'));
-
-        if (chatsUnsubscribe) {
-            chatsUnsubscribe();
+        
+        if (!isAuthenticated) {
+            console.warn('💬 User not authenticated, chat list may be empty or fail');
         }
 
-        chatsUnsubscribe = window.onSnapshot(q, (snapshot) => {
-            chats = [];
-            let totalUnread = 0;
+        try {
+            const chatsRef = window.collection(window.db, 'chats');
+            console.log('💬 chatsRef created:', chatsRef);
+            
+            const q = window.query(chatsRef, window.orderBy('lastMessageTime', 'desc'));
+            console.log('💬 Query created, subscribing to onSnapshot...');
 
-            snapshot.forEach((doc) => {
-                const chat = { id: doc.id, ...doc.data() };
-                chats.push(chat);
-                if (chat.unreadCount > 0) {
-                    totalUnread += chat.unreadCount;
+            if (chatsUnsubscribe) {
+                console.log('💬 Unsubscribing from previous listener');
+                chatsUnsubscribe();
+            }
+
+            chatsUnsubscribe = window.onSnapshot(q, 
+                // Success callback
+                (snapshot) => {
+                    // Clear loading timeout on success
+                    if (loadingTimeoutId) {
+                        clearTimeout(loadingTimeoutId);
+                        loadingTimeoutId = null;
+                    }
+                    
+                    console.log('✅ onSnapshot SUCCESS - received', snapshot.size, 'documents');
+                    
+                    chats = [];
+                    let totalUnread = 0;
+
+                    snapshot.forEach((doc) => {
+                        const chat = { id: doc.id, ...doc.data() };
+                        chats.push(chat);
+                        if (chat.unreadCount > 0) {
+                            totalUnread += chat.unreadCount;
+                        }
+                    });
+
+                    renderChatList();
+                    updateUnreadBadge(totalUnread);
+
+                    console.log('💬 Loaded', chats.length, 'chats, unread:', totalUnread);
+                },
+                // Error callback - THIS IS CRITICAL!
+                (error) => {
+                    console.error('❌ onSnapshot ERROR:', error);
+                    console.error('❌ Error code:', error.code);
+                    console.error('❌ Error message:', error.message);
+                    
+                    // Clear loading timeout
+                    if (loadingTimeoutId) {
+                        clearTimeout(loadingTimeoutId);
+                        loadingTimeoutId = null;
+                    }
+                    
+                    // Handle specific errors
+                    if (error.code === 'permission-denied') {
+                        showErrorInUI(
+                            'Немає дозволу на читання чатів. Увійдіть як адміністратор.',
+                            'permission-denied'
+                        );
+                    } else if (error.code === 'unavailable') {
+                        showErrorInUI(
+                            'Firestore недоступний. Перевірте інтернет-з\'єднання.',
+                            'unavailable'
+                        );
+                    } else {
+                        showErrorInUI(
+                            error.message || 'Невідома помилка',
+                            error.code
+                        );
+                    }
                 }
-            });
-
-            renderChatList();
-            updateUnreadBadge(totalUnread);
-
-            if (CONFIG.DEBUG) console.log('💬 Loaded', chats.length, 'chats, unread:', totalUnread);
-        });
+            );
+            
+            console.log('💬 onSnapshot listener attached');
+            
+        } catch (error) {
+            console.error('💬 Exception in loadChats:', error);
+            showErrorInUI(error.message, error.code || 'EXCEPTION');
+        }
     }
 
     function renderChatList() {

@@ -1491,6 +1491,29 @@ async function sendMessage() {
         showTypingIndicator();
         
         console.log('✅ Message sent successfully');
+        
+        // 🤖 Call AI Cloud Function for automatic response
+        try {
+            console.log('🤖 Requesting AI response...');
+            const aiResponse = await fetch('https://us-central1-my-magazin-81c96.cloudfunctions.net/aiChatResponder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chatId: currentChatId,
+                    messageText: messageText
+                })
+            });
+            const aiResult = await aiResponse.json();
+            console.log('🤖 AI response result:', aiResult);
+            
+            if (aiResult.skipped) {
+                console.log('🤖 AI skipped:', aiResult.reason);
+            }
+        } catch (aiError) {
+            console.error('🤖 AI request failed:', aiError);
+        } finally {
+            hideTypingIndicator();
+        }
 
     } catch (error) {
         console.error('❌ Error sending message:', error);

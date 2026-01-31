@@ -121,7 +121,7 @@ const headerTemplate = `
                 </path>
               </g>
               <text x="70" y="46" font-family="Poppins, Inter, Manrope, Arial, sans-serif" font-size="36" font-weight="700" fill="url(#shineGradient)">Latiao</text>
-              <text x="198" y="46" font-family="Poppins, Inter, Manrope, Arial, sans-serif" font-size="36" font-weight="700" fill="#333333">Snack</text>
+              <text x="198" y="46" font-family="Poppins, Inter, Manrope, Arial, sans-serif" font-size="36" font-weight="700" fill="#333333" class="logo-snack-text">Snack</text>
               <circle cx="320" cy="20" r="4" fill="#FF4D4F">
                 <animate attributeName="opacity" values="1;0.5;1" dur="1.2s" repeatCount="indefinite"/>
               </circle>

@@ -1,4 +1,5 @@
 const functions = require('firebase-functions');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
 const admin = require('firebase-admin');
 const fetch = require('node-fetch');
 // 👇 Нові бібліотеки для адмінки
@@ -302,6 +303,7 @@ exports.handleMonoWebhook = functions.https.onRequest(async (req, res) => {
   }
 });
 
+
 const app = express();
 
 const ADMIN_USER = "admin_system";
@@ -324,3 +326,374 @@ app.get(/.*/, (req, res) => {
 });
 
 exports.adminPanel = functions.https.onRequest(app);
+
+// ═══════════════════════════════════════════════════════════════════════
+// 📦 KEYCRM PRODUCTS SYNC - Fetch products from KeyCRM API
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * Core sync logic - fetches products from KeyCRM and updates Firestore
+ * Can be called from manual trigger or scheduled function
+ */
+async function performProductSync() {
+  try {
+    console.log('🔗 Starting KeyCRM Products Sync...');
+
+    // 1. Fetch API Key from Firestore settings
+    const settingsDoc = await admin.firestore().collection('settings').doc('config').get();
+
+    if (!settingsDoc.exists || !settingsDoc.data().keycrmApiKey) {
+      throw new Error('API Key not found in settings');
+    }
+
+    const apiKey = settingsDoc.data().keycrmApiKey;
+    console.log('✅ API Key loaded from settings');
+
+    // 2. Fetch products with pagination from KeyCRM
+    const allCrmProducts = [];
+    let currentPage = 1;
+    let hasMorePages = true;
+    const limit = 50;
+
+    do {
+      const targetUrl = `https://openapi.keycrm.app/v1/offers?limit=${limit}&page=${currentPage}`;
+      console.log(`📄 Fetching page ${currentPage}:`, targetUrl);
+
+      const response = await fetch(targetUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log(`📡 Page ${currentPage} response:`, response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Response error body:', errorText);
+        throw new Error(`KeyCRM API error: ${response.status} ${response.statusText}`);
+      }
+
+      const pageData = await response.json();
+      console.log(`📊 Page ${currentPage} data received`);
+
+      const pageProducts = pageData.data || pageData.products || pageData || [];
+
+      if (Array.isArray(pageProducts) && pageProducts.length > 0) {
+        allCrmProducts.push(...pageProducts);
+        console.log(`✅ Page ${currentPage}: Added ${pageProducts.length} products (Total: ${allCrmProducts.length})`);
+
+        hasMorePages = pageProducts.length === limit;
+        currentPage++;
+      } else {
+        console.log(`🛑 Page ${currentPage}: No more data. Stopping pagination.`);
+        hasMorePages = false;
+      }
+
+    } while (hasMorePages);
+
+    console.log(`🎯 Total products fetched from KeyCRM: ${allCrmProducts.length} (${currentPage - 1} pages)`);
+
+    if (allCrmProducts.length === 0) {
+      return {
+        success: true,
+        message: 'No products found in KeyCRM',
+        totalProducts: 0,
+        totalPages: currentPage - 1,
+        productsUpdated: 0
+      };
+    }
+
+    // 3. Load Firebase products and match by SKU
+    const firebaseSnapshot = await admin.firestore().collection('products').get();
+    const firebaseProductsMap = new Map();
+
+    firebaseSnapshot.forEach(doc => {
+      const data = doc.data();
+      if (data.sku) {
+        const normalizedSku = data.sku.trim().toLowerCase();
+        firebaseProductsMap.set(normalizedSku, {
+          id: doc.id,
+          currentStock: data.stock || 0
+        });
+      }
+    });
+
+    console.log(`📊 Firebase products loaded: ${firebaseProductsMap.size}`);
+
+    // 4. Match products and prepare updates
+    const updates = [];
+    const matched = [];
+    const notFound = [];
+
+    for (const crmProduct of allCrmProducts) {
+      const crmSKU = crmProduct.sku || crmProduct.article || crmProduct.code;
+      const crmStock = crmProduct.stock || crmProduct.quantity || crmProduct.warehouse?.quantity || 0;
+
+      if (!crmSKU) {
+        console.warn('⚠️ CRM product missing SKU:', crmProduct);
+        continue;
+      }
+
+      const normalizedCrmSku = crmSKU.trim().toLowerCase();
+      const firebaseProduct = firebaseProductsMap.get(normalizedCrmSku);
+
+      if (firebaseProduct) {
+        const stockValue = parseInt(crmStock);
+        updates.push({
+          docId: firebaseProduct.id,
+          sku: crmSKU,
+          oldStock: firebaseProduct.currentStock,
+          newStock: isNaN(stockValue) ? 0 : stockValue
+        });
+        matched.push(crmSKU);
+        console.log(`✅ Matched: SKU "${crmSKU}" → Stock: ${crmStock}`);
+      } else {
+        notFound.push(crmSKU);
+        console.warn(`⚠️ SKU "${crmSKU}" found in KeyCRM but missing in Firebase`);
+      }
+    }
+
+    console.log(`📊 Matching results: ${matched.length} matched, ${notFound.length} not found`);
+
+    // 5. Batch update Firebase products
+    if (updates.length > 0) {
+      const batchSize = 500;
+      let batchCount = 0;
+
+      for (let i = 0; i < updates.length; i += batchSize) {
+        const batch = admin.firestore().batch();
+        const chunk = updates.slice(i, i + batchSize);
+
+        chunk.forEach(update => {
+          const docRef = admin.firestore().collection('products').doc(update.docId);
+          batch.update(docRef, {
+            stock: update.newStock,
+            updatedAt: new Date().toISOString(),
+            lastSyncedFromCRM: new Date().toISOString()
+          });
+        });
+
+        await batch.commit();
+        batchCount++;
+        console.log(`✅ Batch ${batchCount}/${Math.ceil(updates.length / batchSize)} committed (${chunk.length} updates)`);
+      }
+
+      console.log(`🎉 Sync completed! Updated ${updates.length} products`);
+    }
+
+    return {
+      success: true,
+      totalProducts: allCrmProducts.length,
+      totalPages: currentPage - 1,
+      productsMatched: matched.length,
+      productsUpdated: updates.length,
+      productsNotFound: notFound.length,
+      notFoundSKUs: notFound.slice(0, 10) // Return first 10 for logging
+    };
+
+  } catch (error) {
+    console.error('❌ KeyCRM Products Sync failed:', getSafeErrorMessage(error));
+    throw error;
+  }
+}
+
+// Manual trigger (called from admin panel)
+exports.syncProductsFromKeyCRM = functions.https.onCall(async (data, context) => {
+  try {
+    const result = await performProductSync();
+    return result;
+  } catch (error) {
+    console.error('❌ Manual sync failed:', getSafeErrorMessage(error));
+    throw new functions.https.HttpsError('internal', getSafeErrorMessage(error));
+  }
+});
+
+// ⏰ AUTOMATIC HOURLY SYNC - Scheduled Cloud Function (v2)
+// Runs every hour automatically to keep stock updated
+exports.autoSyncProductsHourly = onSchedule('0 * * * *', async (event) => {
+  console.log('⏰ Starting scheduled hourly product sync...');
+
+  try {
+    const result = await performProductSync();
+
+    console.log('✅ Scheduled sync completed:', {
+      totalProducts: result.totalProducts,
+      productsUpdated: result.productsUpdated,
+      productsNotFound: result.productsNotFound
+    });
+
+    // Log to Firestore for tracking
+    await admin.firestore().collection('sync_logs').add({
+      type: 'scheduled_hourly',
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      result: result,
+      success: true
+    });
+
+    return null;
+  } catch (error) {
+    console.error('❌ Scheduled sync failed:', getSafeErrorMessage(error));
+
+    // Log error to Firestore
+    await admin.firestore().collection('sync_logs').add({
+      type: 'scheduled_hourly',
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      error: getSafeErrorMessage(error),
+      success: false
+    });
+
+    // Don't throw - let it retry on next schedule
+    return null;
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+// 🤖 AI CHAT AUTO-RESPONDER (Gemini 2.0 Flash)
+// ═══════════════════════════════════════════════════════════════════════
+
+const GEMINI_API_KEY = "AIzaSyA11Wu1XUxEXXeCz3t_NfOr0ygoEblvbhY";
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+
+/**
+ * 🤖 HTTP Trigger: Generate AI response for chat
+ * Called by client-side chat widget when user sends a message
+ */
+exports.aiChatResponder = functions.https.onRequest(async (req, res) => {
+  // CORS headers
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).send('');
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).send('Method not allowed');
+  }
+
+  const { chatId, messageId, messageText } = req.body;
+
+  if (!chatId || !messageText) {
+    return res.status(400).json({ error: 'Missing chatId or messageText' });
+  }
+
+  console.log(`📨 AI request for chat ${chatId}:`, messageText.substring(0, 50));
+
+  try {
+    // Get AI settings
+    const settingsDoc = await admin.firestore()
+      .collection('settings')
+      .doc('chat_config')
+      .get();
+
+    if (!settingsDoc.exists) {
+      console.log('⚠️ No chat_config settings found');
+      return res.status(200).json({ skipped: true, reason: 'no_settings' });
+    }
+
+    const settings = settingsDoc.data();
+    const aiEnabled = settings.aiEnabled || settings.enabled || false;
+
+    if (!aiEnabled) {
+      console.log('🚫 AI is disabled in settings');
+      return res.status(200).json({ skipped: true, reason: 'ai_disabled' });
+    }
+
+    // Get chat history for context
+    const historySnap = await admin.firestore()
+      .collection('chats')
+      .doc(chatId)
+      .collection('messages')
+      .orderBy('timestamp', 'desc')
+      .limit(6)
+      .get();
+
+    const history = [];
+    historySnap.docs.reverse().forEach(doc => {
+      const msg = doc.data();
+      if (msg.text) {
+        history.push({
+          role: msg.sender === 'client' ? 'user' : 'model',
+          parts: [{ text: msg.text }]
+        });
+      }
+    });
+
+    // Build Gemini request
+    const systemPrompt = settings.aiSystemPrompt ||
+      'Ти корисний асистент інтернет-магазину. Відповідай дружньо українською мовою.';
+
+    console.log('📝 System prompt length:', systemPrompt.length);
+    console.log('📝 System prompt preview:', systemPrompt.substring(0, 200) + '...');
+
+    const requestBody = {
+      contents: history,
+      systemInstruction: {
+        parts: [{ text: systemPrompt }]
+      },
+      generationConfig: {
+        temperature: 0.8,
+        maxOutputTokens: 2048,
+        topP: 0.95
+      }
+    };
+
+    console.log('🤖 Calling Gemini API...');
+
+    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Gemini API error:', response.status, errorText);
+      return res.status(500).json({ error: 'Gemini API error' });
+    }
+
+    const data = await response.json();
+    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!aiText) {
+      console.error('❌ No text in Gemini response');
+      return res.status(500).json({ error: 'No AI response' });
+    }
+
+    console.log('✅ AI response:', aiText.substring(0, 100) + '...');
+
+    // Save AI response
+    await admin.firestore()
+      .collection('chats')
+      .doc(chatId)
+      .collection('messages')
+      .add({
+        sender: 'ai',
+        senderName: 'Перчик 🌶️',
+        text: aiText,
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        read: false,
+        type: 'text'
+      });
+
+    // Update chat document
+    await admin.firestore()
+      .collection('chats')
+      .doc(chatId)
+      .update({
+        lastMessage: aiText.substring(0, 100),
+        lastMessageTime: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+    console.log(`✅ AI responded to chat ${chatId}`);
+    return res.status(200).json({ success: true, response: aiText });
+
+  } catch (error) {
+    console.error('❌ AI Chat Error:', getSafeErrorMessage(error));
+    return res.status(500).json({ error: getSafeErrorMessage(error) });
+  }
+});
+

@@ -48,6 +48,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
@@ -59,6 +60,8 @@
       }
     }
   </script>
+  <!-- Dark Mode Module (load early to prevent flash) -->
+  <script src="./js/dark-mode.js"></script>
   <style>
     @keyframes truckMove {
       0% {
@@ -1889,6 +1892,9 @@
       startPage()
     }
   </script>
+
+  <!-- Reviews Module (auto-injecting) -->
+  <script type="module" src="./js/reviews.js"></script>
 
   <!-- Live Chat Widget -->
   <script type="module" src="./js/chat-widget.js"></script>

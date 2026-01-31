@@ -138,5 +138,42 @@ service cloud.firestore {
       allow read: if request.auth != null;    // Only admins can view all carts
     }
     
+    // =============================================
+    // 💬 LIVE CHAT (Public create for unauthenticated users)
+    // =============================================
+    
+    // Chat sessions - Each chat is identified by a unique session ID
+    match /chats/{chatId} {
+      // ✅ Anyone can CREATE a new chat session
+      allow create: if true;
+      
+      // ✅ Anyone can READ their own chat (they need chatId to access)
+      // Security: chatId is a random session ID, so only the chat owner knows it
+      allow read: if true;
+      
+      // ✅ Anyone can UPDATE (for lastMessage updates from client)
+      // Admins also need this to update chat metadata
+      allow update: if true;
+      
+      // ❌ Only authenticated admins can delete chats
+      allow delete: if request.auth != null;
+      
+      // Messages subcollection
+      match /messages/{messageId} {
+        // ✅ Anyone can READ messages in their chat session
+        // (they need to know the chatId to access)
+        allow read: if true;
+        
+        // ✅ CREATE rules:
+        // - Unauthenticated users can ONLY send as 'client'
+        // - Authenticated admins can send as 'admin' or 'bot'
+        allow create: if request.resource.data.sender == 'client' 
+                      || request.auth != null;
+        
+        // ❌ Only authenticated admins can update/delete messages
+        allow update, delete: if request.auth != null;
+      }
+    }
+    
   }
 }

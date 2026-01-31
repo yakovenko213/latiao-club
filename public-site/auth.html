@@ -8,6 +8,16 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>LATIAO SNACK — Вхід в кабінет</title>
   
+  <!-- CRITICAL: Apply theme immediately to prevent flash -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('latiao-theme');
+      if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
+  
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   
@@ -21,6 +31,7 @@
   
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
@@ -37,6 +48,9 @@
       }
     }
   </script>
+  
+  <!-- Dark Mode Module -->
+  <script src="./js/dark-mode.js"></script>
   
   <style>
     * { 
@@ -149,7 +163,7 @@
   </style>
 </head>
 
-<body class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50/30 bg-grid flex flex-col">
+<body class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 bg-grid dark:bg-none flex flex-col transition-colors duration-300">
   
   <!-- Toast Notification -->
   <div id="toast" class="toast bg-green-500 text-white px-6 py-3 rounded-2xl shadow-lg font-semibold flex items-center gap-2">
@@ -169,7 +183,7 @@
       
       <!-- Back to Home Button (Below Header) -->
       <div class="mb-6">
-        <a href="./index.html" class="inline-flex items-center gap-2 text-gray-600 hover:text-spicy transition-colors font-medium touch-target py-3 px-2 -ml-2 text-sm">
+        <a href="./index.html" class="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-spicy transition-colors font-medium touch-target py-3 px-2 -ml-2 text-sm">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
           </svg>
@@ -178,7 +192,7 @@
       </div>
       
       <!-- ===== MAIN CARD ===== -->
-      <div class="bg-white rounded-3xl shadow-2xl shadow-gray-200/60 overflow-hidden slide-up">
+      <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl shadow-gray-200/60 dark:shadow-black/30 overflow-hidden slide-up">
         
         <!-- Header with Logo -->
         <div class="bg-gradient-to-r from-red-600 to-red-500 px-6 py-10 text-center relative overflow-hidden">
@@ -204,16 +218,16 @@
           <!-- ========================================== -->
           <div id="step1" class="step-visible">
             <div class="text-center mb-8">
-              <h2 class="text-2xl font-bold text-gray-900 mb-3">Вхід у особистий кабінет</h2>
-              <p class="text-gray-600 text-base leading-relaxed">Тільки для клієнтів, які вже зробили замовлення</p>
+              <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3">Вхід у особистий кабінет</h2>
+              <p class="text-gray-600 dark:text-gray-400 text-base leading-relaxed">Тільки для клієнтів, які вже зробили замовлення</p>
             </div>
             
             <div class="space-y-5">
               <!-- Phone Input -->
               <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-3">Номер телефону</label>
+                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Номер телефону</label>
                 <div class="flex gap-3">
-                  <div class="flex items-center justify-center bg-gray-100 rounded-2xl px-4 py-4 text-gray-700 font-bold border-2 border-gray-200 touch-target">
+                  <div class="flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-2xl px-4 py-4 text-gray-700 dark:text-gray-300 font-bold border-2 border-gray-200 dark:border-gray-600 touch-target">
                     <span class="mr-1.5 text-xl">🇺🇦</span> +380
                   </div>
                   <input 
@@ -223,7 +237,7 @@
                     maxlength="12"
                     autocomplete="tel"
                     inputmode="numeric"
-                    class="flex-1 bg-gray-50 rounded-2xl px-5 py-4 text-gray-900 text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all placeholder:text-gray-400 border-2 border-gray-200 focus:border-red-500 focus-ring-animated touch-target"
+                    class="flex-1 bg-gray-50 dark:bg-gray-700 rounded-2xl px-5 py-4 text-gray-900 dark:text-white text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white dark:focus:bg-gray-600 transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500 border-2 border-gray-200 dark:border-gray-600 focus:border-red-500 focus-ring-animated touch-target"
                   >
                 </div>
               </div>
@@ -238,7 +252,7 @@
               </button>
               
               <!-- SMS Info -->
-              <div class="flex items-center justify-center gap-2 text-gray-500 text-sm bg-gray-50 rounded-xl p-4">
+              <div class="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400 text-sm bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
                 <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
                 </svg>
@@ -253,31 +267,31 @@
           <div id="step2" class="step-hidden">
             <div class="text-center mb-6 relative">
               <!-- Back Button -->
-              <button id="backBtn" class="absolute left-0 top-0 w-12 h-12 flex items-center justify-center text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-colors touch-target">
+              <button id="backBtn" class="absolute left-0 top-0 w-12 h-12 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-2xl transition-colors touch-target">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
               
-              <div class="w-20 h-20 mx-auto mb-5 bg-red-100 rounded-3xl flex items-center justify-center">
+              <div class="w-20 h-20 mx-auto mb-5 bg-red-100 dark:bg-red-900/50 rounded-3xl flex items-center justify-center">
                 <span class="text-4xl">🔐</span>
               </div>
-              <h2 class="text-2xl font-bold text-gray-900 mb-3">Підтвердження</h2>
-              <p class="text-gray-600 text-base mb-2">Введіть 4-значний код з SMS</p>
-              <p id="phoneDisplay" class="text-red-600 font-bold text-base"></p>
+              <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3">Підтвердження</h2>
+              <p class="text-gray-600 dark:text-gray-400 text-base mb-2">Введіть 4-значний код з SMS</p>
+              <p id="phoneDisplay" class="text-red-600 dark:text-red-400 font-bold text-base"></p>
             </div>
             
             <!-- OTP Inputs -->
             <div class="flex justify-center gap-3 mb-8">
-              <input type="number" maxlength="1" class="otp-input w-16 h-16 bg-gray-100 rounded-2xl text-center text-3xl font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all border-2 border-gray-200 focus:border-red-500 touch-target" data-index="0" inputmode="numeric">
-              <input type="number" maxlength="1" class="otp-input w-16 h-16 bg-gray-100 rounded-2xl text-center text-3xl font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all border-2 border-gray-200 focus:border-red-500 touch-target" data-index="1" inputmode="numeric">
-              <input type="number" maxlength="1" class="otp-input w-16 h-16 bg-gray-100 rounded-2xl text-center text-3xl font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all border-2 border-gray-200 focus:border-red-500 touch-target" data-index="2" inputmode="numeric">
-              <input type="number" maxlength="1" class="otp-input w-16 h-16 bg-gray-100 rounded-2xl text-center text-3xl font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all border-2 border-gray-200 focus:border-red-500 touch-target" data-index="3" inputmode="numeric">
+              <input type="number" maxlength="1" class="otp-input w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-2xl text-center text-3xl font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white dark:focus:bg-gray-600 transition-all border-2 border-gray-200 dark:border-gray-600 focus:border-red-500 touch-target" data-index="0" inputmode="numeric">
+              <input type="number" maxlength="1" class="otp-input w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-2xl text-center text-3xl font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white dark:focus:bg-gray-600 transition-all border-2 border-gray-200 dark:border-gray-600 focus:border-red-500 touch-target" data-index="1" inputmode="numeric">
+              <input type="number" maxlength="1" class="otp-input w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-2xl text-center text-3xl font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white dark:focus:bg-gray-600 transition-all border-2 border-gray-200 dark:border-gray-600 focus:border-red-500 touch-target" data-index="2" inputmode="numeric">
+              <input type="number" maxlength="1" class="otp-input w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-2xl text-center text-3xl font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white dark:focus:bg-gray-600 transition-all border-2 border-gray-200 dark:border-gray-600 focus:border-red-500 touch-target" data-index="3" inputmode="numeric">
             </div>
             
             <!-- Timer -->
             <div class="text-center mb-6">
-              <div class="inline-flex items-center gap-2 text-red-600 font-bold bg-red-50 px-6 py-3 rounded-2xl">
+              <div class="inline-flex items-center gap-2 text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-red-900/30 px-6 py-3 rounded-2xl">
                 <span class="text-lg">⏳</span>
                 <span id="timer" class="text-lg">01:00</span>
               </div>
@@ -287,13 +301,13 @@
             <button 
               id="loginBtn" 
               disabled
-              class="w-full bg-gray-300 text-white font-bold text-lg py-5 rounded-2xl transition-all duration-200 btn-press disabled:cursor-not-allowed disabled:opacity-60 shadow-lg touch-target"
+              class="w-full bg-gray-300 dark:bg-gray-600 text-white font-bold text-lg py-5 rounded-2xl transition-all duration-200 btn-press disabled:cursor-not-allowed disabled:opacity-60 shadow-lg touch-target"
             >
               Увійти
             </button>
             
             <!-- Resend Button -->
-            <button id="resendBtn" class="w-full mt-4 text-gray-500 text-base hover:text-red-600 transition-colors hidden py-3 font-semibold rounded-xl hover:bg-gray-50 touch-target">
+            <button id="resendBtn" class="w-full mt-4 text-gray-500 dark:text-gray-400 text-base hover:text-red-600 transition-colors hidden py-3 font-semibold rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 touch-target">
               🔄 Надіслати код повторно
             </button>
           </div>
@@ -302,51 +316,51 @@
       </div>
       
       <!-- ===== BENEFITS SECTION ===== -->
-      <div class="mt-6 bg-white rounded-3xl p-6 shadow-xl shadow-gray-100/50 slide-up" style="animation-delay: 0.2s;">
-        <h3 class="text-xl font-bold text-gray-900 mb-5 text-center">Що дає кабінет?</h3>
+      <div class="mt-6 bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-xl shadow-gray-100/50 dark:shadow-black/30 slide-up" style="animation-delay: 0.2s;">
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-5 text-center">Що дає кабінет?</h3>
         
         <div class="space-y-4">
           <!-- Benefit 1 -->
-          <div class="flex items-start gap-4 p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-transparent hover:from-blue-100 transition-colors active:scale-98">
-            <div class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+          <div class="flex items-start gap-4 p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-transparent dark:from-blue-900/30 dark:to-transparent hover:from-blue-100 dark:hover:from-blue-900/50 transition-colors active:scale-98">
+            <div class="w-14 h-14 bg-blue-100 dark:bg-blue-900/50 rounded-2xl flex items-center justify-center flex-shrink-0">
               <span class="text-3xl">🚀</span>
             </div>
             <div>
-              <h4 class="font-bold text-gray-900 text-base mb-1">Швидке оформлення</h4>
-              <p class="text-gray-600 text-sm leading-relaxed">Не треба вводити дані доставки щоразу</p>
+              <h4 class="font-bold text-gray-900 dark:text-white text-base mb-1">Швидке оформлення</h4>
+              <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">Не треба вводити дані доставки щоразу</p>
             </div>
           </div>
           
           <!-- Benefit 2 -->
-          <div class="flex items-start gap-4 p-4 rounded-2xl bg-gradient-to-r from-green-50 to-transparent hover:from-green-100 transition-colors active:scale-98">
-            <div class="w-14 h-14 bg-green-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+          <div class="flex items-start gap-4 p-4 rounded-2xl bg-gradient-to-r from-green-50 to-transparent dark:from-green-900/30 dark:to-transparent hover:from-green-100 dark:hover:from-green-900/50 transition-colors active:scale-98">
+            <div class="w-14 h-14 bg-green-100 dark:bg-green-900/50 rounded-2xl flex items-center justify-center flex-shrink-0">
               <span class="text-3xl">📦</span>
             </div>
             <div>
-              <h4 class="font-bold text-gray-900 text-base mb-1">Історія замовлень</h4>
-              <p class="text-gray-600 text-sm leading-relaxed">Дивись, де твоя посилка, в реальному часі</p>
+              <h4 class="font-bold text-gray-900 dark:text-white text-base mb-1">Історія замовлень</h4>
+              <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">Дивись, де твоя посилка, в реальному часі</p>
             </div>
           </div>
           
           <!-- Benefit 3 -->
-          <div class="flex items-start gap-4 p-4 rounded-2xl bg-gradient-to-r from-red-50 to-transparent hover:from-red-100 transition-colors active:scale-98">
-            <div class="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+          <div class="flex items-start gap-4 p-4 rounded-2xl bg-gradient-to-r from-red-50 to-transparent dark:from-red-900/30 dark:to-transparent hover:from-red-100 dark:hover:from-red-900/50 transition-colors active:scale-98">
+            <div class="w-14 h-14 bg-red-100 dark:bg-red-900/50 rounded-2xl flex items-center justify-center flex-shrink-0">
               <span class="text-3xl">🔥</span>
             </div>
             <div>
-              <h4 class="font-bold text-gray-900 text-base mb-1">Персональні бонуси</h4>
-              <p class="text-gray-600 text-sm leading-relaxed">Доступ до закритих знижок та промокодів</p>
+              <h4 class="font-bold text-gray-900 dark:text-white text-base mb-1">Персональні бонуси</h4>
+              <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">Доступ до закритих знижок та промокодів</p>
             </div>
           </div>
         </div>
         
         <!-- Footer Note -->
-        <div class="mt-6 pt-5 border-t border-gray-100 text-center">
-          <p class="text-gray-600 text-base leading-relaxed">
+        <div class="mt-6 pt-5 border-t border-gray-100 dark:border-gray-700 text-center">
+          <p class="text-gray-600 dark:text-gray-400 text-base leading-relaxed">
             <span class="text-2xl mr-1">💡</span>
             <br>
             Немає кабінету? 
-            <a href="./index.html" class="text-red-600 font-bold hover:underline touch-target inline-block">Зроби замовлення</a>, і ми створимо його автоматично!
+            <a href="./index.html" class="text-red-600 dark:text-red-400 font-bold hover:underline touch-target inline-block">Зроби замовлення</a>, і ми створимо його автоматично!
           </p>
         </div>
       </div>
@@ -359,10 +373,10 @@
        ============================================ -->
   <div id="notFoundModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-center justify-center p-6">
     <!-- Modal Container -->
-    <div class="bg-white rounded-3xl p-8 max-w-md w-full text-center relative shadow-2xl slide-up">
+    <div class="bg-white dark:bg-gray-800 rounded-3xl p-8 max-w-md w-full text-center relative shadow-2xl slide-up">
       
       <!-- Close button -->
-      <button onclick="closeNotFoundModal()" class="absolute top-4 right-4 w-12 h-12 flex items-center justify-center rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800 transition-all z-10 touch-target active:scale-95">
+      <button onclick="closeNotFoundModal()" class="absolute top-4 right-4 w-12 h-12 flex items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-all z-10 touch-target active:scale-95">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
         </svg>
@@ -376,16 +390,16 @@
       >
       
       <!-- Headline -->
-      <h2 class="text-2xl font-bold text-gray-900 mb-3">
+      <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3">
         Упс! 🙈 Схоже, ми ще не знайомі
       </h2>
       
       <!-- Body Text -->
-      <p class="text-gray-600 text-base mb-6 leading-relaxed">
+      <p class="text-gray-600 dark:text-gray-400 text-base mb-6 leading-relaxed">
         Кабінет з бонусами відкривається тільки після твого першого замовлення. 
         Залітай на головну, хапай смаколики (мінімум на 100 грн) — і ми одразу відкриємо тобі доступ до всіх плюшок! 🚀
         <br><br>
-        <span class="text-sm text-blue-600 font-semibold">
+        <span class="text-sm text-blue-600 dark:text-blue-400 font-semibold">
           P.S. А якщо набереш на 1100 грн — доставка за наш рахунок. 😎
         </span>
       </p>
@@ -401,7 +415,7 @@
       <!-- Secondary action -->
       <button 
         onclick="closeNotFoundModal()" 
-        class="w-full text-gray-600 hover:text-gray-800 text-base py-4 transition-colors font-semibold rounded-xl hover:bg-gray-50 touch-target"
+        class="w-full text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white text-base py-4 transition-colors font-semibold rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 touch-target"
       >
         Спробувати інший номер
       </button>
