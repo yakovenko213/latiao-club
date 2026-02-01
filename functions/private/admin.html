@@ -9947,7 +9947,9 @@
 
         for (const crmProduct of allCrmProducts) {
           const crmSKU = crmProduct.sku || crmProduct.article || crmProduct.code
-          const crmStock = crmProduct.stock || crmProduct.quantity || crmProduct.warehouse?.quantity || 0
+          const quantity = crmProduct.quantity || 0;
+          const inReserve = crmProduct.in_reserve || 0;
+          const crmStock = quantity - inReserve;
 
           if (!crmSKU) {
             console.warn('⚠️ CRM product missing SKU:', crmProduct)
@@ -9966,7 +9968,7 @@
               crmSku: crmSKU,
               name: firebaseProduct.data.name,
               oldStock: firebaseProduct.data.stock || 0,
-              newStock: isNaN(stockValue) ? 0 : stockValue
+              newStock: isNaN(stockValue) || stockValue < 0 ? 0 : stockValue
             })
             results.matched.push(crmSKU)
             console.log(`✅ Matched: CRM "${crmSKU}" → Firebase "${firebaseProduct.originalSku}" (Stock: ${crmStock})`)

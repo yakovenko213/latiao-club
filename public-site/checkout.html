@@ -8,7 +8,7 @@
 
   <!-- CRITICAL: Apply theme immediately to prevent flash -->
   <script>
-    (function() {
+    (function () {
       const theme = localStorage.getItem('latiao-theme');
       if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark');
@@ -2705,6 +2705,73 @@
 
       try {
         // ============================================
+        // STEP 0.5: VALIDATE STOCK AVAILABILITY
+        // ============================================
+        console.log('🔍 Validating stock availability...');
+        btn.textContent = 'Перевірка наявності...';
+
+        // Wait for Firebase to be ready
+        let attempts = 0;
+        while (!window.firebaseInit && attempts < 30) {
+          await new Promise(r => setTimeout(r, 100));
+          attempts++;
+        }
+
+        if (!window.firebaseInit) {
+          throw new Error('Firebase не ініціалізовано');
+        }
+
+        const { db, doc, getDoc } = window.firebaseInit;
+        const stockErrors = [];
+
+        for (const item of cartItems) {
+          // Skip gift items - they don't consume stock
+          if (item.isGift) continue;
+
+          const productId = item.id || item.productId;
+          if (!productId) {
+            console.warn('⚠️ Item missing ID:', item.name);
+            continue;
+          }
+
+          const productRef = doc(db, 'products', productId);
+          const productSnap = await getDoc(productRef);
+
+          if (!productSnap.exists()) {
+            stockErrors.push(`${item.name}: товар не знайдено`);
+            continue;
+          }
+
+          const currentStock = productSnap.data().stock || 0;
+          const requestedQty = item.quantity || item.qty || 1;
+
+          if (currentStock < requestedQty) {
+            if (currentStock === 0) {
+              stockErrors.push(`${item.name}: закінчився на складі`);
+            } else {
+              stockErrors.push(`${item.name}: доступно лише ${currentStock} шт`);
+            }
+          }
+        }
+
+        if (stockErrors.length > 0) {
+          btn.textContent = originalText;
+          btn.disabled = false;
+
+          alert(
+            '⚠️ Деякі товари закінчилися:\n\n' +
+            stockErrors.join('\n') +
+            '\n\nБудь ласка, оновіть кошик та спробуйте ще раз.'
+          );
+
+          console.log('❌ Stock validation failed:', stockErrors);
+          return; // STOP - don't submit order
+        }
+
+        console.log('✅ All items in stock - proceeding with order');
+        btn.textContent = 'Створення замовлення...';
+
+        // ============================================
         // STEP 1: Collect Customer Information
         // ============================================
         // (Already retrieved above after validation)
@@ -2960,6 +3027,64 @@
         await setDoc(doc(db, 'orders', orderId), orderData);
 
         console.log('✅ Order saved successfully! Order ID:', orderId)
+
+        // ============================================
+        // STEP 8.2: DEDUCT STOCK IMMEDIATELY
+        // ============================================
+        console.log('📦 Starting stock deduction for order:', orderId);
+        btn.textContent = 'Оновлення наявності...';
+
+        try {
+          const { writeBatch, doc: fbDoc } = window.firebaseInit;
+          const batch = writeBatch(db);
+          let stockUpdates = 0;
+
+          for (const item of orderItems) {
+            // Skip gift items - they don't consume stock
+            if (item.isGift) {
+              console.log(`🎁 Skipping gift item: ${item.name}`);
+              continue;
+            }
+
+            const productId = item.id || item.productId;
+            if (!productId) {
+              console.warn('⚠️ Item missing ID:', item.name);
+              continue;
+            }
+
+            // Get current stock from Firestore
+            const productRef = fbDoc(db, 'products', productId);
+            const productSnap = await getDoc(productRef);
+
+            if (!productSnap.exists()) {
+              console.warn(`⚠️ Product ${productId} (${item.name}) not found for stock deduction`);
+              continue;
+            }
+
+            const currentStock = productSnap.data().stock || 0;
+            const quantityOrdered = item.quantity || item.qty || 1;
+            const newStock = Math.max(0, currentStock - quantityOrdered);
+
+            batch.update(productRef, {
+              stock: newStock,
+              updatedAt: new Date().toISOString(),
+              lastStockUpdate: serverTimestamp()
+            });
+
+            stockUpdates++;
+            console.log(`📦 Stock update queued: ${item.name} (${item.sku || productId}): ${currentStock} → ${newStock} (-${quantityOrdered})`);
+          }
+
+          if (stockUpdates > 0) {
+            await batch.commit();
+            console.log(`✅ Stock deducted for ${stockUpdates} items in order ${orderId}`);
+          } else {
+            console.log('ℹ️ No stock updates needed (all gifts or no items)');
+          }
+        } catch (stockError) {
+          // Non-blocking error - log but continue with order
+          console.error('❌ Stock deduction failed (non-blocking):', stockError);
+        }
 
         // ============================================
         // STEP 8.3: Mini-CRM - Sync Customer Profile

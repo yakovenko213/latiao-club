@@ -287,6 +287,57 @@ exports.handleMonoWebhook = functions.https.onRequest(async (req, res) => {
         'status': 'paid'
       });
 
+      // ============================================
+      // DEDUCT STOCK FOR PURCHASED ITEMS
+      // ============================================
+      console.log('📦 Starting stock deduction for order:', orderDoc.id);
+
+      const orderItems = orderData.items || [];
+      const batch = admin.firestore().batch();
+      let stockUpdates = 0;
+
+      for (const item of orderItems) {
+        // Skip gift items - they don't consume stock
+        if (item.isGift) {
+          console.log(`🎁 Skipping gift item: ${item.name}`);
+          continue;
+        }
+
+        const productId = item.id || item.productId;
+        if (!productId) {
+          console.warn('⚠️ Item missing ID:', item.name);
+          continue;
+        }
+
+        const productRef = admin.firestore().collection('products').doc(productId);
+        const productDoc = await productRef.get();
+
+        if (!productDoc.exists) {
+          console.warn(`⚠️ Product ${productId} (${item.name}) not found for stock deduction`);
+          continue;
+        }
+
+        const currentStock = productDoc.data().stock || 0;
+        const quantityOrdered = item.quantity || 1;
+        const newStock = Math.max(0, currentStock - quantityOrdered);
+
+        batch.update(productRef, {
+          stock: newStock,
+          updatedAt: new Date().toISOString(),
+          lastStockUpdate: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        stockUpdates++;
+        console.log(`📦 Stock update queued: ${item.name} (${item.sku || productId}): ${currentStock} → ${newStock} (-${quantityOrdered})`);
+      }
+
+      if (stockUpdates > 0) {
+        await batch.commit();
+        console.log(`✅ Stock deducted for ${stockUpdates} items in order ${orderDoc.id}`);
+      } else {
+        console.log('ℹ️ No stock updates needed (all gifts or no items)');
+      }
+
       // TRIGGER KEYCRM SYNC
       await syncToKeyCRM(orderDoc.id);
 
@@ -381,6 +432,11 @@ async function performProductSync() {
       const pageProducts = pageData.data || pageData.products || pageData || [];
 
       if (Array.isArray(pageProducts) && pageProducts.length > 0) {
+        // DEBUG: Log first product to see structure
+        if (currentPage === 1 && pageProducts.length > 0) {
+          console.log('🔍 DEBUG: First product structure from KeyCRM:', JSON.stringify(pageProducts[0], null, 2));
+        }
+
         allCrmProducts.push(...pageProducts);
         console.log(`✅ Page ${currentPage}: Added ${pageProducts.length} products (Total: ${allCrmProducts.length})`);
 
@@ -399,6 +455,7 @@ async function performProductSync() {
       return {
         success: true,
         message: 'No products found in KeyCRM',
+        products: [], // Return empty array when no products found
         totalProducts: 0,
         totalPages: currentPage - 1,
         productsUpdated: 0
@@ -429,7 +486,12 @@ async function performProductSync() {
 
     for (const crmProduct of allCrmProducts) {
       const crmSKU = crmProduct.sku || crmProduct.article || crmProduct.code;
-      const crmStock = crmProduct.stock || crmProduct.quantity || crmProduct.warehouse?.quantity || 0;
+      // CRITICAL: KeyCRM API doesn't have 'available' field!
+      // Calculate: Available = Quantity (всього) - In Reserve (резерв)
+      // Example: quantity=11, in_reserve=33 => available=-22 (sold more than in stock)
+      const quantity = crmProduct.quantity || 0;
+      const inReserve = crmProduct.in_reserve || 0;
+      const crmStock = quantity - inReserve;
 
       if (!crmSKU) {
         console.warn('⚠️ CRM product missing SKU:', crmProduct);
@@ -445,7 +507,7 @@ async function performProductSync() {
           docId: firebaseProduct.id,
           sku: crmSKU,
           oldStock: firebaseProduct.currentStock,
-          newStock: isNaN(stockValue) ? 0 : stockValue
+          newStock: isNaN(stockValue) || stockValue < 0 ? 0 : stockValue
         });
         matched.push(crmSKU);
         console.log(`✅ Matched: SKU "${crmSKU}" → Stock: ${crmStock}`);
@@ -485,6 +547,7 @@ async function performProductSync() {
 
     return {
       success: true,
+      products: allCrmProducts, // Return products array for client-side processing
       totalProducts: allCrmProducts.length,
       totalPages: currentPage - 1,
       productsMatched: matched.length,
