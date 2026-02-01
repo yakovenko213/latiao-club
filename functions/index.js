@@ -1,5 +1,6 @@
 const functions = require('firebase-functions');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
+const { onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const admin = require('firebase-admin');
 const fetch = require('node-fetch');
 // 👇 Нові бібліотеки для адмінки
@@ -20,6 +21,203 @@ function getSafeErrorMessage(error) {
   if (error.message) return error.message;
   return String(error);
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// 📦 AUTOMATIC STOCK DEDUCTION SYSTEM
+// Triggered by payment status changes in orders collection
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * Deduct stock for all items in an order using Firestore Transactions
+ * Ensures atomicity and prevents race conditions
+ */
+async function deductStockForOrder(orderId, orderData) {
+  const db = admin.firestore();
+  const results = {
+    success: true,
+    orderId,
+    deductions: [],
+    skipped: [],
+    errors: [],
+    totalDeducted: 0
+  };
+
+  const orderItems = orderData.items || [];
+  
+  if (orderItems.length === 0) {
+    console.log(`ℹ️ Order ${orderId} has no items to deduct`);
+    return results;
+  }
+
+  console.log(`📦 Starting stock deduction for order ${orderId} with ${orderItems.length} items`);
+
+  for (const item of orderItems) {
+    if (item.isGift) {
+      console.log(`🎁 Skipping gift item: ${item.name}`);
+      results.skipped.push({ name: item.name, reason: 'Gift item' });
+      continue;
+    }
+
+    const sku = item.sku || item.article;
+    const productId = item.id || item.productId;
+    const quantityOrdered = Number(item.quantity) || 1;
+
+    if (!productId && !sku) {
+      results.errors.push({ name: item.name, error: 'Missing product ID and SKU' });
+      continue;
+    }
+
+    try {
+      let productRef, productDoc;
+
+      if (productId) {
+        productRef = db.collection('products').doc(productId);
+        productDoc = await productRef.get();
+      }
+
+      if (!productDoc || !productDoc.exists) {
+        if (sku) {
+          const skuQuery = await db.collection('products').where('sku', '==', sku).limit(1).get();
+          if (!skuQuery.empty) {
+            productDoc = skuQuery.docs[0];
+            productRef = productDoc.ref;
+          }
+        }
+      }
+
+      if (!productDoc || !productDoc.exists) {
+        results.errors.push({ name: item.name, sku, productId, error: 'Product not found' });
+        continue;
+      }
+
+      const deductionResult = await db.runTransaction(async (transaction) => {
+        const freshProductDoc = await transaction.get(productRef);
+        if (!freshProductDoc.exists) throw new Error('Product disappeared');
+
+        const productData = freshProductDoc.data();
+        const currentStock = Number(productData.stock) || 0;
+        const productSku = productData.sku || sku;
+        const productName = productData.name || item.name;
+        const newStock = currentStock - quantityOrdered;
+
+        if (newStock < 0) {
+          console.warn(`⚠️ Stock going negative for ${productName}: ${currentStock} - ${quantityOrdered} = ${newStock}`);
+        }
+
+        transaction.update(productRef, {
+          stock: newStock,
+          updatedAt: new Date().toISOString(),
+          lastStockUpdate: admin.firestore.FieldValue.serverTimestamp(),
+          lastStockUpdateReason: `Order ${orderId}`
+        });
+
+        const stockLogRef = db.collection('stock_logs').doc();
+        transaction.set(stockLogRef, {
+          orderId,
+          productId: productRef.id,
+          sku: productSku,
+          productName,
+          action: 'deduct',
+          quantityDeducted: quantityOrdered,
+          stockBefore: currentStock,
+          stockAfter: newStock,
+          reason: `Order #${orderId.substring(0, 8).toUpperCase()}: Deducted ${quantityOrdered} of SKU ${productSku}`,
+          timestamp: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        return { productId: productRef.id, sku: productSku, productName, stockBefore: currentStock, stockAfter: newStock, quantityDeducted: quantityOrdered };
+      });
+
+      results.deductions.push(deductionResult);
+      results.totalDeducted += quantityOrdered;
+      console.log(`✅ Stock deducted: ${deductionResult.productName} (SKU: ${deductionResult.sku}): ${deductionResult.stockBefore} → ${deductionResult.stockAfter}`);
+
+    } catch (error) {
+      console.error(`❌ Failed to deduct stock for ${item.name}:`, getSafeErrorMessage(error));
+      results.errors.push({ name: item.name, sku, productId, error: getSafeErrorMessage(error) });
+      results.success = false;
+    }
+  }
+
+  try {
+    await db.collection('orders').doc(orderId).update({
+      stockDeducted: true,
+      stockDeductedAt: admin.firestore.FieldValue.serverTimestamp(),
+      stockDeductionResults: {
+        totalItems: orderItems.length,
+        deducted: results.deductions.length,
+        skipped: results.skipped.length,
+        errors: results.errors.length
+      }
+    });
+  } catch (updateError) {
+    console.error(`❌ Failed to mark order as stock deducted:`, getSafeErrorMessage(updateError));
+  }
+
+  console.log(`📊 Stock deduction complete for order ${orderId}:`, {
+    deducted: results.deductions.length,
+    skipped: results.skipped.length,
+    errors: results.errors.length
+  });
+
+  return results;
+}
+
+/**
+ * Firestore Trigger: Auto-deduct stock when payment status changes to 'paid'
+ */
+exports.onOrderPaymentUpdate = onDocumentUpdated('orders/{orderId}', async (event) => {
+  const orderId = event.params.orderId;
+  const beforeData = event.data.before.data();
+  const afterData = event.data.after.data();
+
+  const paymentStatusBefore = beforeData.payment?.status || beforeData.status;
+  const paymentStatusAfter = afterData.payment?.status || afterData.status;
+
+  console.log(`📋 Order ${orderId} update:`, { paymentStatusBefore, paymentStatusAfter, stockDeducted: afterData.stockDeducted });
+
+  const isPaidNow = paymentStatusAfter === 'paid';
+  const wasNotPaidBefore = paymentStatusBefore !== 'paid';
+  const notYetDeducted = !afterData.stockDeducted;
+
+  if (isPaidNow && wasNotPaidBefore && notYetDeducted) {
+    console.log(`💰 Payment confirmed for order ${orderId}. Initiating stock deduction...`);
+    try {
+      const result = await deductStockForOrder(orderId, afterData);
+      console.log(`✅ Stock deduction completed for order ${orderId}`);
+      return result;
+    } catch (error) {
+      console.error(`❌ Stock deduction failed for order ${orderId}:`, getSafeErrorMessage(error));
+      await admin.firestore().collection('stock_logs').add({
+        orderId,
+        action: 'deduct_failed',
+        error: getSafeErrorMessage(error),
+        timestamp: admin.firestore.FieldValue.serverTimestamp()
+      });
+      throw error;
+    }
+  }
+
+  return null;
+});
+
+/**
+ * Manual stock deduction (for admin panel)
+ */
+exports.manualStockDeduction = functions.https.onCall(async (data, context) => {
+  const orderId = data.orderId || (data.data && data.data.orderId);
+  if (!orderId) throw new functions.https.HttpsError('invalid-argument', 'Order ID is required');
+
+  const orderDoc = await admin.firestore().collection('orders').doc(orderId).get();
+  if (!orderDoc.exists) throw new functions.https.HttpsError('not-found', 'Order not found');
+
+  const orderData = orderDoc.data();
+  if (orderData.stockDeducted) {
+    return { success: false, message: 'Stock already deducted for this order' };
+  }
+
+  return await deductStockForOrder(orderId, orderData);
+});
 
 // 3. KEYCRM SYNC (INTERNAL HELPER)
 async function syncToKeyCRM(orderId) {
@@ -288,58 +486,13 @@ exports.handleMonoWebhook = functions.https.onRequest(async (req, res) => {
       });
 
       // ============================================
-      // DEDUCT STOCK FOR PURCHASED ITEMS
+      // STOCK DEDUCTION IS HANDLED BY FIRESTORE TRIGGER
+      // See: onOrderPaymentUpdate function
       // ============================================
-      console.log('📦 Starting stock deduction for order:', orderDoc.id);
+      console.log(`✅ Payment marked as paid for order ${orderDoc.id}. Stock deduction will be triggered automatically.`);
 
-      const orderItems = orderData.items || [];
-      const batch = admin.firestore().batch();
-      let stockUpdates = 0;
-
-      for (const item of orderItems) {
-        // Skip gift items - they don't consume stock
-        if (item.isGift) {
-          console.log(`🎁 Skipping gift item: ${item.name}`);
-          continue;
-        }
-
-        const productId = item.id || item.productId;
-        if (!productId) {
-          console.warn('⚠️ Item missing ID:', item.name);
-          continue;
-        }
-
-        const productRef = admin.firestore().collection('products').doc(productId);
-        const productDoc = await productRef.get();
-
-        if (!productDoc.exists) {
-          console.warn(`⚠️ Product ${productId} (${item.name}) not found for stock deduction`);
-          continue;
-        }
-
-        const currentStock = productDoc.data().stock || 0;
-        const quantityOrdered = Number(item.quantity) - Number(item.in_reserve) || 1;
-
-        batch.update(productRef, {
-          stock: quantityOrdered,
-          updatedAt: new Date().toISOString(),
-          lastStockUpdate: admin.firestore.FieldValue.serverTimestamp()
-        });
-
-        stockUpdates++;
-        console.log(`📦 Stock update queued: ${item.name} (${item.sku || productId}): ${currentStock} → ${quantityOrdered}`);
-      }
-
-      if (stockUpdates > 0) {
-        await batch.commit();
-        console.log(`✅ Stock deducted for ${stockUpdates} items in order ${orderDoc.id}`);
-      } else {
-        console.log('ℹ️ No stock updates needed (all gifts or no items)');
-      }
-
-      // TRIGGER KEYCRM SYNC
+      // TRIGGER KEYCRM ORDER SYNC
       await syncToKeyCRM(orderDoc.id);
-      await performProductSync();
 
     } else if (status === 'failure') {
       await orderDoc.ref.update({
