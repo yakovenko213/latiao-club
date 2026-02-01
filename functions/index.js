@@ -318,17 +318,16 @@ exports.handleMonoWebhook = functions.https.onRequest(async (req, res) => {
         }
 
         const currentStock = productDoc.data().stock || 0;
-        const quantityOrdered = item.quantity || 1;
-        const newStock = Math.max(0, currentStock - quantityOrdered);
+        const quantityOrdered = Number(item.quantity) - Number(item.in_reserve) || 1;
 
         batch.update(productRef, {
-          stock: newStock,
+          stock: quantityOrdered,
           updatedAt: new Date().toISOString(),
           lastStockUpdate: admin.firestore.FieldValue.serverTimestamp()
         });
 
         stockUpdates++;
-        console.log(`📦 Stock update queued: ${item.name} (${item.sku || productId}): ${currentStock} → ${newStock} (-${quantityOrdered})`);
+        console.log(`📦 Stock update queued: ${item.name} (${item.sku || productId}): ${currentStock} → ${quantityOrdered}`);
       }
 
       if (stockUpdates > 0) {
@@ -340,6 +339,7 @@ exports.handleMonoWebhook = functions.https.onRequest(async (req, res) => {
 
       // TRIGGER KEYCRM SYNC
       await syncToKeyCRM(orderDoc.id);
+      await performProductSync();
 
     } else if (status === 'failure') {
       await orderDoc.ref.update({
