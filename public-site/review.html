@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Залишити відгук | Latiao Store</title>
+  <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            spicy: '#f97316',
+            'spicy-dark': '#ea580c'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .star-rating {
+      display: flex;
+      flex-direction: row-reverse;
+      justify-content: flex-end;
+      gap: 0.25rem;
+    }
+    .star-rating input {
+      display: none;
+    }
+    .star-rating label {
+      cursor: pointer;
+      font-size: 2.5rem;
+      color: #d1d5db;
+      transition: color 0.2s;
+    }
+    .star-rating label:hover,
+    .star-rating label:hover ~ label,
+    .star-rating input:checked ~ label {
+      color: #f59e0b;
+    }
+    .photo-preview {
+      max-height: 200px;
+      object-fit: cover;
+    }
+    @keyframes confetti {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
+    }
+    .confetti {
+      animation: confetti 2s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-orange-50 to-yellow-50">
+  
+  <!-- Header -->
+  <header class="bg-white shadow-sm border-b border-orange-100">
+    <div class="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
+      <a href="/" class="flex items-center gap-2">
+        <img src="/images/logo.png" alt="Latiao" class="h-10 w-auto" onerror="this.style.display='none'">
+        <span class="text-xl font-bold text-spicy">Latiao Store</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="max-w-2xl mx-auto px-4 py-8">
+    
+    <!-- Review Form Card -->
+    <div id="review-form-card" class="bg-white rounded-2xl shadow-xl border border-orange-100 overflow-hidden">
+      
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-spicy to-orange-500 p-6 text-white text-center">
+        <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <span class="text-4xl">⭐</span>
+        </div>
+        <h1 class="text-2xl font-bold mb-2">Залишити відгук</h1>
+        <p class="text-orange-100">Ваша думка важлива для нас!</p>
+      </div>
+      
+      <!-- Form -->
+      <form id="review-form" class="p-6 space-y-6">
+        
+        <!-- Order ID (hidden, from URL) -->
+        <input type="hidden" id="order-id" name="orderId">
+        <!-- Product ID (hidden, from URL) -->
+        <input type="hidden" id="product-id" name="productId">
+        
+        <!-- Name -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
+            Ваше ім'я <span class="text-red-500">*</span>
+          </label>
+          <input type="text" id="customer-name" name="customerName" required
+            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-spicy focus:ring-4 focus:ring-spicy/20 transition outline-none"
+            placeholder="Як вас звати?">
+        </div>
+        
+        <!-- Rating -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-3">
+            Оцінка <span class="text-red-500">*</span>
+          </label>
+          <div class="star-rating" id="star-rating">
+            <input type="radio" name="rating" id="star5" value="5" checked>
+            <label for="star5" title="5 зірок">★</label>
+            <input type="radio" name="rating" id="star4" value="4">
+            <label for="star4" title="4 зірки">★</label>
+            <input type="radio" name="rating" id="star3" value="3">
+            <label for="star3" title="3 зірки">★</label>
+            <input type="radio" name="rating" id="star2" value="2">
+            <label for="star2" title="2 зірки">★</label>
+            <input type="radio" name="rating" id="star1" value="1">
+            <label for="star1" title="1 зірка">★</label>
+          </div>
+          <p class="text-sm text-gray-500 mt-2" id="rating-hint">Чудово! ⭐⭐⭐⭐⭐</p>
+        </div>
+        
+        <!-- Review Text -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
+            Ваш відгук <span class="text-red-500">*</span>
+          </label>
+          <textarea id="review-text" name="text" rows="4" required
+            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-spicy focus:ring-4 focus:ring-spicy/20 transition outline-none resize-none"
+            placeholder="Розкажіть про ваш досвід покупки..."></textarea>
+          <p class="text-xs text-gray-400 mt-1">Мінімум 20 символів</p>
+        </div>
+        
+        <!-- Photo Upload -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
+            Додати фото (необов'язково)
+          </label>
+          <div class="relative">
+            <input type="file" id="review-photo" name="photo" accept="image/*"
+              class="hidden" onchange="previewPhoto(this)">
+            <label for="review-photo" 
+              class="flex items-center justify-center gap-3 w-full px-4 py-6 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-spicy hover:bg-orange-50 transition">
+              <span class="text-3xl">📷</span>
+              <span class="text-gray-600">Натисніть, щоб завантажити фото</span>
+            </label>
+          </div>
+          <!-- Photo Preview -->
+          <div id="photo-preview" class="hidden mt-4">
+            <div class="relative inline-block">
+              <img id="photo-preview-img" class="photo-preview rounded-xl border-2 border-gray-200" alt="Preview">
+              <button type="button" onclick="removePhoto()" 
+                class="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition">
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Submit Button -->
+        <button type="submit" id="submit-btn"
+          class="w-full py-4 bg-gradient-to-r from-spicy to-orange-500 text-white rounded-xl font-bold text-lg hover:from-spicy-dark hover:to-orange-600 transition shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+          <span id="submit-text">Надіслати відгук</span>
+          <span id="submit-spinner" class="hidden">
+            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </span>
+        </button>
+        
+        <!-- Privacy Note -->
+        <p class="text-xs text-gray-400 text-center">
+          Надсилаючи відгук, ви погоджуєтесь з публікацією вашого імені та тексту на нашому сайті
+          після модерації.
+        </p>
+        
+      </form>
+    </div>
+    
+    <!-- Success Message (Hidden by default) -->
+    <div id="success-message" class="hidden bg-white rounded-2xl shadow-xl border border-green-200 overflow-hidden">
+      <div class="bg-gradient-to-r from-green-500 to-emerald-500 p-8 text-white text-center">
+        <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <span class="text-5xl">🎉</span>
+        </div>
+        <h2 class="text-2xl font-bold mb-2">Дякуємо за відгук!</h2>
+        <p class="text-green-100">Ваш відгук надіслано на модерацію</p>
+      </div>
+      <div class="p-6 text-center">
+        <p class="text-gray-600 mb-6">
+          Після перевірки адміністратором ваш відгук з'явиться на нашому сайті.
+          Ми цінуємо вашу думку! 💚
+        </p>
+        <a href="/" 
+          class="inline-block px-8 py-3 bg-spicy text-white rounded-xl font-bold hover:bg-spicy-dark transition">
+          Повернутися на головну
+        </a>
+      </div>
+    </div>
+    
+  </main>
+  
+  <!-- Footer -->
+  <footer class="text-center py-6 text-gray-400 text-sm">
+    <p>© 2024 Latiao Store. Всі права захищені.</p>
+  </footer>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'
+    import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
+    import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js'
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyQvItRyL4IKl9NmEItswwPOEiKAbWkMw",
+      authDomain: "my-magazin-81c96.firebaseapp.com",
+      projectId: "my-magazin-81c96",
+      storageBucket: "my-magazin-81c96.firebasestorage.app",
+      messagingSenderId: "129061757346",
+      appId: "1:129061757346:web:3e7bc5838cc5f7bda992fb"
+    }
+
+    const app = initializeApp(firebaseConfig)
+    const db = getFirestore(app)
+    const storage = getStorage(app)
+
+    // Get order ID and product ID from URL
+    const urlParams = new URLSearchParams(window.location.search)
+    const orderId = urlParams.get('orderId')
+    const productId = urlParams.get('productId')
+    
+    if (orderId) {
+      document.getElementById('order-id').value = orderId
+    }
+    if (productId) {
+      document.getElementById('product-id').value = productId
+    }
+
+    // Rating hints
+    const ratingHints = {
+      1: 'Жахливо 😞',
+      2: 'Погано 😕',
+      3: 'Нормально 😐',
+      4: 'Добре! 🙂',
+      5: 'Чудово! ⭐⭐⭐⭐⭐'
+    }
+
+    document.querySelectorAll('input[name="rating"]').forEach(input => {
+      input.addEventListener('change', (e) => {
+        document.getElementById('rating-hint').textContent = ratingHints[e.target.value]
+      })
+    })
+
+    // Photo preview
+    window.previewPhoto = function(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader()
+        reader.onload = function(e) {
+          document.getElementById('photo-preview').classList.remove('hidden')
+          document.getElementById('photo-preview-img').src = e.target.result
+        }
+        reader.readAsDataURL(input.files[0])
+      }
+    }
+
+    window.removePhoto = function() {
+      document.getElementById('review-photo').value = ''
+      document.getElementById('photo-preview').classList.add('hidden')
+    }
+
+    // Form submission
+    document.getElementById('review-form').addEventListener('submit', async (e) => {
+      e.preventDefault()
+
+      const customerName = document.getElementById('customer-name').value.trim()
+      const rating = parseInt(document.querySelector('input[name="rating"]:checked').value)
+      const text = document.getElementById('review-text').value.trim()
+      const photoInput = document.getElementById('review-photo')
+      const orderId = document.getElementById('order-id').value
+      const productId = document.getElementById('product-id').value
+
+      // Validation
+      if (!customerName || !text || text.length < 20) {
+        alert('Будь ласка, заповніть всі поля. Мінімум 20 символів для відгуку.')
+        return
+      }
+
+      // Disable button
+      const submitBtn = document.getElementById('submit-btn')
+      const submitText = document.getElementById('submit-text')
+      const submitSpinner = document.getElementById('submit-spinner')
+      
+      submitBtn.disabled = true
+      submitText.textContent = 'Надсилання...'
+      submitSpinner.classList.remove('hidden')
+
+      try {
+        let photoUrl = null
+
+        // Upload photo if selected
+        if (photoInput.files && photoInput.files[0]) {
+          const file = photoInput.files[0]
+          const fileName = `reviews/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`
+          const storageRef = ref(storage, fileName)
+          await uploadBytes(storageRef, file)
+          photoUrl = await getDownloadURL(storageRef)
+        }
+
+        // Create review document with status: pending
+        const reviewData = {
+          customerName,
+          rating,
+          text,
+          status: 'pending',  // IMPORTANT: Always pending for moderation
+          createdAt: serverTimestamp(),
+          source: 'review_page'
+        }
+
+        if (photoUrl) {
+          reviewData.photoUrl = photoUrl
+        }
+
+        if (orderId) {
+          reviewData.orderId = orderId
+        }
+        
+        if (productId) {
+          reviewData.productId = productId
+        }
+
+        await addDoc(collection(db, 'reviews'), reviewData)
+
+        // Show success message
+        document.getElementById('review-form-card').classList.add('hidden')
+        document.getElementById('success-message').classList.remove('hidden')
+
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+
+      } catch (error) {
+        console.error('Error submitting review:', error)
+        alert('Помилка при надсиланні відгуку. Спробуйте ще раз.')
+        
+        submitBtn.disabled = false
+        submitText.textContent = 'Надіслати відгук'
+        submitSpinner.classList.add('hidden')
+      }
+    })
+  </script>
+
+</body>
+</html>

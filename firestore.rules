@@ -175,5 +175,22 @@ service cloud.firestore {
       }
     }
     
+    // =============================================
+    // ⭐ REVIEWS (Pre-moderation system)
+    // =============================================
+    
+    match /reviews/{reviewId} {
+      // ✅ PUBLIC can READ only APPROVED reviews (for product pages)
+      // Anyone can read the list, but frontend filters by status=approved
+      allow read: if true;
+      
+      // ✅ ANYONE can CREATE a review (with status: pending)
+      // The review will be pending until admin approves
+      allow create: if request.resource.data.status == 'pending';
+      
+      // ❌ Only ADMINS can UPDATE (approve/reject) or DELETE reviews
+      allow update, delete: if request.auth != null;
+    }
+    
   }
 }

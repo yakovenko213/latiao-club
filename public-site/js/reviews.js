@@ -688,6 +688,21 @@ function renderReviewCard(review) {
 
             <p class="text-gray-600 text-sm leading-relaxed mb-3">${review.text || ''}</p>
 
+            ${review.adminReply ? `
+                <div class="mb-3 p-3 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl border border-orange-100">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-6 h-6 rounded-full bg-spicy flex items-center justify-center">
+                            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                        </div>
+                        <span class="text-sm font-semibold text-spicy">Менеджер Latiao Snack</span>
+                        <span class="text-xs text-gray-400">відповідь</span>
+                    </div>
+                    <p class="text-gray-700 text-sm leading-relaxed pl-8">${review.adminReply}</p>
+                </div>
+            ` : ''}
+
             ${photosHTML}
             ${tagsHTML}
         </div>
