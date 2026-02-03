@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Stock Test</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+  <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-6">
+    <h1 class="text-2xl font-bold mb-4">🧪 Тест системи контролю складу</h1>
+    
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium mb-2">Product ID:</label>
+        <input type="text" id="productId" placeholder="Введіть ID товару" 
+               class="w-full px-3 py-2 border rounded-lg">
+      </div>
+      
+      <button onclick="testStock()" 
+              class="w-full bg-orange-500 text-white font-bold py-3 rounded-lg hover:bg-orange-600">
+        Перевірити наявність
+      </button>
+      
+      <div id="result" class="mt-4 p-4 bg-gray-100 rounded-lg hidden">
+        <pre id="resultText" class="text-sm"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCS3a6pn2Jok3bM9mSUMiP2DqiHeqrG2R4",
+      authDomain: "my-magazin-81c96.firebaseapp.com",
+      projectId: "my-magazin-81c96",
+      storageBucket: "my-magazin-81c96.firebasestorage.app",
+      messagingSenderId: "441200032717",
+      appId: "1:441200032717:web:a51eb14e5ebb2af7cef35f"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.testStock = async function() {
+      const productId = document.getElementById('productId').value.trim();
+      const resultDiv = document.getElementById('result');
+      const resultText = document.getElementById('resultText');
+      
+      if (!productId) {
+        alert('Введіть ID товару');
+        return;
+      }
+
+      try {
+        resultDiv.classList.remove('hidden');
+        resultText.textContent = 'Завантаження...';
+
+        const productRef = doc(db, 'products', productId);
+        const productSnap = await getDoc(productRef);
+
+        if (!productSnap.exists()) {
+          resultText.textContent = '❌ Товар не знайдено';
+          return;
+        }
+
+        const data = productSnap.data();
+        const result = {
+          '✅ Знайдено товар': data.name || 'Без назви',
+          'available_stock': data.available_stock ?? 'відсутнє',
+          'stock': data.stock ?? 'відсутнє',
+          'Буде використано': data.available_stock ?? data.stock ?? 'NULL',
+          '': '',
+          'Всі поля:': JSON.stringify(data, null, 2)
+        };
+
+        resultText.textContent = Object.entries(result)
+          .map(([k, v]) => k ? `${k}: ${v}` : '')
+          .join('\n');
+
+      } catch (error) {
+        resultText.textContent = '❌ Помилка: ' + error.message;
+      }
+    }
+  </script>
+</body>
+</html>

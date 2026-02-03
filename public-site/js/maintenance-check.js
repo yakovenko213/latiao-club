@@ -9,7 +9,30 @@ import { db, auth } from './firebase-init.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 // Admin email for bypass (change to your actual admin email)
-const ADMIN_EMAIL = 'yakovenko7002@gmail.com';
+const ADMIN_EMAIL = 'admin@modernshop.com';
+
+// Secret bypass key - add ?bypass=latiao2024 to URL to access during maintenance
+const BYPASS_KEY = 'latiao2024';
+
+/**
+ * Check if bypass key is in URL
+ */
+function hasBypassKey() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const bypassParam = urlParams.get('bypass');
+    if (bypassParam === BYPASS_KEY) {
+        // Store in sessionStorage so you don't need to add it to every page
+        sessionStorage.setItem('maintenanceBypass', 'true');
+        console.log('🔑 Bypass key accepted - storing in session');
+        return true;
+    }
+    // Check if already bypassed in this session
+    if (sessionStorage.getItem('maintenanceBypass') === 'true') {
+        console.log('🔑 Bypass active from session');
+        return true;
+    }
+    return false;
+}
 
 /**
  * Check if user is admin through multiple methods:
@@ -61,6 +84,14 @@ async function isUserAdmin(user) {
 export async function checkMaintenanceMode() {
     try {
         console.log('🔍 Checking maintenance mode...');
+        
+        // Quick check: URL bypass key (fastest)
+        if (hasBypassKey()) {
+            console.log('🔑 Bypass key detected - allowing access');
+            showAdminMaintenanceBadge();
+            revealPage();
+            return;
+        }
         
         // Step 1: Get maintenance status from Firestore
         const globalDoc = await getDoc(doc(db, 'settings', 'global'));

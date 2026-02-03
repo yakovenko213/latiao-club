@@ -11,7 +11,7 @@ const path = require('path');
 admin.initializeApp();
 
 // const MONO_TOKEN = "m6veKEWDDwa6i0kh_3Ansgw";
-const MONO_TOKEN = "uouPODS5nvAT-h1MJcRYJ3QzL_QTJzQd47uWMPMlO9Ac";
+const MONO_TOKEN = "m6veKEWDDwa6i0kh_3Ansgw";
 const MY_WEBHOOK_URL = "https://handlemonowebhook-6bhm4jhyba-uc.a.run.app";
 const MONO_API_URL = "https://api.monobank.ua/api/merchant/invoice/create";
 

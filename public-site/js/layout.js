@@ -381,6 +381,102 @@ const headerTemplate = `
 `;
 
 // ============================================
+// STOCK VERIFICATION SYSTEM
+// Fetches real-time stock from Firestore
+// ============================================
+
+/**
+ * Get actual stock from Firestore products collection
+ * @param {string} productId - The product ID
+ * @returns {Promise<number|null>} - Available stock or null if error
+ */
+async function getProductStockFromFirestore(productId) {
+  try {
+    // Wait for Firebase to be ready
+    let attempts = 0;
+    while (!window.firebaseInit && attempts < 20) {
+      await new Promise(r => setTimeout(r, 100));
+      attempts++;
+    }
+
+    if (!window.firebaseInit) {
+      console.warn('🔍 Stock check: Firebase not ready');
+      return null;
+    }
+
+    const { db, doc, getDoc } = window.firebaseInit;
+    if (!db || !doc || !getDoc) {
+      console.warn('🔍 Stock check: Missing Firestore functions');
+      return null;
+    }
+
+    const productRef = doc(db, 'products', productId);
+    const productSnap = await getDoc(productRef);
+
+    if (!productSnap.exists()) {
+      console.warn(`🔍 Stock check: Product ${productId} not found`);
+      return null;
+    }
+
+    const productData = productSnap.data();
+    const stock = productData.available_stock ?? productData.stock ?? null;
+    
+    console.log(`✅ Stock check for ${productId}: ${stock}`);
+    return stock;
+
+  } catch (error) {
+    console.error('❌ Stock check failed:', error);
+    return null;
+  }
+}
+
+/**
+ * Validate and adjust cart quantities on page load
+ * Auto-fixes quantities that exceed current stock
+ */
+async function validateCartStockOnLoad() {
+  if (window.cart.length === 0) return;
+
+  console.log('🔍 Validating cart stock...');
+  let adjustmentsMade = false;
+  
+  for (const item of window.cart) {
+    // Skip gifts
+    if (item.isGift === true) continue;
+    
+    // Skip items without ID
+    if (!item.id) continue;
+    
+    const currentQty = item.quantity || item.qty || 1;
+    const actualStock = await getProductStockFromFirestore(item.id);
+    
+    if (actualStock === null) continue;
+    
+    // Update local stock cache
+    item.stock = actualStock;
+    
+    // Auto-adjust if quantity exceeds stock
+    if (currentQty > actualStock) {
+      if ('quantity' in item) {
+        item.quantity = actualStock;
+      } else {
+        item.qty = actualStock;
+      }
+      adjustmentsMade = true;
+      console.log(`⚠️ Adjusted ${item.name}: ${currentQty} → ${actualStock}`);
+    }
+  }
+  
+  if (adjustmentsMade) {
+    saveCart();
+    renderCart();
+    window.showToast('Кількість деяких товарів змінено згідно наявності', 'warning');
+  } else {
+    console.log('✅ Cart stock validation complete - no adjustments needed');
+  }
+}
+
+// ============================================
 // GLOBAL CART STATE & FUNCTIONS
 // ============================================
 
@@ -546,6 +642,9 @@ function renderCart() {
     const qty = item.quantity || item.qty || 1;
     const imageUrl = item.image || item.imageUrl || 'https://placehold.co/100x100/fff3e8/ff6b00?text=Latiao';
     const isGift = item.isGift === true;
+    const stock = item.stock || 999;
+    const isAtLimit = qty >= stock;
+    const isLowStock = stock <= 5 && stock > 0;
 
     return `
       <div class="cart-item-enter card-hover bg-white border border-gray-100 rounded-3xl p-4 shadow-sm ${isGift ? 'border-green-200 bg-green-50/30' : ''}" data-cart-index="${cartIndex}">
@@ -556,8 +655,8 @@ function renderCart() {
           </div>
           <div class="flex-1 min-w-0">
             <div class="flex items-start justify-between gap-2">
-              <div>
-                <h3 class="font-bold text-gray-900 truncate">${item.name}</h3>
+              <div class="flex-1 min-w-0">
+                <h3 class="font-bold text-gray-900 line-clamp-2 break-words">${item.name}</h3>
                 ${isGift ? '<p class="text-xs text-green-600 font-semibold mt-0.5">🎁 Подарунок від Latiao Snack</p>' : `<p class="text-xs mt-0.5">${renderSpiciness(item.spiciness)}</p>`}
               </div>
               <button onclick="window.removeItemByIndex(${cartIndex})" class="btn-press flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors">
@@ -568,10 +667,13 @@ function renderCart() {
             </div>
             <div class="flex items-center justify-between mt-3">
               ${!isGift ? `
-              <div class="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
-                <button onclick="window.updateQtyByIndex(${cartIndex}, -1)" class="qty-btn w-8 h-8 rounded-lg bg-white flex items-center justify-center font-bold text-gray-600 shadow-sm">−</button>
-                <span class="w-8 text-center font-bold text-gray-900">${qty}</span>
-                <button onclick="window.updateQtyByIndex(${cartIndex}, 1)" ${qty >= (item.stock || 999) ? 'disabled' : ''} class="qty-btn w-8 h-8 rounded-lg bg-white flex items-center justify-center font-bold text-gray-600 shadow-sm">+</button>
+              <div class="flex flex-col gap-1">
+                <div class="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
+                  <button onclick="window.updateQtyByIndex(${cartIndex}, -1)" class="qty-btn w-8 h-8 rounded-lg bg-white flex items-center justify-center font-bold text-gray-600 shadow-sm hover:bg-gray-50 transition-colors">−</button>
+                  <span class="w-8 text-center font-bold text-gray-900">${qty}</span>
+                  <button onclick="window.updateQtyByIndex(${cartIndex}, 1)" ${isAtLimit ? 'disabled' : ''} class="qty-btn w-8 h-8 rounded-lg bg-white flex items-center justify-center font-bold text-gray-600 shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">+</button>
+                </div>
+                ${isAtLimit ? `<p class="text-[10px] text-red-600 font-medium">Максимум: ${stock} шт</p>` : isLowStock ? `<p class="text-[10px] text-orange-600 font-medium">Залишилось: ${stock} шт</p>` : ''}
               </div>
               ` : `
               <div class="text-sm text-green-600 font-semibold">Безкоштовно</div>
@@ -826,7 +928,7 @@ window.trackAddToCart = async function (product, source) {
 };
 
 // Add product to cart
-window.addToCart = function (product, source = null) {
+window.addToCart = async function (product, source = null) {
   // ============================================
   // TRACK FIRST ITEM TIME (for cart-to-checkout analytics)
   // ============================================
@@ -849,6 +951,30 @@ window.addToCart = function (product, source = null) {
     const currentQty = existingItem.quantity || existingItem.qty || 1;
     const addQty = product.quantity || product.qty || 1;
     const newQty = currentQty + addQty;
+
+    // ============================================
+    // 🔥 STOCK LIMIT CHECK - Verify with Firestore
+    // ============================================
+    if (product.id && !productIsGift) {
+      const actualStock = await getProductStockFromFirestore(product.id);
+      if (actualStock !== null) {
+        product.stock = actualStock;
+        existingItem.stock = actualStock;
+        
+        if (newQty > actualStock) {
+          window.showToast(`На складі лише ${actualStock} шт`, 'warning');
+          if ('quantity' in existingItem) {
+            existingItem.quantity = actualStock;
+          } else {
+            existingItem.qty = actualStock;
+          }
+          saveCart();
+          renderCart();
+          window.openCart();
+          return;
+        }
+      }
+    }
 
     if (newQty > (product.stock || 999)) {
       window.showToast(`На складі лише ${product.stock || 999}`, 'warning');
@@ -919,7 +1045,7 @@ window.updateQty = function (productId, delta) {
 };
 
 // Update quantity by cart index (NEW - supports multiple entries of same product)
-window.updateQtyByIndex = function (cartIndex, delta) {
+window.updateQtyByIndex = async function (cartIndex, delta) {
   if (cartIndex < 0 || cartIndex >= window.cart.length) return;
 
   const item = window.cart[cartIndex];
@@ -938,8 +1064,42 @@ window.updateQtyByIndex = function (cartIndex, delta) {
     return;
   }
 
+  // ============================================
+  // 🔥 STOCK LIMIT CHECK - Real-time Firestore Verification
+  // ============================================
+  if (delta > 0 && item.id) {
+    // Only check stock when INCREASING quantity
+    const actualStock = await getProductStockFromFirestore(item.id);
+    
+    if (actualStock !== null && newQty > actualStock) {
+      window.showToast(`Максимальна кількість у наявності: ${actualStock}`, 'warning');
+      
+      // Update item stock to reflect actual availability
+      item.stock = actualStock;
+      
+      // Adjust quantity to maximum available if needed
+      if (currentQty > actualStock) {
+        if ('quantity' in item) {
+          item.quantity = actualStock;
+        } else {
+          item.qty = actualStock;
+        }
+        saveCart();
+        renderCart();
+        window.showToast(`Кількість автоматично змінено до ${actualStock}`, 'warning');
+      }
+      
+      return;
+    }
+    
+    // Update local stock cache with fresh data
+    if (actualStock !== null) {
+      item.stock = actualStock;
+    }
+  }
+
   if (newQty > (item.stock || 999)) {
-    window.showToast('Досягнуто максимальну кількість', 'warning');
+    window.showToast(`Максимальна кількість у наявності: ${item.stock || 999}`, 'warning');
     return;
   }
 
@@ -993,7 +1153,7 @@ window.removeItemByIndex = function (cartIndex) {
 };
 
 // Open cart
-window.openCart = function () {
+window.openCart = async function () {
   const sidebar = document.getElementById('cart-sidebar');
   const overlay = document.getElementById('cart-overlay');
   const supportWidget = document.getElementById('support-widget');
@@ -1008,6 +1168,12 @@ window.openCart = function () {
       supportWidget.classList.add('opacity-0', 'pointer-events-none', 'scale-90');
       setTimeout(() => supportWidget.classList.add('hidden'), 200);
     }
+    
+    // ============================================
+    // 🔥 VALIDATE STOCK ON CART OPEN
+    // Auto-adjust quantities if stock changed
+    // ============================================
+    await validateCartStockOnLoad();
   }
 };
 

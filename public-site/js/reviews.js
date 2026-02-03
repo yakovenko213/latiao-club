@@ -9,6 +9,8 @@ import {
     collection, 
     addDoc, 
     getDocs,
+    getDoc,
+    doc,
     onSnapshot, 
     query, 
     where, 
@@ -43,6 +45,11 @@ let selectedPhotoFiles = [];
 let currentLightboxPhotos = [];
 let currentLightboxIndex = 0;
 let unsubscribeReviews = null;
+
+// Global visibility cache
+let reviewsVisibilityCache = null;
+let reviewsVisibilityCacheTime = null;
+const CACHE_DURATION = 60000; // 1 minute cache
 
 const availableTags = ["Смак", "Гострота", "Доставка", "Упаковка", "Якість"];
 const tagColors = {
@@ -139,18 +146,6 @@ const getReviewsHTML = () => `
       <div class="flex flex-col gap-3 sm:gap-4">
         <!-- Rating bars -->
         <div id="rating-breakdown" class="grid grid-cols-1 sm:grid-cols-5 gap-2 sm:gap-3"></div>
-        
-        <!-- Filter toggle -->
-        <button
-          id="filter-verified-btn"
-          onclick="window.reviewsModule.toggleVerifiedFilter()"
-          class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 rounded-full text-sm font-medium transition-all bg-white text-gray-600 border-2 border-gray-200 hover:border-gray-300 active:bg-gray-50"
-        >
-          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-          </svg>
-          Тільки верифіковані
-        </button>
       </div>
     </div>
 
@@ -186,117 +181,156 @@ const getReviewsHTML = () => `
 <!-- REVIEW MODAL -->
 <div id="review-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] hidden items-end sm:items-center justify-center sm:p-4 overflow-y-auto">
   <div class="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[90vh] sm:max-h-[85vh] sm:my-8 reviews-animate-slide-up sm:reviews-animate-scale-in overflow-hidden flex flex-col">
-    <!-- Header -->
-    <div class="sticky top-0 bg-white border-b border-gray-100 p-4 sm:p-6 flex-shrink-0">
-      <div class="sm:hidden w-10 h-1 bg-gray-300 rounded-full mx-auto mb-3"></div>
-      <div class="flex items-center justify-between">
-        <h3 class="text-lg sm:text-xl font-bold text-gray-900">Залишити відгук</h3>
+    
+    <!-- Form State -->
+    <div id="review-form-state" class="flex flex-col flex-1 overflow-hidden">
+      <!-- Header -->
+      <div class="bg-white border-b border-gray-100 p-4 sm:p-6 flex-shrink-0">
+        <div class="sm:hidden w-10 h-1 bg-gray-300 rounded-full mx-auto mb-3"></div>
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg sm:text-xl font-bold text-gray-900">Залишити відгук</h3>
+          <button
+            onclick="window.reviewsModule.closeReviewModal()"
+            class="w-10 h-10 sm:w-9 sm:h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 active:bg-gray-300 transition-colors"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="flex-1 overflow-y-auto p-4 sm:p-6 pt-0 sm:pt-0">
+        <form id="review-form" class="space-y-4 sm:space-y-5 pt-4 sm:pt-5">
+          <!-- Rating -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Ваша оцінка *</label>
+            <div id="modal-stars" class="flex gap-1"></div>
+            <input type="hidden" id="rating-input" value="0">
+          </div>
+
+          <!-- Name -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Ім'я *</label>
+            <input
+              type="text"
+              id="name-input"
+              placeholder="Ваше ім'я"
+              required
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-spicy focus:ring-2 focus:ring-spicy/20 outline-none transition-all text-base"
+            >
+          </div>
+
+          <!-- Phone -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Телефон (для верифікації)
+              <span class="ml-1 sm:ml-2 text-xs text-gray-400 font-normal">не публікується</span>
+            </label>
+            <input
+              type="tel"
+              id="phone-input"
+              placeholder="+380XXXXXXXXX"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-spicy focus:ring-2 focus:ring-spicy/20 outline-none transition-all text-base"
+            >
+            <p class="mt-1.5 text-xs text-gray-400">
+              Якщо ви робили замовлення з цим номером, відгук буде позначено як верифікований
+            </p>
+          </div>
+
+          <!-- Review text -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Ваш відгук *</label>
+            <textarea
+              id="review-text-input"
+              rows="3"
+              placeholder="Поділіться вашими враженнями про товар..."
+              required
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-spicy focus:ring-2 focus:ring-spicy/20 outline-none transition-all resize-none text-base"
+            ></textarea>
+          </div>
+
+          <!-- Photo upload -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Додати фото
+              <span class="ml-2 text-xs text-gray-400 font-normal">до 5 фото</span>
+            </label>
+            <div id="photo-upload-container" class="flex flex-wrap gap-2">
+              <input type="file" id="photo-input" accept="image/*" multiple class="hidden">
+              <button
+                type="button"
+                onclick="document.getElementById('photo-input').click()"
+                class="w-14 h-14 sm:w-16 sm:h-16 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-spicy hover:text-spicy active:bg-orange-50 transition-colors"
+              >
+                <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                <span class="text-[10px] mt-0.5">Фото</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Footer -->
+      <div class="bg-white border-t border-gray-100 p-4 sm:p-6 pb-6 sm:pb-6 flex-shrink-0">
         <button
-          onclick="window.reviewsModule.closeReviewModal()"
-          class="w-10 h-10 sm:w-9 sm:h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 active:bg-gray-300 transition-colors"
+          type="submit"
+          id="submit-review-btn"
+          form="review-form"
+          onclick="window.reviewsModule.submitReview(event)"
+          class="w-full bg-gradient-to-r from-spicy to-spicy-dark text-white font-bold py-3.5 sm:py-3.5 rounded-xl shadow-lg shadow-orange-500/25 hover:shadow-xl active:scale-[0.98] transition-all text-base disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          Надіслати відгук
         </button>
+        <p class="text-xs text-center text-gray-400 mt-2">
+          Відгук з'явиться після перевірки модератором
+        </p>
       </div>
     </div>
-
-    <!-- Content -->
-    <div class="flex-1 overflow-y-auto p-4 sm:p-6 pt-0 sm:pt-0">
-      <form id="review-form" class="space-y-4 sm:space-y-5 pt-4 sm:pt-5">
-        <!-- Rating -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Ваша оцінка *</label>
-          <div id="modal-stars" class="flex gap-1"></div>
-          <input type="hidden" id="rating-input" value="0">
+    
+    <!-- Success State (hidden by default) -->
+    <div id="review-success-state" class="hidden flex-col items-center justify-center p-5 sm:p-8 text-center flex-1">
+      <!-- Animated success icon container -->
+      <div class="relative mb-4 sm:mb-6">
+        <!-- Background glow -->
+        <div class="absolute inset-0 bg-gradient-to-br from-green-400/30 to-emerald-500/30 rounded-full blur-2xl scale-150 animate-pulse"></div>
+        <!-- Icon -->
+        <div class="relative w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-green-50 to-emerald-100 rounded-full flex items-center justify-center shadow-lg border-4 border-white">
+          <img src="./images/success-icon.png" alt="Успіх" class="w-16 h-16 sm:w-20 sm:h-20 object-contain" onerror="this.outerHTML='<svg class=\\'w-12 h-12 sm:w-16 sm:h-16 text-green-500\\' fill=\\'none\\' stroke=\\'currentColor\\' viewBox=\\'0 0 24 24\\'><path stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\' stroke-width=\\'2.5\\' d=\\'M5 13l4 4L19 7\\'></path></svg>'">
         </div>
-
-        <!-- Name -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Ім'я *</label>
-          <input
-            type="text"
-            id="name-input"
-            placeholder="Ваше ім'я"
-            required
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-spicy focus:ring-2 focus:ring-spicy/20 outline-none transition-all text-base"
-          >
-        </div>
-
-        <!-- Email -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Email (для верифікації)
-            <span class="ml-1 sm:ml-2 text-xs text-gray-400 font-normal">не публікується</span>
-          </label>
-          <input
-            type="email"
-            id="email-input"
-            placeholder="example@email.com"
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-spicy focus:ring-2 focus:ring-spicy/20 outline-none transition-all text-base"
-          >
-          <p class="mt-1.5 text-xs text-gray-400">
-            Якщо ви робили замовлення з цим email, відгук буде позначено як верифікований
-          </p>
-        </div>
-
-        <!-- Review text -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Ваш відгук *</label>
-          <textarea
-            id="review-text-input"
-            rows="3"
-            placeholder="Поділіться вашими враженнями про товар..."
-            required
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-spicy focus:ring-2 focus:ring-spicy/20 outline-none transition-all resize-none text-base"
-          ></textarea>
-        </div>
-
-        <!-- Photo upload -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Додати фото
-            <span class="ml-2 text-xs text-gray-400 font-normal">до 5 фото</span>
-          </label>
-          <div id="photo-upload-container" class="flex flex-wrap gap-2">
-            <input type="file" id="photo-input" accept="image/*" multiple class="hidden">
-            <button
-              type="button"
-              onclick="document.getElementById('photo-input').click()"
-              class="w-14 h-14 sm:w-16 sm:h-16 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-spicy hover:text-spicy active:bg-orange-50 transition-colors"
-            >
-              <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              <span class="text-[10px] mt-0.5">Фото</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Tags -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Теги (опціонально)</label>
-          <div id="tags-container" class="flex flex-wrap gap-1.5 sm:gap-2"></div>
-        </div>
-      </form>
-    </div>
-
-    <!-- Footer -->
-    <div class="sticky bottom-0 bg-white border-t border-gray-100 p-4 sm:p-6 pb-6 sm:pb-6 flex-shrink-0">
-      <button
-        type="submit"
-        id="submit-review-btn"
-        form="review-form"
-        onclick="window.reviewsModule.submitReview(event)"
-        class="w-full bg-gradient-to-r from-spicy to-spicy-dark text-white font-bold py-3.5 sm:py-3.5 rounded-xl shadow-lg shadow-orange-500/25 hover:shadow-xl active:scale-[0.98] transition-all text-base disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        Надіслати відгук
-      </button>
-      <p class="text-xs text-center text-gray-400 mt-2">
-        Відгук з'явиться після перевірки модератором
+      </div>
+      
+      <!-- Title -->
+      <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
+        Дякуємо за відгук! 🎉
+      </h3>
+      
+      <!-- Description -->
+      <p class="text-sm sm:text-base text-gray-600 mb-5 sm:mb-6 max-w-xs sm:max-w-sm leading-relaxed">
+        Ми швиденько перевіримо ваш відгук та опублікуємо його на сайті
       </p>
+      
+      <!-- Decorative stars -->
+      <div class="flex gap-1 mb-5 sm:mb-6">
+        <span class="text-yellow-400 text-lg sm:text-xl">★</span>
+        <span class="text-yellow-400 text-lg sm:text-xl">★</span>
+        <span class="text-yellow-400 text-lg sm:text-xl">★</span>
+        <span class="text-yellow-400 text-lg sm:text-xl">★</span>
+        <span class="text-yellow-400 text-lg sm:text-xl">★</span>
+      </div>
+      
+      <!-- Close button -->
+      <button
+        onclick="window.reviewsModule.closeReviewModal()"
+        class="w-full sm:w-auto px-8 py-3.5 sm:py-3 bg-gradient-to-r from-spicy to-spicy-dark text-white font-bold rounded-xl shadow-lg shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/30 active:scale-[0.98] transition-all text-base"
+      >
+        Чудово!
+      </button>
     </div>
+    
   </div>
 </div>
 
@@ -389,6 +423,40 @@ function generateFileName(originalName) {
 // ============================================
 // INJECTION LOGIC
 // ============================================
+
+// Check if reviews should be displayed (with caching)
+async function checkReviewsVisibility() {
+    // Check cache first
+    const now = Date.now();
+    if (reviewsVisibilityCache !== null && reviewsVisibilityCacheTime && (now - reviewsVisibilityCacheTime) < CACHE_DURATION) {
+        console.log('📦 Using cached reviews visibility:', reviewsVisibilityCache);
+        return reviewsVisibilityCache;
+    }
+
+    try {
+        const configDoc = await getDoc(doc(db, 'settings', 'general_config'));
+        if (configDoc.exists()) {
+            const data = configDoc.data();
+            const isEnabled = data.isReviewsEnabled !== undefined ? data.isReviewsEnabled : true;
+            
+            // Update cache
+            reviewsVisibilityCache = isEnabled;
+            reviewsVisibilityCacheTime = now;
+            
+            console.log('✅ Reviews visibility fetched:', isEnabled);
+            return isEnabled;
+        } else {
+            // Default to enabled if config doesn't exist
+            reviewsVisibilityCache = true;
+            reviewsVisibilityCacheTime = now;
+            return true;
+        }
+    } catch (error) {
+        console.error('❌ Error checking reviews visibility:', error);
+        // Default to enabled on error
+        return true;
+    }
+}
 
 function injectReviewsSection() {
     // Prevent duplicate injection
@@ -536,6 +604,8 @@ async function uploadPhotos(files, productId) {
 // ============================================
 
 function renderAll() {
+    console.log('📝 Rendering reviews:', reviews.length, 'reviews');
+    console.log('🔍 Reviews isVerified status:', reviews.map(r => ({ name: r.userName, isVerified: r.isVerified })));
     renderAverageStars();
     renderTotalReviews();
     renderRatingBreakdown();
@@ -869,6 +939,14 @@ function closeReviewModal() {
         selectedPhotos = [];
         selectedPhotoFiles = [];
         document.getElementById('review-form')?.reset();
+        
+        // Reset states - show form, hide success
+        document.getElementById('review-form-state')?.classList.remove('hidden');
+        const successState = document.getElementById('review-success-state');
+        if (successState) {
+            successState.classList.add('hidden');
+            successState.classList.remove('flex');
+        }
     }
 }
 
@@ -932,7 +1010,7 @@ async function submitReview(event) {
     
     try {
         const name = document.getElementById('name-input')?.value?.trim();
-        const email = document.getElementById('email-input')?.value?.trim();
+        const phone = document.getElementById('phone-input')?.value?.trim();
         const text = document.getElementById('review-text-input')?.value?.trim();
         
         if (!name || !text || selectedRating === 0) {
@@ -961,7 +1039,7 @@ async function submitReview(event) {
         const reviewData = {
             productId: currentProductId,
             userName: name,
-            email: email || null,
+            phone: phone || null,
             text: text,
             rating: selectedRating,
             tags: selectedTags,
@@ -975,8 +1053,11 @@ async function submitReview(event) {
         await addDoc(collection(db, REVIEWS_COLLECTION), reviewData);
         
         console.log('✅ Review submitted successfully');
-        alert('Дякуємо за ваш відгук! Він з\'явиться після перевірки модератором.');
-        closeReviewModal();
+        
+        // Show success state
+        document.getElementById('review-form-state').classList.add('hidden');
+        document.getElementById('review-success-state').classList.remove('hidden');
+        document.getElementById('review-success-state').classList.add('flex');
         
     } catch (error) {
         console.error('❌ Error submitting review:', error);
@@ -1058,7 +1139,7 @@ function setLightboxIndex(index) {
 // INITIALIZATION
 // ============================================
 
-function initReviews() {
+async function initReviews() {
     currentProductId = getProductId();
     
     if (!currentProductId) {
@@ -1067,6 +1148,13 @@ function initReviews() {
     }
     
     console.log('🔍 Reviews: Initializing for product:', currentProductId);
+    
+    // Check if reviews are globally enabled
+    const isEnabled = await checkReviewsVisibility();
+    if (!isEnabled) {
+        console.log('🚫 Reviews section is disabled globally. Skipping injection.');
+        return;
+    }
     
     const injected = injectReviewsSection();
     if (!injected) return;

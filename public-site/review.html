@@ -205,7 +205,7 @@
   <!-- Firebase -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'
-    import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
+    import { getFirestore, collection, addDoc, doc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
     import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js'
 
     const firebaseConfig = {
@@ -228,7 +228,25 @@
     
     if (orderId) {
       document.getElementById('order-id').value = orderId
+      
+      // Load order details and pre-fill customer name
+      try {
+        const orderDoc = await getDoc(doc(db, 'orders', orderId))
+        if (orderDoc.exists()) {
+          const orderData = orderDoc.data()
+          const customerName = orderData.customer?.fullName || ''
+          if (customerName) {
+            document.getElementById('customer-name').value = customerName
+            console.log('✅ Order loaded:', orderId, '| Customer:', customerName)
+          }
+        } else {
+          console.warn('⚠️ Order not found:', orderId)
+        }
+      } catch (error) {
+        console.error('❌ Error loading order:', error)
+      }
     }
+    
     if (productId) {
       document.getElementById('product-id').value = productId
     }
