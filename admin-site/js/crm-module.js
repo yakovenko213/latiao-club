@@ -1061,6 +1061,38 @@ export function openCardDetails(cartId) {
     const total = parseFloat(cart.total) || 0;
     const items = cart.items || [];
     
+    // Extract payment method from multiple possible locations
+    let paymentMethodRaw = '';
+    let paymentMethodDisplay = 'Не обрано';
+    
+    // Try all possible data locations
+    paymentMethodRaw = cart.paymentMethod || 
+                      cart.payment_method || 
+                      cart.payment || 
+                      (cart.orderData && cart.orderData.payment) ||
+                      (cart.formData && cart.formData.paymentMethod) ||
+                      (cart.selectionData && cart.selectionData.payment) ||
+                      (cart.paymentInfo && cart.paymentInfo.method) || '';
+    
+    // Map technical values to Ukrainian labels
+    if (paymentMethodRaw) {
+        const paymentMap = {
+            'cod': 'Накладений платіж',
+            'cash': 'Накладений платіж',
+            'online': 'Оплата карткою',
+            'card': 'Оплата карткою',
+            'mono': 'Монобанк',
+            'monobank': 'Монобанк',
+            'liqpay': 'LiqPay'
+        };
+        
+        // Check if it's a technical slug or already human-readable
+        const lowerValue = paymentMethodRaw.toLowerCase().trim();
+        paymentMethodDisplay = paymentMap[lowerValue] || paymentMethodRaw;
+    }
+    
+    const hasPaymentMethod = paymentMethodDisplay !== 'Не обрано';
+    
     // Format timestamp
     let createdDate = 'Невідомо';
     if (cart.created_at || cart.updated_at) {
@@ -1112,6 +1144,12 @@ export function openCardDetails(cartId) {
                     <label class="text-xs text-gray-600 font-semibold">Створено</label>
                     <p class="text-sm text-gray-900 mt-1">${createdDate}</p>
                 </div>
+            </div>
+            
+            <!-- Payment Method -->
+            <div class="mt-4 pt-4 border-t border-blue-200">
+                <label class="text-xs text-gray-600 font-semibold">💳 Метод оплати</label>
+                <p class="text-sm ${hasPaymentMethod ? 'text-gray-900 font-semibold' : 'text-gray-500 italic'} mt-1">${paymentMethodDisplay}</p>
             </div>
         </div>
         

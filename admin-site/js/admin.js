@@ -1282,6 +1282,39 @@ window.viewAbandonedCartDetails = async function(phone) {
         const items = cart.items || [];
         const total = cart.total || 0;
         
+        // Extract payment method from multiple possible locations
+        let paymentMethodRaw = '';
+        let paymentMethodDisplay = 'Не обрано';
+        
+        // Try all possible data locations
+        paymentMethodRaw = cart.paymentMethod || 
+                          cart.payment_method || 
+                          cart.payment || 
+                          (cart.orderData && cart.orderData.payment) ||
+                          (cart.formData && cart.formData.paymentMethod) ||
+                          (cart.selectionData && cart.selectionData.payment) ||
+                          (cart.paymentInfo && cart.paymentInfo.method) || '';
+        
+        // Map technical values to Ukrainian labels
+        if (paymentMethodRaw) {
+            const paymentMap = {
+                'cod': 'Накладений платіж',
+                'cash': 'Накладений платіж',
+                'online': 'Оплата карткою',
+                'card': 'Оплата карткою',
+                'mono': 'Монобанк',
+                'monobank': 'Монобанк',
+                'liqpay': 'LiqPay'
+            };
+            
+            // Check if it's a technical slug or already human-readable
+            const lowerValue = paymentMethodRaw.toLowerCase().trim();
+            paymentMethodDisplay = paymentMap[lowerValue] || paymentMethodRaw;
+        }
+        
+        const hasPaymentMethod = paymentMethodDisplay !== 'Не обрано';
+        const paymentStyle = hasPaymentMethod ? 'text-gray-900 font-semibold' : 'text-gray-500 italic';
+        
         // Build items HTML - ✅ FIXED: Using backticks
         let itemsHtml = '';
         items.forEach(item => {
@@ -1319,6 +1352,13 @@ window.viewAbandonedCartDetails = async function(phone) {
                             <div class="space-y-2 text-sm">
                                 <div><strong>Ім'я:</strong> ${customer.fullName || 'Не вказано'}</div>
                                 <div><strong>Телефон:</strong> <a href="tel:${customer.phone || phone}" class="text-blue-600">📞 ${customer.phone || phone}</a></div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                            <h4 class="font-bold text-gray-900 mb-3">💳 Спосіб оплати</h4>
+                            <div class="text-sm">
+                                <p class="${paymentStyle}">${paymentMethodDisplay}</p>
                             </div>
                         </div>
                         

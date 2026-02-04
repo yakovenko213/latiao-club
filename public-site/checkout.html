@@ -1936,6 +1936,13 @@
       updatePaymentSummary(method)
 
       console.log('✅ Payment method selected:', method)
+      
+      // Auto-update abandoned cart with new payment method (if phone exists)
+      const phoneInput = document.getElementById('phone')
+      if (phoneInput && phoneInput.value.trim().length >= 10) {
+        console.log('💳 Payment method changed, updating abandoned cart...')
+        saveAbandonedCart()
+      }
     }
 
     // ============================================
@@ -2520,6 +2527,21 @@
           deliveryInfo.address = upCity && upPostcode ? `${upCity}, Індекс: ${upPostcode}` : upCity || 'Не вказано'
         }
 
+        // Get payment method information
+        const selectedPaymentCard = document.querySelector('[data-payment].selected')
+        const paymentMethodRaw = selectedPaymentCard ? selectedPaymentCard.getAttribute('data-payment') : 'online'
+        
+        // Map to human-readable Ukrainian labels
+        const paymentMethodMap = {
+          'cod': 'Накладений платіж',
+          'online': 'Оплата карткою',
+          'card': 'Оплата карткою',
+          'mono': 'Монобанк',
+          'monobank': 'Монобанк'
+        }
+        const paymentMethodDisplay = paymentMethodMap[paymentMethodRaw] || paymentMethodRaw
+        console.log('💳 Payment method captured:', paymentMethodRaw, '→', paymentMethodDisplay)
+
         // Prepare abandoned cart data (capture only, NO Telegram yet)
         const abandonedCartData = {
           customer: {
@@ -2529,6 +2551,8 @@
           },
           delivery: deliveryInfo,
           comment: comment || '',
+          paymentMethod: paymentMethodDisplay,  // Human-readable payment method
+          payment_method_raw: paymentMethodRaw, // Technical value for analytics
           items: cart.map(item => ({
             name: item.name,
             price: item.price,
