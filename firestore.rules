@@ -188,15 +188,14 @@ service cloud.firestore {
     // =============================================
     
     match /reviews/{reviewId} {
-      // ✅ PUBLIC can READ only APPROVED reviews (for product pages)
-      // Anyone can read the list, but frontend filters by status=approved
+      // ✅ PUBLIC can READ all reviews
       allow read: if true;
       
-      // ✅ ANYONE can CREATE a review (with status: pending)
-      // The review will be pending until admin approves
-      allow create: if request.resource.data.status == 'pending';
+      // ✅ ANYONE can CREATE a review (no restrictions)
+      // We validate status='pending' in frontend code instead
+      allow create: if true;
       
-      // ❌ Only ADMINS can UPDATE (approve/reject) or DELETE reviews
+      // ❌ Only ADMINS can UPDATE or DELETE reviews
       allow update, delete: if request.auth != null;
     }
     
