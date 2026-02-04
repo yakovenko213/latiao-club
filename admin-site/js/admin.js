@@ -1213,17 +1213,23 @@ window.loadAbandonedCarts = async function() {
                     <td class="px-6 py-4 text-right">
                         <div class="flex items-center justify-end gap-2">
                             ${!showArchivedCarts ? `
+                            <button onclick="window.showCrmTransferModal('${phone}')" 
+                                    class="p-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors shadow-sm flex items-center gap-1" 
+                                    title="Передати в CRM">
+                                <i data-lucide="send" class="w-4 h-4"></i>
+                                <span class="text-xs font-semibold">CRM</span>
+                            </button>
                             <button onclick="sendRecoverySMS('${phone}')" 
                                     class="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors shadow-sm flex items-center gap-1" 
                                     title="Відправити SMS для відновлення">
                                 <i data-lucide="mail" class="w-4 h-4"></i>
-                                <span class="text-xs font-semibold">📩 SMS</span>
+                                <span class="text-xs font-semibold">SMS</span>
                             </button>
                             ` : ''}
                             <button onclick="window.convertToOrder('${phone}')" 
-                                    class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded transition-colors shadow-sm" 
+                                    class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded transition-colors shadow-sm" 
                                     title="Створити замовлення">
-                                <span>Створити замовлення</span>
+                                <span>Замовлення</span>
                             </button>
                             <button onclick="window.viewAbandonedCartDetails('${phone}')" 
                                     class="p-2 hover:bg-white rounded-lg transition-colors shadow-sm" 
@@ -2883,3 +2889,194 @@ window.fixMissingAvatars = async function() {
 };
 
 console.log('✅ admin.js loaded successfully (with Shopify import support)');
+// ============================================
+// CRM TRANSFER MODAL
+// ============================================
+
+/**
+ * Show modal to transfer abandoned cart to CRM
+ * @param {string} cartId - Cart document ID (phone number)
+ */
+window.showCrmTransferModal = async function(cartId) {
+    console.log('🔄 Transferring cart to CRM:', cartId);
+    
+    try {
+        // Load CRM columns
+        const columnsSnapshot = await getDocs(query(
+            collection(db, 'crm_columns'),
+            orderBy('order', 'asc')
+        ));
+        
+        if (columnsSnapshot.empty) {
+            alert('❌ Немає колонок CRM. Створіть колонки спочатку.');
+            return;
+        }
+        
+        const columns = [];
+        columnsSnapshot.forEach(doc => {
+            columns.push({
+                id: doc.id,
+                name: doc.data().name || doc.id
+            });
+        });
+        
+        // Create modal HTML
+        const columnsOptions = columns.map(col => 
+            `<option value="${col.id}">${col.name}</option>`
+        ).join('');
+        
+        const modalHTML = `
+            <div id="crm-transfer-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+                    <!-- Header -->
+                    <div class="bg-gradient-to-r from-green-600 to-teal-600 text-white p-6 rounded-t-2xl">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                            </svg>
+                            <div>
+                                <h2 class="text-2xl font-bold">Передати в CRM</h2>
+                                <p class="text-green-100 text-sm">Оберіть етап воронки продажів</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div class="p-6">
+                        <div class="mb-6">
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                Колонка Kanban
+                            </label>
+                            <select id="crm-column-select" class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-base">
+                                ${columnsOptions}
+                            </select>
+                        </div>
+                        
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                            <div class="flex items-start gap-3">
+                                <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <div class="text-sm text-green-800">
+                                    <p class="font-semibold mb-1">Миттєвий перенос</p>
+                                    <p>Кошик з'явиться в CRM негайно, незалежно від налаштувань автоматизації.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div class="border-t border-gray-200 p-6 bg-gray-50 rounded-b-2xl flex items-center justify-end gap-3">
+                        <button onclick="closeCrmTransferModal()" 
+                            class="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-semibold transition">
+                            Скасувати
+                        </button>
+                        <button onclick="confirmCrmTransfer('${cartId}')" 
+                            class="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition">
+                            ✅ Передати
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        const existingModal = document.getElementById('crm-transfer-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Inject modal
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Close on overlay click
+        const modal = document.getElementById('crm-transfer-modal');
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeCrmTransferModal();
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Error showing CRM transfer modal:', error);
+        alert(`Помилка: ${error.message}`);
+    }
+};
+
+/**
+ * Close CRM transfer modal
+ */
+window.closeCrmTransferModal = function() {
+    const modal = document.getElementById('crm-transfer-modal');
+    if (modal) {
+        modal.remove();
+    }
+};
+
+/**
+ * Confirm CRM transfer
+ * @param {string} cartId - Cart document ID
+ */
+window.confirmCrmTransfer = async function(cartId) {
+    try {
+        const selectedColumn = document.getElementById('crm-column-select')?.value;
+        
+        if (!selectedColumn) {
+            alert('❌ Оберіть колонку');
+            return;
+        }
+        
+        console.log('🔄 Transferring order:', cartId, 'to column:', selectedColumn);
+        
+        // Update cart in Firestore
+        const cartRef = doc(db, 'abandoned_carts', cartId);
+        await updateDoc(cartRef, {
+            crm_status: selectedColumn,
+            manually_transferred: true,
+            transferred_at: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        });
+        
+        console.log('✅ Cart transferred successfully');
+        
+        // Show success toast
+        const successToast = document.createElement('div');
+        successToast.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3';
+        successToast.innerHTML = `
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span class="font-semibold">✅ Кошик переданий в CRM</span>
+        `;
+        document.body.appendChild(successToast);
+        setTimeout(() => successToast.remove(), 3000);
+        
+        // Close modal
+        closeCrmTransferModal();
+        
+        // Update row visual state (add green highlight)
+        const row = document.querySelector(`tr input[data-cart-id="${cartId}"]`)?.closest('tr');
+        if (row) {
+            row.classList.remove('border-blue-400');
+            row.classList.add('border-green-500', 'bg-green-50');
+            
+            // Add "Transferred" badge
+            const actionsCell = row.querySelector('td:last-child');
+            if (actionsCell) {
+                const badge = document.createElement('div');
+                badge.className = 'inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full mr-2';
+                badge.innerHTML = `
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <span>В CRM</span>
+                `;
+                actionsCell.querySelector('div').prepend(badge);
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Error transferring cart:', error);
+        alert(`Помилка переносу: ${error.message}`);
+    }
+};

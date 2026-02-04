@@ -5712,17 +5712,23 @@
                                   <td class="px-6 py-4 text-right">
                                       <div class="flex items-center justify-end gap-2">
                                           ${!showArchivedCarts ? `
+                                          <button onclick="window.crmModule.openManualTransferModal('${phone}')" 
+                                                  class="p-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors shadow-sm flex items-center gap-1" 
+                                                  title="Передати в CRM">
+                                              <i data-lucide="send" class="w-4 h-4"></i>
+                                              <span class="text-xs font-semibold">CRM</span>
+                                          </button>
                                           <button onclick="sendRecoverySMS('${phone}')" 
                                                   class="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors shadow-sm flex items-center gap-1" 
                                                   title="Відправити SMS для відновлення">
                                               <i data-lucide="mail" class="w-4 h-4"></i>
-                                              <span class="text-xs font-semibold">📩 SMS</span>
+                                              <span class="text-xs font-semibold">SMS</span>
                                           </button>
                                           ` : ''}
                                           <button onclick="window.convertToOrder('${phone}')" 
-                                                  class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded transition-colors shadow-sm" 
+                                                  class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded transition-colors shadow-sm" 
                                                   title="Створити замовлення">
-                                              <span>Створити замовлення</span>
+                                              <span>Замовлення</span>
                                           </button>
                                           <button onclick="viewAbandonedCartDetails('${phone}')" 
                                                   class="p-2 hover:bg-white rounded-lg transition-colors shadow-sm" 
@@ -5993,6 +5999,24 @@
                                           </h4>
                                           <div class="space-y-2">
                                               ${historyHtml}
+                                          </div>
+                                      </div>
+                                      
+                                      <!-- CRM Transfer Button -->
+                                      <div class="bg-gradient-to-r from-green-50 to-teal-50 border-2 border-green-200 rounded-xl p-4">
+                                          <div class="flex items-center justify-between">
+                                              <div class="flex items-center gap-3">
+                                                  <i data-lucide="send" class="w-6 h-6 text-green-600"></i>
+                                                  <div>
+                                                      <h4 class="font-bold text-gray-900">Передати в CRM</h4>
+                                                      <p class="text-sm text-gray-600">Додати кошик на Kanban-дошку</p>
+                                                  </div>
+                                              </div>
+                                              <button onclick="window.crmModule.openManualTransferModal('${phone}')" 
+                                                  class="flex items-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-bold transition-all shadow-lg hover:shadow-xl transform hover:scale-105">
+                                                  <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                                                  <span>Передати</span>
+                                              </button>
                                           </div>
                                       </div>
                                   </div>
@@ -18018,6 +18042,15 @@
       if (hoursInput) {
         hoursInput.addEventListener('input', updateTimingPreview)
       }
+      
+      // Preload CRM module for manual transfer functionality
+      console.log('📦 Preloading CRM module...')
+      import('./js/crm-module.js').then(module => {
+        window.crmModule = module
+        console.log('✅ CRM module preloaded and ready for manual transfers')
+      }).catch(err => {
+        console.warn('⚠️ CRM module preload failed:', err)
+      })
     })
 
     // ============================================

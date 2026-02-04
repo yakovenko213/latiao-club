@@ -2541,6 +2541,9 @@
           })),
           total: total,
           updatedAt: serverTimestamp(),
+          created_at: serverTimestamp(),  // CRM: Creation timestamp
+          updated_at: serverTimestamp(),   // CRM: Update timestamp
+          crm_status: 'new_lead',          // CRM: Default status for new carts
           status: 'browsing',
           history: [{
             action: 'created',

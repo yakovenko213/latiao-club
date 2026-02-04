@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Debug Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .log-item { margin: 4px 0; padding: 8px 12px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 13px; }
+        .log-success { background: #d1fae5; color: #065f46; }
+        .log-error { background: #fee2e2; color: #991b1b; }
+        .log-warning { background: #fef3c7; color: #92400e; }
+        .log-info { background: #dbeafe; color: #1e40af; }
+    </style>
+</head>
+<body class="bg-gray-50 p-6">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl shadow-lg p-8 mb-6">
+            <h1 class="text-3xl font-bold mb-2">🔍 CRM Debug Dashboard</h1>
+            <p class="text-purple-100">Діагностика та виправлення проблем з відображенням карток</p>
+        </div>
+
+        <!-- Status Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-gray-500 text-sm font-semibold mb-2">Всього кошиків</div>
+                <div id="total-carts" class="text-3xl font-bold text-gray-900">-</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-gray-500 text-sm font-semibold mb-2">З crm_status</div>
+                <div id="with-status" class="text-3xl font-bold text-green-600">-</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-gray-500 text-sm font-semibold mb-2">Без crm_status</div>
+                <div id="without-status" class="text-3xl font-bold text-orange-600">-</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-gray-500 text-sm font-semibold mb-2">Колонок CRM</div>
+                <div id="total-columns" class="text-3xl font-bold text-purple-600">-</div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">🛠️ Інструменти</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button onclick="checkStatus()" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition">
+                    📊 Перевірити статус
+                </button>
+                <button onclick="runMigration()" class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-lg transition">
+                    🔄 Запустити міграцію
+                </button>
+                <button onclick="checkColumns()" class="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-lg transition">
+                    📋 Перевірити колонки
+                </button>
+                <button onclick="testPermissions()" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition">
+                    🔐 Тест дозволів
+                </button>
+                <button onclick="createDefaultColumns()" class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg transition">
+                    ➕ Створити колонки
+                </button>
+                <button onclick="clearLogs()" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition">
+                    🧹 Очистити логи
+                </button>
+            </div>
+        </div>
+
+        <!-- Cart Details -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">🛒 Деталі кошиків</h2>
+            <div id="cart-details" class="space-y-2 max-h-96 overflow-y-auto">
+                <p class="text-gray-500 text-sm">Натисніть "Перевірити статус" для завантаження даних</p>
+            </div>
+        </div>
+
+        <!-- Console Log -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-gray-900">📝 Консоль</h2>
+                <button onclick="exportLogs()" class="text-sm text-blue-600 hover:text-blue-700 font-semibold">
+                    💾 Експортувати логи
+                </button>
+            </div>
+            <div id="console-log" class="bg-gray-900 rounded-lg p-4 max-h-96 overflow-y-auto">
+                <div class="text-green-400 text-sm font-mono">Готовий до роботи...</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Get Firebase instance from parent window or initialize
+        const db = window.firebase ? window.firebase.firestore() : 
+                   (parent.firebase ? parent.firebase.firestore() : null);
+
+        if (!db) {
+            log('❌ Firebase не ініціалізовано. Відкрийте цю сторінку з панелі адміністратора.', 'error');
+        }
+
+        let allCarts = [];
+        let allColumns = [];
+
+        window.checkStatus = async function() {
+            log('🔍 Перевіряю статус кошиків...', 'info');
+            
+            try {
+                const cartsSnapshot = await db.collection('abandoned_carts').get();
+                allCarts = cartsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                const withStatus = allCarts.filter(cart => cart.crm_status);
+                const withoutStatus = allCarts.filter(cart => !cart.crm_status);
+                
+                document.getElementById('total-carts').textContent = allCarts.length;
+                document.getElementById('with-status').textContent = withStatus.length;
+                document.getElementById('without-status').textContent = withoutStatus.length;
+                
+                log(`✅ Завантажено ${allCarts.length} кошиків`, 'success');
+                log(`   ├─ З crm_status: ${withStatus.length}`, 'success');
+                log(`   └─ Без crm_status: ${withoutStatus.length}`, withoutStatus.length > 0 ? 'warning' : 'success');
+                
+                // Show status distribution
+                const statusCounts = {};
+                allCarts.forEach(cart => {
+                    const status = cart.crm_status || 'undefined';
+                    statusCounts[status] = (statusCounts[status] || 0) + 1;
+                });
+                
+                log('📊 Розподіл по статусах:', 'info');
+                Object.entries(statusCounts).forEach(([status, count]) => {
+                    log(`   ${status}: ${count}`, status === 'undefined' ? 'warning' : 'info');
+                });
+                
+                // Display cart details
+                displayCartDetails(allCarts);
+                
+            } catch (error) {
+                log(`❌ Помилка: ${error.message}`, 'error');
+                console.error(error);
+            }
+        };
+
+        window.runMigration = async function() {
+            log('🔄 Починаю міграцію...', 'info');
+            
+            try {
+                const cartsSnapshot = await db.collection('abandoned_carts').get();
+                const cartsToMigrate = [];
+                
+                cartsSnapshot.forEach(doc => {
+                    if (!doc.data().crm_status) {
+                        cartsToMigrate.push(doc.id);
+                    }
+                });
+                
+                if (cartsToMigrate.length === 0) {
+                    log('✅ Всі кошики вже мають crm_status', 'success');
+                    return;
+                }
+                
+                log(`🔧 Оновлюю ${cartsToMigrate.length} кошиків...`, 'info');
+                
+                const batch = db.batch();
+                cartsToMigrate.forEach(cartId => {
+                    const ref = db.collection('abandoned_carts').doc(cartId);
+                    batch.update(ref, {
+                        crm_status: 'new_lead',
+                        updated_at: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                });
+                
+                await batch.commit();
+                
+                log(`✅ Міграція завершена! Оновлено ${cartsToMigrate.length} кошиків`, 'success');
+                
+                // Refresh status
+                setTimeout(() => checkStatus(), 1000);
+                
+            } catch (error) {
+                log(`❌ Помилка міграції: ${error.message}`, 'error');
+                console.error(error);
+            }
+        };
+
+        window.checkColumns = async function() {
+            log('📋 Перевіряю колонки CRM...', 'info');
+            
+            try {
+                const columnsSnapshot = await db.collection('crm_columns').orderBy('order').get();
+                allColumns = columnsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                document.getElementById('total-columns').textContent = allColumns.length;
+                
+                log(`✅ Знайдено ${allColumns.length} колонок`, 'success');
+                
+                if (allColumns.length === 0) {
+                    log('⚠️ Колонки відсутні! Натисніть "Створити колонки"', 'warning');
+                } else {
+                    allColumns.forEach((col, index) => {
+                        log(`   ${index + 1}. ${col.name} (${col.id})`, 'info');
+                    });
+                }
+                
+            } catch (error) {
+                log(`❌ Помилка: ${error.message}`, 'error');
+                console.error(error);
+            }
+        };
+
+        window.testPermissions = async function() {
+            log('🔐 Перевіряю дозволи Firestore...', 'info');
+            
+            try {
+                // Test abandoned_carts read
+                await db.collection('abandoned_carts').limit(1).get();
+                log('✅ Дозвіл на читання abandoned_carts: OK', 'success');
+                
+                // Test crm_columns read
+                await db.collection('crm_columns').limit(1).get();
+                log('✅ Дозвіл на читання crm_columns: OK', 'success');
+                
+                // Test write (if admin)
+                const testRef = db.collection('crm_columns').doc('test_permission');
+                await testRef.set({ test: true });
+                await testRef.delete();
+                log('✅ Дозвіл на запис crm_columns: OK', 'success');
+                
+                log('🎉 Всі дозволи працюють коректно', 'success');
+                
+            } catch (error) {
+                log(`❌ Помилка дозволів: ${error.message}`, 'error');
+                log('💡 Можливо, ви не адміністратор або правила Firestore не налаштовані', 'warning');
+                console.error(error);
+            }
+        };
+
+        window.createDefaultColumns = async function() {
+            log('➕ Створюю базові колонки...', 'info');
+            
+            const columns = [
+                { id: 'new_lead', name: 'Новий лід', color: '#3b82f6', order: 0, description: 'Нові покинуті кошики, потребують першого контакту' },
+                { id: 'contacted', name: 'Контакт встановлено', color: '#8b5cf6', order: 1, description: 'Зв\'язалися з клієнтом, очікуємо відповіді' },
+                { id: 'negotiation', name: 'Переговори', color: '#f59e0b', order: 2, description: 'Активні переговори з клієнтом' },
+                { id: 'ready_to_order', name: 'Готовий замовити', color: '#06b6d4', order: 3, description: 'Клієнт готовий оформити замовлення' },
+                { id: 'converted', name: 'Конверсія', color: '#10b981', order: 4, description: 'Замовлення створено успішно' },
+                { id: 'not_interested', name: 'Не зацікавлений', color: '#ef4444', order: 5, description: 'Клієнт відмовився від покупки' }
+            ];
+            
+            try {
+                for (const col of columns) {
+                    await db.collection('crm_columns').doc(col.id).set({
+                        name: col.name,
+                        description: col.description,
+                        color: col.color,
+                        order: col.order,
+                        created_at: new Date()
+                    });
+                    log(`✅ Створено: ${col.name}`, 'success');
+                }
+                
+                log('🎉 Всі колонки створено успішно!', 'success');
+                
+                // Refresh columns
+                setTimeout(() => checkColumns(), 1000);
+                
+            } catch (error) {
+                log(`❌ Помилка створення колонок: ${error.message}`, 'error');
+                console.error(error);
+            }
+        };
+
+        function displayCartDetails(carts) {
+            const container = document.getElementById('cart-details');
+            
+            if (carts.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm">Кошики не знайдено</p>';
+                return;
+            }
+            
+            const withoutStatus = carts.filter(cart => !cart.crm_status);
+            
+            if (withoutStatus.length === 0) {
+                container.innerHTML = '<p class="text-green-600 text-sm font-semibold">✅ Всі кошики мають crm_status</p>';
+                return;
+            }
+            
+            const html = withoutStatus.map(cart => `
+                <div class="border border-orange-200 bg-orange-50 rounded-lg p-3">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="font-semibold text-gray-900 text-sm">${cart.customer?.fullName || 'Без імені'}</div>
+                            <div class="text-xs text-gray-600">${cart.customer?.phone || 'Немає телефону'}</div>
+                            <div class="text-xs text-gray-500 mt-1">ID: ${cart.id}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm font-bold text-gray-900">${cart.total || 0} ₴</div>
+                            <div class="text-xs text-orange-600 font-semibold mt-1">❌ Немає crm_status</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = `
+                <div class="bg-orange-100 border border-orange-300 rounded-lg p-3 mb-3">
+                    <div class="font-semibold text-orange-800 mb-1">⚠️ Знайдено ${withoutStatus.length} кошиків без crm_status</div>
+                    <div class="text-sm text-orange-700">Натисніть "Запустити міграцію" щоб додати crm_status до всіх кошиків</div>
+                </div>
+                ${html}
+            `;
+        }
+
+        function log(message, type = 'info') {
+            const consoleEl = document.getElementById('console-log');
+            const logItem = document.createElement('div');
+            logItem.className = `log-item log-${type}`;
+            logItem.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            consoleEl.appendChild(logItem);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        window.clearLogs = function() {
+            document.getElementById('console-log').innerHTML = '<div class="text-green-400 text-sm font-mono">Логи очищено...</div>';
+        };
+
+        window.exportLogs = function() {
+            const logs = Array.from(document.querySelectorAll('.log-item')).map(el => el.textContent).join('\n');
+            const blob = new Blob([logs], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `crm-debug-logs-${Date.now()}.txt`;
+            a.click();
+            log('💾 Логи експортовано', 'success');
+        };
+
+        // Auto-check on load
+        if (db) {
+            log('✅ Firebase підключено', 'success');
+            setTimeout(() => {
+                checkStatus();
+                checkColumns();
+            }, 500);
+        }
+    </script>
+</body>
+</html>

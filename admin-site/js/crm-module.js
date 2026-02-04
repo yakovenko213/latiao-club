@@ -39,6 +39,9 @@ export async function initCRM() {
     // Load the CRM board
     await renderCrmBoard();
     
+    // Start automation timer
+    startAutomationTimer();
+    
     console.log('✅ CRM Module initialized successfully');
 }
 
@@ -112,6 +115,7 @@ export async function renderCrmBoard() {
 
 /**
  * Load CRM columns and carts from Firestore
+ * Sets up real-time listeners with onSnapshot
  * @returns {Promise<void>}
  */
 async function loadCRMData() {
@@ -120,9 +124,9 @@ async function loadCRMData() {
     }
     
     // Import Firestore functions
-    const { collection, getDocs, query, where, orderBy, onSnapshot } = window.firebaseInit;
+    const { collection, getDocs, query, orderBy, onSnapshot, setDoc, doc: firestoreDoc } = window.firebaseInit;
     
-    // Load columns
+    // Load columns (one-time, they don't change often)
     const columnsRef = collection(db, 'crm_columns');
     const columnsQuery = query(columnsRef, orderBy('order', 'asc'));
     const columnsSnapshot = await getDocs(columnsQuery);
@@ -134,22 +138,149 @@ async function loadCRMData() {
     
     console.log('📋 Loaded CRM columns:', currentColumns.length);
     
-    // Load abandoned carts with CRM status
+    // Auto-create default "new_lead" column if no columns exist
+    if (currentColumns.length === 0) {
+        console.warn('⚠️ No CRM columns found. Creating default "new_lead" column...');
+        try {
+            const defaultColumnRef = firestoreDoc(db, 'crm_columns', 'new_lead');
+            await setDoc(defaultColumnRef, {
+                name: 'Новий лід',
+                description: 'Нові покинуті кошики, потребують першого контакту',
+                color: '#3b82f6',
+                order: 0,
+                created_at: new Date()
+            });
+            
+            // Reload columns
+            const updatedSnapshot = await getDocs(columnsQuery);
+            currentColumns = updatedSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            
+            console.log('✅ Default column "new_lead" created successfully');
+            showToast('✅ Створено базову колонку "Новий лід"', 'success');
+        } catch (error) {
+            console.error('❌ Failed to create default column:', error);
+        }
+    }
+    
+    // Set up real-time listener for carts
+    // IMPORTANT: Smart Import - respect automation settings
     const cartsRef = collection(db, 'abandoned_carts');
     const cartsQuery = query(
         cartsRef,
-        where('crm_status', '!=', null),
-        orderBy('crm_status'),
         orderBy('updated_at', 'desc')
     );
-    const cartsSnapshot = await getDocs(cartsQuery);
     
-    currentCarts = cartsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-    }));
+    console.log('📡 Setting up real-time listener with Smart Import...');
     
-    console.log('🛒 Loaded CRM carts:', currentCarts.length);
+    // Load automation settings first
+    let automationSettings = null;
+    try {
+        const { doc: firestoreDoc, getDoc } = window.firebaseInit;
+        const settingsRef = firestoreDoc(db, 'settings', 'crm_automation');
+        const settingsSnap = await getDoc(settingsRef);
+        
+        if (settingsSnap.exists()) {
+            automationSettings = settingsSnap.data();
+            console.log('⚙️ Automation settings loaded:', automationSettings);
+        }
+    } catch (error) {
+        console.warn('⚠️ Could not load automation settings:', error);
+    }
+    
+    // Listen to real-time changes
+    unsubscribeCarts = onSnapshot(cartsQuery, (snapshot) => {
+        console.log('🔄 Real-time update: Cart data changed');
+        console.log('📦 Total documents received:', snapshot.docs.length);
+        
+        const now = new Date();
+        
+        // Map all carts and apply Smart Import logic
+        currentCarts = snapshot.docs.map(doc => {
+            const data = doc.data();
+            
+            // Skip carts without required fields
+            if (!data.created_at && !data.updated_at) {
+                console.warn('⚠️ Cart missing timestamps, skipping:', doc.id);
+                return null;
+            }
+            
+            const createdAt = data.created_at?.toDate ? data.created_at.toDate() : 
+                            (data.created_at ? new Date(data.created_at) : 
+                            (data.updated_at?.toDate ? data.updated_at.toDate() : new Date(data.updated_at)));
+            
+            // Calculate age of cart
+            const cartAgeMs = now - createdAt;
+            
+            // Check if cart has crm_status
+            let shouldShow = true;
+            let crmStatus = data.crm_status;
+            
+            if (!data.crm_status && !data.manually_transferred) {
+                // Cart not yet in CRM and not manually transferred
+                
+                if (automationSettings && automationSettings.initialDelay) {
+                    // Apply initial delay rule
+                    const delayMs = convertToMs(
+                        automationSettings.initialDelay.value,
+                        automationSettings.initialDelay.unit
+                    );
+                    
+                    if (cartAgeMs < delayMs) {
+                        // Cart is too young, don't show yet
+                        console.log(`⏳ Cart ${doc.id} waiting for initial delay (${cartAgeMs}ms < ${delayMs}ms)`);
+                        shouldShow = false;
+                    } else {
+                        // Cart passed delay, use target column
+                        crmStatus = automationSettings.initialDelay.targetColumn || 'new_lead';
+                        console.log(`✅ Cart ${doc.id} ready for CRM → ${crmStatus}`);
+                    }
+                } else {
+                    // No automation settings, use default
+                    crmStatus = 'new_lead';
+                }
+            }
+            
+            // If manually transferred, always show immediately
+            if (data.manually_transferred) {
+                shouldShow = true;
+                crmStatus = data.crm_status || 'new_lead';
+                console.log(`👤 Manually transferred cart ${doc.id} → ${crmStatus}`);
+            }
+            
+            if (!shouldShow) {
+                return null;
+            }
+            
+            return {
+                id: doc.id,
+                ...data,
+                crm_status: crmStatus
+            };
+        }).filter(cart => cart !== null); // Remove null entries
+        
+        console.log('🛒 CRM carts displayed:', currentCarts.length);
+        console.log('📊 Carts by status:', countCartsByStatus(currentCarts));
+        
+        // Re-render the board with new data
+        const container = document.getElementById('crm-module-container');
+        if (container && currentColumns.length > 0) {
+            renderBoardUI(container);
+            initializeDragDrop();
+            
+            // Reinit Lucide icons
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        }
+    }, (error) => {
+        console.error('❌ Real-time listener error:', error);
+        showToast('❌ Помилка синхронізації даних', 'error');
+    });
+    
+    console.log('✅ Real-time sync enabled for abandoned carts');
 }
 
 /**
@@ -176,6 +307,12 @@ function renderBoardUI(container) {
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
+                    <button onclick="window.crmModule.migrateCartsWithoutStatus()" 
+                        class="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-semibold transition"
+                        title="Додати crm_status до всіх старих кошиків">
+                        <i data-lucide="database" class="w-4 h-4"></i>
+                        <span>Міграція</span>
+                    </button>
                     <button onclick="window.crmModule.refreshBoard()" 
                         class="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg font-semibold transition">
                         <i data-lucide="refresh-cw" class="w-4 h-4"></i>
@@ -280,8 +417,14 @@ function renderStats() {
  */
 function renderColumns() {
     const columnsHTML = currentColumns.map(column => {
+        // Filter cards for this column
         const cardsInColumn = currentCarts.filter(cart => cart.crm_status === column.id);
         const columnTotal = cardsInColumn.reduce((sum, cart) => sum + (parseFloat(cart.total) || 0), 0);
+        
+        // Debug logs
+        console.log(`📋 Loading cards for column: "${column.name}" (${column.id})`);
+        console.log(`   ├─ Cards found: ${cardsInColumn.length}`);
+        console.log(`   └─ Total value: ${columnTotal.toFixed(0)} ₴`);
         
         return `
             <div class="flex-shrink-0 w-80 bg-gray-50 rounded-lg border border-gray-200">
@@ -385,61 +528,127 @@ function renderCard(cart) {
     const customer = cart.customer || {};
     const phone = customer.phone || 'Немає телефону';
     const name = customer.fullName || customer.name || 'Без імені';
+    const telegram = customer.telegram || '';
     const total = parseFloat(cart.total) || 0;
     const items = cart.items || [];
     const itemCount = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
     
-    // Format date
+    // Format created_at timestamp
     let dateStr = 'Невідомо';
-    if (cart.updated_at) {
-        const date = cart.updated_at.toDate ? cart.updated_at.toDate() : new Date(cart.updated_at);
-        dateStr = date.toLocaleDateString('uk-UA', { 
-            day: 'numeric', 
-            month: 'short',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+    let timeAgo = '';
+    
+    if (cart.created_at || cart.updated_at) {
+        const timestamp = cart.created_at || cart.updated_at;
+        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        
+        // Format as DD.MM HH:MM
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        dateStr = `${day}.${month} ${hours}:${minutes}`;
+        
+        // Calculate time ago
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        
+        if (diffMins < 1) {
+            timeAgo = 'щойно';
+        } else if (diffMins < 60) {
+            timeAgo = `${diffMins} хв тому`;
+        } else if (diffHours < 24) {
+            timeAgo = `${diffHours} год тому`;
+        } else if (diffDays === 1) {
+            timeAgo = 'вчора';
+        } else if (diffDays < 7) {
+            timeAgo = `${diffDays} дн тому`;
+        } else {
+            timeAgo = dateStr;
+        }
     }
     
+    // Telegram badge
+    const telegramBadge = telegram && telegram !== 'Не вказано' 
+        ? `<div class="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+              <i data-lucide="send" class="w-3 h-3"></i>
+              <span>${telegram}</span>
+           </div>`
+        : '';
+    
+    // Auto-updated badge
+    const autoUpdatedBadge = cart.auto_updated 
+        ? `<div class="flex items-center gap-1 text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded" title="${cart.auto_update_reason || 'Автоматично оновлено'}">
+              <i data-lucide="bot" class="w-3 h-3"></i>
+              <span>Auto</span>
+           </div>`
+        : '';
+    
+    // Manually transferred badge
+    const manualBadge = cart.manually_transferred 
+        ? `<div class="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded" title="Переданий в CRM вручну">
+              <i data-lucide="user-check" class="w-3 h-3"></i>
+              <span>Manual</span>
+           </div>`
+        : '';
+    
     return `
-        <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition cursor-move crm-card" 
+        <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition cursor-move crm-card ${cart.auto_updated ? 'ring-2 ring-purple-200' : ''} ${cart.manually_transferred ? 'ring-2 ring-green-200' : ''}" 
              data-cart-id="${cart.id}"
              draggable="true">
+            
+            <!-- Customer Info -->
             <div class="flex items-start justify-between mb-3">
                 <div class="flex-1">
-                    <h5 class="font-bold text-gray-900 text-sm mb-1">${name}</h5>
-                    <p class="text-xs text-gray-600">${phone}</p>
+                    <h5 class="font-bold text-gray-900 text-sm mb-1 leading-tight">${name}</h5>
+                    <div class="flex items-center gap-1 text-xs text-gray-600 mb-1">
+                        <i data-lucide="phone" class="w-3 h-3"></i>
+                        <span>${phone}</span>
+                    </div>
+                    <div class="flex items-center gap-1 flex-wrap">
+                        ${telegramBadge}
+                        ${autoUpdatedBadge}
+                        ${manualBadge}
+                    </div>
                 </div>
                 <button onclick="window.crmModule.openCardDetails('${cart.id}')" 
-                    class="p-1 hover:bg-gray-100 rounded transition"
+                    class="p-1 hover:bg-gray-100 rounded transition flex-shrink-0"
                     title="Детальніше">
                     <i data-lucide="more-vertical" class="w-4 h-4 text-gray-600"></i>
                 </button>
             </div>
             
-            <div class="space-y-2 mb-3">
+            <!-- Cart Info -->
+            <div class="space-y-1.5 mb-3">
                 <div class="flex items-center gap-2 text-xs text-gray-600">
-                    <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i>
+                    <i data-lucide="shopping-bag" class="w-3.5 h-3.5 flex-shrink-0"></i>
                     <span>${itemCount} товар(ів)</span>
                 </div>
                 <div class="flex items-center gap-2 text-xs text-gray-600">
-                    <i data-lucide="clock" class="w-3.5 h-3.5"></i>
-                    <span>${dateStr}</span>
+                    <i data-lucide="clock" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                    <span title="${dateStr}">${timeAgo}</span>
                 </div>
             </div>
             
+            <!-- Amount & Actions -->
             <div class="flex items-center justify-between pt-3 border-t border-gray-200">
                 <span class="text-lg font-bold text-gray-900">${total.toFixed(0)} ₴</span>
                 <div class="flex items-center gap-1">
-                    <button onclick="window.crmModule.createOrderFromCart('${cart.id}')" 
-                        class="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs rounded transition"
+                    <button 
+                        onclick="window.crmModule.createOrderFromCart('${cart.id}')" 
+                        class="flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded transition"
                         title="Створити замовлення">
                         <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                        <span>Замовлення</span>
                     </button>
-                    <button onclick="window.crmModule.sendSMS('${cart.id}')" 
-                        class="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded transition"
+                    <button 
+                        onclick="window.crmModule.sendSMS('${cart.id}')" 
+                        class="flex items-center gap-1 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold rounded transition"
                         title="Надіслати SMS">
                         <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+                        <span>SMS</span>
                     </button>
                 </div>
             </div>
@@ -524,9 +733,8 @@ export async function refreshBoard() {
 /**
  * Open column settings modal
  */
-export function openColumnSettings() {
-    showToast('ℹ️ Налаштування колонок - в розробці', 'info');
-    // TODO: Implement column settings modal
+export async function openColumnSettings() {
+    await openAutomationSettings();
 }
 
 /**
@@ -790,9 +998,767 @@ export async function deleteColumn(columnId) {
 }
 
 /**
+ * Count carts by status for debugging
+ * @param {Array} carts - Array of cart objects
+ * @returns {Object} Object with status counts
+ */
+function countCartsByStatus(carts) {
+    const statusCounts = {};
+    carts.forEach(cart => {
+        const status = cart.crm_status || 'undefined';
+        statusCounts[status] = (statusCounts[status] || 0) + 1;
+    });
+    return statusCounts;
+}
+
+/**
+ * Migration function: Add crm_status to all carts without it
+ * @returns {Promise<void>}
+ */
+export async function migrateCartsWithoutStatus() {
+    if (!db) {
+        showToast('❌ Firebase не ініціалізовано', 'error');
+        return;
+    }
+    
+    const confirmed = confirm(
+        '🔄 Міграція даних\n\n' +
+        'Ця операція додасть поле crm_status: "new_lead" до всіх кошиків, які не мають цього поля.\n\n' +
+        'Це безпечна операція, яка не видаляє дані.\n\n' +
+        'Продовжити?'
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+        const { collection, getDocs, doc, updateDoc, serverTimestamp } = window.firebaseInit;
+        
+        console.log('🚀 Starting migration...');
+        showToast('🔄 Починаю міграцію...', 'info');
+        
+        // Get ALL abandoned carts
+        const cartsRef = collection(db, 'abandoned_carts');
+        const snapshot = await getDocs(cartsRef);
+        
+        console.log(`📦 Total carts in database: ${snapshot.docs.length}`);
+        
+        // Find carts without crm_status
+        const cartsToMigrate = [];
+        snapshot.docs.forEach(docSnap => {
+            const data = docSnap.data();
+            if (!data.crm_status) {
+                cartsToMigrate.push({
+                    id: docSnap.id,
+                    data: data
+                });
+            }
+        });
+        
+        console.log(`🔍 Carts without crm_status: ${cartsToMigrate.length}`);
+        
+        if (cartsToMigrate.length === 0) {
+            showToast('✅ Всі кошики вже мають crm_status', 'success');
+            console.log('✅ No migration needed - all carts have crm_status');
+            return;
+        }
+        
+        // Update each cart
+        let successCount = 0;
+        let errorCount = 0;
+        
+        for (const cart of cartsToMigrate) {
+            try {
+                const cartRef = doc(db, 'abandoned_carts', cart.id);
+                await updateDoc(cartRef, {
+                    crm_status: 'new_lead',
+                    updated_at: serverTimestamp()
+                });
+                
+                console.log(`✅ Migrated cart ${cart.id}`);
+                successCount++;
+                
+            } catch (error) {
+                console.error(`❌ Failed to migrate cart ${cart.id}:`, error);
+                errorCount++;
+            }
+        }
+        
+        // Show results
+        const message = `✅ Міграція завершена!\n\nОновлено: ${successCount}\nПомилки: ${errorCount}`;
+        console.log(`🎉 Migration complete: ${successCount} success, ${errorCount} errors`);
+        showToast(message, 'success');
+        
+        // Refresh board to show newly visible carts
+        await renderCrmBoard();
+        
+    } catch (error) {
+        console.error('❌ Migration error:', error);
+        showToast('❌ Помилка міграції: ' + error.message, 'error');
+    }
+}
+
+// ============================================
+// AUTOMATION SYSTEM
+// ============================================
+
+let automationTimer = null;
+
+/**
+ * Open automation settings modal
+ * @returns {Promise<void>}
+ */
+export async function openAutomationSettings() {
+    if (!db) {
+        showToast('❌ Firebase не ініціалізовано', 'error');
+        return;
+    }
+    
+    console.log('⚙️ Opening automation settings...');
+    
+    try {
+        // Load current settings
+        const { doc: firestoreDoc, getDoc } = window.firebaseInit;
+        const settingsRef = firestoreDoc(db, 'settings', 'crm_automation');
+        const settingsSnap = await getDoc(settingsRef);
+        
+        const currentSettings = settingsSnap.exists() ? settingsSnap.data() : {
+            initialDelay: { value: 5, unit: 'minutes', targetColumn: 'new_lead' },
+            transitionRules: []
+        };
+        
+        // Create modal HTML
+        const modalHTML = createAutomationModal(currentSettings);
+        
+        // Inject modal into page
+        const existingModal = document.getElementById('crm-automation-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Initialize Lucide icons
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+        
+        // Set up event listeners
+        setupAutomationModalListeners(currentSettings);
+        
+    } catch (error) {
+        console.error('❌ Error opening automation settings:', error);
+        showToast('❌ Помилка завантаження налаштувань', 'error');
+    }
+}
+
+/**
+ * Create automation modal HTML
+ * @param {Object} settings - Current automation settings
+ * @returns {string} Modal HTML
+ */
+function createAutomationModal(settings) {
+    const columnOptions = currentColumns.map(col => 
+        `<option value="${col.id}">${col.name}</option>`
+    ).join('');
+    
+    const transitionRulesHTML = settings.transitionRules.map((rule, index) => 
+        createTransitionRuleHTML(rule, index, columnOptions)
+    ).join('');
+    
+    return `
+        <div id="crm-automation-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+                <!-- Header -->
+                <div class="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="bot" class="w-8 h-8"></i>
+                            <div>
+                                <h2 class="text-2xl font-bold">🤖 Автоматизація CRM</h2>
+                                <p class="text-purple-100 text-sm">Налаштуйте автоматичне переміщення карток</p>
+                            </div>
+                        </div>
+                        <button onclick="window.crmModule.closeAutomationModal()" class="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition">
+                            <i data-lucide="x" class="w-6 h-6"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Content -->
+                <div class="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+                    
+                    <!-- Initial Capture -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
+                        <div class="flex items-start gap-3 mb-4">
+                            <i data-lucide="clock" class="w-6 h-6 text-blue-600 flex-shrink-0 mt-1"></i>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-bold text-gray-900 mb-1">Початкове захоплення</h3>
+                                <p class="text-sm text-gray-600">Затримка перед появою нового покинутого кошика в CRM</p>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Затримка</label>
+                                <input type="number" id="initial-delay-value" 
+                                    value="${settings.initialDelay.value}" 
+                                    min="1" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Одиниця</label>
+                                <select id="initial-delay-unit" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="minutes" ${settings.initialDelay.unit === 'minutes' ? 'selected' : ''}>Хвилин</option>
+                                    <option value="hours" ${settings.initialDelay.unit === 'hours' ? 'selected' : ''}>Годин</option>
+                                    <option value="days" ${settings.initialDelay.unit === 'days' ? 'selected' : ''}>Днів</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Цільова колонка</label>
+                                <select id="initial-target-column" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    ${currentColumns.map(col => 
+                                        `<option value="${col.id}" ${settings.initialDelay.targetColumn === col.id ? 'selected' : ''}>${col.name}</option>`
+                                    ).join('')}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Transition Rules -->
+                    <div class="bg-purple-50 border border-purple-200 rounded-xl p-6">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex items-start gap-3">
+                                <i data-lucide="shuffle" class="w-6 h-6 text-purple-600 flex-shrink-0 mt-1"></i>
+                                <div class="flex-1">
+                                    <h3 class="text-lg font-bold text-gray-900 mb-1">Правила переходів</h3>
+                                    <p class="text-sm text-gray-600">Автоматично переміщуйте картки між колонками</p>
+                                </div>
+                            </div>
+                            <button onclick="window.crmModule.addTransitionRule()" 
+                                class="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold transition">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                <span>Додати правило</span>
+                            </button>
+                        </div>
+                        
+                        <div id="transition-rules-container" class="space-y-4">
+                            ${transitionRulesHTML || '<p class="text-center text-gray-500 py-8">Правила відсутні. Натисніть "Додати правило" щоб створити.</p>'}
+                        </div>
+                    </div>
+                    
+                </div>
+                
+                <!-- Footer -->
+                <div class="border-t border-gray-200 p-6 bg-gray-50 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <button onclick="window.crmModule.testAutomation()" 
+                            class="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-semibold transition">
+                            <i data-lucide="play" class="w-4 h-4"></i>
+                            <span>Тестувати</span>
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="window.crmModule.closeAutomationModal()" 
+                            class="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-semibold transition">
+                            Скасувати
+                        </button>
+                        <button onclick="window.crmModule.saveAutomationSettings()" 
+                            class="px-6 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold transition">
+                            💾 Зберегти
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Create transition rule HTML
+ * @param {Object} rule - Rule object
+ * @param {number} index - Rule index
+ * @param {string} columnOptions - HTML options for columns
+ * @returns {string} Rule HTML
+ */
+function createTransitionRuleHTML(rule, index, columnOptions) {
+    return `
+        <div class="bg-white border border-purple-200 rounded-lg p-4" data-rule-index="${index}">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <span class="flex items-center justify-center w-6 h-6 bg-purple-100 text-purple-700 rounded-full text-sm font-bold">${index + 1}</span>
+                    <span class="text-sm font-semibold text-gray-700">Правило переходу</span>
+                </div>
+                <button onclick="window.crmModule.removeTransitionRule(${index})" 
+                    class="p-1 hover:bg-red-100 rounded transition" 
+                    title="Видалити правило">
+                    <i data-lucide="trash-2" class="w-4 h-4 text-red-600"></i>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Зі статусу</label>
+                    <select class="rule-from-status w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                        ${currentColumns.map(col => 
+                            `<option value="${col.id}" ${rule.fromStatus === col.id ? 'selected' : ''}>${col.name}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">До статусу</label>
+                    <select class="rule-to-status w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                        ${currentColumns.map(col => 
+                            `<option value="${col.id}" ${rule.toStatus === col.id ? 'selected' : ''}>${col.name}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Час очікування</label>
+                    <input type="number" 
+                        class="rule-wait-value w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" 
+                        value="${rule.waitTime.value}" 
+                        min="1">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Одиниця</label>
+                    <select class="rule-wait-unit w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                        <option value="minutes" ${rule.waitTime.unit === 'minutes' ? 'selected' : ''}>Хвилин</option>
+                        <option value="hours" ${rule.waitTime.unit === 'hours' ? 'selected' : ''}>Годин</option>
+                        <option value="days" ${rule.waitTime.unit === 'days' ? 'selected' : ''}>Днів</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Setup modal event listeners
+ * @param {Object} settings - Current settings
+ */
+function setupAutomationModalListeners(settings) {
+    // Close on overlay click
+    const modal = document.getElementById('crm-automation-modal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeAutomationModal();
+            }
+        });
+    }
+}
+
+/**
+ * Add new transition rule
+ */
+export function addTransitionRule() {
+    const container = document.getElementById('transition-rules-container');
+    if (!container) return;
+    
+    // Remove "no rules" message if present
+    const noRulesMsg = container.querySelector('p');
+    if (noRulesMsg) {
+        noRulesMsg.remove();
+    }
+    
+    const currentRules = container.querySelectorAll('[data-rule-index]');
+    const newIndex = currentRules.length;
+    
+    const columnOptions = currentColumns.map(col => 
+        `<option value="${col.id}">${col.name}</option>`
+    ).join('');
+    
+    const newRule = {
+        fromStatus: currentColumns[0]?.id || '',
+        toStatus: currentColumns[1]?.id || currentColumns[0]?.id || '',
+        waitTime: { value: 1, unit: 'hours' }
+    };
+    
+    const ruleHTML = createTransitionRuleHTML(newRule, newIndex, columnOptions);
+    container.insertAdjacentHTML('beforeend', ruleHTML);
+    
+    // Reinit icons
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+}
+
+/**
+ * Remove transition rule
+ * @param {number} index - Rule index to remove
+ */
+export function removeTransitionRule(index) {
+    const container = document.getElementById('transition-rules-container');
+    if (!container) return;
+    
+    const rule = container.querySelector(`[data-rule-index="${index}"]`);
+    if (rule) {
+        rule.remove();
+        
+        // Re-index remaining rules
+        const remainingRules = container.querySelectorAll('[data-rule-index]');
+        remainingRules.forEach((ruleEl, idx) => {
+            ruleEl.setAttribute('data-rule-index', idx);
+            const numberSpan = ruleEl.querySelector('.w-6.h-6');
+            if (numberSpan) {
+                numberSpan.textContent = idx + 1;
+            }
+            
+            // Update remove button
+            const removeBtn = ruleEl.querySelector('button[onclick^="window.crmModule.removeTransitionRule"]');
+            if (removeBtn) {
+                removeBtn.setAttribute('onclick', `window.crmModule.removeTransitionRule(${idx})`);
+            }
+        });
+        
+        // Show "no rules" message if empty
+        if (remainingRules.length === 0) {
+            container.innerHTML = '<p class="text-center text-gray-500 py-8">Правила відсутні. Натисніть "Додати правило" щоб створити.</p>';
+        }
+    }
+}
+
+/**
+ * Save automation settings
+ * @returns {Promise<void>}
+ */
+export async function saveAutomationSettings() {
+    if (!db) return;
+    
+    try {
+        const { doc: firestoreDoc, setDoc, serverTimestamp } = window.firebaseInit;
+        
+        // Collect initial delay settings
+        const initialDelay = {
+            value: parseInt(document.getElementById('initial-delay-value').value) || 5,
+            unit: document.getElementById('initial-delay-unit').value,
+            targetColumn: document.getElementById('initial-target-column').value
+        };
+        
+        // Collect transition rules
+        const container = document.getElementById('transition-rules-container');
+        const ruleElements = container.querySelectorAll('[data-rule-index]');
+        
+        const transitionRules = Array.from(ruleElements).map(ruleEl => {
+            return {
+                fromStatus: ruleEl.querySelector('.rule-from-status').value,
+                toStatus: ruleEl.querySelector('.rule-to-status').value,
+                waitTime: {
+                    value: parseInt(ruleEl.querySelector('.rule-wait-value').value) || 1,
+                    unit: ruleEl.querySelector('.rule-wait-unit').value
+                }
+            };
+        });
+        
+        // Save to Firestore
+        const settingsRef = firestoreDoc(db, 'settings', 'crm_automation');
+        await setDoc(settingsRef, {
+            initialDelay,
+            transitionRules,
+            enabled: true,
+            updated_at: serverTimestamp()
+        });
+        
+        console.log('✅ Automation settings saved:', { initialDelay, transitionRules });
+        showToast('✅ Налаштування збережено', 'success');
+        
+        closeAutomationModal();
+        
+        // Start automation if not already running
+        startAutomationTimer();
+        
+    } catch (error) {
+        console.error('❌ Error saving automation settings:', error);
+        showToast('❌ Помилка збереження: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Close automation modal
+ */
+export function closeAutomationModal() {
+    const modal = document.getElementById('crm-automation-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// ============================================
+// MANUAL TRANSFER TO CRM
+// ============================================
+
+/**
+ * Open modal to manually transfer abandoned cart to CRM
+ * @param {string} cartId - Cart document ID (usually phone number)
+ * @returns {Promise<void>}
+ */
+export async function openManualTransferModal(cartId) {
+    if (!db) {
+        showToast('❌ Firebase не ініціалізовано', 'error');
+        return;
+    }
+    
+    console.log('👤 Opening manual transfer for cart:', cartId);
+    
+    // Create modal HTML
+    const columnsOptions = currentColumns.map(col => 
+        `<option value="${col.id}">${col.name}</option>`
+    ).join('');
+    
+    const modalHTML = `
+        <div id="manual-transfer-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+                <!-- Header -->
+                <div class="bg-gradient-to-r from-green-600 to-teal-600 text-white p-6 rounded-t-2xl">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="send" class="w-8 h-8"></i>
+                        <div>
+                            <h2 class="text-2xl font-bold">Передати в CRM</h2>
+                            <p class="text-green-100 text-sm">Оберіть етап воронки продажів</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Content -->
+                <div class="p-6">
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">
+                            Колонка Kanban
+                        </label>
+                        <select id="transfer-column-select" class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-base">
+                            ${columnsOptions}
+                        </select>
+                    </div>
+                    
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="info" class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"></i>
+                            <div class="text-sm text-green-800">
+                                <p class="font-semibold mb-1">Миттєвий перенос</p>
+                                <p>Кошик з'явиться в CRM негайно, незалежно від налаштувань автоматизації.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Footer -->
+                <div class="border-t border-gray-200 p-6 bg-gray-50 rounded-b-2xl flex items-center justify-end gap-3">
+                    <button onclick="window.crmModule.closeManualTransferModal()" 
+                        class="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-semibold transition">
+                        Скасувати
+                    </button>
+                    <button onclick="window.crmModule.confirmManualTransfer('${cartId}')" 
+                        class="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition">
+                        ✅ Передати
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Inject modal
+    const existingModal = document.getElementById('manual-transfer-modal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Initialize icons
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+    
+    // Close on overlay click
+    const modal = document.getElementById('manual-transfer-modal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeManualTransferModal();
+            }
+        });
+    }
+}
+
+/**
+ * Close manual transfer modal
+ */
+export function closeManualTransferModal() {
+    const modal = document.getElementById('manual-transfer-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+/**
+ * Confirm manual transfer of cart to CRM
+ * @param {string} cartId - Cart document ID
+ * @returns {Promise<void>}
+ */
+export async function confirmManualTransfer(cartId) {
+    if (!db) return;
+    
+    try {
+        const selectedColumn = document.getElementById('transfer-column-select')?.value;
+        
+        if (!selectedColumn) {
+            showToast('❌ Оберіть колонку', 'error');
+            return;
+        }
+        
+        const { doc: firestoreDoc, updateDoc, serverTimestamp } = window.firebaseInit;
+        
+        console.log(`👤 Manually transferring cart ${cartId} to column ${selectedColumn}`);
+        
+        // Update cart in Firestore
+        const cartRef = firestoreDoc(db, 'abandoned_carts', cartId);
+        await updateDoc(cartRef, {
+            crm_status: selectedColumn,
+            manually_transferred: true,
+            transferred_at: serverTimestamp(),
+            updated_at: serverTimestamp()
+        });
+        
+        console.log('✅ Cart transferred successfully');
+        showToast('✅ Кошик переданий в CRM', 'success');
+        
+        closeManualTransferModal();
+        
+        // Board will update automatically via onSnapshot
+        
+    } catch (error) {
+        console.error('❌ Error transferring cart:', error);
+        showToast('❌ Помилка переносу: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Run CRM automation
+ * @returns {Promise<void>}
+ */
+export async function runCrmAutomation() {
+    if (!db) return;
+    
+    try {
+        const { doc: firestoreDoc, getDoc, updateDoc, serverTimestamp } = window.firebaseInit;
+        
+        // Load automation settings
+        const settingsRef = firestoreDoc(db, 'settings', 'crm_automation');
+        const settingsSnap = await getDoc(settingsRef);
+        
+        if (!settingsSnap.exists() || !settingsSnap.data().enabled) {
+            console.log('ℹ️ Automation is disabled or not configured');
+            return;
+        }
+        
+        const settings = settingsSnap.data();
+        const now = new Date();
+        
+        console.log('🤖 Running CRM automation...', settings);
+        
+        let updatedCount = 0;
+        
+        // Process each cart
+        for (const cart of currentCarts) {
+            // Skip if no updated_at
+            if (!cart.updated_at) continue;
+            
+            const updatedAt = cart.updated_at.toDate ? cart.updated_at.toDate() : new Date(cart.updated_at);
+            const diffMs = now - updatedAt;
+            
+            // Check transition rules
+            for (const rule of settings.transitionRules) {
+                // Check if cart matches "fromStatus"
+                if (cart.crm_status !== rule.fromStatus) continue;
+                
+                // Calculate wait time in milliseconds
+                const waitMs = convertToMs(rule.waitTime.value, rule.waitTime.unit);
+                
+                // Check if enough time has passed
+                if (diffMs >= waitMs) {
+                    console.log(`🔄 Auto-moving cart ${cart.id} from "${rule.fromStatus}" to "${rule.toStatus}"`);
+                    
+                    // Update cart status
+                    const cartRef = firestoreDoc(db, 'abandoned_carts', cart.id);
+                    await updateDoc(cartRef, {
+                        crm_status: rule.toStatus,
+                        updated_at: serverTimestamp(),
+                        auto_updated: true,
+                        auto_update_reason: `Auto-moved after ${rule.waitTime.value} ${rule.waitTime.unit}`
+                    });
+                    
+                    updatedCount++;
+                    break; // Only apply first matching rule
+                }
+            }
+        }
+        
+        if (updatedCount > 0) {
+            console.log(`✅ Automation complete: ${updatedCount} carts updated`);
+            showToast(`🤖 Автоматично оновлено ${updatedCount} карток`, 'info');
+        } else {
+            console.log('ℹ️ No carts needed automation');
+        }
+        
+    } catch (error) {
+        console.error('❌ Automation error:', error);
+    }
+}
+
+/**
+ * Convert time to milliseconds
+ * @param {number} value - Time value
+ * @param {string} unit - Time unit (minutes, hours, days)
+ * @returns {number} Milliseconds
+ */
+function convertToMs(value, unit) {
+    const conversions = {
+        minutes: 60 * 1000,
+        hours: 60 * 60 * 1000,
+        days: 24 * 60 * 60 * 1000
+    };
+    return value * (conversions[unit] || conversions.minutes);
+}
+
+/**
+ * Start automation timer
+ */
+export function startAutomationTimer() {
+    // Stop existing timer
+    if (automationTimer) {
+        clearInterval(automationTimer);
+    }
+    
+    // Run immediately
+    runCrmAutomation();
+    
+    // Run every 5 minutes
+    automationTimer = setInterval(() => {
+        runCrmAutomation();
+    }, 5 * 60 * 1000);
+    
+    console.log('⏰ Automation timer started (runs every 5 minutes)');
+}
+
+/**
+ * Test automation (manual trigger)
+ * @returns {Promise<void>}
+ */
+export async function testAutomation() {
+    showToast('🧪 Запускаю тест автоматизації...', 'info');
+    await runCrmAutomation();
+}
+
+/**
  * Clean up listeners on module unload
  */
 export function cleanup() {
+    // Stop automation timer
+    if (automationTimer) {
+        clearInterval(automationTimer);
+        automationTimer = null;
+    }
+    
     if (unsubscribeColumns) {
         unsubscribeColumns();
         unsubscribeColumns = null;
@@ -823,7 +1789,22 @@ window.crmModule = {
     addNewColumn,
     saveColumnName,
     saveColumnField,
-    deleteColumn
+    deleteColumn,
+    // Migration
+    migrateCartsWithoutStatus,
+    // Automation
+    openAutomationSettings,
+    closeAutomationModal,
+    addTransitionRule,
+    removeTransitionRule,
+    saveAutomationSettings,
+    testAutomation,
+    runCrmAutomation,
+    startAutomationTimer,
+    // Manual Transfer
+    openManualTransferModal,
+    closeManualTransferModal,
+    confirmManualTransfer
 };
 
 console.log('📦 CRM Module loaded');
