@@ -59,6 +59,20 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "abandoned_carts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "crm_status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "updated_at",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

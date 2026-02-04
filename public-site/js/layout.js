@@ -89,7 +89,7 @@ const headerTemplate = `
   <div id="toast-container" class="fixed top-4 right-4 z-[60] flex flex-col gap-2"></div>
 
   <!-- Header -->
-  <header class="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md z-50 border-b border-gray-100">
+  <header class="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md z-50 border-b border-gray-100 dark:bg-gray-900/95 dark:border-gray-800">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16 lg:h-20">
         <a href="/index.html" class="flex items-center">
@@ -303,10 +303,10 @@ const headerTemplate = `
   </style>
 
   <!-- Cart Overlay -->
-  <div id="cart-overlay" onclick="window.closeCart()" class="fixed inset-0 bg-black/50 z-[40] pointer-events-auto hidden transition-opacity"></div>
+  <div id="cart-overlay" onclick="window.closeCart()" class="fixed inset-0 bg-black/50 z-[80] pointer-events-auto hidden transition-opacity"></div>
 
   <!-- Cart Sidebar -->
-  <div id="cart-sidebar" class="fixed top-0 right-0 h-full w-full md:w-[500px] bg-white shadow-2xl z-[50] pointer-events-auto transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+  <div id="cart-sidebar" class="fixed top-0 right-0 h-full w-full md:w-[500px] bg-white shadow-2xl z-[85] pointer-events-auto transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
     <header class="sticky top-0 bg-white z-40 px-5 py-4 border-b border-gray-100">
       <div class="flex items-center justify-between">
         <div>
@@ -1152,8 +1152,15 @@ window.removeItemByIndex = function (cartIndex) {
   }
 };
 
-// Open cart
+// Open cart (with mutual exclusion)
 window.openCart = async function () {
+  // Close mobile menu if open (mutual exclusion)
+  const mobileMenu = document.getElementById('mobile-menu');
+  const menuOverlay = document.getElementById('menu-overlay');
+  if (mobileMenu && !mobileMenu.classList.contains('translate-x-full')) {
+    window.toggleMobileMenu();
+  }
+  
   const sidebar = document.getElementById('cart-sidebar');
   const overlay = document.getElementById('cart-overlay');
   const supportWidget = document.getElementById('support-widget');
@@ -1198,7 +1205,7 @@ window.closeCart = function () {
   }
 };
 
-// Toggle mobile menu
+// Toggle mobile menu (with mutual exclusion)
 window.toggleMobileMenu = function () {
   console.log('🍔 toggleMobileMenu called');
 
@@ -1216,6 +1223,12 @@ window.toggleMobileMenu = function () {
   console.log('📍 Menu state:', isClosed ? 'CLOSED' : 'OPEN');
 
   if (isClosed) {
+    // Close cart if open (mutual exclusion)
+    const cartSidebar = document.getElementById('cart-sidebar');
+    if (cartSidebar && !cartSidebar.classList.contains('translate-x-full')) {
+      window.closeCart();
+    }
+    
     // Open the menu
     console.log('✅ Opening menu...');
     menu.classList.remove('translate-x-full');

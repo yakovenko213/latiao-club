@@ -1412,10 +1412,10 @@ window.convertToOrder = async function(cartId) {
                 telegram: cartData.customer?.telegram || ''
             },
             
-            // Items from cart (CRITICAL: Must be an array for Kanban rendering)
+            // Items from cart
             items: cartData.items || [],
             
-            // Summary (CRITICAL: Kanban uses summary.total for display)
+            // Order summary
             summary: {
                 total: cartData.total || 0,
                 itemCount: (cartData.items || []).reduce((sum, item) => sum + (item.quantity || 0), 0),
@@ -1436,7 +1436,7 @@ window.convertToOrder = async function(cartId) {
                 status: 'pending'
             },
             
-            // Order status - CRITICAL: Must be lowercase 'new' for Kanban first column
+            // Order status
             status: 'new',
             
             // Timestamps (CRITICAL: Must use serverTimestamp() for Firestore Timestamp object)

@@ -1,0 +1,204 @@
+/**
+ * Z-Index Hierarchy Management
+ * Prevents overlapping UI conflicts
+ * 
+ * USAGE: Import this file in all HTML pages that use layered elements
+ */
+
+/* ============================================
+   Z-INDEX SCALE (DO NOT MODIFY WITHOUT REVIEW)
+   ============================================ */
+
+/*
+  Z-Index Hierarchy:
+  
+  Level 0-10: Base Content
+  -----------
+  0   - Default document flow
+  1   - Slight elevation (cards, etc.)
+  10  - Sticky elements (sticky headers, footers)
+  
+  Level 20-50: Page Elements
+  -----------
+  20  - Dropdowns, tooltips
+  30  - Modals backdrop
+  40  - Modal content
+  50  - Site header/navigation
+  
+  Level 60-99: Overlays & Notifications
+  -----------
+  60  - Toasts, notifications
+  70  - Loading spinners
+  80  - Cart overlay
+  85  - Cart sidebar
+  90  - Search overlay
+  
+  Level 100+: Full-Screen Overlays
+  -----------
+  100 - Dashboard/Personal Account (mobile full-screen)
+  110 - Critical modals (confirm dialogs)
+  
+  Level 9000+: System UI
+  -----------
+  9998 - Mobile menu overlay
+  9999 - Mobile menu
+  10000 - Debug tools (development only)
+*/
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Base Content */
+.z-base { z-index: 0; }
+.z-elevated { z-index: 1; }
+.z-sticky { z-index: 10; }
+
+/* Page Elements */
+.z-dropdown { z-index: 20; }
+.z-modal-backdrop { z-index: 30; }
+.z-modal { z-index: 40; }
+.z-header { z-index: 50; }
+
+/* Overlays & Notifications */
+.z-toast { z-index: 60; }
+.z-loader { z-index: 70; }
+.z-cart-overlay { z-index: 80; }
+.z-cart { z-index: 85; }
+.z-search { z-index: 90; }
+
+/* Full-Screen Overlays */
+.z-dashboard { z-index: 100; }
+.z-critical-modal { z-index: 110; }
+
+/* System UI */
+.z-menu-overlay { z-index: 9998; }
+.z-menu { z-index: 9999; }
+.z-debug { z-index: 10000; }
+
+/* ============================================
+   STACKING CONTEXT MANAGEMENT
+   ============================================ */
+
+/* Ensure elements create new stacking contexts */
+.stacking-context {
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+}
+
+/* Prevent z-index inheritance issues */
+.isolate-z {
+  isolation: isolate;
+}
+
+/* ============================================
+   MOBILE-SPECIFIC Z-INDEX
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Dashboard becomes full-screen overlay on mobile */
+  .dashboard-page {
+    z-index: 100 !important;
+  }
+  
+  /* Ensure header stays below dashboard */
+  header {
+    z-index: 50 !important;
+  }
+  
+  /* Cart should be below dashboard */
+  #cart-sidebar,
+  .z-cart {
+    z-index: 85 !important;
+  }
+  
+  /* Mobile menu stays on top of everything except debug tools */
+  #mobile-menu,
+  .z-menu {
+    z-index: 9999 !important;
+  }
+}
+
+/* ============================================
+   INTERACTION MANAGEMENT
+   ============================================ */
+
+/* Prevent clicks on elements behind overlays */
+.pointer-events-none-overlay {
+  pointer-events: none;
+}
+
+.pointer-events-auto-overlay {
+  pointer-events: auto;
+}
+
+/* Hide elements visually but keep in DOM */
+.visually-hidden-behind {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ============================================
+   DEBUGGING (Comment out in production)
+   ============================================ */
+
+/* Uncomment to visualize z-index layers */
+/*
+.z-debug-labels::before {
+  content: 'z-index: ' attr(data-z-index);
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: rgba(255, 0, 0, 0.8);
+  color: white;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: bold;
+  z-index: 99999;
+  pointer-events: none;
+}
+*/
+
+/* ============================================
+   ANTI-PATTERNS TO AVOID
+   ============================================ */
+
+/*
+  ❌ DON'T DO THIS:
+  - Using arbitrary z-index values (z-index: 999999)
+  - Inline z-index styles (style="z-index: 100")
+  - Competing z-index in same layer
+  - Z-index without position (won't work)
+  
+  ✅ DO THIS:
+  - Use utility classes from this file
+  - Follow the hierarchy scale
+  - Test on mobile devices
+  - Document custom z-index values
+*/
+
+/* ============================================
+   INTEGRATION NOTES
+   ============================================ */
+
+/*
+  TO USE THIS FILE:
+  
+  1. Add to HTML <head>:
+     <link rel="stylesheet" href="./css/z-index-hierarchy.css">
+  
+  2. Use utility classes:
+     <div class="z-cart">...</div>
+     <div class="z-modal">...</div>
+  
+  3. For inline styles, reference the scale:
+     style="z-index: 85" for cart
+     style="z-index: 100" for dashboard
+  
+  4. Test interaction:
+     - Can you click header when cart is open? (Should: Yes)
+     - Can you click header when dashboard is open? (Should: Yes on desktop, contextual on mobile)
+     - Can you open cart when mobile menu is open? (Should: No - mutual exclusion)
+     - Can you open dashboard when cart is open? (Should: Yes - cart auto-closes)
+*/

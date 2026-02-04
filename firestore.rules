@@ -139,6 +139,14 @@ service cloud.firestore {
     }
     
     // =============================================
+    // 🎯 CRM COLUMNS (Admin only)
+    // =============================================
+    
+    match /crm_columns/{columnId} {
+      allow read, write: if request.auth != null;  // Only authenticated admins
+    }
+    
+    // =============================================
     // 💬 LIVE CHAT (Public create for unauthenticated users)
     // =============================================
     

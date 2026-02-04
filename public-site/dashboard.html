@@ -83,6 +83,28 @@
     .main-content {
       padding-top: 80px;
     }
+    
+    /* Dashboard as full-screen overlay on mobile */
+    @media (max-width: 768px) {
+      .dashboard-page {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        background: white;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      html.dark .dashboard-page {
+        background: #111827;
+      }
+      
+      .main-content {
+        padding-top: 64px;
+        min-height: 100vh;
+      }
+    }
+    
     /* Cart & Button styles from index.html */
     .fire-gradient { background: linear-gradient(135deg, #ff6b00 0%, #ff4444 100%); }
     .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -154,9 +176,13 @@
       border-color: #374151 !important;
     }
   </style>
+  
+  <!-- Z-Index Hierarchy Management -->
+  <link rel="stylesheet" href="./css/z-index-hierarchy.css">
+  
   <script type="module" src="./js/dark-mode.js"></script>
 </head>
-<body class="min-h-screen bg-background dark:bg-gray-900">
+<body class="dashboard-page min-h-screen bg-background dark:bg-gray-900">
   
   <!-- Global Header (injected by layout.js) -->
   <!-- Layout.js will inject the header automatically -->
@@ -290,6 +316,32 @@
   <div id="footer-placeholder"></div>
 
   <script>
+    // ============================================
+    // DASHBOARD PAGE INITIALIZATION
+    // ============================================
+    
+    // Close cart and mobile menu when dashboard loads (mutual exclusion)
+    window.addEventListener('DOMContentLoaded', function() {
+      // Close cart if open
+      if (window.closeCart && typeof window.closeCart === 'function') {
+        const cartSidebar = document.getElementById('cart-sidebar');
+        if (cartSidebar && !cartSidebar.classList.contains('translate-x-full')) {
+          window.closeCart();
+        }
+      }
+      
+      // Close mobile menu if open
+      if (window.toggleMobileMenu && typeof window.toggleMobileMenu === 'function') {
+        const mobileMenu = document.getElementById('mobile-menu');
+        if (mobileMenu && !mobileMenu.classList.contains('translate-x-full')) {
+          window.toggleMobileMenu();
+        }
+      }
+      
+      // Ensure body scroll is enabled for dashboard
+      document.body.style.overflow = '';
+    });
+    
     // ============================================
     // DASHBOARD UTILITIES
     // ============================================
@@ -1178,6 +1230,6 @@
   <!-- Firebase Initialization -->
   <script type="module" src="./js/firebase-init.js"></script>
   <script type="module" src="./js/layout.js"></script>
-  <script type="module" src="./js/dashboard.js?v=3010"></script>
+  <script type="module" src="./js/dashboard.js?v=1770212367080"></script>
 </body>
 </html>
