@@ -14,6 +14,9 @@
   <!-- 🎯 SEO: Canonical Tag -->
   <link rel="canonical" href="https://latiao-snack.com.ua/">
   
+  <!-- ⚡ PERFORMANCE: Priority Loading for Critical Resources -->
+  <link rel="modulepreload" href="./js/layout.js" as="script" fetchpriority="high">
+  
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
        CACHE CONTROL - Force fresh assets
        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
@@ -45,8 +48,8 @@
     }
     
     .skeleton-logo {
-      width: 120px;
-      height: 40px;
+      width: 180px;
+      height: 48px;
       background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
       background-size: 200% 100%;
       animation: shimmer 1.5s infinite;

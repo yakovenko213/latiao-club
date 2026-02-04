@@ -12,6 +12,9 @@
   <!-- 🔀 DOMAIN REDIRECT - Redirect Firebase domains to primary domain -->
   <script src="./js/domain-redirect.js"></script>
 
+  <!-- ⚡ PERFORMANCE: Priority Loading for Critical Resources -->
+  <link rel="modulepreload" href="./js/layout.js" as="script" fetchpriority="high">
+
   <!-- 🎯 SEO: Dynamic Canonical Tag for Category Pages -->
   <script>
     (function() {

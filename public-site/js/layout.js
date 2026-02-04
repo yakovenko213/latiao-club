@@ -93,7 +93,7 @@ const headerTemplate = `
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16 lg:h-20">
         <a href="/index.html" class="flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 70" class="h-10 md:h-12 w-auto" preserveAspectRatio="xMinYMid meet">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 70" width="360" height="70" class="h-10 md:h-12 w-auto" preserveAspectRatio="xMinYMid meet">
             <defs>
               <linearGradient id="flameGradient" x1="0%" y1="100%" x2="0%" y2="0%">
                 <stop offset="0%" stop-color="#FF4D4F"/>

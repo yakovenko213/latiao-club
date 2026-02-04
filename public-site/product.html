@@ -12,6 +12,9 @@
   <!-- 🔀 DOMAIN REDIRECT - Redirect Firebase domains to primary domain -->
   <script src="./js/domain-redirect.js"></script>
 
+  <!-- ⚡ PERFORMANCE: Priority Loading for Critical Resources -->
+  <link rel="modulepreload" href="./js/layout.js" as="script" fetchpriority="high">
+
   <!-- 🎯 SEO: Dynamic Canonical Tag for Product Pages -->
   <script>
     (function() {
@@ -202,6 +205,86 @@
     .hide-scrollbar {
       -ms-overflow-style: none;
       scrollbar-width: none;
+    }
+
+    /* Stock Warning Pulse Dot Animation */
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background-color: #ef4444;
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 rgba(239, 68, 68, 0.4);
+      animation: pulse-red 2s infinite;
+    }
+
+    @keyframes pulse-red {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+      }
+    }
+
+    /* Stock Warning Enhanced Styles */
+    .stock-warning {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background-color: rgba(239, 68, 68, 0.03);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: 12px;
+      padding: 10px 16px;
+      color: #b91c1c;
+    }
+    
+    .stock-warning strong {
+      font-weight: 700;
+    }
+
+    /* Compact FOMO Section - Reduce spacing */
+    .fomo-view-count {
+      margin-top: 8px;
+      margin-bottom: 5px;
+    }
+
+    .fomo-stock-warning {
+      margin-top: 5px;
+      margin-bottom: 4px;
+    }
+
+    .fomo-shipping {
+      margin-top: 0;
+    }
+
+    /* Responsive: Smaller font on mobile for FOMO section */
+    @media (max-width: 640px) {
+      .fomo-view-count,
+      .stock-warning,
+      .fomo-shipping {
+        font-size: 0.9rem;
+      }
+      
+      .stock-warning {
+        padding: 8px 12px;
+        gap: 10px;
+      }
+      
+      .pulse-dot {
+        width: 7px;
+        height: 7px;
+      }
+      
+      .fomo-stock-warning {
+        margin-bottom: 3px;
+      }
     }
 
     .tab-content {
@@ -635,7 +718,7 @@
             </div>
 
             <!-- Social Proof: View Count -->
-            <div class="flex items-center gap-1.5 mt-2.5">
+            <div class="flex items-center gap-1.5 fomo-view-count">
               <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -645,6 +728,12 @@
               <p class="text-xs text-gray-400">
                 Цим товаром цікавилися <span id="view-count" class="text-gray-500">0</span> разів за цей тиждень
               </p>
+            </div>
+
+            <!-- Stock Warning (Hidden by default, shown when stock 1-5) -->
+            <div id="stock-warning" class="stock-warning fomo-stock-warning" style="display: none;">
+              <span class="pulse-dot"></span>
+              <span>Залишилося лише <strong id="stock-warning-quantity">0</strong> шт. на складі</span>
             </div>
 
             <!-- Arrival Date Message (Hidden by default, shown conditionally) -->
@@ -662,7 +751,7 @@
         </section>
 
         <!-- 3. SHIPPING STATUS BLOCK -->
-        <section class="fade-slide-up stagger-3">
+        <section class="fade-slide-up stagger-3 fomo-shipping">
           <div id="shipping-container"
             class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-4">
             <div class="flex items-center gap-3">
@@ -1163,6 +1252,23 @@
       // ============================================
       maxStock = product.stock ?? product.quantity ?? 0
       const inStock = maxStock > 0
+
+      // ============================================
+      // STOCK WARNING - Show if stock is between 1-5
+      // ============================================
+      const stockWarningEl = document.getElementById('stock-warning')
+      const stockWarningQuantityEl = document.getElementById('stock-warning-quantity')
+      
+      if (maxStock >= 1 && maxStock <= 5) {
+        if (stockWarningEl && stockWarningQuantityEl) {
+          stockWarningQuantityEl.textContent = maxStock
+          stockWarningEl.style.display = 'flex'
+        }
+      } else {
+        if (stockWarningEl) {
+          stockWarningEl.style.display = 'none'
+        }
+      }
 
       if (!inStock) {
         // OUT OF STOCK - Disable everything
