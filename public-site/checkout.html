@@ -3590,14 +3590,6 @@
         // CHECK PREPAYMENT SETTING FOR COD ORDERS
         // ============================================
         let isPrepaymentEnabled = true; // FORCE ENABLED as per requirement
-        console.log('💳 Prepayment setting: FORCE ENABLED');
-
-        console.log('═══════════════════════════════════════════');
-        console.log('💾 [FIRESTORE] About to save order to Firestore');
-        console.log('📋 [FIRESTORE] Order ID:', orderId);
-        console.log('🎯 [FIRESTORE] UTM data in order:', orderData.utm_data);
-        console.log('📦 [FIRESTORE] Full order data:', JSON.stringify(orderData, null, 2));
-        console.log('═══════════════════════════════════════════');
 
         // ============================================
         // 🔒 SECURITY: Link order to authenticated user (if available)
@@ -3626,38 +3618,12 @@
           // Continue anyway - userId is optional for now
         }
 
-        // ============================================
-        // 🚨 FINAL CHECK BEFORE FIRESTORE WRITE
-        // ============================================
-        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #F44336; font-weight: bold; font-size: 18px;');
-        console.log('%c🚨 FINAL DATA TO FIRESTORE - LAST CHANCE TO VERIFY!', 'background: #F44336; color: white; padding: 15px; font-size: 20px; font-weight: bold;');
-        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #F44336; font-weight: bold; font-size: 18px;');
-        console.log('%cOrder ID:', 'font-weight: bold; font-size: 14px;', orderId);
-        console.log('%cFull Order Data:', 'font-weight: bold; font-size: 14px;');
-        console.log(JSON.stringify(orderData, null, 2));
-        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #F44336; font-weight: bold;');
-        console.log('%cCRITICAL CHECK - utm_data field:', 'background: #FF9800; color: black; padding: 10px; font-size: 16px; font-weight: bold;');
-        console.table(orderData.utm_data);
-        console.log('%cField name:', 'font-weight: bold;', 'utm_data');
-        console.log('%cField value type:', 'font-weight: bold;', typeof orderData.utm_data);
-        console.log('%cField value:', 'font-weight: bold;', orderData.utm_data);
-        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #F44336; font-weight: bold; font-size: 18px;');
-        
-        // Pause to let user see the logs
-        alert('⚠️ CHECK CONSOLE NOW!\n\nAbout to save order to Firestore.\nPress OK after checking console logs (F12).');
-
-        // Use setDoc with custom ID instead of addDoc
-        // This forces Firestore to use our short ID as the Document ID
-        console.log('%c📤 WRITING TO FIRESTORE NOW...', 'background: #2196F3; color: white; padding: 10px; font-size: 16px;');
+        // Save order to Firestore silently
         await setDoc(doc(db, 'orders', orderId), orderData);
-
-        console.log('%c✅ ORDER SAVED TO FIRESTORE SUCCESSFULLY!', 'background: #4CAF50; color: white; padding: 10px; font-size: 18px; font-weight: bold;');
-        console.log('Order ID:', orderId)
 
         // ============================================
         // STEP 8.2: DEDUCT STOCK IMMEDIATELY
         // ============================================
-        console.log('📦 Starting stock deduction for order:', orderId);
         btn.textContent = 'Оновлення наявності...';
 
         try {

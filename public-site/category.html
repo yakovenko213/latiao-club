@@ -67,6 +67,10 @@
   </script>
   <!-- Dark Mode Module -->
   <script src="./js/dark-mode.js"></script>
+  <!-- Product Cache Manager -->
+  <script src="./js/product-cache-manager.js"></script>
+  <!-- Performance Monitor (dev tool) -->
+  <script src="./js/performance-monitor.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -501,10 +505,21 @@
     // Global state for products and filters
     let allProducts = []
     let filteredProducts = []
+    let currentAbortController = null // For canceling ongoing requests
 
-    // Cache key helper
-    function getCacheKey(slug) {
-      return `category_cache_${slug}`
+    // Skeleton screen helper
+    function showSkeleton(count = 8) {
+      const grid = document.getElementById('products-grid')
+      grid.innerHTML = Array(count).fill(0).map(() => `
+        <div class="bg-white rounded-3xl shadow-lg overflow-hidden animate-pulse">
+          <div class="aspect-square bg-gray-200"></div>
+          <div class="p-5 space-y-3">
+            <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+            <div class="h-6 bg-gray-200 rounded w-1/2"></div>
+            <div class="h-10 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      `).join('')
     }
 
     async function initPage() {
@@ -520,53 +535,76 @@
         return
       }
 
+      // Cancel any ongoing requests from previous category
+      if (currentAbortController) {
+        currentAbortController.abort()
+        console.log('🛑 Cancelled previous request')
+      }
+      currentAbortController = new AbortController()
+      const signal = currentAbortController.signal
+
       try {
         console.log('🔄 Завантаження категорії та товарів...')
 
-        // ⚡ Check cache first for instant loading
-        const cacheKey = getCacheKey(categorySlug)
-        const cached = sessionStorage.getItem(cacheKey)
+        // ⚡ STEP 1: Check IndexedDB cache for INSTANT rendering
+        const cached = await window.productCache.getCached(categorySlug)
         let usedCache = false
 
-        if (cached) {
-          try {
-            const { categoryData, products, cachedAt } = JSON.parse(cached)
-            const cacheAge = Date.now() - cachedAt
+        if (cached && cached.products) {
+          console.log('⚡ Cache HIT - Instant render!')
 
-            // Use cache if less than 5 minutes old
-            if (cacheAge < 5 * 60 * 1000) {
-              console.log('⚡ Використовуємо кеш (вік:', Math.round(cacheAge / 1000), 'сек)')
-
-              // Instantly show cached data
-              if (categoryData) {
-                document.title = `${categoryData.name} | Latiao`
-                document.getElementById('category-title').textContent = categoryData.name
-                document.getElementById('category-desc').textContent = categoryData.description || 'Найкращі снеки в цій категорії'
-                document.getElementById('breadcrumb-current').textContent = categoryData.name
-              }
-
-              allProducts = products
-              filteredProducts = [...allProducts]
-              renderProducts(filteredProducts)
-              setupFilterListeners()
-              document.getElementById('loading-state').style.display = 'none'
-              usedCache = true
-
-              // Continue loading fresh data in background
-              console.log('🔄 Оновлюємо дані у фоні...')
-            }
-          } catch (e) {
-            console.warn('⚠️ Помилка читання кешу:', e)
+          // INSTANTLY show cached data
+          if (cached.categoryData) {
+            document.title = `${cached.categoryData.name} | Latiao`
+            document.getElementById('category-title').textContent = cached.categoryData.name
+            document.getElementById('category-desc').textContent = cached.categoryData.description || 'Найкращі снеки в цій категорії'
+            document.getElementById('breadcrumb-current').textContent = cached.categoryData.name
           }
+
+          allProducts = cached.products
+          filteredProducts = [...allProducts]
+          renderProducts(filteredProducts)
+          setupFilterListeners()
+          document.getElementById('loading-state').style.display = 'none'
+          usedCache = true
+
+          console.log('🔄 Silent refresh in background...')
+        } else {
+          // No cache - show skeleton
+          console.log('💾 Cache MISS - showing skeleton')
+          showSkeleton()
         }
 
-        // ⚡ OPTIMIZED: Server-side category filtering (no index required)
-        // Note: isVisible will be filtered on client to avoid needing composite index
-        const [catSnap, newFormatSnap, oldFormatSnap] = await Promise.all([
+        // ⚡ STEP 2: Fetch fresh data with timeout protection
+        const fetchPromise = Promise.all([
           getDocs(query(collection(db, 'categories'), where('slug', '==', categorySlug))),
           getDocs(query(collection(db, 'products'), where('categories', 'array-contains', categorySlug))),
           getDocs(query(collection(db, 'products'), where('category', '==', categorySlug)))
         ])
+
+        // Race between fetch and 5-second timeout
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Fetch timeout')), 5000)
+        )
+
+        let catSnap, newFormatSnap, oldFormatSnap
+        
+        try {
+          [catSnap, newFormatSnap, oldFormatSnap] = await Promise.race([fetchPromise, timeoutPromise])
+        } catch (timeoutError) {
+          if (usedCache) {
+            // Keep showing cached data on timeout
+            console.warn('⏱️ Fetch timed out - keeping cached data')
+            return
+          }
+          throw timeoutError
+        }
+
+        // Check if request was aborted
+        if (signal.aborted) {
+          console.log('🛑 Request aborted (user switched category)')
+          return
+        }
 
         // Process category metadata
         let categoryData = null
@@ -599,19 +637,12 @@
         // Sort by sortOrder
         allProducts.sort((a, b) => (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999))
 
-        console.log(`📦 Знайдено товарів: ${allProducts.length} (${newProducts.length + oldProducts.length} from server, ${newProducts.length + oldProducts.length - allProducts.length} hidden filtered)`)
+        console.log(`📦 Знайдено товарів: ${allProducts.length}`)
 
-        // Save to cache for next visit
-        try {
-          sessionStorage.setItem(cacheKey, JSON.stringify({
-            categoryData,
-            products: allProducts,
-            cachedAt: Date.now()
-          }))
-          console.log('💾 Дані збережено в кеш')
-        } catch (e) {
-          console.warn('⚠️ Не вдалось зберегти кеш:', e)
-        }
+        // ⚡ STEP 3: Save to IndexedDB cache (async, non-blocking)
+        window.productCache.setCached(categorySlug, categoryData, allProducts).catch(err => {
+          console.warn('⚠️ Failed to cache:', err)
+        })
 
         // If we didn't use cache, show products now
         if (!usedCache) {
@@ -627,12 +658,17 @@
 
       } catch (err) {
         console.error('❌ Помилка завантаження:', err)
-        document.getElementById('products-grid').innerHTML = `
-          <div class="col-span-full text-center py-10">
-            <p class="text-red-500 font-bold mb-2">Помилка завантаження</p>
-            <p class="text-gray-500 text-sm">${err.message}</p>
-          </div>
-        `
+        
+        // If we have cached data, keep showing it instead of error
+        if (!usedCache) {
+          document.getElementById('products-grid').innerHTML = `
+            <div class="col-span-full text-center py-10">
+              <p class="text-red-500 font-bold mb-2">Помилка завантаження</p>
+              <p class="text-gray-500 text-sm">${err.message}</p>
+              <button onclick="location.reload()" class="mt-4 px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">Спробувати ще раз</button>
+            </div>
+          `
+        }
       } finally {
         document.getElementById('loading-state').style.display = 'none'
       }
@@ -775,6 +811,8 @@
                   <div class="relative overflow-hidden aspect-square bg-gray-100">
                     <img 
                       src="${img}" 
+                      loading="lazy"
+                      decoding="async"
                       class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 ${!inStock ? 'grayscale opacity-50' : ''}" 
                       alt="${product.name}"
                       onerror="this.src='https://placehold.co/400x400/fff3e8/ff6b00?text=Latiao'"
@@ -951,6 +989,9 @@
       startPage()
     }
   </script>
+
+  <!-- Service Worker Registration -->
+  <script src="./js/sw-register.js"></script>
 
   <!-- Live Chat Widget -->
   <script type="module" src="./js/chat-widget.js"></script>
