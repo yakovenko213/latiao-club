@@ -537,26 +537,26 @@ function renderColumns() {
         
         switch(statusType) {
             case 'success':
-                columnBg = 'bg-green-50';
-                headerBg = 'bg-green-100';
+                columnBg = 'bg-gradient-to-b from-green-50 to-white';
+                headerBg = 'bg-gradient-to-br from-green-100 to-green-50';
                 borderColor = 'border-green-500';
-                statusIcon = '<span class="inline-flex items-center justify-center w-5 h-5 bg-green-500 text-white rounded-full text-xs" title="Успіх">✓</span>';
-                cardIcon = '<div class="absolute top-2 right-2 w-5 h-5 bg-green-500 text-white rounded-full flex items-center justify-center text-xs" title="Успіх"><i data-lucide="check" class="w-3 h-3"></i></div>';
+                statusIcon = '<span class="inline-flex items-center justify-center w-5 h-5 bg-green-500 text-white rounded-full text-xs shadow-sm" title="Успіх">✓</span>';
+                cardIcon = '<div class="absolute top-2 right-2 w-5 h-5 bg-green-500 text-white rounded-full flex items-center justify-center text-xs shadow-sm" title="Успіх"><i data-lucide="check" class="w-3 h-3"></i></div>';
                 break;
             case 'failure':
-                columnBg = 'bg-red-50';
-                headerBg = 'bg-red-100';
+                columnBg = 'bg-gradient-to-b from-red-50 to-white';
+                headerBg = 'bg-gradient-to-br from-red-100 to-red-50';
                 borderColor = 'border-red-500';
-                statusIcon = '<span class="inline-flex items-center justify-center w-5 h-5 bg-red-500 text-white rounded-full text-xs" title="Невдача">✕</span>';
-                cardIcon = '<div class="absolute top-2 right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs" title="Невдача"><i data-lucide="x" class="w-3 h-3"></i></div>';
+                statusIcon = '<span class="inline-flex items-center justify-center w-5 h-5 bg-red-500 text-white rounded-full text-xs shadow-sm" title="Невдача">✕</span>';
+                cardIcon = '<div class="absolute top-2 right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs shadow-sm" title="Невдача"><i data-lucide="x" class="w-3 h-3"></i></div>';
                 break;
             case 'neutral':
             default:
-                columnBg = 'bg-gray-50';
-                headerBg = 'bg-gray-100';
-                borderColor = 'border-gray-300';
-                statusIcon = '<span class="inline-flex items-center justify-center w-5 h-5 bg-gray-500 text-white rounded-full text-xs" title="В роботі">⚡</span>';
-                cardIcon = '';
+                columnBg = 'bg-gradient-to-b from-indigo-50 to-white';
+                headerBg = 'bg-gradient-to-br from-indigo-100 to-indigo-50';
+                borderColor = 'border-indigo-500';
+                statusIcon = '<span class="inline-flex items-center justify-center w-5 h-5 bg-indigo-500 text-white rounded-full text-xs shadow-sm" title="В роботі">⚡</span>';
+                cardIcon = '<div class="absolute top-2 right-2 w-5 h-5 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xs shadow-sm" title="В роботі"><i data-lucide="zap" class="w-3 h-3"></i></div>';
                 break;
         }
         
@@ -566,8 +566,8 @@ function renderColumns() {
         console.log(`   └─ Total value: ${columnTotal.toFixed(0)} ₴`);
         
         return `
-            <div class="flex-shrink-0 w-80 ${columnBg} rounded-lg border-2 ${borderColor} shadow-sm">
-                <div class="p-4 border-b-2 ${borderColor} ${headerBg}">
+            <div class="flex-shrink-0 w-80 ${columnBg} rounded-xl border-t-4 ${borderColor} shadow-sm hover:shadow-md transition-all duration-300 ease-in-out overflow-hidden">
+                <div class="${headerBg} p-4 border-b border-gray-200/50 backdrop-blur-sm">
                     <div class="flex items-center justify-between mb-3">
                         <div class="flex-1 flex items-center gap-2">
                             ${statusIcon}
@@ -628,7 +628,7 @@ function renderColumns() {
                         Сума: ${columnTotal.toFixed(0)} ₴
                     </div>
                 </div>
-                <div class="p-3 space-y-3 min-h-[200px] max-h-[600px] overflow-y-auto crm-column" 
+                <div class="p-3 space-y-3 min-h-[200px] max-h-[600px] overflow-y-auto scroll-smooth crm-column" 
                      data-column-id="${column.id}">
                     ${renderCardsInColumn(cardsInColumn, cardIcon)}
                 </div>
@@ -641,9 +641,9 @@ function renderColumns() {
         <div class="flex-shrink-0 w-80">
             <button 
                 onclick="window.crmModule.addNewColumn()"
-                class="w-full h-full min-h-[200px] bg-gray-100 hover:bg-gray-200 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center gap-3 transition group">
-                <i data-lucide="plus-circle" class="w-12 h-12 text-gray-400 group-hover:text-gray-600"></i>
-                <span class="text-base font-semibold text-gray-500 group-hover:text-gray-700">
+                class="w-full h-full min-h-[200px] bg-white hover:bg-gray-50 border-2 border-dashed border-gray-300 hover:border-indigo-400 rounded-xl flex flex-col items-center justify-center gap-3 transition-all duration-300 ease-in-out group shadow-sm hover:shadow-md">
+                <i data-lucide="plus-circle" class="w-12 h-12 text-gray-400 group-hover:text-indigo-500 transition-colors duration-300"></i>
+                <span class="text-base font-semibold text-gray-500 group-hover:text-indigo-600 transition-colors duration-300">
                     Додати колонку
                 </span>
             </button>
@@ -662,9 +662,10 @@ function renderColumns() {
 function renderCardsInColumn(cards, cardIcon = '') {
     if (cards.length === 0) {
         return `
-            <div class="text-center py-8 text-gray-400 text-sm">
-                <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
-                <p>Немає карток</p>
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50/50">
+                <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-3 text-gray-400"></i>
+                <p class="text-sm text-gray-500 font-medium">Тут поки порожньо</p>
+                <p class="text-xs text-gray-400 mt-1">Перетягніть картку сюди</p>
             </div>
         `;
     }
@@ -759,16 +760,17 @@ function renderCard(cart, cardIcon = '') {
         : '';
     
     return `
-        <div class="relative bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition cursor-move crm-card ${cart.auto_updated ? 'ring-2 ring-purple-200' : ''} ${cart.manually_transferred ? 'ring-2 ring-green-200' : ''}" 
+        <div class="relative bg-white rounded-lg border border-gray-100 hover:border-indigo-300 p-4 shadow-sm hover:shadow-md transition-all duration-300 ease-in-out cursor-move crm-card group ${cart.auto_updated ? 'ring-2 ring-purple-200' : ''} ${cart.manually_transferred ? 'ring-2 ring-green-200' : ''}" 
              data-cart-id="${cart.id}"
-             draggable="true">
+             draggable="true"
+             style="transform-origin: center; will-change: transform, box-shadow;">
             ${cardIcon}
             
             <!-- Customer Info -->
             <div class="flex items-start justify-between mb-3">
                 <div class="flex-1">
-                    <h5 class="font-bold text-gray-900 text-sm mb-1 leading-tight">${name}</h5>
-                    <div class="flex items-center gap-1 text-xs text-gray-600 mb-1">
+                    <h5 class="font-semibold text-gray-900 text-sm mb-1 leading-tight group-hover:text-indigo-600 transition-colors duration-200">${name}</h5>
+                    <div class="flex items-center gap-1 text-xs text-gray-500 mb-1">
                         <i data-lucide="phone" class="w-3 h-3"></i>
                         <span>${phone}</span>
                     </div>
@@ -780,38 +782,38 @@ function renderCard(cart, cardIcon = '') {
                     </div>
                 </div>
                 <button onclick="window.crmModule.openCardDetails('${cart.id}')" 
-                    class="p-1 hover:bg-gray-100 rounded transition flex-shrink-0"
+                    class="p-1 hover:bg-gray-100 rounded transition-all duration-200 flex-shrink-0 opacity-0 group-hover:opacity-100"
                     title="Детальніше">
-                    <i data-lucide="more-vertical" class="w-4 h-4 text-gray-600"></i>
+                    <i data-lucide="more-vertical" class="w-4 h-4 text-gray-500"></i>
                 </button>
             </div>
             
             <!-- Cart Info -->
             <div class="space-y-1.5 mb-3">
-                <div class="flex items-center gap-2 text-xs text-gray-600">
-                    <i data-lucide="shopping-bag" class="w-3.5 h-3.5 flex-shrink-0"></i>
-                    <span>${itemCount} товар(ів)</span>
+                <div class="flex items-center gap-2 text-xs text-gray-500">
+                    <i data-lucide="shopping-bag" class="w-3.5 h-3.5 flex-shrink-0 text-gray-400"></i>
+                    <span class="font-medium">${itemCount} товар(ів)</span>
                 </div>
-                <div class="flex items-center gap-2 text-xs text-gray-600">
-                    <i data-lucide="clock" class="w-3.5 h-3.5 flex-shrink-0"></i>
-                    <span title="${dateStr}">${timeAgo}</span>
+                <div class="flex items-center gap-2 text-xs text-gray-500">
+                    <i data-lucide="clock" class="w-3.5 h-3.5 flex-shrink-0 text-gray-400"></i>
+                    <span class="font-medium" title="${dateStr}">${timeAgo}</span>
                 </div>
             </div>
             
             <!-- Amount & Actions -->
-            <div class="flex items-center justify-between pt-3 border-t border-gray-200">
-                <span class="text-lg font-bold text-gray-900">${total.toFixed(0)} ₴</span>
-                <div class="flex items-center gap-1">
+            <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+                <span class="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors duration-200">${total.toFixed(0)} ₴</span>
+                <div class="flex items-center gap-1.5">
                     <button 
                         onclick="window.crmModule.openCardDetails('${cart.id}')"
-                        class="flex items-center gap-1 px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold rounded transition"
+                        class="flex items-center gap-1 px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold rounded-md transition-all duration-200 hover:scale-105 active:scale-95"
                         title="Деталі та нотатки">
                         <i data-lucide="eye" class="w-3.5 h-3.5"></i>
                         <span>Деталі</span>
                     </button>
                     <button 
                         onclick="window.crmModule.createOrderFromCart('${cart.id}')" 
-                        class="flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded transition"
+                        class="flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded-md transition-all duration-200 hover:scale-105 active:scale-95"
                         title="Створити замовлення">
                         <i data-lucide="check" class="w-3.5 h-3.5"></i>
                         <span>Замовлення</span>
