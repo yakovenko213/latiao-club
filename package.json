@@ -6,7 +6,16 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "version": "node scripts/update-version.js",
+    "predeploy": "npm run version",
+    "deploy": "firebase deploy --only hosting",
+    "deploy:admin": "npm run version && firebase deploy --only hosting:adminpanel",
+    "deploy:main": "npm run version && firebase deploy --only hosting:main",
+    "deploy:admin-store": "npm run version && firebase deploy --only hosting:admin-store-latio",
+    "deploy:clean": "./scripts/deploy.sh",
+    "deploy:clean:admin": "./scripts/deploy.sh adminpanel",
+    "deploy:clean:main": "./scripts/deploy.sh main"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

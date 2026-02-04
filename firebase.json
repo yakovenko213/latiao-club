@@ -111,19 +111,45 @@
     {
       "target": "adminpanel",
       "public": "functions/private",
-      "rewrites": [
-        {
-          "source": "**",
-          "function": "adminPanel"
-        }
+      "cleanUrls": false,
+      "trailingSlash": false,
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
       ],
       "headers": [
+        {
+          "source": "**/*.@(js|css|html)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, no-store, must-revalidate"
+            },
+            {
+              "key": "Pragma",
+              "value": "no-cache"
+            },
+            {
+              "key": "Expires",
+              "value": "0"
+            }
+          ]
+        },
         {
           "source": "**",
           "headers": [
             {
-              "key": "Cache-Control",
-              "value": "no-store"
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "SAMEORIGIN"
+            },
+            {
+              "key": "X-XSS-Protection",
+              "value": "1; mode=block"
             }
           ]
         }
