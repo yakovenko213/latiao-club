@@ -350,6 +350,42 @@ function renderBoardUI(container) {
     
     container.innerHTML = headerHTML + statsHTML + boardHTML;
     
+    // Add confirmation modal to the page
+    const modalHTML = `
+        <div id="order-confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl shadow-2xl max-w-md w-full transform transition-all">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="p-2 bg-green-100 rounded-lg">
+                            <i data-lucide="shopping-cart" class="w-6 h-6 text-green-600"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900">Створити замовлення?</h3>
+                    </div>
+                    <p class="text-sm text-gray-600">Перетворення покинутого кошика на реальне замовлення</p>
+                </div>
+                <div id="order-confirmation-content" class="p-6">
+                    <!-- Content will be dynamically inserted -->
+                </div>
+                <div class="p-6 border-t border-gray-200 flex gap-3">
+                    <button 
+                        id="cancel-order-btn"
+                        onclick="window.crmModule.closeOrderConfirmation()"
+                        class="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition">
+                        Скасувати
+                    </button>
+                    <button 
+                        id="confirm-order-btn"
+                        onclick="window.crmModule.confirmCreateOrder()"
+                        class="flex-1 px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition flex items-center justify-center gap-2">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i>
+                        <span>Так, створити</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', modalHTML);
+    
     // Initialize drag and drop
     initializeDragDrop();
 }
@@ -421,16 +457,48 @@ function renderColumns() {
         const cardsInColumn = currentCarts.filter(cart => cart.crm_status === column.id);
         const columnTotal = cardsInColumn.reduce((sum, cart) => sum + (parseFloat(cart.total) || 0), 0);
         
+        // Determine statusType (default to 'neutral' if not set)
+        const statusType = column.statusType || 'neutral';
+        
+        // Define color schemes based on statusType
+        let columnBg, headerBg, borderColor, statusIcon, cardIcon;
+        
+        switch(statusType) {
+            case 'success':
+                columnBg = 'bg-green-50';
+                headerBg = 'bg-green-100';
+                borderColor = 'border-green-500';
+                statusIcon = '<span class="inline-flex items-center justify-center w-5 h-5 bg-green-500 text-white rounded-full text-xs" title="Успіх">✓</span>';
+                cardIcon = '<div class="absolute top-2 right-2 w-5 h-5 bg-green-500 text-white rounded-full flex items-center justify-center text-xs" title="Успіх"><i data-lucide="check" class="w-3 h-3"></i></div>';
+                break;
+            case 'failure':
+                columnBg = 'bg-red-50';
+                headerBg = 'bg-red-100';
+                borderColor = 'border-red-500';
+                statusIcon = '<span class="inline-flex items-center justify-center w-5 h-5 bg-red-500 text-white rounded-full text-xs" title="Невдача">✕</span>';
+                cardIcon = '<div class="absolute top-2 right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs" title="Невдача"><i data-lucide="x" class="w-3 h-3"></i></div>';
+                break;
+            case 'neutral':
+            default:
+                columnBg = 'bg-gray-50';
+                headerBg = 'bg-gray-100';
+                borderColor = 'border-gray-300';
+                statusIcon = '<span class="inline-flex items-center justify-center w-5 h-5 bg-gray-500 text-white rounded-full text-xs" title="В роботі">⚡</span>';
+                cardIcon = '';
+                break;
+        }
+        
         // Debug logs
         console.log(`📋 Loading cards for column: "${column.name}" (${column.id})`);
         console.log(`   ├─ Cards found: ${cardsInColumn.length}`);
         console.log(`   └─ Total value: ${columnTotal.toFixed(0)} ₴`);
         
         return `
-            <div class="flex-shrink-0 w-80 bg-gray-50 rounded-lg border border-gray-200">
-                <div class="p-4 border-b border-gray-200" style="background-color: ${column.color || '#e5e7eb'}20;">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="flex-1">
+            <div class="flex-shrink-0 w-80 ${columnBg} rounded-lg border-2 ${borderColor} shadow-sm">
+                <div class="p-4 border-b-2 ${borderColor} ${headerBg}">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex-1 flex items-center gap-2">
+                            ${statusIcon}
                             <input 
                                 type="text" 
                                 value="${column.name || 'Без назви'}"
@@ -452,6 +520,18 @@ function renderColumns() {
                                 <i data-lucide="trash-2" class="w-4 h-4 text-red-600"></i>
                             </button>
                         </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Тип статусу:</label>
+                        <select 
+                            data-column-id="${column.id}"
+                            data-field="statusType"
+                            onchange="window.crmModule.saveColumnField(this)"
+                            class="w-full text-sm text-gray-900 bg-white border-2 ${borderColor} rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 transition cursor-pointer font-medium">
+                            <option value="neutral" ${statusType === 'neutral' ? 'selected' : ''}>⚡ Звичайний (В роботі)</option>
+                            <option value="success" ${statusType === 'success' ? 'selected' : ''}>✅ Успіх</option>
+                            <option value="failure" ${statusType === 'failure' ? 'selected' : ''}>❌ Невдача / Скасовано</option>
+                        </select>
                     </div>
                     ${column.description ? `
                         <textarea 
@@ -478,7 +558,7 @@ function renderColumns() {
                 </div>
                 <div class="p-3 space-y-3 min-h-[200px] max-h-[600px] overflow-y-auto crm-column" 
                      data-column-id="${column.id}">
-                    ${renderCardsInColumn(cardsInColumn)}
+                    ${renderCardsInColumn(cardsInColumn, cardIcon)}
                 </div>
             </div>
         `;
@@ -504,9 +584,10 @@ function renderColumns() {
 /**
  * Render cards in a column
  * @param {Array} cards - Array of cart objects
+ * @param {string} cardIcon - HTML for status icon to display on card
  * @returns {string} HTML for cards
  */
-function renderCardsInColumn(cards) {
+function renderCardsInColumn(cards, cardIcon = '') {
     if (cards.length === 0) {
         return `
             <div class="text-center py-8 text-gray-400 text-sm">
@@ -516,15 +597,16 @@ function renderCardsInColumn(cards) {
         `;
     }
     
-    return cards.map(cart => renderCard(cart)).join('');
+    return cards.map(cart => renderCard(cart, cardIcon)).join('');
 }
 
 /**
  * Render a single CRM card
  * @param {Object} cart - Cart object
+ * @param {string} cardIcon - HTML for status icon to display on card
  * @returns {string} HTML for card
  */
-function renderCard(cart) {
+function renderCard(cart, cardIcon = '') {
     const customer = cart.customer || {};
     const phone = customer.phone || 'Немає телефону';
     const name = customer.fullName || customer.name || 'Без імені';
@@ -595,9 +677,10 @@ function renderCard(cart) {
         : '';
     
     return `
-        <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition cursor-move crm-card ${cart.auto_updated ? 'ring-2 ring-purple-200' : ''} ${cart.manually_transferred ? 'ring-2 ring-green-200' : ''}" 
+        <div class="relative bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition cursor-move crm-card ${cart.auto_updated ? 'ring-2 ring-purple-200' : ''} ${cart.manually_transferred ? 'ring-2 ring-green-200' : ''}" 
              data-cart-id="${cart.id}"
              draggable="true">
+            ${cardIcon}
             
             <!-- Customer Info -->
             <div class="flex items-start justify-between mb-3">
@@ -760,6 +843,10 @@ export function openCardDetails(cartId) {
  * Create order from cart
  * @param {string} cartId - Cart document ID
  */
+/**
+ * Show order confirmation modal
+ * @param {string} cartId - Cart document ID
+ */
 export async function createOrderFromCart(cartId) {
     const cart = currentCarts.find(c => c.id === cartId);
     if (!cart) {
@@ -767,11 +854,236 @@ export async function createOrderFromCart(cartId) {
         return;
     }
     
-    // Use existing function if available
-    if (typeof window.convertCartToOrder === 'function') {
-        await window.convertCartToOrder(cart);
-    } else {
-        showToast('ℹ️ Створення замовлення - в розробці', 'info');
+    // Show confirmation modal
+    showOrderConfirmationModal(cart);
+}
+
+/**
+ * Show order confirmation modal with cart details
+ * @param {Object} cart - Cart object
+ */
+function showOrderConfirmationModal(cart) {
+    const modal = document.getElementById('order-confirmation-modal');
+    const content = document.getElementById('order-confirmation-content');
+    
+    if (!modal || !content) return;
+    
+    const customer = cart.customer || {};
+    const name = customer.fullName || customer.name || 'Без імені';
+    const phone = customer.phone || 'Немає телефону';
+    const telegram = customer.telegram || 'Не вказано';
+    const total = parseFloat(cart.total) || 0;
+    const items = cart.items || [];
+    const itemCount = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    
+    content.innerHTML = `
+        <div class="space-y-4">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p class="text-sm text-gray-700 mb-3">
+                    Ви впевнені, що хочете перетворити цей покинутий кошик на реальне замовлення для клієнта <strong>${name}</strong>?
+                </p>
+                <div class="space-y-2 text-sm">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="user" class="w-4 h-4 text-gray-600"></i>
+                        <span class="text-gray-700"><strong>Клієнт:</strong> ${name}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="phone" class="w-4 h-4 text-gray-600"></i>
+                        <span class="text-gray-700"><strong>Телефон:</strong> ${phone}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="send" class="w-4 h-4 text-gray-600"></i>
+                        <span class="text-gray-700"><strong>Telegram:</strong> ${telegram}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="shopping-bag" class="w-4 h-4 text-gray-600"></i>
+                        <span class="text-gray-700"><strong>Товарів:</strong> ${itemCount} шт.</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="dollar-sign" class="w-4 h-4 text-gray-600"></i>
+                        <span class="text-gray-700"><strong>Сума:</strong> ${total.toFixed(0)} ₴</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <div class="flex items-start gap-2">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0"></i>
+                    <p class="text-xs text-yellow-800">
+                        <strong>Увага!</strong> Після створення замовлення, картка буде видалена з CRM дошки, а замовлення з'явиться на головній Kanban-дошці.
+                    </p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Store cartId for confirmation
+    modal.dataset.cartId = cart.id;
+    
+    // Show modal
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    
+    // Reinit Lucide icons
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+}
+
+/**
+ * Close order confirmation modal
+ */
+export function closeOrderConfirmation() {
+    const modal = document.getElementById('order-confirmation-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+/**
+ * Confirm and create order from cart
+ */
+export async function confirmCreateOrder() {
+    const modal = document.getElementById('order-confirmation-modal');
+    const confirmBtn = document.getElementById('confirm-order-btn');
+    const cancelBtn = document.getElementById('cancel-order-btn');
+    
+    if (!modal) return;
+    
+    const cartId = modal.dataset.cartId;
+    if (!cartId) {
+        showToast('❌ Помилка: ID кошика не знайдено', 'error');
+        closeOrderConfirmation();
+        return;
+    }
+    
+    const cart = currentCarts.find(c => c.id === cartId);
+    if (!cart) {
+        showToast('❌ Кошик не знайдено', 'error');
+        closeOrderConfirmation();
+        return;
+    }
+    
+    // Disable buttons
+    confirmBtn.disabled = true;
+    cancelBtn.disabled = true;
+    confirmBtn.innerHTML = `
+        <div class="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+        <span>Створюю...</span>
+    `;
+    
+    try {
+        const { collection, addDoc, doc, deleteDoc, serverTimestamp } = window.firebaseInit;
+        
+        // Validate total is not zero
+        const cartTotal = parseFloat(cart.total) || 0;
+        if (cartTotal === 0) {
+            throw new Error('❌ Помилка: Сума замовлення не може бути 0 грн. Перевірте дані кошика.');
+        }
+        
+        // Prepare items with proper price structure
+        const items = (cart.items || []).map(item => ({
+            ...item,
+            price: parseFloat(item.price) || 0,
+            quantity: parseInt(item.quantity) || 1,
+            subtotal: (parseFloat(item.price) || 0) * (parseInt(item.quantity) || 1)
+        }));
+        
+        // Calculate subtotal from items
+        const calculatedSubtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
+        
+        // Use cart.total as final price (no discount)
+        const finalTotal = cartTotal;
+        
+        // Prepare order data
+        const orderData = {
+            // Customer info
+            customer: cart.customer || {},
+            
+            // Order details - items with explicit prices
+            items: items,
+            
+            // Total price (for backward compatibility)
+            total: finalTotal,
+            totalAmount: finalTotal,
+            
+            // Payment info
+            payment: {
+                method: cart.payment_method || cart.payment?.method || 'not_selected',
+                status: 'pending'
+            },
+            
+            // Delivery info
+            delivery: cart.delivery || {},
+            
+            // Order status
+            status: 'new',
+            viewed: false,
+            isViewed: false,
+            isArchived: false,
+            archived: false,
+            
+            // Summary - CRITICAL: Set summary.total to match items total
+            summary: {
+                itemCount: items.length,
+                totalQuantity: items.reduce((sum, item) => sum + item.quantity, 0),
+                subtotal: calculatedSubtotal,
+                total: finalTotal,  // Must match calculated subtotal to avoid "discount"
+                totalAmount: finalTotal,
+                discountAmount: 0,  // No discount for CRM orders
+                deliveryFee: 0
+            },
+            
+            // Metadata
+            source: 'crm_kanban',
+            crm_converted: true,
+            crm_column: cart.crm_status || 'unknown',
+            original_cart_id: cartId,
+            
+            // Timestamps
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            created_at: serverTimestamp(),
+            updated_at: serverTimestamp()
+        };
+        
+        // Create order in Firestore
+        const ordersRef = collection(db, 'orders');
+        const orderDoc = await addDoc(ordersRef, orderData);
+        
+        console.log('✅ Order created:', orderDoc.id);
+        
+        // Delete cart from abandoned_carts
+        const cartRef = doc(db, 'abandoned_carts', cartId);
+        await deleteDoc(cartRef);
+        
+        console.log('✅ Cart deleted:', cartId);
+        
+        // Close modal
+        closeOrderConfirmation();
+        
+        // Show success message
+        showToast('✅ Замовлення успішно створено!', 'success');
+        
+        // Refresh board (cart will be removed automatically via real-time listener)
+        // No need to manually refresh since we have onSnapshot
+        
+    } catch (error) {
+        console.error('❌ Error creating order:', error);
+        showToast('❌ Помилка створення замовлення: ' + error.message, 'error');
+        
+        // Re-enable buttons
+        confirmBtn.disabled = false;
+        cancelBtn.disabled = false;
+        confirmBtn.innerHTML = `
+            <i data-lucide="check-circle" class="w-4 h-4"></i>
+            <span>Так, створити</span>
+        `;
+        
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
     }
 }
 
@@ -836,6 +1148,7 @@ export async function addNewColumn() {
             description: '',
             color: randomColor,
             order: maxOrder + 1,
+            statusType: 'neutral',
             created_at: serverTimestamp()
         };
         
@@ -1783,6 +2096,8 @@ window.crmModule = {
     openColumnSettings,
     openCardDetails,
     createOrderFromCart,
+    confirmCreateOrder,
+    closeOrderConfirmation,
     sendSMS,
     cleanup,
     // Column management
