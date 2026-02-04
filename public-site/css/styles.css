@@ -28,11 +28,16 @@ html {
 
 /* Global transitions for interactive elements */
 @media (prefers-reduced-motion: no-preference) {
-  a, button, input, textarea, select,
+  a,
   [role="button"],
   .clickable,
   .interactive {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Form elements: smooth transitions for COLORS ONLY, no transforms */
+  button, input, textarea, select {
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
   }
 }
 
@@ -41,10 +46,9 @@ html {
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 @media (prefers-reduced-motion: no-preference) {
-  /* Product card container */
+  /* Product card container - SPECIFIC SELECTORS ONLY */
   .product-card,
   [class*="product-"],
-  .bg-white.rounded-2xl.shadow-sm,
   .category-card {
     transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     will-change: transform, box-shadow;
@@ -52,7 +56,6 @@ html {
 
   .product-card:hover,
   [class*="product-"]:hover,
-  .bg-white.rounded-2xl.shadow-sm:hover,
   .category-card:hover {
     transform: translateY(-8px) scale(1.02);
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 
@@ -62,6 +65,19 @@ html {
   .product-card:active,
   [class*="product-"]:active {
     transform: translateY(-4px) scale(1.01);
+  }
+  
+  /* EXCLUDE checkout page elements from product card effects */
+  .checkout-container .bg-white.rounded-2xl.shadow-sm,
+  #checkout-form .bg-white,
+  .order-summary .bg-white {
+    transform: none !important;
+  }
+  
+  .checkout-container .bg-white.rounded-2xl.shadow-sm:hover,
+  #checkout-form .bg-white:hover,
+  .order-summary .bg-white:hover {
+    transform: none !important;
   }
 }
 
@@ -96,38 +112,62 @@ html {
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 @media (prefers-reduced-motion: no-preference) {
-  button,
+  /* ONLY apply hover effects to buttons with specific classes */
   .btn,
   [role="button"],
-  a.button {
+  a.button,
+  .hover-lift {
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     will-change: transform, background-color, box-shadow;
   }
 
-  button:hover,
   .btn:hover,
-  [role="button"]:hover {
+  [role="button"]:hover,
+  .hover-lift:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   }
 
-  button:active,
   .btn:active,
-  [role="button"]:active {
+  [role="button"]:active,
+  .hover-lift:active {
     transform: translateY(0) scale(0.97);
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   }
+  
+  /* EXCLUDE form elements and checkout buttons from lifting effects */
+  input, textarea, select,
+  form button,
+  .checkout-container button,
+  #checkout-form button {
+    transform: none !important;
+    will-change: auto !important;
+  }
+  
+  input:hover, textarea:hover, select:hover,
+  form button:hover,
+  .checkout-container button:hover,
+  #checkout-form button:hover {
+    transform: none !important;
+  }
 
-  /* Primary action buttons - more prominent */
-  button.bg-red-500,
-  button.bg-red-600,
-  button.bg-blue-600,
-  .btn-primary {
+  /* Primary action buttons - subtle opacity change ONLY for checkout */
+  .checkout-container button.bg-red-500:hover,
+  .checkout-container button.bg-red-600:hover,
+  .checkout-container .btn-primary:hover {
+    opacity: 0.9;
+    transform: none !important;
+  }
+  
+  /* Non-checkout primary buttons can still have effects */
+  button.bg-red-500:not(.checkout-container button),
+  button.bg-red-600:not(.checkout-container button),
+  .btn-primary:not(.checkout-container .btn-primary) {
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  button.bg-red-500:hover,
-  button.bg-red-600:hover {
+  button.bg-red-500:not(.checkout-container button):hover,
+  button.bg-red-600:not(.checkout-container button):hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3);
   }

@@ -64,6 +64,7 @@
       font-family: 'Inter', sans-serif;
     }
 
+    /* Payment method selection cards - KEEP hover effect (not a form input) */
     .card-select {
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
@@ -87,18 +88,21 @@
       transform: scale(1);
     }
 
+    /* Checkout action buttons - DISABLE hover lift, only opacity change */
     .btn-primary {
       background: linear-gradient(135deg, #ff6b00 0%, #ff8533 100%);
-      transition: all 0.3s ease;
+      transition: opacity 0.3s ease, box-shadow 0.3s ease;
     }
 
     .btn-primary:not(:disabled):hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px -5px rgba(255, 107, 0, 0.5);
+      opacity: 0.92;
+      box-shadow: 0 8px 20px -5px rgba(255, 107, 0, 0.4);
+      /* REMOVED: transform: translateY(-2px); */
     }
 
     .btn-primary:not(:disabled):active {
-      transform: scale(0.98);
+      opacity: 0.85;
+      /* REMOVED: transform: scale(0.98); */
     }
 
     .btn-primary:disabled {
@@ -174,6 +178,7 @@
       animation: float 4s ease-in-out 1s infinite;
     }
 
+    /* Testimonials can keep hover effect (not a form element) */
     .testimonial-card {
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
@@ -185,6 +190,52 @@
 
     .sticky-bar {
       box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       CHECKOUT FORM STABILITY - NO MOVEMENT ON HOVER
+       Purpose: Prevent annoying hover effects on form elements
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    
+    /* Disable ALL transforms for form inputs */
+    input, 
+    textarea, 
+    select,
+    input:hover,
+    textarea:hover,
+    select:hover,
+    input:focus,
+    textarea:focus,
+    select:focus {
+      transform: none !important;
+    }
+    
+    /* Disable transforms for labels and form text */
+    label,
+    label:hover,
+    .text-sm,
+    .text-xs,
+    .checkout-container p,
+    .checkout-container span {
+      transform: none !important;
+    }
+    
+    /* Disable transforms for order summary rows */
+    .order-summary,
+    .order-summary *,
+    .order-summary:hover,
+    .order-summary *:hover {
+      transform: none !important;
+    }
+    
+    /* Smooth color transitions ONLY for form elements */
+    input, textarea, select {
+      transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease !important;
+    }
+    
+    input:focus, textarea:focus, select:focus {
+      border-color: #ff6b00;
+      box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
     }
   </style>
   <!-- Force Cache Clear - CRITICAL: Must be FIRST! -->
