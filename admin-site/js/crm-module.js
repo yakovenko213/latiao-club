@@ -20,6 +20,7 @@ let unsubscribeCarts = null;
 let currentColumns = [];
 let currentCarts = [];
 let isEditingColumn = false;
+let currentView = 'kanban'; // 'kanban' or 'analytics'
 
 /**
  * Initialize the CRM module
@@ -321,6 +322,13 @@ function renderBoardUI(container) {
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
+                    <button onclick="window.crmModule.toggleView()" 
+                        class="flex items-center gap-2 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg font-semibold transition-all duration-300"
+                        id="view-toggle-btn"
+                        title="Переключити вид">
+                        <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                        <span>Аналітика</span>
+                    </button>
                     <button onclick="window.crmModule.migrateCartsWithoutStatus()" 
                         class="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-semibold transition"
                         title="Додати crm_status до всіх старих кошиків">
@@ -345,24 +353,34 @@ function renderBoardUI(container) {
     // Statistics section
     const statsHTML = renderStats();
     
-    // Kanban board
-    const boardHTML = `
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div class="p-4 border-b border-gray-200 bg-gray-50">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-base font-bold text-gray-900">Воронка продажів</h3>
-                    <span class="text-sm text-gray-600">Всього карток: ${currentCarts.length}</span>
-                </div>
-            </div>
-            <div class="p-6 overflow-x-auto">
-                <div class="flex gap-4 min-w-max pb-4" id="crm-kanban-board">
-                    ${renderColumns()}
-                </div>
-            </div>
-        </div>
-    `;
+    // Content section - Kanban or Analytics
+    let contentHTML = '';
     
-    container.innerHTML = headerHTML + statsHTML + boardHTML;
+    if (currentView === 'analytics') {
+        contentHTML = renderAnalyticsDashboard();
+    } else {
+        // Kanban board
+        contentHTML = `
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-gray-200 bg-gray-50">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-base font-bold text-gray-900">Воронка продажів</h3>
+                        <span class="text-sm text-gray-600">Всього карток: ${currentCarts.length}</span>
+                    </div>
+                </div>
+                <div class="p-6 overflow-x-auto scroll-smooth">
+                    <div class="flex gap-4 min-w-max pb-4" id="crm-kanban-board">
+                        ${renderColumns()}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = headerHTML + statsHTML + contentHTML;
+    
+    // Update toggle button text
+    updateViewToggleButton();
     
     // Add confirmation modal to the page
     const modalHTML = `
@@ -864,18 +882,66 @@ async function updateCartStatus(cartId, columnId) {
     if (!db) return;
     
     try {
-        const { doc, updateDoc, serverTimestamp } = window.firebaseInit;
+        const { doc, updateDoc, serverTimestamp, getDoc } = window.firebaseInit;
         const cartRef = doc(db, 'abandoned_carts', cartId);
         
-        await updateDoc(cartRef, {
+        // Get current cart data to save previous status
+        const cartSnap = await getDoc(cartRef);
+        const currentData = cartSnap.data();
+        const previousStatusId = currentData?.crm_status;
+        
+        // Find the column names
+        const previousColumn = previousStatusId ? currentColumns.find(c => c.id === previousStatusId) : null;
+        const newColumn = currentColumns.find(c => c.id === columnId);
+        
+        const previousStatusName = previousColumn ? previousColumn.name : null;
+        const newStatusName = newColumn ? newColumn.name : 'Невідомий статус';
+        
+        // Determine if we're moving to a failure column
+        const isMovingToFailure = newColumn && newColumn.statusType === 'failure';
+        
+        // Prepare update data
+        const updateData = {
             crm_status: columnId,
             updated_at: serverTimestamp()
-        });
+        };
+        
+        // Save previous status info if moving from one status to another
+        if (previousStatusId && previousStatusId !== columnId) {
+            // Save both ID and human-readable name
+            updateData.last_status = previousStatusId;
+            
+            if (previousStatusName) {
+                updateData.previousStatusName = previousStatusName;
+            }
+            
+            // If moving to failure, track the transition with readable name
+            if (isMovingToFailure) {
+                updateData.failed_from_status = previousStatusId;
+                if (previousStatusName) {
+                    updateData.failedFromStatusName = previousStatusName;
+                }
+                updateData.failed_at = serverTimestamp();
+                console.log(`🔴 Cart ${cartId} failed from status: ${previousStatusName} (${previousStatusId})`);
+            }
+        }
+        
+        await updateDoc(cartRef, updateData);
         
         // Update local cache
         const cart = currentCarts.find(c => c.id === cartId);
         if (cart) {
             cart.crm_status = columnId;
+            if (previousStatusId) {
+                cart.last_status = previousStatusId;
+            }
+            if (previousStatusName) {
+                cart.previousStatusName = previousStatusName;
+            }
+            if (isMovingToFailure && previousStatusName) {
+                cart.failed_from_status = previousStatusId;
+                cart.failedFromStatusName = previousStatusName;
+            }
         }
         
         showToast('✅ Статус картки оновлено', 'success');
@@ -1484,121 +1550,152 @@ export async function confirmCreateOrder() {
     
     const cartId = modal.dataset.cartId;
     if (!cartId) {
-        showToast('❌ Помилка: ID кошика не знайдено', 'error');
-        closeOrderConfirmation();
+        showToast('❌ ID кошика не знайдено', 'error');
         return;
     }
     
-    const cart = currentCarts.find(c => c.id === cartId);
-    if (!cart) {
-        showToast('❌ Кошик не знайдено', 'error');
-        closeOrderConfirmation();
-        return;
-    }
-    
-    // Disable buttons
+    // Disable buttons during processing
     confirmBtn.disabled = true;
     cancelBtn.disabled = true;
     confirmBtn.innerHTML = `
         <div class="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
-        <span>Створюю...</span>
+        <span>Створення...</span>
     `;
     
     try {
-        const { collection, addDoc, doc, deleteDoc, serverTimestamp } = window.firebaseInit;
+        const { collection, doc, addDoc, deleteDoc, serverTimestamp, getDoc: firestoreGetDoc } = window.firebaseInit;
         
-        // Validate total is not zero
-        const cartTotal = parseFloat(cart.total) || 0;
-        if (cartTotal === 0) {
-            throw new Error('❌ Помилка: Сума замовлення не може бути 0 грн. Перевірте дані кошика.');
+        // Get cart data
+        const cart = currentCarts.find(c => c.id === cartId);
+        if (!cart) {
+            throw new Error('Кошик не знайдено в локальному кеші');
         }
         
-        // Prepare items with proper price structure
+        // Calculate correct totals
         const items = (cart.items || []).map(item => ({
             ...item,
             price: parseFloat(item.price) || 0,
-            quantity: parseInt(item.quantity) || 1,
-            subtotal: (parseFloat(item.price) || 0) * (parseInt(item.quantity) || 1)
+            quantity: parseInt(item.quantity) || 1
         }));
         
-        // Calculate subtotal from items
-        const calculatedSubtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
-        
-        // Use cart.total as final price (no discount)
-        const finalTotal = cartTotal;
+        const calculatedSubtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const finalTotal = calculatedSubtotal;
         
         // Prepare order data
         const orderData = {
-            // Customer info
             customer: cart.customer || {},
-            
-            // Order details - items with explicit prices
             items: items,
-            
-            // Total price (for backward compatibility)
             total: finalTotal,
             totalAmount: finalTotal,
-            
-            // Payment info
             payment: {
                 method: cart.payment_method || cart.payment?.method || 'not_selected',
                 status: 'pending'
             },
-            
-            // Delivery info
             delivery: cart.delivery || {},
-            
-            // Order status
             status: 'new',
             viewed: false,
             isViewed: false,
             isArchived: false,
             archived: false,
-            
-            // Summary - CRITICAL: Set summary.total to match items total
             summary: {
                 itemCount: items.length,
                 totalQuantity: items.reduce((sum, item) => sum + item.quantity, 0),
                 subtotal: calculatedSubtotal,
-                total: finalTotal,  // Must match calculated subtotal to avoid "discount"
+                total: finalTotal,
                 totalAmount: finalTotal,
-                discountAmount: 0,  // No discount for CRM orders
+                discountAmount: 0,
                 deliveryFee: 0
             },
-            
-            // Metadata
             source: 'crm_kanban',
             crm_converted: true,
             crm_column: cart.crm_status || 'unknown',
             original_cart_id: cartId,
-            
-            // Timestamps
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
             created_at: serverTimestamp(),
             updated_at: serverTimestamp()
         };
         
-        // Create order in Firestore
+        // 1. Create order in Firestore
         const ordersRef = collection(db, 'orders');
         const orderDoc = await addDoc(ordersRef, orderData);
-        
         console.log('✅ Order created:', orderDoc.id);
         
-        // Delete cart from abandoned_carts
-        const cartRef = doc(db, 'abandoned_carts', cartId);
-        await deleteDoc(cartRef);
+        // 2. Fetch CRM automation settings
+        let targetSuccessColumnId = null;
+        let targetSuccessColumnName = null;
+        let shouldMoveCard = false;
         
-        console.log('✅ Cart deleted:', cartId);
+        try {
+            const settingsRef = doc(db, 'settings', 'crm_automation');
+            const settingsSnap = await firestoreGetDoc(settingsRef);
+            
+            if (settingsSnap.exists()) {
+                const settings = settingsSnap.data();
+                targetSuccessColumnId = settings.targetSuccessColumn;
+                
+                if (targetSuccessColumnId) {
+                    // Find the column name for UI message
+                    const targetColumn = currentColumns.find(c => c.id === targetSuccessColumnId);
+                    
+                    if (targetColumn) {
+                        targetSuccessColumnName = targetColumn.name;
+                        shouldMoveCard = true;
+                        console.log(`🎯 Target success column found: ${targetSuccessColumnName} (${targetSuccessColumnId})`);
+                    } else {
+                        console.warn(`⚠️ Target column ${targetSuccessColumnId} not found in current columns`);
+                    }
+                } else {
+                    console.log('ℹ️ No target success column configured - card will be deleted');
+                }
+            } else {
+                console.log('ℹ️ No CRM automation settings found - card will be deleted');
+            }
+        } catch (settingsError) {
+            console.warn('⚠️ Error loading CRM settings:', settingsError);
+            // Continue without moving card
+        }
         
-        // Close modal
-        closeOrderConfirmation();
-        
-        // Show success message
-        showToast('✅ Замовлення успішно створено!', 'success');
-        
-        // Refresh board (cart will be removed automatically via real-time listener)
-        // No need to manually refresh since we have onSnapshot
+        // 3. Execute automation based on settings
+        if (shouldMoveCard) {
+            try {
+                // Move card to success column (this will update last_status and previousStatusName)
+                console.log(`🔄 Moving cart ${cartId} from ${cart.crm_status} to ${targetSuccessColumnId}...`);
+                await updateCartStatus(cartId, targetSuccessColumnId);
+                
+                // Wait for the move to be processed and synced
+                await new Promise(resolve => setTimeout(resolve, 800));
+                
+                console.log('✅ Cart successfully moved to success column');
+                
+                // Close modal
+                closeOrderConfirmation();
+                
+                // Show success message with column name
+                showToast(`✅ Замовлення створено, картку переміщено в «${targetSuccessColumnName}»`, 'success');
+                
+                // Board will auto-refresh via onSnapshot listener
+                
+            } catch (moveError) {
+                console.error('❌ Error moving card to success column:', moveError);
+                
+                // Fallback: delete the card if move fails
+                const cartRef = doc(db, 'abandoned_carts', cartId);
+                await deleteDoc(cartRef);
+                console.log('⚠️ Card deleted after failed move');
+                
+                closeOrderConfirmation();
+                showToast('✅ Замовлення створено (картку видалено через помилку переміщення)', 'warning');
+            }
+        } else {
+            // No automation configured - delete card as before
+            const cartRef = doc(db, 'abandoned_carts', cartId);
+            await deleteDoc(cartRef);
+            console.log('✅ Cart deleted (no target column configured)');
+            
+            closeOrderConfirmation();
+            showToast('✅ Замовлення успішно створено!', 'success');
+        }
         
     } catch (error) {
         console.error('❌ Error creating order:', error);
@@ -2068,6 +2165,44 @@ function createAutomationModal(settings) {
                         </div>
                     </div>
                     
+                    <!-- Success Column After Order Creation -->
+                    <div class="bg-green-50 border border-green-200 rounded-xl p-6 mb-6">
+                        <div class="flex items-start gap-3 mb-4">
+                            <i data-lucide="check-circle" class="w-6 h-6 text-green-600 flex-shrink-0 mt-1"></i>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-bold text-gray-900 mb-1">Статус після успішного замовлення</h3>
+                                <p class="text-sm text-gray-600">Коли картка перетворюється на реальне замовлення, автоматично перемістити її в цю колонку</p>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i data-lucide="target" class="w-4 h-4 inline-block mr-1"></i>
+                                    Цільова колонка успіху
+                                </label>
+                                <select id="target-success-column" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                    <option value="">— Не переміщувати (залишити в поточній) —</option>
+                                    ${currentColumns.map(col => {
+                                        const isSuccess = col.statusType === 'success';
+                                        return `<option value="${col.id}" ${settings.targetSuccessColumn === col.id ? 'selected' : ''}>
+                                            ${isSuccess ? '✅ ' : ''}${col.name}${isSuccess ? ' (Успіх)' : ''}
+                                        </option>`;
+                                    }).join('')}
+                                </select>
+                            </div>
+                            <div class="bg-white border border-green-200 rounded-lg p-3">
+                                <div class="flex items-start gap-2">
+                                    <i data-lucide="info" class="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0"></i>
+                                    <p class="text-xs text-gray-600">
+                                        <strong>Порада:</strong> Оберіть колонку з типом «Успіх», щоб автоматично відстежувати конверсії в аналітиці.
+                                        Якщо не обрано, картка залишиться в поточній колонці.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Transition Rules -->
                     <div class="bg-purple-50 border border-purple-200 rounded-xl p-6">
                         <div class="flex items-start justify-between mb-4">
@@ -2279,6 +2414,9 @@ export async function saveAutomationSettings() {
             targetColumn: document.getElementById('initial-target-column').value
         };
         
+        // Get target success column
+        const targetSuccessColumn = document.getElementById('target-success-column')?.value || null;
+        
         // Collect transition rules
         const container = document.getElementById('transition-rules-container');
         const ruleElements = container.querySelectorAll('[data-rule-index]');
@@ -2298,12 +2436,13 @@ export async function saveAutomationSettings() {
         const settingsRef = firestoreDoc(db, 'settings', 'crm_automation');
         await setDoc(settingsRef, {
             initialDelay,
+            targetSuccessColumn,
             transitionRules,
             enabled: true,
             updated_at: serverTimestamp()
         });
         
-        console.log('✅ Automation settings saved:', { initialDelay, transitionRules });
+        console.log('✅ Automation settings saved:', { initialDelay, targetSuccessColumn, transitionRules });
         showToast('✅ Налаштування збережено', 'success');
         
         closeAutomationModal();
@@ -2619,11 +2758,556 @@ export function cleanup() {
     console.log('🧹 CRM Module cleaned up');
 }
 
+/**
+ * Toggle between Kanban and Analytics view
+ */
+export function toggleView() {
+    currentView = currentView === 'kanban' ? 'analytics' : 'kanban';
+    renderBoardUI(document.getElementById('crm-module-container'));
+    
+    // Reinitialize icons
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+    
+    showToast(currentView === 'analytics' ? '📊 Аналітика' : '📋 Kanban', 'info');
+}
+
+/**
+ * Update view toggle button text and icon
+ */
+function updateViewToggleButton() {
+    const btn = document.getElementById('view-toggle-btn');
+    if (!btn) return;
+    
+    if (currentView === 'analytics') {
+        btn.innerHTML = `
+            <i data-lucide="kanban-square" class="w-4 h-4"></i>
+            <span>Kanban</span>
+        `;
+    } else {
+        btn.innerHTML = `
+            <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+            <span>Аналітика</span>
+        `;
+    }
+    
+    // Reinitialize icons
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+}
+
+/**
+ * Calculate funnel statistics
+ * @returns {Object} Funnel statistics
+ */
+function calculateFunnelStats() {
+    const totalLeads = currentCarts.length;
+    
+    // Count by status type
+    let successCount = 0;
+    let failureCount = 0;
+    let neutralCount = 0;
+    
+    // Stage analysis - count per column
+    const stageAnalysis = currentColumns.map(col => {
+        const cartsInColumn = currentCarts.filter(cart => cart.crm_status === col.id);
+        const columnTotal = cartsInColumn.reduce((sum, cart) => sum + (parseFloat(cart.total) || 0), 0);
+        const statusType = col.statusType || 'neutral';
+        
+        // Count by status type
+        if (statusType === 'success') {
+            successCount += cartsInColumn.length;
+        } else if (statusType === 'failure') {
+            failureCount += cartsInColumn.length;
+        } else {
+            neutralCount += cartsInColumn.length;
+        }
+        
+        return {
+            id: col.id,
+            name: col.name,
+            statusType,
+            count: cartsInColumn.length,
+            percentage: totalLeads > 0 ? ((cartsInColumn.length / totalLeads) * 100).toFixed(1) : 0,
+            totalValue: columnTotal,
+            avgValue: cartsInColumn.length > 0 ? columnTotal / cartsInColumn.length : 0
+        };
+    });
+    
+    // Calculate conversion and drop-off rates
+    const conversionRate = totalLeads > 0 ? ((successCount / totalLeads) * 100).toFixed(1) : 0;
+    const dropoffRate = totalLeads > 0 ? ((failureCount / totalLeads) * 100).toFixed(1) : 0;
+    const inProgressRate = totalLeads > 0 ? ((neutralCount / totalLeads) * 100).toFixed(1) : 0;
+    
+    // Success metrics
+    const successCarts = currentCarts.filter(cart => {
+        const col = currentColumns.find(c => c.id === cart.crm_status);
+        return col && col.statusType === 'success';
+    });
+    const successTotalValue = successCarts.reduce((sum, cart) => sum + (parseFloat(cart.total) || 0), 0);
+    const successAvgValue = successCarts.length > 0 ? successTotalValue / successCarts.length : 0;
+    
+    // Find most common drop-off stage
+    const failureStages = stageAnalysis.filter(s => s.statusType === 'failure');
+    const mostCommonDropoff = failureStages.length > 0
+        ? failureStages.reduce((max, stage) => stage.count > max.count ? stage : max, failureStages[0])
+        : null;
+    
+    // Loss Attribution - track where failures come from
+    const failedCarts = currentCarts.filter(cart => {
+        const col = currentColumns.find(c => c.id === cart.crm_status);
+        return col && col.statusType === 'failure';
+    });
+    
+    // Group failures by their source using readable names
+    const lossAttribution = {};
+    let cardsWithTrackingData = 0;
+    
+    failedCarts.forEach(cart => {
+        // Try to get human-readable name first, fallback to ID lookup
+        let sourceStatusName = cart.failedFromStatusName || cart.previousStatusName;
+        let sourceStatusId = cart.failed_from_status || cart.last_status;
+        
+        // If we don't have a readable name but have an ID, look it up
+        if (!sourceStatusName && sourceStatusId) {
+            const sourceColumn = currentColumns.find(c => c.id === sourceStatusId);
+            sourceStatusName = sourceColumn?.name;
+        }
+        
+        // Only count if we have tracking data
+        if (sourceStatusName) {
+            cardsWithTrackingData++;
+            
+            if (!lossAttribution[sourceStatusName]) {
+                lossAttribution[sourceStatusName] = {
+                    statusName: sourceStatusName,
+                    statusId: sourceStatusId || 'unknown',
+                    count: 0,
+                    carts: []
+                };
+            }
+            lossAttribution[sourceStatusName].count++;
+            lossAttribution[sourceStatusName].carts.push(cart);
+        }
+    });
+    
+    // Convert to array and sort by count
+    const lossAttributionArray = Object.values(lossAttribution)
+        .sort((a, b) => b.count - a.count);
+    
+    // Find the main leakage point
+    const mainLeakagePoint = lossAttributionArray.length > 0 ? lossAttributionArray[0] : null;
+    const leakagePercentage = cardsWithTrackingData > 0 && mainLeakagePoint
+        ? ((mainLeakagePoint.count / cardsWithTrackingData) * 100).toFixed(1)
+        : 0;
+    
+    // Calculate tracking coverage
+    const trackingCoverage = failedCarts.length > 0
+        ? ((cardsWithTrackingData / failedCarts.length) * 100).toFixed(0)
+        : 0;
+    
+    // Push efficiency analysis
+    const cartsWithNotes = currentCarts.filter(cart => cart.notes_history && cart.notes_history.length > 0);
+    const successfulCartsWithNotes = cartsWithNotes.filter(cart => {
+        const col = currentColumns.find(c => c.id === cart.crm_status);
+        return col && col.statusType === 'success';
+    });
+    const pushEfficiency = cartsWithNotes.length > 0 
+        ? ((successfulCartsWithNotes.length / cartsWithNotes.length) * 100).toFixed(1)
+        : 0;
+    
+    // Calculate average time in funnel for successful conversions
+    const successfulCartsWithTime = successCarts.filter(cart => cart.created_at);
+    let avgTimeToConversion = 0;
+    if (successfulCartsWithTime.length > 0) {
+        const totalTime = successfulCartsWithTime.reduce((sum, cart) => {
+            const created = cart.created_at.toDate ? cart.created_at.toDate() : new Date(cart.created_at);
+            const now = new Date();
+            return sum + (now - created);
+        }, 0);
+        avgTimeToConversion = totalTime / successfulCartsWithTime.length;
+    }
+    
+    return {
+        totalLeads,
+        successCount,
+        failureCount,
+        neutralCount,
+        conversionRate: parseFloat(conversionRate),
+        dropoffRate: parseFloat(dropoffRate),
+        inProgressRate: parseFloat(inProgressRate),
+        successTotalValue,
+        successAvgValue,
+        mostCommonDropoff,
+        pushEfficiency: parseFloat(pushEfficiency),
+        cartsWithNotes: cartsWithNotes.length,
+        successfulCartsWithNotes: successfulCartsWithNotes.length,
+        avgTimeToConversion,
+        stageAnalysis,
+        lossAttribution: lossAttributionArray,
+        mainLeakagePoint,
+        leakagePercentage: parseFloat(leakagePercentage),
+        failedCartsCount: failedCarts.length,
+        cardsWithTrackingData,
+        trackingCoverage: parseFloat(trackingCoverage)
+    };
+}
+
+/**
+ * Render Analytics Dashboard
+ * @returns {string} HTML for analytics dashboard
+ */
+function renderAnalyticsDashboard() {
+    const stats = calculateFunnelStats();
+    
+    // Format average time to conversion
+    let timeToConversionStr = 'Н/Д';
+    if (stats.avgTimeToConversion > 0) {
+        const hours = Math.floor(stats.avgTimeToConversion / 3600000);
+        const days = Math.floor(hours / 24);
+        if (days > 0) {
+            timeToConversionStr = `${days} дн ${hours % 24} год`;
+        } else {
+            timeToConversionStr = `${hours} год`;
+        }
+    }
+    
+    return `
+        <div class="space-y-6">
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- Total Leads -->
+                <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm font-semibold text-gray-600">Всього лідів</span>
+                        <i data-lucide="users" class="w-5 h-5 text-blue-500"></i>
+                    </div>
+                    <p class="text-3xl font-bold text-gray-900 mb-1">${stats.totalLeads}</p>
+                    <div class="flex items-center gap-2 text-xs">
+                        <span class="text-green-600 font-medium">${stats.neutralCount} в роботі</span>
+                    </div>
+                </div>
+                
+                <!-- Conversion Rate -->
+                <div class="bg-gradient-to-br from-green-50 to-white border border-green-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm font-semibold text-green-700">% Конверсії</span>
+                        <i data-lucide="trending-up" class="w-5 h-5 text-green-500"></i>
+                    </div>
+                    <p class="text-3xl font-bold text-green-600 mb-1">${stats.conversionRate}%</p>
+                    <div class="flex items-center gap-2 text-xs text-green-700">
+                        <span class="font-medium">${stats.successCount} успішних</span>
+                    </div>
+                </div>
+                
+                <!-- Success Revenue -->
+                <div class="bg-gradient-to-br from-emerald-50 to-white border border-emerald-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm font-semibold text-emerald-700">Сума успішних</span>
+                        <i data-lucide="dollar-sign" class="w-5 h-5 text-emerald-500"></i>
+                    </div>
+                    <p class="text-3xl font-bold text-emerald-600 mb-1">${stats.successTotalValue.toFixed(0)} ₴</p>
+                    <div class="flex items-center gap-2 text-xs text-emerald-700">
+                        <span class="font-medium">Середній: ${stats.successAvgValue.toFixed(0)} ₴</span>
+                    </div>
+                </div>
+                
+                <!-- Drop-off Rate -->
+                <div class="bg-gradient-to-br from-red-50 to-white border border-red-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm font-semibold text-red-700">% Відмов</span>
+                        <i data-lucide="trending-down" class="w-5 h-5 text-red-500"></i>
+                    </div>
+                    <p class="text-3xl font-bold text-red-600 mb-1">${stats.dropoffRate}%</p>
+                    <div class="flex items-center gap-2 text-xs text-red-700">
+                        <span class="font-medium">${stats.failureCount} відмовлено</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Funnel Visualization -->
+                <div class="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <i data-lucide="filter" class="w-5 h-5 text-indigo-500"></i>
+                            Візуалізація воронки
+                        </h3>
+                        <span class="text-sm text-gray-500">Від найбільшого до найменшого</span>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        ${stats.stageAnalysis
+                            .sort((a, b) => b.count - a.count)
+                            .map((stage, index) => {
+                                let bgColor, borderColor, textColor;
+                                switch(stage.statusType) {
+                                    case 'success':
+                                        bgColor = 'bg-green-100';
+                                        borderColor = 'border-green-500';
+                                        textColor = 'text-green-700';
+                                        break;
+                                    case 'failure':
+                                        bgColor = 'bg-red-100';
+                                        borderColor = 'border-red-500';
+                                        textColor = 'text-red-700';
+                                        break;
+                                    default:
+                                        bgColor = 'bg-indigo-100';
+                                        borderColor = 'border-indigo-500';
+                                        textColor = 'text-indigo-700';
+                                }
+                                
+                                return `
+                                    <div class="relative">
+                                        <div class="flex items-center gap-3">
+                                            <div class="flex-shrink-0 w-8 h-8 ${bgColor} ${textColor} rounded-full flex items-center justify-center font-bold text-sm">
+                                                ${index + 1}
+                                            </div>
+                                            <div class="flex-1">
+                                                <div class="flex items-center justify-between mb-1">
+                                                    <span class="font-semibold text-gray-900">${stage.name}</span>
+                                                    <span class="text-sm font-bold ${textColor}">${stage.count} (${stage.percentage}%)</span>
+                                                </div>
+                                                <div class="relative w-full h-8 bg-gray-100 rounded-lg overflow-hidden border ${borderColor}">
+                                                    <div class="${bgColor} h-full transition-all duration-500 ease-out flex items-center justify-end pr-3" 
+                                                         style="width: ${stage.percentage}%">
+                                                        <span class="text-xs font-bold ${textColor}">${stage.totalValue.toFixed(0)} ₴</span>
+                                                    </div>
+                                                </div>
+                                                <div class="mt-1 text-xs text-gray-500">
+                                                    Середній чек: ${stage.avgValue.toFixed(0)} ₴
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                    </div>
+                </div>
+                
+                <!-- Insights Panel -->
+                <div class="space-y-6">
+                    <!-- Push Efficiency -->
+                    <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                        <h4 class="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <i data-lucide="message-circle" class="w-4 h-4 text-purple-500"></i>
+                            Ефективність відпрацювань
+                        </h4>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">З нотатками:</span>
+                                <span class="text-sm font-bold text-gray-900">${stats.cartsWithNotes}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Успішні з нотатками:</span>
+                                <span class="text-sm font-bold text-green-600">${stats.successfulCartsWithNotes}</span>
+                            </div>
+                            <div class="pt-3 border-t border-gray-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-semibold text-gray-700">Конверсія пушів:</span>
+                                    <span class="text-lg font-bold text-purple-600">${stats.pushEfficiency}%</span>
+                                </div>
+                                <div class="relative w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                                    <div class="bg-gradient-to-r from-purple-500 to-purple-600 h-full transition-all duration-500" 
+                                         style="width: ${stats.pushEfficiency}%"></div>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-3">
+                                ${stats.pushEfficiency >= 30 
+                                    ? '✅ Відмінний результат! Продовжуйте відпрацьовувати ліди.'
+                                    : stats.pushEfficiency >= 15
+                                        ? '⚠️ Є потенціал для покращення. Аналізуйте якість пушів.'
+                                        : '❌ Низька конверсія. Перегляньте стратегію комунікації.'}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Loss Attribution & Leakage Analysis -->
+                    ${stats.failedCartsCount > 0 ? `
+                        <div class="bg-gradient-to-br from-red-50 to-white border border-red-200 rounded-xl p-5 shadow-sm">
+                            <h4 class="text-base font-bold text-red-700 mb-3 flex items-center gap-2">
+                                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                                Джерело відмов («Leakage Point»)
+                            </h4>
+                            
+                            ${stats.mainLeakagePoint ? `
+                                <div class="bg-white rounded-lg p-4 mb-3 border border-red-300">
+                                    <p class="text-sm text-gray-600 mb-2">Найбільше відмов (${stats.leakagePercentage}%) стається при переході з етапу:</p>
+                                    <p class="text-xl font-bold text-red-600 mb-1">«${stats.mainLeakagePoint.statusName}»</p>
+                                    <p class="text-sm text-red-700">${stats.mainLeakagePoint.count} з ${stats.cardsWithTrackingData} відмов (з даними відстеження)</p>
+                                </div>
+                                
+                                <!-- Heatmap of Losses -->
+                                ${stats.lossAttribution.length > 0 ? `
+                                    <div class="space-y-2 mb-3">
+                                        <p class="text-xs font-semibold text-gray-700 mb-2">Розподіл відмов за попереднім етапом:</p>
+                                        ${stats.lossAttribution.slice(0, 5).map((loss, index) => {
+                                            const percentage = stats.cardsWithTrackingData > 0 
+                                                ? ((loss.count / stats.cardsWithTrackingData) * 100).toFixed(0)
+                                                : 0;
+                                            const isMain = index === 0;
+                                            return `
+                                                <div class="flex items-center gap-2">
+                                                    <div class="flex-1">
+                                                        <div class="flex items-center justify-between mb-1">
+                                                            <span class="text-xs ${isMain ? 'font-bold text-red-700' : 'text-gray-600'}">
+                                                                ${isMain ? '🔴 ' : '• '}З «${loss.statusName}»
+                                                            </span>
+                                                            <span class="text-xs font-bold ${isMain ? 'text-red-600' : 'text-gray-500'}">
+                                                                ${loss.count} (${percentage}%)
+                                                            </span>
+                                                        </div>
+                                                        <div class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                                            <div class="${isMain ? 'bg-red-500' : 'bg-red-400'} h-full transition-all duration-500" 
+                                                                 style="width: ${percentage}%"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                ` : ''}
+                                
+                                <!-- Tracking Coverage Info -->
+                                ${stats.trackingCoverage < 100 ? `
+                                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3 text-xs">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <i data-lucide="info" class="w-3 h-3 text-yellow-600"></i>
+                                            <span class="font-semibold text-yellow-700">Покриття відстеження: ${stats.trackingCoverage}%</span>
+                                        </div>
+                                        <p class="text-yellow-600">
+                                            ${stats.failedCartsCount - stats.cardsWithTrackingData} старих карток без даних про попередній статус. 
+                                            Перемістіть їх в інший статус і назад, щоб відстежувати.
+                                        </p>
+                                    </div>
+                                ` : ''}
+                                
+                                <!-- Dynamic Advice -->
+                                <div class="text-xs text-gray-600 bg-white rounded-lg p-3 border border-red-200">
+                                    <p class="font-semibold text-red-700 mb-1">💡 Рекомендація:</p>
+                                    ${stats.mainLeakagePoint.statusName.toLowerCase().includes('смс') || 
+                                      stats.mainLeakagePoint.statusName.toLowerCase().includes('sms') ? `
+                                        <p>Зверніть увагу на текст СМС — клієнти часто відмовляються саме після нього. Спробуйте інший підхід або час відправлення.</p>
+                                    ` : stats.mainLeakagePoint.statusName.toLowerCase().includes('дзвінок') ||
+                                        stats.mainLeakagePoint.statusName.toLowerCase().includes('call') ? `
+                                        <p>Аналізуйте скрипти дзвінків. Можливо, потрібно покращити тренінг менеджерів або змінити час зв’язку.</p>
+                                    ` : stats.mainLeakagePoint.statusName.toLowerCase().includes('очіку') ||
+                                        stats.mainLeakagePoint.statusName.toLowerCase().includes('wait') ? `
+                                        <p>Клієнти відмовляються на етапі очікування. Спробуйте скоротити час відгуку або додати нагадування.</p>
+                                    ` : `
+                                        <p>Аналізуйте причини відмов після етапу «${stats.mainLeakagePoint.statusName}». Перегляньте нотатки в картках та оптимізуйте процес.</p>
+                                    `}
+                                </div>
+                            ` : `
+                                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+                                    <i data-lucide="database" class="w-10 h-10 mx-auto mb-2 text-yellow-500"></i>
+                                    <p class="text-sm font-semibold text-yellow-700 mb-1">Немає даних про джерело відмов</p>
+                                    <p class="text-xs text-yellow-600">
+                                        Усі ${stats.failedCartsCount} карток у статусі «Відмова» є старими замовленнями без інформації про попередній статус.<br>
+                                        Перемістіть картки в інший статус і назад, щоб почати відстеження.
+                                    </p>
+                                </div>
+                            `}
+                        </div>
+                    ` : stats.mostCommonDropoff ? `
+                        <div class="bg-gradient-to-br from-red-50 to-white border border-red-200 rounded-xl p-5 shadow-sm">
+                            <h4 class="text-base font-bold text-red-700 mb-3 flex items-center gap-2">
+                                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                                Найчастіша точка відмови
+                            </h4>
+                            <div class="text-center py-3">
+                                <p class="text-2xl font-bold text-red-600 mb-1">${stats.mostCommonDropoff.name}</p>
+                                <p class="text-sm text-red-700">${stats.mostCommonDropoff.count} відмов (${stats.mostCommonDropoff.percentage}%)</p>
+                            </div>
+                            <p class="text-xs text-gray-600 mt-3 bg-white rounded-lg p-3">
+                                💡 <strong>Порада:</strong> Аналізуйте причини відмов на цьому етапі. Можливо, потрібна додаткова комунікація або зміна підходу.
+                            </p>
+                        </div>
+                    ` : ''}
+                    
+                    <!-- Time Metrics -->
+                    <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                        <h4 class="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <i data-lucide="clock" class="w-4 h-4 text-orange-500"></i>
+                            Часові метрики
+                        </h4>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Середній час до конверсії:</span>
+                                <span class="text-sm font-bold text-gray-900">${timeToConversionStr}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">В роботі зараз:</span>
+                                <span class="text-sm font-bold text-indigo-600">${stats.neutralCount}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Distribution Pie Chart (Text-based) -->
+                    <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                        <h4 class="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <i data-lucide="pie-chart" class="w-4 h-4 text-blue-500"></i>
+                            Розподіл статусів
+                        </h4>
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-3">
+                                <div class="w-4 h-4 bg-green-500 rounded"></div>
+                                <span class="text-sm text-gray-700 flex-1">Успіх</span>
+                                <span class="text-sm font-bold text-green-600">${stats.conversionRate}%</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="w-4 h-4 bg-indigo-500 rounded"></div>
+                                <span class="text-sm text-gray-700 flex-1">В роботі</span>
+                                <span class="text-sm font-bold text-indigo-600">${stats.inProgressRate}%</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="w-4 h-4 bg-red-500 rounded"></div>
+                                <span class="text-sm text-gray-700 flex-1">Відмова</span>
+                                <span class="text-sm font-bold text-red-600">${stats.dropoffRate}%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Export/Actions -->
+            <div class="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-5 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="lightbulb" class="w-6 h-6 text-indigo-600"></i>
+                        <div>
+                            <h4 class="font-bold text-gray-900">Рекомендації на основі даних</h4>
+                            <p class="text-sm text-gray-600">
+                                ${stats.conversionRate >= 20 
+                                    ? '🎉 Чудова конверсія! Масштабуйте процеси.'
+                                    : stats.conversionRate >= 10
+                                        ? '📈 Хороші показники. Продовжуйте оптимізацію.'
+                                        : '⚠️ Конверсія потребує уваги. Аналізуйте воронку детальніше.'}
+                            </p>
+                        </div>
+                    </div>
+                    <button 
+                        onclick="window.crmModule.refreshBoard()"
+                        class="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg font-semibold transition">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        <span>Оновити дані</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 // Expose module to window for inline event handlers
 window.crmModule = {
     initCRM,
     renderCrmBoard,
     refreshBoard,
+    toggleView,
     openColumnSettings,
     openCardDetails,
     createOrderFromCart,
