@@ -9,6 +9,35 @@
   <!-- ⚡ CONSOLE SILENCER - Must be first to catch all logs -->
   <script src="./js/console-silencer.js"></script>
 
+  <!-- 🔀 DOMAIN REDIRECT - Redirect Firebase domains to primary domain -->
+  <script src="./js/domain-redirect.js"></script>
+
+  <!-- 🎯 SEO: Dynamic Canonical Tag for Product Pages -->
+  <script>
+    (function() {
+      'use strict';
+      const PRODUCTION_DOMAIN = 'latiao-snack.com.ua';
+      const urlParams = new URLSearchParams(window.location.search);
+      const productId = urlParams.get('id');
+      
+      // Build canonical URL with product ID parameter
+      const canonicalUrl = productId 
+        ? `https://${PRODUCTION_DOMAIN}/product.html?id=${encodeURIComponent(productId)}`
+        : `https://${PRODUCTION_DOMAIN}/product.html`;
+      
+      // Create and inject canonical link
+      const link = document.createElement('link');
+      link.rel = 'canonical';
+      link.href = canonicalUrl;
+      document.head.appendChild(link);
+      
+      // Debug log (development mode only)
+      if (window.__consoleMode === 'development') {
+        console.log('[Canonical Tag] Product:', canonicalUrl);
+      }
+    })();
+  </script>
+
   <!-- Anti-Flash Style: Hide body until maintenance check completes -->
   <!-- Skeleton Loader for instant render -->
   <style id="skeleton-loader">
