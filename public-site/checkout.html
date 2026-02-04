@@ -6,6 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Оформлення замовлення | LATIAO SNACK</title>
 
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       CACHE CONTROL - Force fresh assets
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
   <!-- CRITICAL: Apply theme immediately to prevent flash -->
   <script>
     (function () {
@@ -36,7 +43,11 @@
     }
   </script>
   <!-- Dark Mode Module -->
-  <script src="./js/dark-mode.js"></script>
+  <script src="./js/dark-mode.js?v=1770234709510"></script>
+  
+  <!-- Premium Smoothness & Animations -->
+  <link rel="stylesheet" href="./css/styles.css?v=1770234709510">
+  
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -168,7 +179,7 @@
     }
   </style>
   <!-- Force Cache Clear - CRITICAL: Must be FIRST! -->
-  <script src="./js/cache-clear.js?v=1770212367080"></script>
+  <script src="./js/cache-clear.js?v=1770234709510"></script>
   
 </head>
 
@@ -911,7 +922,7 @@
   <script src="js/utm-tracker-bulletproof.js"></script>
 
   <!-- Maintenance Mode Check -->
-  <script type="module" src="./js/maintenance-check.js"></script>
+  <script type="module" src="./js/maintenance-check.js?v=1770234709510"></script>
 
   <script type="module">
     // ============================================
@@ -994,12 +1005,31 @@
     // CRITICAL: Load Cart Data from LocalStorage and validate IMMEDIATELY
     let cartItems = JSON.parse(localStorage.getItem('latiao_cart') || '[]')
 
-    // BOUNCER: Redirect if cart is empty (NO fake data allowed)
-    if (!cartItems || cartItems.length === 0) {
-      // Immediate redirect - no alerts, no delays
-      window.location.replace('index.html')
-      // Halt all script execution
-      throw new Error('Cart empty - redirected to store')
+    // ============================================
+    // SPECIAL CASE: Check if this is a cart recovery link
+    // If ?restore or ?recovery_id parameter exists, SKIP empty cart check
+    // The cart will be restored from Firestore later
+    // ============================================
+    const urlParams = new URLSearchParams(window.location.search)
+    const hasRestoreParam = urlParams.has('restore') || urlParams.has('recovery_id')
+
+    if (hasRestoreParam) {
+      console.log('🔗 RESTORE LINK DETECTED - Skipping empty cart validation')
+      console.log('   Cart will be restored from Firestore inside DOMContentLoaded')
+      // Allow empty cart - it will be filled from Firestore
+      if (!cartItems || cartItems.length === 0) {
+        cartItems = [] // Initialize empty array for now
+        console.log('   📦 Cart is empty, will be populated from restore link')
+      }
+    } else {
+      // BOUNCER: Redirect if cart is empty (NO fake data allowed)
+      if (!cartItems || cartItems.length === 0) {
+        console.log('❌ Cart is empty and no restore link - redirecting to store')
+        // Immediate redirect - no alerts, no delays
+        window.location.replace('index.html')
+        // Halt all script execution
+        throw new Error('Cart empty - redirected to store')
+      }
     }
 
     let promoApplied = false
@@ -1058,75 +1088,257 @@
       }
 
       // ============================================
-      // PART 1: MAGIC LINK - Recovery from SMS
+      // PART 1: CART RECOVERY - Restore from SMS/Email Link
+      // Supports both ?restore=ID and ?recovery_id=ID parameters
       // ============================================
       const urlParams = new URLSearchParams(window.location.search)
-      const recoveryId = urlParams.get('recovery_id')
+      const restoreId = urlParams.get('restore') || urlParams.get('recovery_id')
 
-      if (recoveryId) {
-        console.log('🔗 Recovery link detected:', recoveryId)
+      if (restoreId) {
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+        console.log('🔗 CART RECOVERY INITIATED')
+        console.log('   Document ID:', restoreId)
+        console.log('   Current cart items:', cartItems.length)
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
         try {
+          console.log('📡 Fetching abandoned cart from Firestore...')
+          
           // Fetch abandoned cart from Firestore
-          const cartDocRef = doc(db, 'abandoned_carts', recoveryId)
+          const cartDocRef = doc(db, 'abandoned_carts', restoreId)
           const cartSnapshot = await getDoc(cartDocRef)
+
+          console.log('📡 Firestore response:', cartSnapshot.exists() ? 'FOUND' : 'NOT FOUND')
 
           if (cartSnapshot.exists()) {
             const cartData = cartSnapshot.data()
-            console.log('✅ Abandoned cart found:', cartData)
+            console.log('✅ Document exists! Data:', cartData)
 
-            // Step 1: Restore cart items to localStorage
+            // ============================================
+            // STEP 1: Restore Cart Items
+            // ============================================
+            console.log('━━━ STEP 1: Restoring cart items ━━━')
             if (cartData.items && cartData.items.length > 0) {
+              console.log('   Found items in document:', cartData.items.length)
+              
+              // Save to localStorage
               localStorage.setItem('latiao_cart', JSON.stringify(cartData.items))
+              
+              // Update global variable
               cartItems = cartData.items
-              console.log('✅ Cart restored with', cartData.items.length, 'items')
+              
+              console.log('   ✅ Cart restored to localStorage')
+              console.log('   ✅ Global cartItems updated:', cartItems.length, 'items')
+              
+              // Log each item
+              cartItems.forEach((item, index) => {
+                console.log(`   📦 Item ${index + 1}:`, item.name, '-', item.quantity, 'шт.')
+              })
+            } else {
+              console.warn('   ⚠️ No items found in document')
             }
 
-            // Step 2: Pre-fill customer data
+            // ============================================
+            // STEP 2: Pre-fill Customer Information
+            // ============================================
+            console.log('━━━ STEP 2: Restoring customer info ━━━')
             if (cartData.customer) {
               const customer = cartData.customer
-              if (customer.fullName) {
-                document.getElementById('fullName').value = customer.fullName
+              console.log('   Customer data found:', customer)
+              
+              if (customer.fullName && customer.fullName !== 'Не вказано') {
+                const fullNameInput = document.getElementById('fullName')
+                if (fullNameInput) {
+                  fullNameInput.value = customer.fullName
+                  console.log('   ✅ Name restored:', customer.fullName)
+                }
               }
+              
               if (customer.phone) {
-                document.getElementById('phone').value = customer.phone
+                const phoneInput = document.getElementById('phone')
+                if (phoneInput) {
+                  phoneInput.value = customer.phone
+                  console.log('   ✅ Phone restored:', customer.phone)
+                }
               }
-              if (customer.telegram) {
-                document.getElementById('telegram').value = customer.telegram
+              
+              if (customer.telegram && customer.telegram !== 'Не вказано') {
+                const telegramInput = document.getElementById('telegram')
+                if (telegramInput) {
+                  telegramInput.value = customer.telegram
+                  console.log('   ✅ Telegram restored:', customer.telegram)
+                }
               }
-              console.log('✅ Customer data pre-filled')
+            } else {
+              console.log('   ℹ️ No customer data in document')
             }
 
-            // Step 3: Pre-fill delivery data if available
+            // ============================================
+            // STEP 3: Restore Delivery Method & Details
+            // ============================================
+            console.log('━━━ STEP 3: Restoring delivery ━━━')
             if (cartData.delivery) {
               const delivery = cartData.delivery
-              if (delivery.city) {
-                document.getElementById('np-city-input').value = delivery.city
+              console.log('   Delivery data found:', delivery)
+              
+              // Restore delivery method selection (Nova Poshta / Ukrposhta)
+              if (delivery.method) {
+                const isNovaPoshta = delivery.method.includes('Нова')
+                const deliveryCard = document.querySelector(`[data-delivery="${isNovaPoshta ? 'nova' : 'ukr'}"]`)
+                if (deliveryCard) {
+                  setTimeout(() => {
+                    deliveryCard.click()
+                    console.log('   ✅ Delivery method clicked:', delivery.method)
+                  }, 100)
+                }
               }
-              // Note: Warehouse would need additional logic to set dropdown
+              
+              // Restore city
+              if (delivery.city) {
+                const cityInput = document.getElementById('np-city-input') || document.getElementById('up-city-input')
+                if (cityInput) {
+                  setTimeout(() => {
+                    cityInput.value = delivery.city
+                    console.log('   ✅ City restored:', delivery.city)
+                  }, 200)
+                }
+              }
+              
+              // Restore postcode for Ukrposhta
+              if (delivery.postcode) {
+                const postcodeInput = document.getElementById('up-postcode-input')
+                if (postcodeInput) {
+                  setTimeout(() => {
+                    postcodeInput.value = delivery.postcode
+                    console.log('   ✅ Postcode restored:', delivery.postcode)
+                  }, 200)
+                }
+              }
+            } else {
+              console.log('   ℹ️ No delivery data in document')
             }
 
-            // Step 4: Pre-fill comment if available
+            // ============================================
+            // STEP 4: Restore Payment Method
+            // ============================================
+            console.log('━━━ STEP 4: Restoring payment ━━━')
+            if (cartData.payment_method_raw || cartData.paymentMethod) {
+              const paymentRaw = cartData.payment_method_raw || 
+                                (cartData.paymentMethod && cartData.paymentMethod.includes('Накладений') ? 'cod' : 'online')
+              
+              console.log('   Payment method:', paymentRaw)
+              const paymentCard = document.querySelector(`[data-payment="${paymentRaw}"]`)
+              if (paymentCard) {
+                setTimeout(() => {
+                  paymentCard.click()
+                  console.log('   ✅ Payment method clicked:', paymentRaw)
+                }, 300)
+              } else {
+                console.warn('   ⚠️ Payment card not found for:', paymentRaw)
+              }
+            } else {
+              console.log('   ℹ️ No payment data in document')
+            }
+
+            // ============================================
+            // STEP 5: Restore Comment
+            // ============================================
+            console.log('━━━ STEP 5: Restoring comment ━━━')
             if (cartData.comment) {
-              document.getElementById('comment').value = cartData.comment
+              const commentInput = document.getElementById('comment')
+              if (commentInput) {
+                commentInput.value = cartData.comment
+                console.log('   ✅ Comment restored')
+              }
+            } else {
+              console.log('   ℹ️ No comment in document')
             }
 
-            // Step 5: Show success toast notification
-            showRecoveryToast()
+            // ============================================
+            // STEP 6: Show Success Notification
+            // ============================================
+            console.log('━━━ STEP 6: Showing success toast ━━━')
+            setTimeout(() => {
+              showRecoveryToast()
+              console.log('   ✅ Success toast shown')
+            }, 500)
+
+            // ============================================
+            // STEP 7: Clean URL (remove restore parameter)
+            // ============================================
+            console.log('━━━ STEP 7: Cleaning URL ━━━')
+            const cleanUrl = window.location.origin + window.location.pathname
+            window.history.replaceState({}, document.title, cleanUrl)
+            console.log('   ✅ URL cleaned:', cleanUrl)
+            
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+            console.log('🎉 CART RECOVERY COMPLETED SUCCESSFULLY')
+            console.log('   Final cart items:', cartItems.length)
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
           } else {
-            console.warn('⚠️ No abandoned cart found with ID:', recoveryId)
+            console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+            console.error('❌ CART RECOVERY FAILED')
+            console.error('   Reason: Document not found')
+            console.error('   Document ID:', restoreId)
+            console.error('   Collection: abandoned_carts')
+            console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+            
+            // Show error toast
+            const toast = document.createElement('div')
+            toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-2xl z-[9999] animate-fade-in'
+            toast.innerHTML = '❌ Кошик не знайдено або вже оформлено'
+            document.body.appendChild(toast)
+            setTimeout(() => toast.remove(), 3000)
+            
+            // Redirect to homepage after 3 seconds
+            setTimeout(() => {
+              console.log('   Redirecting to homepage...')
+              window.location.replace('index.html')
+            }, 3000)
           }
 
         } catch (error) {
-          console.error('❌ Error restoring cart:', error)
+          console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+          console.error('❌ CART RECOVERY ERROR')
+          console.error('   Error type:', error.name)
+          console.error('   Error message:', error.message)
+          console.error('   Full error:', error)
+          console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+          
+          // Show error toast
+          const toast = document.createElement('div')
+          toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-2xl z-[9999] animate-fade-in'
+          toast.innerHTML = '❌ Помилка відновлення: ' + error.message
+          document.body.appendChild(toast)
+          setTimeout(() => toast.remove(), 4000)
+          
+          // Redirect to homepage after 4 seconds
+          setTimeout(() => {
+            console.log('   Redirecting to homepage...')
+            window.location.replace('index.html')
+          }, 4000)
         }
       }
 
-      // Double-check cart still has items (in case localStorage was cleared during page load)
+      // ============================================
+      // VALIDATION: Check cart has items after restore attempt
+      // ============================================
+      console.log('━━━ Final validation ━━━')
+      console.log('   Cart items count:', cartItems ? cartItems.length : 0)
+      
       if (!cartItems || cartItems.length === 0) {
-        window.location.replace('index.html')
-        return
+        console.error('❌ Cart is still empty after restore attempt')
+        if (!restoreId) {
+          // Only redirect if this wasn't a restore attempt
+          console.log('   No restore parameter - redirecting to homepage')
+          window.location.replace('index.html')
+          return
+        } else {
+          console.warn('   ⚠️ Restore attempted but cart is empty - user will see empty page')
+        }
+      } else {
+        console.log('   ✅ Cart validation passed:', cartItems.length, 'items')
       }
 
       // Render cart products
@@ -2690,6 +2902,7 @@
         const {
           doc: firestoreDoc,
           deleteDoc,
+          updateDoc,
           collection,
           query,
           where,
@@ -2700,21 +2913,32 @@
         const cleanupPromises = []
 
         // ============================================
-        // 1. CLEAN ABANDONED CARTS
+        // 1. MARK ABANDONED CART AS CONVERTED (DO NOT DELETE)
+        // Keep document for recovery link history and analytics
         // ============================================
-        const abandonedCartCleanup = async () => {
+        const abandonedCartUpdate = async () => {
           try {
             const cartRef = firestoreDoc(db, 'abandoned_carts', customerPhone)
-            await deleteDoc(cartRef)
-            console.log('✅ Abandoned cart deleted')
+            
+            // Update document instead of deleting
+            await updateDoc(cartRef, {
+              isConverted: true,
+              convertedAt: serverTimestamp(),
+              orderId: orderId,
+              orderRef: orderRef.id
+            })
+            
+            console.log('✅ Abandoned cart marked as converted (preserved for history)')
           } catch (error) {
             if (error.code !== 'not-found') {
-              console.error('⚠️ Failed to delete abandoned cart:', error)
+              console.error('⚠️ Failed to update abandoned cart:', error)
+            } else {
+              console.log('ℹ️ No abandoned cart to update (direct checkout)')
             }
           }
         }
 
-        cleanupPromises.push(abandonedCartCleanup())
+        cleanupPromises.push(abandonedCartUpdate())
 
         // ============================================
         // 2. CLEAN OLD PENDING ORDERS (ABANDONED PAYMENTS)
@@ -3738,7 +3962,7 @@
   </script>
 
   <!-- Load Pop-up Manager -->
-  <script type="module" src="./js/popup-manager.js"></script>
+  <script type="module" src="./js/popup-manager.js?v=1770234709510"></script>
 
   <!-- 🔥 NUCLEAR AI ASSISTANT TOGGLE - WITH AGGRESSIVE DEBUGGING -->
   <script type="module">
@@ -3899,7 +4123,7 @@
   <script src="js/ai-checkout-helper.js"></script>
 
   <!-- Live Chat Widget -->
-  <script type="module" src="./js/chat-widget.js"></script>
+  <script type="module" src="./js/chat-widget.js?v=1770234709510"></script>
 </body>
 
 </html>

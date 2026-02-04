@@ -6361,8 +6361,9 @@
 
         console.log('📱 Final phone for SMS:', phoneForSMS)
 
-        // Step 6: Generate recovery link
-        const recoveryLink = `https://latiao-snack.com.ua/checkout.html?recovery_id=${phoneDocId}`
+        // Step 6: Generate recovery link with restore parameter
+        const recoveryLink = `https://latiao-snack.com.ua/checkout.html?restore=${phoneDocId}`
+        console.log('🔗 Recovery link generated:', recoveryLink)
 
         // Step 7: Prepare message text (replace placeholders with RANDOM template)
         let messageText = randomTemplate
@@ -17253,19 +17254,19 @@
   </div>
   
   <!-- Firebase Initialization (Synchronous for Admin Chat) -->
-  <script type="module" src="/js/firebase-init-sync.js?v=202602040001"></script>
+  <script type="module" src="/js/firebase-init-sync.js?v=1770234709510"></script>
   
   <!-- Firebase Initialization (Original for other modules) -->
-  <script type="module" src="/js/firebase-init.js?v=202602040001"></script>
+  <script type="module" src="/js/firebase-init.js?v=1770234709510"></script>
 
   <!-- Admin Panel Logic -->
-  <script type="module" src="/js/admin.js"></script>
+  <script type="module" src="/js/admin.js?v=1770234709510"></script>
   
   <!-- Live Chat Management -->
-  <script defer src="/js/admin-chat-v3.js"></script>
+  <script defer src="/js/admin-chat-v3.js?v=1770234709510"></script>
   
   <!-- AI Chat Logic (Gemini Integration) -->
-  <script defer src="/js/chat-logic-v2.js"></script>
+  <script defer src="/js/chat-logic-v2.js?v=1770234709510"></script>
   
   <!-- ============================================ -->
   <!-- REVIEWS MANAGEMENT FUNCTIONS -->

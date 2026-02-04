@@ -1,6 +1,6 @@
 {
-  "version": "1770212367080",
-  "date": "20260204-133927",
-  "deployed": "2026-02-04T13:39:27Z",
-  "commit": "56d1b8d"
+  "version": "2.1.0",
+  "timestamp": 1770234709510,
+  "buildDate": "2026-02-04T19:51:49.532Z",
+  "description": "Auto-updated cache-busting version"
 }
