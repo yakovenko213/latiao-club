@@ -719,9 +719,35 @@ async function performProductSync() {
 exports.syncProductsFromKeyCRM = functions.https.onCall(async (data, context) => {
   try {
     const result = await performProductSync();
+    
+    // Update sync stats for admin panel display (same as scheduled sync)
+    await admin.firestore().collection('settings').doc('stockSyncStats').set({
+      lastSyncTimestamp: admin.firestore.FieldValue.serverTimestamp(),
+      lastSyncResult: {
+        success: true,
+        totalProducts: result.totalProducts,
+        productsUpdated: result.productsUpdated,
+        productsNotFound: result.productsNotFound,
+        productsMatched: result.productsMatched
+      },
+      lastSyncType: 'manual',
+      nextScheduledSync: new Date(Date.now() + 30 * 60 * 1000).toISOString()
+    }, { merge: true });
+    
     return result;
   } catch (error) {
     console.error('❌ Manual sync failed:', getSafeErrorMessage(error));
+    
+    // Update sync stats with error
+    await admin.firestore().collection('settings').doc('stockSyncStats').set({
+      lastSyncTimestamp: admin.firestore.FieldValue.serverTimestamp(),
+      lastSyncResult: {
+        success: false,
+        error: getSafeErrorMessage(error)
+      },
+      lastSyncType: 'manual'
+    }, { merge: true });
+    
     throw new functions.https.HttpsError('internal', getSafeErrorMessage(error));
   }
 });
@@ -755,6 +781,74 @@ exports.autoSyncProductsHourly = onSchedule('0 * * * *', async (event) => {
     // Log error to Firestore
     await admin.firestore().collection('sync_logs').add({
       type: 'scheduled_hourly',
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      error: getSafeErrorMessage(error),
+      success: false
+    });
+
+    // Don't throw - let it retry on next schedule
+    return null;
+  }
+});
+
+// ⏰ AUTOMATIC 30-MINUTE SYNC - Scheduled Cloud Function (v2)
+// Runs every 30 minutes to keep stock freshly updated
+// More frequent than hourly sync for better inventory accuracy
+exports.scheduledStockSync = onSchedule({
+  schedule: 'every 30 minutes',
+  timeZone: 'Europe/Kiev',
+  timeoutSeconds: 300,
+  memory: '256MiB'
+}, async (event) => {
+  console.log('⏰ Starting scheduled 30-minute stock sync...');
+
+  try {
+    const result = await performProductSync();
+
+    console.log('✅ Scheduled 30-min sync completed:', {
+      totalProducts: result.totalProducts,
+      productsUpdated: result.productsUpdated,
+      productsNotFound: result.productsNotFound
+    });
+
+    // Update sync stats for admin panel display
+    await admin.firestore().collection('settings').doc('stockSyncStats').set({
+      lastSyncTimestamp: admin.firestore.FieldValue.serverTimestamp(),
+      lastSyncResult: {
+        success: true,
+        totalProducts: result.totalProducts,
+        productsUpdated: result.productsUpdated,
+        productsNotFound: result.productsNotFound,
+        productsMatched: result.productsMatched
+      },
+      nextScheduledSync: new Date(Date.now() + 30 * 60 * 1000).toISOString()
+    }, { merge: true });
+
+    // Log to Firestore for tracking
+    await admin.firestore().collection('sync_logs').add({
+      type: 'scheduled_30min',
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      result: result,
+      success: true
+    });
+
+    return null;
+  } catch (error) {
+    console.error('❌ Scheduled 30-min sync failed:', getSafeErrorMessage(error));
+
+    // Update sync stats with error
+    await admin.firestore().collection('settings').doc('stockSyncStats').set({
+      lastSyncTimestamp: admin.firestore.FieldValue.serverTimestamp(),
+      lastSyncResult: {
+        success: false,
+        error: getSafeErrorMessage(error)
+      },
+      nextScheduledSync: new Date(Date.now() + 30 * 60 * 1000).toISOString()
+    }, { merge: true });
+
+    // Log error to Firestore
+    await admin.firestore().collection('sync_logs').add({
+      type: 'scheduled_30min',
       timestamp: admin.firestore.FieldValue.serverTimestamp(),
       error: getSafeErrorMessage(error),
       success: false

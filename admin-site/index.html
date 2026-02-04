@@ -1081,6 +1081,34 @@
 
               </div>
 
+              <!-- Sync Schedule Info Box -->
+              <div id="sync-schedule-info" class="mt-4 bg-white rounded-lg p-4 border border-blue-200">
+                <div class="flex items-start gap-3">
+                  <div class="mt-0.5">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-sm font-semibold text-gray-900 mb-2">📅 Розклад автоматичної синхронізації</p>
+                    <div class="space-y-1.5 text-xs">
+                      <div class="flex items-center justify-between">
+                        <span class="text-gray-600">Остання синхронізація:</span>
+                        <span id="last-sync-time" class="font-semibold text-gray-900">Завантаження...</span>
+                      </div>
+                      <div class="flex items-center justify-between">
+                        <span class="text-gray-600">Наступна синхронізація:</span>
+                        <span id="next-sync-time" class="font-semibold text-blue-700">Завантаження...</span>
+                      </div>
+                      <div class="flex items-center justify-between pt-1 border-t border-gray-100">
+                        <span class="text-gray-600">Частота:</span>
+                        <span class="font-semibold text-green-700">Кожні 30 хвилин ⏰</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <!-- Status Area -->
 
               <div id="crm-sync-status" class="mt-4 hidden">
@@ -10975,6 +11003,94 @@
         syncBtn.innerHTML = originalBtnHTML
       }
     }
+
+    // ========================================
+    // SYNC SCHEDULE INFO - REAL-TIME UPDATES
+    // ========================================
+
+    let syncStatsUnsubscribe = null;
+
+    function setupSyncStatsListener() {
+      // Clean up existing listener
+      if (syncStatsUnsubscribe) {
+        syncStatsUnsubscribe();
+      }
+
+      const lastSyncTimeEl = document.getElementById('last-sync-time');
+      const nextSyncTimeEl = document.getElementById('next-sync-time');
+
+      // Listen to real-time updates from Firestore
+      syncStatsUnsubscribe = db.collection('settings').doc('stockSyncStats')
+        .onSnapshot((doc) => {
+          if (!doc.exists) {
+            lastSyncTimeEl.textContent = 'Немає даних';
+            lastSyncTimeEl.classList.remove('text-orange-600', 'text-red-600');
+            nextSyncTimeEl.textContent = 'Очікування...';
+            return;
+          }
+
+          const data = doc.data();
+          const lastSyncTimestamp = data.lastSyncTimestamp?.toDate();
+
+          if (lastSyncTimestamp) {
+            const now = new Date();
+            const diffMinutes = Math.floor((now - lastSyncTimestamp) / 1000 / 60);
+            
+            // Format time
+            const timeStr = lastSyncTimestamp.toLocaleString('uk-UA', {
+              day: '2-digit',
+              month: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+
+            // Show warning if sync is too old
+            if (diffMinutes > 40) {
+              lastSyncTimeEl.innerHTML = `<span class="text-red-600">⚠️ ${timeStr}</span> <span class="text-xs text-red-500">(${diffMinutes} хв тому)</span>`;
+            } else if (diffMinutes > 35) {
+              lastSyncTimeEl.innerHTML = `<span class="text-orange-600">${timeStr}</span> <span class="text-xs text-orange-500">(${diffMinutes} хв тому)</span>`;
+            } else {
+              lastSyncTimeEl.textContent = timeStr;
+              lastSyncTimeEl.classList.remove('text-orange-600', 'text-red-600');
+            }
+
+            // Calculate next sync (30 minutes after last sync)
+            const nextSyncTime = new Date(lastSyncTimestamp.getTime() + 30 * 60 * 1000);
+            const nextSyncStr = nextSyncTime.toLocaleString('uk-UA', {
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+
+            const minutesUntilNext = Math.floor((nextSyncTime - now) / 1000 / 60);
+            if (minutesUntilNext > 0) {
+              nextSyncTimeEl.textContent = `${nextSyncStr} (через ${minutesUntilNext} хв)`;
+            } else {
+              nextSyncTimeEl.innerHTML = `<span class="text-green-600">Зараз ⏳</span>`;
+            }
+          } else {
+            lastSyncTimeEl.textContent = 'Немає даних';
+            nextSyncTimeEl.textContent = 'Очікування...';
+          }
+        }, (error) => {
+          console.error('❌ Error listening to sync stats:', error);
+          lastSyncTimeEl.textContent = 'Помилка завантаження';
+          nextSyncTimeEl.textContent = 'Помилка';
+        });
+    }
+
+    // Initialize sync stats listener when inventory view is loaded
+    window.addEventListener('DOMContentLoaded', () => {
+      setupSyncStatsListener();
+    });
+
+    // Also refresh when switching to inventory view
+    const originalRenderWarehouse = window.renderWarehouse || renderWarehouse;
+    window.renderWarehouse = async function() {
+      setupSyncStatsListener();
+      if (typeof originalRenderWarehouse === 'function') {
+        return await originalRenderWarehouse();
+      }
+    };
 
     // ========================================
     // CSV IMPORT WITH ADVANCED COLUMN MAPPING
