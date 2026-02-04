@@ -904,6 +904,9 @@
     </button>
   </div>
 
+  <!-- 🎯 BULLETPROOF UTM Tracking System v2.0 - LOAD FIRST! -->
+  <script src="js/utm-tracker-bulletproof.js"></script>
+
   <!-- Maintenance Mode Check -->
   <script type="module" src="./js/maintenance-check.js"></script>
 
@@ -3141,6 +3144,59 @@
         // ============================================
         // STEP 7: Construct Order Object
         // ============================================
+        
+        // 🎯 BULLETPROOF UTM CAPTURE WITH MAXIMUM VISIBILITY
+        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #FF6B00; font-weight: bold; font-size: 16px;');
+        console.log('%c🎯 STEP 7: CAPTURING UTM DATA FOR ORDER', 'color: #FF6B00; font-weight: bold; font-size: 18px;');
+        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #FF6B00; font-weight: bold; font-size: 16px;');
+        
+        let utm_data = null;
+        
+        // Check if UTMTracker exists
+        if (typeof window.UTMTracker !== 'undefined') {
+          console.log('%c✅ UTMTracker is available', 'color: #4CAF50; font-weight: bold; font-size: 14px;');
+          utm_data = window.UTMTracker.getUTMForOrder();
+          console.log('%c📦 UTM DATA CAPTURED:', 'background: #2196F3; color: white; padding: 10px; font-size: 16px;');
+          console.table(utm_data);
+        } else {
+          console.error('%c❌ UTMTracker NOT FOUND!', 'background: #F44336; color: white; padding: 10px; font-size: 16px;');
+          console.error('Falling back to direct localStorage check...');
+          
+          // Emergency fallback
+          try {
+            const stored = localStorage.getItem('latiao_utm_data');
+            if (stored) {
+              const parsed = JSON.parse(stored);
+              utm_data = {
+                source: parsed.utm_source || 'organic',
+                medium: parsed.utm_medium || 'direct',
+                campaign: parsed.utm_campaign || null,
+                content: parsed.utm_content || null,
+                term: parsed.utm_term || null,
+                landingPage: parsed.landingPage || null,
+                capturedAt: parsed.capturedAt || null
+              };
+              console.log('%c✅ FALLBACK SUCCESS - Data from localStorage:', 'background: #FF9800; color: white; padding: 5px;');
+              console.table(utm_data);
+            } else {
+              console.warn('%c⚠️ No UTM data in localStorage', 'color: #FF9800; font-size: 14px;');
+              utm_data = { source: 'organic', medium: 'direct', campaign: null, content: null, term: null, landingPage: null, capturedAt: null };
+            }
+          } catch (e) {
+            console.error('❌ Fallback failed:', e);
+            utm_data = { source: 'organic', medium: 'direct', campaign: null, content: null, term: null, landingPage: null, capturedAt: null };
+          }
+        }
+        
+        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #FF6B00; font-weight: bold;');
+        console.log('%c✅ FINAL UTM DATA FOR ORDER:', 'background: #4CAF50; color: white; padding: 10px; font-size: 16px; font-weight: bold;');
+        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #FF6B00; font-weight: bold;');
+        console.table(utm_data);
+        console.log('utm_data object:', utm_data);
+        console.log('utm_data.source:', utm_data.source);
+        console.log('utm_data.medium:', utm_data.medium);
+        console.log('utm_data.campaign:', utm_data.campaign);
+        
         const orderData = {
           // 🔒 SECURITY: userId for future Firebase Auth integration
           userId: null,  // Will be populated below if available
@@ -3177,6 +3233,9 @@
           // Additional Information
           comment: comment,
 
+          // 🎯 Marketing Attribution (UTM tracking)
+          utm_data: utm_data,
+
           // Order Metadata
           status: 'pending', // pending, confirmed, shipped, delivered, cancelled
           createdAt: serverTimestamp(),
@@ -3184,6 +3243,12 @@
           // Optional: Store promo code if applied
           promo: promoCodeData
         }
+
+        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #9C27B0; font-weight: bold; font-size: 16px;');
+        console.log('%c📋 ORDER DATA OBJECT CONSTRUCTED', 'color: #9C27B0; font-weight: bold; font-size: 18px;');
+        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #9C27B0; font-weight: bold; font-size: 16px;');
+        console.log('VERIFY utm_data field:', orderData.utm_data);
+        console.table(orderData.utm_data);
 
         // ============================================
         // STEP 8: Save to Firebase Firestore with SHORT ID
@@ -3273,7 +3338,12 @@
         let isPrepaymentEnabled = true; // FORCE ENABLED as per requirement
         console.log('💳 Prepayment setting: FORCE ENABLED');
 
-        console.log('💾 Saving order to Firestore...', { orderId, orderData })
+        console.log('═══════════════════════════════════════════');
+        console.log('💾 [FIRESTORE] About to save order to Firestore');
+        console.log('📋 [FIRESTORE] Order ID:', orderId);
+        console.log('🎯 [FIRESTORE] UTM data in order:', orderData.utm_data);
+        console.log('📦 [FIRESTORE] Full order data:', JSON.stringify(orderData, null, 2));
+        console.log('═══════════════════════════════════════════');
 
         // ============================================
         // 🔒 SECURITY: Link order to authenticated user (if available)
@@ -3302,11 +3372,33 @@
           // Continue anyway - userId is optional for now
         }
 
+        // ============================================
+        // 🚨 FINAL CHECK BEFORE FIRESTORE WRITE
+        // ============================================
+        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #F44336; font-weight: bold; font-size: 18px;');
+        console.log('%c🚨 FINAL DATA TO FIRESTORE - LAST CHANCE TO VERIFY!', 'background: #F44336; color: white; padding: 15px; font-size: 20px; font-weight: bold;');
+        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #F44336; font-weight: bold; font-size: 18px;');
+        console.log('%cOrder ID:', 'font-weight: bold; font-size: 14px;', orderId);
+        console.log('%cFull Order Data:', 'font-weight: bold; font-size: 14px;');
+        console.log(JSON.stringify(orderData, null, 2));
+        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #F44336; font-weight: bold;');
+        console.log('%cCRITICAL CHECK - utm_data field:', 'background: #FF9800; color: black; padding: 10px; font-size: 16px; font-weight: bold;');
+        console.table(orderData.utm_data);
+        console.log('%cField name:', 'font-weight: bold;', 'utm_data');
+        console.log('%cField value type:', 'font-weight: bold;', typeof orderData.utm_data);
+        console.log('%cField value:', 'font-weight: bold;', orderData.utm_data);
+        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #F44336; font-weight: bold; font-size: 18px;');
+        
+        // Pause to let user see the logs
+        alert('⚠️ CHECK CONSOLE NOW!\n\nAbout to save order to Firestore.\nPress OK after checking console logs (F12).');
+
         // Use setDoc with custom ID instead of addDoc
         // This forces Firestore to use our short ID as the Document ID
+        console.log('%c📤 WRITING TO FIRESTORE NOW...', 'background: #2196F3; color: white; padding: 10px; font-size: 16px;');
         await setDoc(doc(db, 'orders', orderId), orderData);
 
-        console.log('✅ Order saved successfully! Order ID:', orderId)
+        console.log('%c✅ ORDER SAVED TO FIRESTORE SUCCESSFULLY!', 'background: #4CAF50; color: white; padding: 10px; font-size: 18px; font-weight: bold;');
+        console.log('Order ID:', orderId)
 
         // ============================================
         // STEP 8.2: DEDUCT STOCK IMMEDIATELY

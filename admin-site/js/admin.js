@@ -1212,13 +1212,26 @@ window.loadAbandonedCarts = async function() {
                     </td>
                     <td class="px-6 py-4 text-right">
                         <div class="flex items-center justify-end gap-2">
+                            ${!showArchivedCarts ? `
+                            <button onclick="sendRecoverySMS('${phone}')" 
+                                    class="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors shadow-sm flex items-center gap-1" 
+                                    title="Відправити SMS для відновлення">
+                                <i data-lucide="mail" class="w-4 h-4"></i>
+                                <span class="text-xs font-semibold">📩 SMS</span>
+                            </button>
+                            ` : ''}
+                            <button onclick="window.convertToOrder('${phone}')" 
+                                    class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded transition-colors shadow-sm" 
+                                    title="Створити замовлення">
+                                <span>Створити замовлення</span>
+                            </button>
                             <button onclick="window.viewAbandonedCartDetails('${phone}')" 
-                                    class="p-2 hover:bg-white rounded-lg transition-colors" 
+                                    class="p-2 hover:bg-white rounded-lg transition-colors shadow-sm" 
                                     title="Переглянути деталі">
                                 <i data-lucide="eye" class="w-5 h-5 text-gray-600"></i>
                             </button>
                             <button onclick="window.deleteAbandonedCart('${phone}')" 
-                                    class="p-2 hover:bg-red-50 rounded-lg transition-colors" 
+                                    class="p-2 hover:bg-red-50 rounded-lg transition-colors shadow-sm" 
                                     title="Видалити">
                                 <i data-lucide="trash-2" class="w-5 h-5 text-red-600"></i>
                             </button>
@@ -1232,6 +1245,11 @@ window.loadAbandonedCarts = async function() {
         
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
+        }
+        
+        // Reset selection state after loading
+        if (typeof deselectAllAbandonedCarts === 'function') {
+            deselectAllAbandonedCarts();
         }
         
         console.log('✅ Abandoned carts loaded successfully');
@@ -1349,6 +1367,160 @@ window.deleteAbandonedCart = async function(phone) {
     } catch (e) {
         console.error('❌ Error deleting cart:', e);
         alert(`Помилка: ${e.message}`);
+    }
+};
+
+// ============================================
+// CONVERT ABANDONED CART TO ORDER
+// ============================================
+window.convertToOrder = async function(cartId) {
+    try {
+        console.log('🔄 Converting cart to order:', cartId);
+        
+        // Step 1: Get the abandoned cart data
+        const cartDoc = await getDoc(doc(db, 'abandoned_carts', cartId));
+        
+        if (!cartDoc.exists()) {
+            throw new Error('Кошик не знайдено!');
+        }
+        
+        const cartData = cartDoc.data();
+        
+        // Confirm with user
+        const customerName = cartData.customer?.fullName || 'Не вказано';
+        const total = cartData.total || 0;
+        if (!confirm(`Створити замовлення для:\n\n👤 ${customerName}\n💰 ₴${total}\n\nПродовжити?`)) {
+            return;
+        }
+        
+        // Show loading toast
+        const loadingToast = document.createElement('div');
+        loadingToast.className = 'fixed top-4 right-4 bg-blue-500 text-white px-6 py-3 rounded-xl shadow-2xl z-[100] flex items-center gap-3';
+        loadingToast.innerHTML = `
+            <div class="animate-spin w-5 h-5 border-3 border-white border-t-transparent rounded-full"></div>
+            <span>Створення замовлення...</span>
+        `;
+        document.body.appendChild(loadingToast);
+        
+        // Step 2: Create order data from cart
+        const orderData = {
+            // Customer info
+            customer: {
+                fullName: cartData.customer?.fullName || '',
+                phone: cartData.customer?.phone || cartId,
+                email: cartData.customer?.email || '',
+                telegram: cartData.customer?.telegram || ''
+            },
+            
+            // Items from cart (CRITICAL: Must be an array for Kanban rendering)
+            items: cartData.items || [],
+            
+            // Summary (CRITICAL: Kanban uses summary.total for display)
+            summary: {
+                total: cartData.total || 0,
+                itemCount: (cartData.items || []).reduce((sum, item) => sum + (item.quantity || 0), 0),
+                subtotal: cartData.subtotal || cartData.total || 0,
+                deliveryFee: cartData.deliveryFee || 0
+            },
+            
+            // Delivery info (if available)
+            delivery: cartData.delivery || {
+                method: 'Не вказано',
+                address: 'Не вказано',
+                city: cartData.delivery?.city || ''
+            },
+            
+            // Payment info
+            payment: {
+                method: cartData.payment?.method || 'Не вказано',
+                status: 'pending'
+            },
+            
+            // Order status - CRITICAL: Must be lowercase 'new' for Kanban first column
+            status: 'new',
+            
+            // Timestamps (CRITICAL: Must use serverTimestamp() for Firestore Timestamp object)
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            
+            // Meta fields for filtering (prevents issues with archived/hidden orders)
+            viewed: false,
+            isArchived: false,
+            
+            // Source tracking
+            source: 'abandoned_cart_conversion',
+            originalCartId: cartId,
+            
+            // Comment if any
+            comment: cartData.comment || 'Створено з покинутого кошика'
+        };
+        
+        // Step 3: Save order to Firestore using TRANSACTION for safety
+        let orderId = null;
+        
+        try {
+            // Create the order
+            const orderRef = await addDoc(collection(db, 'orders'), orderData);
+            orderId = orderRef.id;
+            console.log('✅ Order created:', orderId);
+            
+            // Step 4: Delete the abandoned cart (only after successful order creation)
+            await deleteDoc(doc(db, 'abandoned_carts', cartId));
+            console.log('✅ Abandoned cart deleted:', cartId);
+            
+            // Success!
+            loadingToast.remove();
+            
+            // Show success toast
+            const successToast = document.createElement('div');
+            successToast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-xl shadow-2xl z-[100]';
+            successToast.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">✅</span>
+                    <div>
+                        <div class="font-bold">Замовлення створено!</div>
+                        <div class="text-xs opacity-90">ID: ${orderId.substring(0, 8)}</div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(successToast);
+            setTimeout(() => successToast.remove(), 5000);
+            
+            // Reload the abandoned carts list
+            loadAbandonedCarts();
+            
+            // CRITICAL: Refresh orders if currently viewing orders page
+            // The real-time listener should auto-update, but we'll trigger a manual refresh just in case
+            if (typeof window.loadOrders === 'function') {
+                console.log('🔄 Triggering orders refresh...');
+                window.loadOrders();
+            }
+            
+            console.log('🎉 Cart successfully converted to order');
+            
+        } catch (firestoreError) {
+            // If order creation or cart deletion fails, show error
+            loadingToast.remove();
+            throw new Error(`Помилка збереження: ${firestoreError.message}`);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error converting cart to order:', error);
+        
+        // Show error toast
+        const errorToast = document.createElement('div');
+        errorToast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-2xl z-[100]';
+        errorToast.innerHTML = `
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">❌</span>
+                <div>
+                    <div class="font-bold">Помилка!</div>
+                    <div class="text-xs opacity-90">${error.message}</div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(errorToast);
+        setTimeout(() => errorToast.remove(), 5000);
     }
 };
 
