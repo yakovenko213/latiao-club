@@ -62,31 +62,34 @@ async function waitForFirebaseInit() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// 🔥 FIREBASE INITIALIZATION (FALLBACK)
+// 🔥 FIREBASE INITIALIZATION (USES CENTRALIZED CONFIG)
+// ═══════════════════════════════════════════════════════════════════
+// 
+// SECURITY: Firebase config is now centralized in firebase-init.js
+// This prevents config duplication and makes security updates easier.
+// The config is protected by:
+// - Domain restrictions in Google Cloud Console
+// - Firebase App Check (anti-bot protection)
+// - Firestore Security Rules
 // ═══════════════════════════════════════════════════════════════════
 
 let db;
 
 async function initializeFirebase() {
-    console.log('🔥 Initializing Firebase...');
+    console.log('🔥 Initializing Firebase from centralized config...');
     
-    const firebaseConfig = {
-        apiKey: "AIzaSyDyQvItRyL4IKl9NmEItswwPOEiKAbWkMw",
-        authDomain: "my-magazin-81c96.firebaseapp.com",
-        projectId: "my-magazin-81c96",
-        storageBucket: "my-magazin-81c96.firebasestorage.app",
-        messagingSenderId: "129061757346",
-        appId: "1:129061757346:web:3e7bc5838cc5f7bda992fb"
-    };
-
     try {
-        // Use existing app if available, otherwise create new
-        const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+        // Use existing Firebase app initialized by firebase-init.js
+        const app = getApps().length ? getApp() : (() => {
+            throw new Error('Firebase not initialized. Load firebase-init.js before chat-widget.js');
+        })();
+        
         db = getFirestore(app);
-        console.log('✅ Firebase initialized successfully');
+        console.log('✅ Firebase initialized successfully (using existing app)');
         return true;
     } catch (error) {
         console.error('❌ Firebase initialization failed:', error);
+        console.error('💡 Make sure firebase-init.js is loaded in <head> before chat-widget.js');
         return false;
     }
 }
