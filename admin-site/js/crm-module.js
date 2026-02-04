@@ -264,6 +264,11 @@ async function loadCRMData() {
         console.log('🛒 CRM carts displayed:', currentCarts.length);
         console.log('📊 Carts by status:', countCartsByStatus(currentCarts));
         
+        // Save modal state before re-rendering
+        const modal = document.getElementById('crm-details-modal');
+        const isModalOpen = modal && !modal.classList.contains('hidden');
+        const activeCartId = modal?.dataset.cartId;
+        
         // Re-render the board with new data
         const container = document.getElementById('crm-module-container');
         if (container && currentColumns.length > 0) {
@@ -273,6 +278,15 @@ async function loadCRMData() {
             // Reinit Lucide icons
             if (window.lucide) {
                 window.lucide.createIcons();
+            }
+            
+            // Restore modal if it was open
+            if (isModalOpen && activeCartId) {
+                console.log('🔄 Restoring modal for cart:', activeCartId);
+                // Re-open the modal with fresh data
+                setTimeout(() => {
+                    openCardDetails(activeCartId);
+                }, 100); // Small delay to ensure DOM is ready
             }
         }
     }, (error) => {
@@ -385,6 +399,64 @@ function renderBoardUI(container) {
         </div>
     `;
     container.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Add Cart Details Modal to the page
+    const detailsModalHTML = `
+        <div id="crm-details-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black bg-opacity-50 p-4">
+            <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden transform transition-all">
+                <!-- Header -->
+                <div class="sticky top-0 bg-white p-6 border-b border-gray-200 z-10">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-indigo-100 rounded-lg">
+                                <i data-lucide="info" class="w-6 h-6 text-indigo-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-900">Деталі кошика</h3>
+                                <p class="text-sm text-gray-600">Повна інформація про покинутий кошик</p>
+                            </div>
+                        </div>
+                        <button 
+                            onclick="window.crmModule.closeCardDetails()"
+                            class="p-2 hover:bg-gray-100 rounded-lg transition"
+                            title="Закрити">
+                            <i data-lucide="x" class="w-5 h-5 text-gray-600"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Content -->
+                <div id="crm-details-content" class="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+                    <!-- Content will be dynamically inserted -->
+                </div>
+                
+                <!-- Footer Actions -->
+                <div class="sticky bottom-0 bg-gray-50 p-6 border-t border-gray-200 flex gap-3">
+                    <button 
+                        onclick="window.crmModule.closeCardDetails()"
+                        class="flex-1 px-4 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition">
+                        Закрити
+                    </button>
+                    <button 
+                        id="create-order-from-details-btn"
+                        onclick="window.crmModule.createOrderFromDetails()"
+                        class="flex-1 px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition flex items-center justify-center gap-2">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i>
+                        <span>Створити замовлення</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', detailsModalHTML);
+    
+    // Add click outside to close modal
+    document.addEventListener('click', (e) => {
+        const modal = document.getElementById('crm-details-modal');
+        if (modal && e.target === modal) {
+            closeCardDetails();
+        }
+    });
     
     // Initialize drag and drop
     initializeDragDrop();
@@ -676,6 +748,16 @@ function renderCard(cart, cardIcon = '') {
            </div>`
         : '';
     
+    // Notes indicator
+    const notesHistory = cart.notes_history || [];
+    const notesCount = notesHistory.length;
+    const notesIndicator = notesCount > 0
+        ? `<div class="flex items-center gap-1 text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded" title="${notesCount} нотаток">
+              <i data-lucide="sticky-note" class="w-3 h-3"></i>
+              <span class="font-bold">${notesCount}</span>
+           </div>`
+        : '';
+    
     return `
         <div class="relative bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition cursor-move crm-card ${cart.auto_updated ? 'ring-2 ring-purple-200' : ''} ${cart.manually_transferred ? 'ring-2 ring-green-200' : ''}" 
              data-cart-id="${cart.id}"
@@ -694,6 +776,7 @@ function renderCard(cart, cardIcon = '') {
                         ${telegramBadge}
                         ${autoUpdatedBadge}
                         ${manualBadge}
+                        ${notesIndicator}
                     </div>
                 </div>
                 <button onclick="window.crmModule.openCardDetails('${cart.id}')" 
@@ -720,18 +803,18 @@ function renderCard(cart, cardIcon = '') {
                 <span class="text-lg font-bold text-gray-900">${total.toFixed(0)} ₴</span>
                 <div class="flex items-center gap-1">
                     <button 
+                        onclick="window.crmModule.openCardDetails('${cart.id}')"
+                        class="flex items-center gap-1 px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold rounded transition"
+                        title="Деталі та нотатки">
+                        <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                        <span>Деталі</span>
+                    </button>
+                    <button 
                         onclick="window.crmModule.createOrderFromCart('${cart.id}')" 
                         class="flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded transition"
                         title="Створити замовлення">
                         <i data-lucide="check" class="w-3.5 h-3.5"></i>
                         <span>Замовлення</span>
-                    </button>
-                    <button 
-                        onclick="window.crmModule.sendSMS('${cart.id}')" 
-                        class="flex items-center gap-1 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold rounded transition"
-                        title="Надіслати SMS">
-                        <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
-                        <span>SMS</span>
                     </button>
                 </div>
             </div>
@@ -824,6 +907,70 @@ export async function openColumnSettings() {
  * Open card details modal
  * @param {string} cartId - Cart document ID
  */
+/**
+ * Render notes history list
+ * @param {Array} notesHistory - Array of note objects
+ * @returns {string} HTML for notes history
+ */
+function renderNotesHistory(notesHistory) {
+    if (!notesHistory || notesHistory.length === 0) {
+        return `
+            <div class="text-center py-6 text-gray-500">
+                <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-2 opacity-50"></i>
+                <p class="text-sm">Ще немає нотаток</p>
+            </div>
+        `;
+    }
+    
+    // Sort by timestamp (newest first)
+    const sorted = [...notesHistory].sort((a, b) => {
+        const timeA = a.time?.toDate ? a.time.toDate() : (a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.time || a.timestamp));
+        const timeB = b.time?.toDate ? b.time.toDate() : (b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.time || b.timestamp));
+        return timeB - timeA;
+    });
+    
+    return sorted.map(note => {
+        // Support both old format (timestamp) and new format (time)
+        const timestamp = note.time || note.timestamp;
+        const date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const dateStr = `${day}.${month} ${hours}:${minutes}`;
+        
+        // Support both old format (adminName) and new format (admin)
+        const adminName = note.admin || note.adminName || 'Admin';
+        
+        // Serialize note for deletion (use data attribute to avoid escaping issues)
+        const noteJSON = JSON.stringify(note);
+        
+        return `
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div class="flex items-start gap-3">
+                    <div class="p-2 bg-yellow-100 rounded-lg flex-shrink-0">
+                        <i data-lucide="message-square" class="w-4 h-4 text-yellow-600"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm text-gray-800 whitespace-pre-wrap break-words">${note.text}</p>
+                        <p class="text-xs text-gray-500 mt-2">${dateStr} · ${adminName}</p>
+                    </div>
+                    <button 
+                        class="delete-note-btn text-red-500 hover:text-red-700 p-1.5 rounded hover:bg-red-50 transition flex-shrink-0"
+                        data-note='${noteJSON}'
+                        title="Видалити нотатку">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+/**
+ * Open cart details modal
+ * @param {string} cartId - Cart document ID
+ */
 export function openCardDetails(cartId) {
     const cart = currentCarts.find(c => c.id === cartId);
     if (!cart) {
@@ -831,11 +978,393 @@ export function openCardDetails(cartId) {
         return;
     }
     
-    // Use existing abandoned cart modal if available
-    if (typeof window.openAbandonedCartModal === 'function') {
-        window.openAbandonedCartModal(cart);
-    } else {
-        showToast('ℹ️ Деталі картки - в розробці', 'info');
+    const modal = document.getElementById('crm-details-modal');
+    const content = document.getElementById('crm-details-content');
+    
+    if (!modal || !content) {
+        console.error('❌ Modal elements not found:', { modal: !!modal, content: !!content });
+        return;
+    }
+    
+    const customer = cart.customer || {};
+    const name = customer.fullName || customer.name || 'Без імені';
+    const phone = customer.phone || 'Немає телефону';
+    const telegram = customer.telegram || 'Не вказано';
+    const total = parseFloat(cart.total) || 0;
+    const items = cart.items || [];
+    
+    // Format timestamp
+    let createdDate = 'Невідомо';
+    if (cart.created_at || cart.updated_at) {
+        const timestamp = cart.created_at || cart.updated_at;
+        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear();
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        createdDate = `${day}.${month}.${year} о ${hours}:${minutes}`;
+    }
+    
+    // Render items list
+    const itemsHTML = items.map(item => `
+        <div class="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+            <div class="flex-1">
+                <p class="font-medium text-gray-900 text-sm">${item.name || 'Товар без назви'}</p>
+                <p class="text-xs text-gray-500">Кількість: ${item.quantity || 1}</p>
+            </div>
+            <div class="text-right">
+                <p class="font-semibold text-gray-900">${(parseFloat(item.price) * (item.quantity || 1)).toFixed(0)} ₴</p>
+                <p class="text-xs text-gray-500">${parseFloat(item.price).toFixed(0)} ₴ × ${item.quantity || 1}</p>
+            </div>
+        </div>
+    `).join('');
+    
+    content.innerHTML = `
+        <!-- Customer Information -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+            <h4 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <i data-lucide="user" class="w-5 h-5 text-blue-600"></i>
+                <span>Інформація про клієнта</span>
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs text-gray-600 font-semibold">Ім'я</label>
+                    <p class="text-sm text-gray-900 mt-1">${name}</p>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-600 font-semibold">Телефон</label>
+                    <p class="text-sm text-gray-900 mt-1">${phone}</p>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-600 font-semibold">Telegram</label>
+                    <p class="text-sm text-gray-900 mt-1">${telegram}</p>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-600 font-semibold">Створено</label>
+                    <p class="text-sm text-gray-900 mt-1">${createdDate}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Cart Items -->
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
+            <h4 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <i data-lucide="shopping-bag" class="w-5 h-5 text-gray-600"></i>
+                <span>Товари в кошику (${items.length})</span>
+            </h4>
+            <div class="bg-white rounded-lg p-4">
+                ${itemsHTML || '<p class="text-sm text-gray-500 text-center py-4">Немає товарів</p>'}
+            </div>
+            <div class="mt-4 pt-4 border-t-2 border-gray-300 flex items-center justify-between">
+                <span class="font-bold text-lg text-gray-900">Загальна сума:</span>
+                <span class="font-bold text-2xl text-green-600">${total.toFixed(0)} ₴</span>
+            </div>
+        </div>
+        
+        <!-- CRM Notes Section -->
+        <div class="bg-white border-2 border-yellow-300 rounded-lg p-6">
+            <h4 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <i data-lucide="sticky-note" class="w-5 h-5 text-yellow-600"></i>
+                <span>Нотатки адміністратора</span>
+            </h4>
+            
+            <!-- Notes History -->
+            <div id="notes-history-list" class="space-y-3 mb-4 max-h-64 overflow-y-auto">
+                ${renderNotesHistory(cart.notes_history)}
+            </div>
+            
+            <!-- Add New Note -->
+            <div class="mt-4 pt-4 border-t border-gray-200">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Додати нову нотатку</label>
+                <textarea 
+                    id="new-note-textarea"
+                    rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-sm"
+                    placeholder="Введіть коментар про цього клієнта або лід..."></textarea>
+                <button 
+                    onclick="window.crmModule.addNote('${cart.id}')"
+                    id="add-note-btn"
+                    class="mt-3 w-full px-4 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-lg transition flex items-center justify-center gap-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    <span>Додати нотатку</span>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    // Store cartId for later use
+    modal.dataset.cartId = cart.id;
+    
+    // Show modal
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    
+    // Reinit Lucide icons
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+    
+    // Attach delete note event listeners
+    attachDeleteNoteListeners();
+}
+
+/**
+ * Close card details modal
+ */
+export function closeCardDetails() {
+    const modal = document.getElementById('crm-details-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+/**
+ * Add new note to cart history using arrayUnion
+ * @param {string} cartId - Cart document ID
+ */
+export async function addNote(cartId) {
+    const textarea = document.getElementById('new-note-textarea');
+    const button = document.getElementById('add-note-btn');
+    
+    if (!textarea) return;
+    
+    const noteText = textarea.value.trim();
+    
+    if (!noteText) {
+        showToast('⚠️ Введіть текст нотатки', 'warning');
+        return;
+    }
+    
+    // Disable button during save
+    if (button) {
+        button.disabled = true;
+        button.innerHTML = `
+            <div class="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+            <span>Збереження...</span>
+        `;
+    }
+    
+    try {
+        const { doc, updateDoc, arrayUnion } = window.firebaseInit;
+        const cartRef = doc(db, 'abandoned_carts', cartId);
+        
+        // Create new note object with client-side timestamp (ISO string)
+        // Firebase does NOT support serverTimestamp() inside arrays
+        const newNote = {
+            text: noteText,
+            time: new Date().toISOString(), // Client-side timestamp compatible with arrays
+            admin: 'Admin' // TODO: Replace with actual admin name from auth
+        };
+        
+        // Use arrayUnion to add note without overwriting existing notes
+        await updateDoc(cartRef, {
+            notes_history: arrayUnion(newNote)
+        });
+        
+        // Update local cache
+        const cart = currentCarts.find(c => c.id === cartId);
+        if (cart) {
+            if (!cart.notes_history) {
+                cart.notes_history = [];
+            }
+            cart.notes_history.push({
+                text: noteText,
+                time: new Date().toISOString(), // Same format as saved to Firestore
+                admin: 'Admin'
+            });
+        }
+        
+        // Clear textarea
+        textarea.value = '';
+        
+        showToast('✅ Нотатку додано', 'success');
+        
+        // Refresh the notes list in the modal (keep modal open)
+        const notesList = document.getElementById('notes-history-list');
+        if (notesList && cart) {
+            notesList.innerHTML = renderNotesHistory(cart.notes_history);
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        }
+        
+        // Update notes badge on the card (without re-rendering entire board)
+        const cardElement = document.querySelector(`[data-cart-id="${cartId}"]`);
+        if (cardElement && cart.notes_history) {
+            const badgeContainer = cardElement.querySelector('.flex.items-center.gap-1.flex-wrap');
+            if (badgeContainer) {
+                // Remove old notes indicator if exists
+                const oldIndicator = badgeContainer.querySelector('[title*="нотаток"]');
+                if (oldIndicator) {
+                    oldIndicator.remove();
+                }
+                
+                // Add updated notes indicator
+                const notesCount = cart.notes_history.length;
+                if (notesCount > 0) {
+                    const notesIndicator = document.createElement('div');
+                    notesIndicator.className = 'flex items-center gap-1 text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded';
+                    notesIndicator.title = `${notesCount} нотаток`;
+                    notesIndicator.innerHTML = `
+                        <i data-lucide="sticky-note" class="w-3 h-3"></i>
+                        <span class="font-bold">${notesCount}</span>
+                    `;
+                    badgeContainer.appendChild(notesIndicator);
+                    
+                    if (window.lucide) {
+                        window.lucide.createIcons();
+                    }
+                }
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Error adding note:', error);
+        showToast('❌ Помилка додавання нотатки: ' + error.message, 'error');
+    } finally {
+        // Re-enable button
+        if (button) {
+            button.disabled = false;
+            button.innerHTML = `
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Додати нотатку</span>
+            `;
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        }
+    }
+}
+
+/**
+ * Delete note from cart history using arrayRemove
+ * @param {Event} event - Click event
+ */
+export async function deleteNote(event) {
+    // Prevent event bubbling
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    try {
+        // Get note data from button's data attribute
+        const button = event.currentTarget;
+        const noteJSON = button.getAttribute('data-note');
+        
+        if (!noteJSON) {
+            console.error('❌ No note data found');
+            return;
+        }
+        
+        // Parse note from JSON
+        const noteToDelete = JSON.parse(noteJSON);
+        
+        // Confirm deletion
+        const confirmDelete = confirm(`Ви впевнені, що хочете видалити цю нотатку?\n\n"${noteToDelete.text}"`);
+        if (!confirmDelete) {
+            return;
+        }
+        
+        // Get modal and cartId
+        const modal = document.getElementById('crm-details-modal');
+        const cartId = modal?.dataset.cartId;
+        
+        if (!cartId) {
+            showToast('❌ Помилка: ID кошика не знайдено', 'error');
+            return;
+        }
+        
+        const { doc, updateDoc, arrayRemove } = window.firebaseInit;
+        const cartRef = doc(db, 'abandoned_carts', cartId);
+        
+        // Use arrayRemove to delete the exact note object
+        await updateDoc(cartRef, {
+            notes_history: arrayRemove(noteToDelete)
+        });
+        
+        console.log('✅ Note deleted:', noteToDelete);
+        
+        // Update local cache
+        const cart = currentCarts.find(c => c.id === cartId);
+        if (cart && cart.notes_history) {
+            cart.notes_history = cart.notes_history.filter(note => 
+                JSON.stringify(note) !== JSON.stringify(noteToDelete)
+            );
+        }
+        
+        showToast('✅ Нотатку видалено', 'success');
+        
+        // Refresh the notes list in the modal (keep modal open)
+        const notesList = document.getElementById('notes-history-list');
+        if (notesList && cart) {
+            notesList.innerHTML = renderNotesHistory(cart.notes_history);
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+            
+            // Re-attach event listeners to new delete buttons
+            attachDeleteNoteListeners();
+        }
+        
+        // Update notes badge on the card (without re-rendering entire board)
+        const cardElement = document.querySelector(`[data-cart-id="${cartId}"]`);
+        if (cardElement && cart.notes_history) {
+            const badgeContainer = cardElement.querySelector('.flex.items-center.gap-1.flex-wrap');
+            if (badgeContainer) {
+                // Remove old notes indicator if exists
+                const oldIndicator = badgeContainer.querySelector('[title*="нотаток"]');
+                if (oldIndicator) {
+                    oldIndicator.remove();
+                }
+                
+                // Add updated notes indicator (only if notes exist)
+                const notesCount = cart.notes_history.length;
+                if (notesCount > 0) {
+                    const notesIndicator = document.createElement('div');
+                    notesIndicator.className = 'flex items-center gap-1 text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded';
+                    notesIndicator.title = `${notesCount} нотаток`;
+                    notesIndicator.innerHTML = `
+                        <i data-lucide="sticky-note" class="w-3 h-3"></i>
+                        <span class="font-bold">${notesCount}</span>
+                    `;
+                    badgeContainer.appendChild(notesIndicator);
+                    
+                    if (window.lucide) {
+                        window.lucide.createIcons();
+                    }
+                }
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Error deleting note:', error);
+        showToast('❌ Помилка видалення нотатки: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Attach event listeners to delete note buttons
+ */
+function attachDeleteNoteListeners() {
+    const deleteButtons = document.querySelectorAll('.delete-note-btn');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', deleteNote);
+    });
+}
+
+/**
+ * Create order from details modal
+ */
+export function createOrderFromDetails() {
+    const modal = document.getElementById('crm-details-modal');
+    if (modal && modal.dataset.cartId) {
+        // Close details modal
+        closeCardDetails();
+        // Open order confirmation
+        createOrderFromCart(modal.dataset.cartId);
     }
 }
 

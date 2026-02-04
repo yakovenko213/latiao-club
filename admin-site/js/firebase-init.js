@@ -20,7 +20,10 @@ import {
     orderBy, 
     limit,
     serverTimestamp,
-    Timestamp
+    Timestamp,
+    arrayUnion,
+    arrayRemove,
+    increment
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
@@ -69,7 +72,10 @@ window.firebaseInit = {
     orderBy,
     limit,
     serverTimestamp,
-    Timestamp
+    Timestamp,
+    arrayUnion,
+    arrayRemove,
+    increment
 };
 
 // Export to global scope for admin-chat.js and others
@@ -86,6 +92,13 @@ window.query = query;
 window.orderBy = orderBy;
 window.Timestamp = Timestamp;
 window.serverTimestamp = serverTimestamp;
+window.arrayUnion = arrayUnion;
+window.arrayRemove = arrayRemove;
+window.increment = increment;
+
+console.log('✅ Firebase initialized');
+console.log('📦 window.firebaseInit available:', !!window.firebaseInit);
+console.log('🔧 arrayUnion available:', typeof window.firebaseInit?.arrayUnion);
 
 // ============================================
 // MODULE EXPORTS FOR ES6 IMPORTS
@@ -110,6 +123,9 @@ export {
     limit,
     serverTimestamp,
     Timestamp,
+    arrayUnion,
+    arrayRemove,
+    increment,
     httpsCallable
 };
 

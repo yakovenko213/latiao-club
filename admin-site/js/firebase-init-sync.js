@@ -25,7 +25,10 @@
         orderBy, 
         limit,
         serverTimestamp,
-        Timestamp
+        Timestamp,
+        arrayUnion,
+        arrayRemove,
+        increment
     } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
     
     const { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
@@ -69,6 +72,9 @@
     window.limit = limit;
     window.serverTimestamp = serverTimestamp;
     window.Timestamp = Timestamp;
+    window.arrayUnion = arrayUnion;
+    window.arrayRemove = arrayRemove;
+    window.increment = increment;
     window.onAuthStateChanged = onAuthStateChanged;
     window.signInWithEmailAndPassword = signInWithEmailAndPassword;
     window.signOut = signOut;
@@ -93,13 +99,16 @@
         orderBy,
         limit,
         serverTimestamp,
-        Timestamp
+        Timestamp,
+        arrayUnion,
+        arrayRemove,
+        increment
     };
 
-    console.log('✅ Firebase initialized and exported to window');
-    console.log('📦 Available:', Object.keys(window).filter(k => 
-        ['db', 'auth', 'storage', 'functions', 'collection', 'doc', 'addDoc', 'setDoc', 'getDoc', 'getDocs', 'updateDoc', 'onSnapshot', 'query', 'orderBy', 'Timestamp'].includes(k)
-    ).join(', '));
+    console.log('✅ Firebase (SYNC) initialized and exported to window');
+    console.log('📦 window.firebaseInit available:', !!window.firebaseInit);
+    console.log('🔧 arrayUnion available:', typeof window.firebaseInit?.arrayUnion);
+    console.log('🔧 arrayUnion in global:', typeof window.arrayUnion);
 
     // Auto-initialize chat config if needed
     try {
