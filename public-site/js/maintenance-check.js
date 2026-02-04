@@ -99,7 +99,6 @@ export async function checkMaintenanceMode() {
         
         if (!isMaintenanceMode) {
             // NORMAL MODE - No maintenance, reveal site immediately
-            console.log('✅ Site is operational - proceeding with normal load');
             revealPage();
             return;
         }
@@ -172,8 +171,6 @@ function revealPage() {
     if (antiFlashStyle) {
         antiFlashStyle.remove();
     }
-    
-    console.log('✨ Page revealed with smooth fade-in');
 }
 
 /**

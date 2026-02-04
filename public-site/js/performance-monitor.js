@@ -4,9 +4,13 @@
  * ====================================================
  * Test and measure category loading performance
  * Usage: Open browser console and run window.testCategorySwitching()
+ * NOTE: Only active in development mode
  * Date: 04.02.2026
  */
 
+// Only load performance monitor in development or when explicitly enabled
+if (window.__consoleMode === 'development' || window.location.search.includes('debug=1')) {
+  
 window.performanceMonitor = {
   /**
    * Measure category switching time
@@ -173,3 +177,18 @@ console.log('Commands:');
 console.log('  window.testPerf()         - Full performance audit');
 console.log('  window.testCache("slug")  - Test cache for category');
 console.log('  window.testSwitch()       - Test category switching speed');
+
+} else {
+  // Production mode - performance monitor disabled
+  // Provide no-op stubs
+  window.performanceMonitor = {
+    measureCategoryLoad: () => Promise.resolve(null),
+    testCategorySwitching: () => Promise.resolve([]),
+    monitorImageLoading: () => {},
+    benchmarkFirestoreQuery: () => Promise.resolve(null),
+    fullAudit: () => Promise.resolve()
+  };
+  window.testPerf = () => console.warn('⚠️ Performance monitor disabled in production. Add ?debug=1 to enable.');
+  window.testCache = () => console.warn('⚠️ Performance monitor disabled in production. Add ?debug=1 to enable.');
+  window.testSwitch = () => console.warn('⚠️ Performance monitor disabled in production. Add ?debug=1 to enable.');
+}

@@ -3,8 +3,16 @@
  * PRODUCT CACHE MANAGER - IndexedDB + localStorage
  * ====================================================
  * High-performance caching for instant category switching
+ * Production-safe: Minimal logging
  * Date: 04.02.2026
  */
+
+// Development logging helper
+const devLog = (...args) => {
+  if (window.__consoleMode === 'development' || window.location.search.includes('debug=1')) {
+    console.log(...args);
+  }
+};
 
 class ProductCacheManager {
   constructor() {
@@ -30,7 +38,7 @@ class ProductCacheManager {
 
       request.onsuccess = (event) => {
         this.db = event.target.result;
-        console.log('✅ IndexedDB initialized');
+        devLog('✅ IndexedDB initialized');
         resolve(this.db);
       };
 
@@ -41,7 +49,7 @@ class ProductCacheManager {
         if (!db.objectStoreNames.contains(this.storeName)) {
           const objectStore = db.createObjectStore(this.storeName, { keyPath: 'cacheKey' });
           objectStore.createIndex('timestamp', 'timestamp', { unique: false });
-          console.log('📦 Created IndexedDB object store');
+          devLog('📦 Created IndexedDB object store');
         }
       };
     });
@@ -72,12 +80,12 @@ class ProductCacheManager {
           // Check if cache is still valid
           const age = Date.now() - data.timestamp;
           if (age > this.cacheExpiry) {
-            console.log('🕐 Cache expired (age:', Math.round(age / 1000), 'seconds)');
+            devLog('🕐 Cache expired (age:', Math.round(age / 1000), 'seconds)');
             resolve(null);
             return;
           }
 
-          console.log('⚡ Cache HIT (age:', Math.round(age / 1000), 'seconds)');
+          devLog('⚡ Cache HIT (age:', Math.round(age / 1000), 'seconds)');
           resolve(data);
         };
 
@@ -114,7 +122,7 @@ class ProductCacheManager {
         const request = objectStore.put(data);
 
         request.onsuccess = () => {
-          console.log('💾 Cached', products.length, 'products for', categorySlug);
+          devLog('💾 Cached', products.length, 'products for', categorySlug);
           resolve(true);
         };
 
@@ -154,7 +162,7 @@ class ProductCacheManager {
           cursor.continue();
         } else {
           if (cleared > 0) {
-            console.log('🗑️ Cleared', cleared, 'expired cache entries');
+            devLog('🗑️ Cleared', cleared, 'expired cache entries');
           }
         }
       };
@@ -176,7 +184,7 @@ class ProductCacheManager {
 
       return new Promise((resolve) => {
         request.onsuccess = () => {
-          console.log('🗑️ All cache cleared');
+          devLog('🗑️ All cache cleared');
           resolve(true);
         };
         request.onerror = () => {

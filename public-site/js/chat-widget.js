@@ -1080,33 +1080,16 @@ async function checkIfPageEnabled() {
         
         if (!configDoc.exists()) {
             console.error('❌ Chat config document NOT FOUND in Firestore');
-            console.log('💡 SOLUTION:');
-            console.log('   1. Open admin.html in your browser');
-            console.log('   2. Navigate to 💬 Онлайн чат | ШІ → ⚙️ Налаштування');
-            console.log('   3. Select pages where you want chat to appear');
-            console.log('   4. Click "💾 Зберегти налаштування чату"');
-            console.log('═══════════════════════════════════════════════════════════════');
             return false;
         }
         
-        console.log('✅ Config document found!');
         const config = configDoc.data();
-        console.log('📄 Config data:', JSON.stringify(config, null, 2));
         
         // Step 2: Check global enabled flag
-        console.log('');
-        console.log('🎛️ Step 2: Checking global "enabled" flag...');
         if (!config.enabled) {
             console.error('❌ Chat is GLOBALLY DISABLED');
-            console.log('💡 SOLUTION:');
-            console.log('   1. Open admin.html');
-            console.log('   2. Go to 💬 Онлайн чат | ШІ → ⚙️ Налаштування');
-            console.log('   3. Check the box: ☑️ "Увімкнути чат на сайті"');
-            console.log('   4. Click "💾 Зберегти налаштування чату"');
-            console.log('═══════════════════════════════════════════════════════════════');
             return false;
         }
-        console.log('✅ Chat is globally ENABLED');
         
         // Step 3: Get current page identifiers
         console.log('');
@@ -1817,20 +1800,13 @@ function setupRealtimeMessages(chatId) {
         injectStyles();
         
         // Step 3: Check if page is enabled
-        console.log('');
-        console.log('🔍 Step 3: Checking if chat should load on this page...');
         const shouldLoad = await checkIfPageEnabled();
         
         if (!shouldLoad) {
-            console.log('');
-            console.log('🛑 Chat widget will NOT load on this page');
-            console.log('═══════════════════════════════════════════════════════════════');
             return;
         }
         
         // Step 4: Create UI
-        console.log('');
-        console.log('🎨 Step 4: Creating chat UI...');
         createChatUI();
         
         // Step 5: Setup events

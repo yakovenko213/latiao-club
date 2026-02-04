@@ -818,8 +818,6 @@ window.trackSessionStart = async function () {
       firstVisit: serverTimestamp()
     }, { merge: true }); // merge: true - update lastSeen, keep firstVisit
 
-    console.log('📊 Session tracked:', sessionId);
-
     // Setup heartbeat every 5 minutes to track "online now"
     setInterval(async () => {
       try {
@@ -1339,8 +1337,6 @@ async function loadNavigation() {
       _timestamp: Date.now()
     };
 
-    console.log(`✅ Завантажено: ${categories.length} категорій, ${pages.length} сторінок`);
-
     renderNavigation(navigationCache);
 
   } catch (error) {
@@ -1650,9 +1646,6 @@ async function loadFooterDynamicContent() {
         listItem.appendChild(link);
         catalogList.appendChild(listItem);
       });
-      console.log('✅ Footer categories loaded');
-    } else {
-      console.log('ℹ️ No active categories found for footer');
     }
 
     // ===== COLUMN 2: Fetch and render PAGES with footerSection='client_info' =====

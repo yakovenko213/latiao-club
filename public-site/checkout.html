@@ -6,6 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Оформлення замовлення | LATIAO SNACK</title>
 
+  <!-- ⚡ CONSOLE SILENCER - Must be first to catch all logs -->
+  <script src="./js/console-silencer.js"></script>
+
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
        CACHE CONTROL - Force fresh assets
        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
@@ -43,10 +46,10 @@
     }
   </script>
   <!-- Dark Mode Module -->
-  <script src="./js/dark-mode.js?v=1770234709510"></script>
+  <script src="./js/dark-mode.js?v=1770237732360"></script>
   
   <!-- Premium Smoothness & Animations -->
-  <link rel="stylesheet" href="./css/styles.css?v=1770234709510">
+  <link rel="stylesheet" href="./css/styles.css?v=1770237732360">
   
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -179,7 +182,7 @@
     }
   </style>
   <!-- Force Cache Clear - CRITICAL: Must be FIRST! -->
-  <script src="./js/cache-clear.js?v=1770234709510"></script>
+  <script src="./js/cache-clear.js?v=1770237732360"></script>
   
 </head>
 
@@ -922,7 +925,7 @@
   <script src="js/utm-tracker-bulletproof.js"></script>
 
   <!-- Maintenance Mode Check -->
-  <script type="module" src="./js/maintenance-check.js?v=1770234709510"></script>
+  <script type="module" src="./js/maintenance-check.js?v=1770237732360"></script>
 
   <script type="module">
     // ============================================
@@ -1112,7 +1115,6 @@
 
           if (cartSnapshot.exists()) {
             const cartData = cartSnapshot.data()
-            console.log('✅ Document exists! Data:', cartData)
 
             // ============================================
             // STEP 1: Restore Cart Items
@@ -3602,7 +3604,6 @@
 
             if (currentUser) {
               orderData.userId = currentUser.uid;
-              console.log('✅ Order linked to Firebase Auth userId:', currentUser.uid);
             }
           }
 
@@ -3611,7 +3612,6 @@
           if (!orderData.userId && phone) {
             // Create consistent userId from phone (remove all non-digits)
             orderData.userId = phone.replace(/\D/g, '');
-            console.log('📱 Order linked to phone-based userId:', orderData.userId);
           }
         } catch (userIdError) {
           console.warn('⚠️ Could not link userId to order:', userIdError);
@@ -3928,7 +3928,7 @@
   </script>
 
   <!-- Load Pop-up Manager -->
-  <script type="module" src="./js/popup-manager.js?v=1770234709510"></script>
+  <script type="module" src="./js/popup-manager.js?v=1770237732360"></script>
 
   <!-- 🔥 NUCLEAR AI ASSISTANT TOGGLE - WITH AGGRESSIVE DEBUGGING -->
   <script type="module">
@@ -4089,7 +4089,7 @@
   <script src="js/ai-checkout-helper.js"></script>
 
   <!-- Live Chat Widget -->
-  <script type="module" src="./js/chat-widget.js?v=1770234709510"></script>
+  <script type="module" src="./js/chat-widget.js?v=1770237732360"></script>
 </body>
 
 </html>

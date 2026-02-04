@@ -5,7 +5,7 @@
 (function() {
     'use strict';
     
-    const CURRENT_VERSION = '1770212367080'; // Will be replaced by build script
+    const CURRENT_VERSION = '1770237732360'; // Will be replaced by build script
     const VERSION_KEY = 'latiao_admin_version';
     
     // Check stored version

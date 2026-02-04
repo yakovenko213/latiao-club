@@ -643,20 +643,6 @@
     // RENDER ORDER DATA
     // ============================================
     async function renderThankYouPage(orderData, orderId) {
-      console.log('🎨 Rendering order data:', orderData);
-      console.log('📦 Full Order Data (for debugging):', JSON.stringify(orderData, null, 2));
-      console.log('🚚 Delivery object:', orderData.delivery);
-      console.log('🏘️ Branch field check:', {
-        'delivery.branch': orderData.delivery?.branch,
-        'delivery.warehouse': orderData.delivery?.warehouse,
-        'delivery.warehouseNumber': orderData.delivery?.warehouseNumber,
-        'delivery.address': orderData.delivery?.address,
-        'delivery.deliveryAddress': orderData.delivery?.deliveryAddress,
-        'deliveryAddress': orderData.deliveryAddress,
-        'warehouse': orderData.warehouse,
-        'branch': orderData.branch
-      });
-
       // Update order ID
       const orderIdElement = document.getElementById('order-id-display');
       if (orderIdElement) {

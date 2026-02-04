@@ -6,6 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Категорія | LATIAO SNACK</title>
 
+  <!-- ⚡ CONSOLE SILENCER - Must be first to catch all logs -->
+  <script src="./js/console-silencer.js"></script>
+
   <!-- Skeleton Loader for instant render -->
   <style id="skeleton-loader">
     @keyframes shimmer {
@@ -459,16 +462,12 @@
 
   <!-- Логіка сторінки категорії -->
   <script type="module">
-    console.log('[v0] Category page script starting...')
-
     // CRITICAL: Check maintenance mode FIRST
     import './js/maintenance-check.js'
 
     // Import Firebase - use same pattern as storefront.js for consistency
     import { db } from './js/firebase-init.js'
     import { collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
-
-    console.log('[v0] Imports loaded, db:', db ? 'exists' : 'null')
 
     // ============================================
     // GLOBAL UI HELPERS
@@ -526,9 +525,6 @@
       const urlParams = new URLSearchParams(window.location.search)
       const categorySlug = urlParams.get('slug')
 
-      console.log('🔍 Сторінка категорії завантажена')
-      console.log('📌 URL slug:', categorySlug)
-
       if (!categorySlug) {
         document.getElementById('loading-state').style.display = 'none'
         document.getElementById('products-grid').innerHTML = '<div class="col-span-full text-center py-10 text-gray-500">❌ Категорію не вказано в URL</div>'
@@ -538,20 +534,16 @@
       // Cancel any ongoing requests from previous category
       if (currentAbortController) {
         currentAbortController.abort()
-        console.log('🛑 Cancelled previous request')
       }
       currentAbortController = new AbortController()
       const signal = currentAbortController.signal
 
       try {
-        console.log('🔄 Завантаження категорії та товарів...')
-
         // ⚡ STEP 1: Check IndexedDB cache for INSTANT rendering
         const cached = await window.productCache.getCached(categorySlug)
         let usedCache = false
 
         if (cached && cached.products) {
-          console.log('⚡ Cache HIT - Instant render!')
 
           // INSTANTLY show cached data
           if (cached.categoryData) {
@@ -567,11 +559,8 @@
           setupFilterListeners()
           document.getElementById('loading-state').style.display = 'none'
           usedCache = true
-
-          console.log('🔄 Silent refresh in background...')
         } else {
           // No cache - show skeleton
-          console.log('💾 Cache MISS - showing skeleton')
           showSkeleton()
         }
 
@@ -911,13 +900,10 @@
 
     // Instant Firebase check - no delays if already ready
     async function startPage() {
-      console.log('[v0] startPage called')
-
       try {
         // ⚡ Check if Firebase is ALREADY ready (synchronous check)
         if (db && typeof db === 'object') {
           // Firebase is ready! Start immediately with ZERO delay
-          console.log('⚡ Firebase already ready - starting instantly!')
           await initPage()
           return
         }
