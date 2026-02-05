@@ -418,6 +418,54 @@
       }
     }
 
+    /* ============================================
+       STATUS CONTAINER - COMPACT SINGLE LINE
+       ============================================ */
+    .status-container {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      padding: 6px 12px;
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      color: #1e40af;
+      transition: all 0.2s ease;
+    }
+
+    .status-container:hover {
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      border-color: #93c5fd;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+    }
+
+    .status-date {
+      font-weight: 600;
+      font-size: 0.875rem;
+      letter-spacing: -0.01em;
+      color: #1e40af;
+    }
+
+    .status-count {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #6b7280;
+      background: rgba(255, 255, 255, 0.7);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 2px;
+      border: 1px solid rgba(107, 114, 128, 0.2);
+    }
+
+    .status-count:hover {
+      color: #374151;
+      background: rgba(255, 255, 255, 0.9);
+      border-color: rgba(107, 114, 128, 0.3);
+    }
+
     /* Sent status (alternative style for already-sent state) */
     .review-sent-status {
       display: inline-flex;
@@ -441,6 +489,46 @@
     .review-sent-status .resend-link:hover {
       color: #2563eb;
       text-decoration: underline;
+    }
+
+    /* Reviewed Orders Section - Visual Distinction */
+    #review-requests-reviewed-table tbody tr {
+      background-color: rgba(249, 250, 251, 0.7);
+      opacity: 0.85;
+    }
+
+    #review-requests-reviewed-table tbody tr:hover {
+      background-color: rgba(243, 244, 246, 0.9);
+      opacity: 0.95;
+    }
+
+    /* Waiting Orders - Highlight Priority */
+    #review-requests-waiting-table tbody tr {
+      background-color: #ffffff;
+    }
+
+    #review-requests-waiting-table tbody tr:hover {
+      background-color: rgba(254, 243, 199, 0.3);
+    }
+
+    /* Reset Review Status Button */
+    button[onclick^="resetReviewStatus"] {
+      font-size: 0.75rem;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+
+    button[onclick^="resetReviewStatus"]:hover {
+      opacity: 1;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    }
+
+    button[onclick^="resetReviewStatus"] svg {
+      transition: transform 0.3s ease;
+    }
+
+    button[onclick^="resetReviewStatus"]:hover svg {
+      transform: rotate(-180deg);
     }
 
     /* Review Card Responsive Styles - Mobile Optimization */
@@ -3109,24 +3197,19 @@
           <!-- Tab Content: Review Requests -->
           <div id="review-requests-content" class="space-y-6">
             
-            <!-- Delivered Orders List -->
+            <!-- Section 1: Waiting for Review -->
             <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+              <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-amber-50 to-orange-50">
                 <h3 class="font-semibold text-gray-900 flex items-center gap-2">
-                  <i data-lucide="package-check" class="w-5 h-5 text-green-600"></i>
-                  Виконані замовлення
+                  <i data-lucide="message-square-warning" class="w-5 h-5 text-amber-600"></i>
+                  <span class="text-amber-900">📥 Очікують запиту на відгук</span>
+                  <span id="waiting-count" class="inline-flex items-center justify-center min-w-[24px] h-6 px-2 bg-amber-100 text-amber-700 rounded-full text-xs font-bold border border-amber-200">0</span>
                 </h3>
                 <div class="flex items-center gap-2">
-                  <select id="review-request-filter" onchange="filterReviewRequests()" class="text-sm border border-gray-300 rounded-lg px-3 py-2">
-                    <option value="all">Всі статуси</option>
-                    <option value="pending">Очікують відправки</option>
-                    <option value="sent">Запит надіслано</option>
-                    <option value="responded">Відповіли</option>
-                  </select>
-                  <button onclick="openReviewSettingsModal()" class="p-2 hover:bg-gray-100 rounded-lg transition" title="Налаштування">
+                  <button onclick="openReviewSettingsModal()" class="p-2 hover:bg-white hover:bg-opacity-50 rounded-lg transition" title="Налаштування">
                     <i data-lucide="settings" class="w-4 h-4 text-gray-600"></i>
                   </button>
-                  <button onclick="refreshReviewRequests()" class="p-2 hover:bg-gray-100 rounded-lg transition" title="Оновити">
+                  <button onclick="refreshReviewRequests()" class="p-2 hover:bg-white hover:bg-opacity-50 rounded-lg transition" title="Оновити">
                     <i data-lucide="refresh-cw" class="w-4 h-4 text-gray-600"></i>
                   </button>
                 </div>
@@ -3139,11 +3222,44 @@
                       <th class="px-4 py-3 text-left">Клієнт</th>
                       <th class="px-4 py-3 text-left">Товари</th>
                       <th class="px-4 py-3 text-left">Сума</th>
-                      <th class="px-4 py-3 text-left">Статус запиту</th>
+                      <th class="px-4 py-3 text-left">Статус</th>
                       <th class="px-4 py-3 text-center">Дії</th>
                     </tr>
                   </thead>
-                  <tbody id="review-requests-table" class="divide-y divide-gray-100">
+                  <tbody id="review-requests-waiting-table" class="divide-y divide-gray-100">
+                    <tr>
+                      <td colspan="6" class="px-4 py-12 text-center text-gray-400">
+                        <i data-lucide="loader-2" class="w-8 h-8 mx-auto mb-2 animate-spin"></i>
+                        <p>Завантаження...</p>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Section 2: Reviewed Orders -->
+            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-green-50 to-emerald-50">
+                <h3 class="font-semibold text-gray-900 flex items-center gap-2">
+                  <i data-lucide="check-circle-2" class="w-5 h-5 text-green-600"></i>
+                  <span class="text-green-900">✅ Відгук отримано</span>
+                  <span id="reviewed-count" class="inline-flex items-center justify-center min-w-[24px] h-6 px-2 bg-green-100 text-green-700 rounded-full text-xs font-bold border border-green-200">0</span>
+                </h3>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full">
+                  <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
+                    <tr>
+                      <th class="px-4 py-3 text-left">№ Замовлення</th>
+                      <th class="px-4 py-3 text-left">Клієнт</th>
+                      <th class="px-4 py-3 text-left">Товари</th>
+                      <th class="px-4 py-3 text-left">Сума</th>
+                      <th class="px-4 py-3 text-left">Статус</th>
+                      <th class="px-4 py-3 text-center">Дії</th>
+                    </tr>
+                  </thead>
+                  <tbody id="review-requests-reviewed-table" class="divide-y divide-gray-100">
                     <tr>
                       <td colspan="6" class="px-4 py-12 text-center text-gray-400">
                         <i data-lucide="loader-2" class="w-8 h-8 mx-auto mb-2 animate-spin"></i>
@@ -17654,6 +17770,7 @@
     // REVIEW REQUESTS (Completed Orders) - Real-time
     // ============================================
     let reviewRequestsUnsubscribe = null
+    let reviewedOrderIds = new Set()  // Store orderIds that have reviews
     
     async function loadReviewRequests() {
       // Unsubscribe from previous listener
@@ -17665,7 +17782,20 @@
       console.log('📡 Initializing review requests real-time listener...')
       
       try {
-        // Query for completed orders
+        // STEP 1: Fetch all reviews and store orderIds in Set
+        console.log('📚 Fetching existing reviews...')
+        const reviewsQuery = query(collection(db, 'reviews'))
+        const reviewsSnapshot = await getDocs(reviewsQuery)
+        
+        reviewedOrderIds = new Set(
+          reviewsSnapshot.docs
+            .map(doc => doc.data().orderId)
+            .filter(id => id)  // Filter out undefined/null
+        )
+        
+        console.log(`✅ Loaded ${reviewedOrderIds.size} reviewed orders`)
+        
+        // STEP 2: Query for completed orders
         const ordersQuery = query(
           collection(db, 'orders'),
           where('status', 'in', ['completed', 'delivered', 'Доставлено', 'Виконано']),
@@ -17683,7 +17813,7 @@
           })
 
           renderReviewRequests()
-          document.getElementById('requests-count-badge').textContent = deliveredOrders.length
+          updateReviewRequestsCounts()
           
         }, (error) => {
           console.error('❌ Review requests listener error:', error)
@@ -17700,6 +17830,18 @@
     // Fallback one-time fetch
     async function loadReviewRequestsOnce() {
       try {
+        // Fetch reviews first
+        const reviewsQuery = query(collection(db, 'reviews'))
+        const reviewsSnapshot = await getDocs(reviewsQuery)
+        
+        reviewedOrderIds = new Set(
+          reviewsSnapshot.docs
+            .map(doc => doc.data().orderId)
+            .filter(id => id)
+        )
+        
+        console.log(`✅ Loaded ${reviewedOrderIds.size} reviewed orders (fallback)`)
+        
         const ordersQuery = query(
           collection(db, 'orders'),
           where('status', 'in', ['completed', 'delivered', 'Доставлено', 'Виконано']),
@@ -17715,11 +17857,11 @@
         })
 
         renderReviewRequests()
-        document.getElementById('requests-count-badge').textContent = deliveredOrders.length
+        updateReviewRequestsCounts()
 
       } catch (error) {
         console.error('Error loading review requests:', error)
-        document.getElementById('review-requests-table').innerHTML = `
+        document.getElementById('review-requests-waiting-table').innerHTML = `
           <tr><td colspan="6" class="px-4 py-12 text-center text-red-500">
             <i data-lucide="alert-circle" class="w-8 h-8 mx-auto mb-2"></i>
             <p>Помилка завантаження: ${error.message}</p>
@@ -17732,35 +17874,57 @@
     window.refreshReviewRequests = function() {
       loadReviewRequests()
     }
+    
+    // Update counts for both categories
+    function updateReviewRequestsCounts() {
+      const waitingOrders = deliveredOrders.filter(order => !reviewedOrderIds.has(order.id))
+      const reviewedOrders = deliveredOrders.filter(order => reviewedOrderIds.has(order.id))
+      
+      document.getElementById('waiting-count').textContent = waitingOrders.length
+      document.getElementById('reviewed-count').textContent = reviewedOrders.length
+      document.getElementById('requests-count-badge').textContent = deliveredOrders.length
+    }
 
     function renderReviewRequests() {
-      const tbody = document.getElementById('review-requests-table')
-      const filter = document.getElementById('review-request-filter').value
-
-      let filtered = deliveredOrders
-      if (filter === 'pending') {
-        filtered = deliveredOrders.filter(o => !o.reviewRequestSent)
-      } else if (filter === 'sent') {
-        filtered = deliveredOrders.filter(o => o.reviewRequestSent && !o.reviewReceived)
-      } else if (filter === 'responded') {
-        filtered = deliveredOrders.filter(o => o.reviewReceived)
+      // Split orders into two categories based on reviewedOrderIds Set
+      const waitingOrders = deliveredOrders.filter(order => !reviewedOrderIds.has(order.id))
+      const reviewedOrders = deliveredOrders.filter(order => reviewedOrderIds.has(order.id))
+      
+      console.log(`📊 Orders split: ${waitingOrders.length} waiting, ${reviewedOrders.length} reviewed`)
+      
+      // Render waiting for review table
+      renderOrdersTable('review-requests-waiting-table', waitingOrders, 'waiting')
+      
+      // Render reviewed orders table
+      renderOrdersTable('review-requests-reviewed-table', reviewedOrders, 'reviewed')
+      
+      lucide.createIcons()
+    }
+    
+    function renderOrdersTable(tableId, orders, category) {
+      const tbody = document.getElementById(tableId)
+      
+      if (!tbody) {
+        console.error(`Table ${tableId} not found`)
+        return
       }
-
-      if (filtered.length === 0) {
+      
+      if (orders.length === 0) {
+        const emptyMessage = category === 'waiting' 
+          ? 'Всі клієнти вже залишили відгуки! 🎉'
+          : 'Ще немає отриманих відгуків'
+        
         tbody.innerHTML = `
           <tr><td colspan="6" class="px-4 py-12 text-center text-gray-400">
-            <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-3"></i>
-            <p>Немає замовлень для відображення</p>
-            <p class="text-xs mt-2">Виконані замовлення з'являться тут автоматично</p>
+            <i data-lucide="${category === 'waiting' ? 'party-popper' : 'inbox'}" class="w-12 h-12 mx-auto mb-3"></i>
+            <p>${emptyMessage}</p>
           </td></tr>`
-        lucide.createIcons()
         return
       }
 
-      tbody.innerHTML = filtered.map((order, index) => {
+      tbody.innerHTML = orders.map((order, index) => {
         const customer = order.customer || {}
         const total = order.summary?.total || order.total || 0
-        const status = order.reviewReceived ? 'responded' : ((order.review_request_sent || order.reviewRequestSent) ? 'sent' : 'pending')
         
         // Format order number
         const orderNumber = order.orderNumber || `#${(index + 1).toString().padStart(4, '0')}`
@@ -17769,14 +17933,69 @@
         // Format items list
         const itemsHtml = formatOrderItems(order.items || [])
         
-        const statusBadge = {
-          'pending': '<span class="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium"><span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>Очікує</span>',
-          'sent': '<span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium"><span class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>Надіслано</span>',
-          'responded': '<span class="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium"><span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>Отримано</span>'
+        // Different styling based on category
+        const rowClass = category === 'reviewed' 
+          ? 'hover:bg-gray-50 transition opacity-70' 
+          : 'hover:bg-gray-50 transition'
+        
+        // ✅ COMPACT: Format status cell with single-line layout
+        const requestCount = order.reviewRequestCount || 0
+        const lastSentAt = order.reviewRequestLastSentAt || order.reviewRequestSentAt
+        let statusCellHtml = ''
+        
+        if (category === 'waiting') {
+          // Check if request has been sent
+          if (lastSentAt) {
+            // ✅ SENT: Compact format "📅 05.02 14:30 (№2)" - single line
+            const sentDate = lastSentAt?.toDate ? lastSentAt.toDate() : new Date(lastSentAt)
+            const dateStr = sentDate.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit' })
+            const timeStr = sentDate.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })
+            
+            // Compact single-line format with optional counter
+            const counterHtml = requestCount > 1 
+              ? `<span class="status-count" title="Всього відправлено: ${requestCount}">(№${requestCount})</span>` 
+              : ''
+            
+            const clickHandler = requestCount > 1 
+              ? `onclick="showReviewRequestHistory('${order.id}')" style="cursor: pointer;"` 
+              : ''
+            
+            statusCellHtml = `
+              <div class="status-container" ${clickHandler}>
+                <svg class="w-3.5 h-3.5 flex-shrink-0 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                <span class="status-date">${dateStr} ${timeStr}</span>
+                ${counterHtml}
+              </div>
+            `
+          } else {
+            // ✅ NOT SENT: Show "Очікує запиту" with gray styling
+            statusCellHtml = `
+              <span class="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-500 rounded-full text-xs font-medium whitespace-nowrap">
+                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse"></span>
+                Очікує запиту
+              </span>
+            `
+          }
+        } else {
+          // Category: reviewed
+          statusCellHtml = `
+            <span class="inline-flex items-center gap-1 px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-xs font-medium whitespace-nowrap">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              Відгук вже є
+            </span>
+          `
         }
 
         return `
-          <tr class="hover:bg-gray-50 transition">
+          <tr class="${rowClass}">
             <td class="px-4 py-4">
               <div class="font-bold text-gray-900">${orderNumber}</div>
               <div class="text-xs text-gray-400 font-mono">${orderId}</div>
@@ -17794,9 +18013,11 @@
             <td class="px-4 py-4">
               <div class="font-bold text-lg text-spicy">${total.toFixed(0)} ₴</div>
             </td>
-            <td class="px-4 py-4">${statusBadge[status]}</td>
+            <td class="px-4 py-4">
+              ${statusCellHtml}
+            </td>
             <td class="px-4 py-4 text-center">
-              ${status === 'pending' ? `
+              ${category === 'waiting' ? `
                 <button 
                   onclick="sendReviewRequest('${order.id}', event)" 
                   data-order-id="${order.id}"
@@ -17805,33 +18026,32 @@
                   <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
                   </svg>
-                  <span class="btn-text-desktop">Запит відгуку</span>
+                  <span class="btn-text-desktop">Надіслати запит</span>
                   <span class="btn-text-mobile">Надіслати</span>
                 </button>
-              ` : status === 'sent' ? `
-                <div class="review-sent-status">
-                  <span class="status-text">✅ Надіслано</span>
+              ` : `
+                <div class="flex flex-col items-center gap-2">
+                  <span class="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium border border-green-200">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Відгук отримано
+                  </span>
                   <button 
-                    onclick="resendReviewRequest('${order.id}')" 
-                    class="resend-link"
-                    type="button">
-                    ↻ Надіслати ще раз
+                    onclick="resetReviewStatus('${order.id}')" 
+                    class="inline-flex items-center gap-1 px-3 py-1.5 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
+                    type="button"
+                    title="Видалити відгук і повернути в чергу">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                    </svg>
+                    Скинути статус
                   </button>
                 </div>
-              ` : `
-                <span class="inline-flex items-center gap-1 text-green-600 text-sm font-medium">
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                    <polyline points="22 4 12 14.01 9 11.01"/>
-                  </svg>
-                  Відгук отримано
-                </span>
               `}
             </td>
           </tr>`
       }).join('')
-
-      lucide.createIcons()
     }
     
     // Format order items for display
@@ -17864,8 +18084,172 @@
       return itemsHtml + moreHtml
     }
 
-    window.filterReviewRequests = function() {
-      renderReviewRequests()
+    // ============================================
+    // SHOW REVIEW REQUEST HISTORY
+    // ============================================
+    window.showReviewRequestHistory = async function(orderId) {
+      try {
+        const orderDoc = await getDoc(doc(db, 'orders', orderId))
+        
+        if (!orderDoc.exists()) {
+          showToast('Замовлення не знайдено', 'error')
+          return
+        }
+        
+        const orderData = orderDoc.data()
+        const history = orderData.reviewRequestHistory || []
+        
+        if (history.length === 0) {
+          showToast('Історія відправок порожня', 'warning')
+          return
+        }
+        
+        // Build history HTML
+        let historyHtml = history.map((entry, index) => {
+          const sentDate = entry.sentAt?.toDate ? entry.sentAt.toDate() : new Date(entry.sentAt)
+          const dateStr = sentDate.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' })
+          const timeStr = sentDate.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })
+          
+          return `
+            <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+              <div class="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm">
+                ${history.length - index}
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                  <svg class="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                  </svg>
+                  <span class="font-semibold text-gray-900">${dateStr} о ${timeStr}</span>
+                </div>
+                <div class="text-xs text-gray-600 space-y-1">
+                  <div>📱 Телефон: ${entry.phone || 'N/A'}</div>
+                  <div>📨 Метод: ${entry.method || 'sms'}</div>
+                  <div>✅ Статус: ${entry.status || 'sent'}</div>
+                  ${entry.apiResponse ? `<div>💬 API: ${entry.apiResponse}</div>` : ''}
+                </div>
+              </div>
+            </div>
+          `
+        }).reverse().join('')
+        
+        // Show modal
+        const modal = `
+          <div id="review-history-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+            <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+              <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <svg class="w-6 h-6 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 3v18h18"/>
+                    <path d="M18 17V9"/>
+                    <path d="M13 17V5"/>
+                    <path d="M8 17v-3"/>
+                  </svg>
+                  Історія запитів на відгук
+                </h3>
+                <button onclick="closeReviewHistoryModal()" class="p-2 hover:bg-gray-100 rounded-lg transition">
+                  <svg class="w-6 h-6 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="p-6 overflow-y-auto flex-1">
+                <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div class="flex items-center gap-2 text-sm text-blue-900">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="16" x2="12" y2="12"/>
+                      <line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                    <span><strong>Всього відправлено:</strong> ${history.length} запит(ів)</span>
+                  </div>
+                </div>
+                <div class="space-y-3">
+                  ${historyHtml}
+                </div>
+              </div>
+              <div class="p-6 border-t border-gray-200 flex justify-end">
+                <button onclick="closeReviewHistoryModal()" class="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition">
+                  Закрити
+                </button>
+              </div>
+            </div>
+          </div>
+        `
+        
+        // Add modal to DOM
+        document.body.insertAdjacentHTML('beforeend', modal)
+        
+      } catch (error) {
+        console.error('Error showing history:', error)
+        showToast(`Помилка: ${error.message}`, 'error')
+      }
+    }
+    
+    // Close history modal
+    window.closeReviewHistoryModal = function() {
+      const modal = document.getElementById('review-history-modal')
+      if (modal) {
+        modal.remove()
+      }
+    }
+
+    // ============================================
+    // RESET REVIEW STATUS
+    // ============================================
+    window.resetReviewStatus = async function(orderId) {
+      // Show confirmation dialog
+      const confirmed = confirm(
+        'Ви впевнені, що хочете видалити цей відгук і повернути замовлення в чергу?\n\n' +
+        'Це дія незворотна і видалить всі відгуки, пов\'язані з цим замовленням.'
+      )
+      
+      if (!confirmed) {
+        return
+      }
+      
+      try {
+        console.log(`🔄 Resetting review status for order: ${orderId}`)
+        
+        // Find all reviews with this orderId
+        const reviewsQuery = query(
+          collection(db, 'reviews'),
+          where('orderId', '==', orderId)
+        )
+        
+        const reviewsSnapshot = await getDocs(reviewsQuery)
+        console.log(`📚 Found ${reviewsSnapshot.size} review(s) to delete`)
+        
+        if (reviewsSnapshot.empty) {
+          showToast('Відгуків для цього замовлення не знайдено', 'warning')
+          return
+        }
+        
+        // Delete all reviews for this order
+        const deletePromises = []
+        reviewsSnapshot.forEach(reviewDoc => {
+          console.log(`🗑️ Deleting review: ${reviewDoc.id}`)
+          deletePromises.push(deleteDoc(doc(db, 'reviews', reviewDoc.id)))
+        })
+        
+        await Promise.all(deletePromises)
+        
+        console.log(`✅ Successfully deleted ${deletePromises.length} review(s)`)
+        
+        // Remove orderId from reviewedOrderIds Set
+        reviewedOrderIds.delete(orderId)
+        
+        // Update UI
+        updateReviewRequestsCounts()
+        renderReviewRequests()
+        
+        showToast(`Статус скинуто! Замовлення повернуто в очікування (${deletePromises.length} відгук(ів) видалено)`, 'success')
+        
+      } catch (error) {
+        console.error('❌ Error resetting review status:', error)
+        showToast(`Помилка: ${error.message}`, 'error')
+      }
     }
 
     // ============================================
@@ -17878,13 +18262,16 @@
         return
       }
 
+      // ✅ FIX: Clean phone number - remove ALL non-digits (spaces, +, -, etc.)
       let phone = order.customer?.phone?.replace(/\D/g, '') || ''
+      
+      // ✅ FIX: Validate phone exists
       if (!phone) {
         showToast('Номер телефону клієнта відсутній', 'error')
         return
       }
 
-      // Ensure phone is in international format
+      // ✅ FIX: Ensure phone is in international format (380XXXXXXXXX)
       if (!phone.startsWith('380')) {
         if (phone.startsWith('0')) {
           phone = '380' + phone.substring(1)
@@ -17893,6 +18280,16 @@
         } else {
           phone = '380' + phone
         }
+      }
+      
+      // ✅ FIX: Final validation - ensure clean string without spaces/special chars
+      phone = phone.trim().replace(/[^0-9]/g, '')
+      
+      // ✅ FIX: Validate phone format (should be 12 digits: 380XXXXXXXXX)
+      if (phone.length !== 12) {
+        showToast(`Невірний формат номера телефону: ${phone}`, 'error')
+        console.error('❌ Invalid phone format:', phone, 'Length:', phone.length)
+        return
       }
 
       let button = null
@@ -17986,37 +18383,74 @@
         console.log('📊 Response Code:', result.response_code, '(type:', typeof result.response_code, ')')
         console.log('📊 Response Status:', result.response_status)
         console.log('📊 HTTP Status:', response.status)
+        console.log('📊 Success Field:', result.success)
 
-        // TurboSMS API Success Indicators:
+        // TurboSMS API Success Indicators (COMPREHENSIVE):
         // - response_code: 0 (number) or "0" (string) = success
-        // - response_status: "OK" or "SUCCESS" = success
+        // - response_code: 801 = SUCCESS_MESSAGE_SENT (success)
+        // - response_status: "OK" or "SUCCESS" or "SUCCESS_MESSAGE_SENT" = success
         // - success: true (some endpoints)
+        // - HTTP status: 200-299 = typically success
+        // - result_array with message_id = success
         const isSuccess = (
           result.response_code === 0 || 
           result.response_code === '0' || 
+          result.response_code === 801 ||           // ✅ FIXED: 801 is success
+          result.response_code === '801' ||         // ✅ FIXED: string version
           String(result.response_code) === '0' ||
+          String(result.response_code) === '801' || // ✅ FIXED: ensure string comparison
           result.response_status === 'OK' ||
           result.response_status === 'SUCCESS' ||
-          result.success === true
+          result.response_status === 'SUCCESS_MESSAGE_SENT' || // ✅ FIXED: new status
+          result.success === true ||
+          (response.status >= 200 && response.status < 300 && result.result_array && result.result_array.length > 0) ||
+          (response.status >= 200 && response.status < 300 && !result.error && !result.response_code)
         )
 
         if (isSuccess) {
           console.log('✅ TurboSMS Success detected!')
           
-          // Update order in Firestore
+          // Get existing history or create new array
+          const orderDoc = await getDoc(doc(db, 'orders', orderId))
+          const existingHistory = orderDoc.exists() && orderDoc.data().reviewRequestHistory 
+            ? orderDoc.data().reviewRequestHistory 
+            : []
+          
+          // ✅ FIX: Use new Date().toISOString() instead of serverTimestamp() inside arrayUnion
+          // serverTimestamp() can ONLY be used with top-level fields in update()/set()
+          const newHistoryEntry = {
+            sentAt: new Date().toISOString(),  // ✅ FIXED: Use ISO string instead of serverTimestamp()
+            type: 'sms',
+            method: 'turbosms',
+            phone: phone,
+            status: 'sent',
+            messageLength: messageText.length,
+            apiResponse: result.response_status || 'OK'
+          }
+          
+          console.log('💾 Updating order with history entry:', newHistoryEntry)
+          
+          // ✅ FIX: Update order in Firestore with history
+          // serverTimestamp() only for TOP-LEVEL fields, ISO string inside arrayUnion
           await updateDoc(doc(db, 'orders', orderId), {
             review_request_sent: true,
             reviewRequestSent: true,
-            reviewRequestSentAt: serverTimestamp(),
+            reviewRequestSentAt: serverTimestamp(),      // ✅ TOP-LEVEL: serverTimestamp() OK
+            reviewRequestLastSentAt: serverTimestamp(),  // ✅ TOP-LEVEL: serverTimestamp() OK
+            lastReviewRequestSent: serverTimestamp(),    // ✅ TOP-LEVEL: serverTimestamp() OK (renamed for clarity)
             reviewRequestMethod: 'turbosms',
-            reviewRequestPhone: phone
+            reviewRequestPhone: phone,
+            reviewRequestHistory: arrayUnion(newHistoryEntry),  // ✅ INSIDE arrayUnion: ISO string
+            reviewRequestCount: (orderDoc.data()?.reviewRequestCount || 0) + 1  // Increment counter
           })
 
-          // Update local cache
+          // Update local cache with history data
           const idx = deliveredOrders.findIndex(o => o.id === orderId)
           if (idx !== -1) {
             deliveredOrders[idx].review_request_sent = true
             deliveredOrders[idx].reviewRequestSent = true
+            deliveredOrders[idx].reviewRequestLastSentAt = new Date()  // For immediate UI update
+            deliveredOrders[idx].reviewRequestCount = (deliveredOrders[idx].reviewRequestCount || 0) + 1
           }
 
           // Update button to permanent success state (prevent double-sending)
@@ -18036,30 +18470,33 @@
           // Refresh table to show updated status
           renderReviewRequests()
 
-          // Show SUCCESS notification
-          showToast('✅ Запит на відгук успішно надіслано!', 'success')
+          // Show SUCCESS notification with send count
+          const sendCount = (orderDoc.data()?.reviewRequestCount || 0) + 1
+          showToast(`✅ Запит на відгук успішно надіслано! (Всього: ${sendCount})`, 'success')
           
         } else {
           // Real API error - construct detailed error message
           console.error('❌ TurboSMS API Error:', result)
+          console.error('❌ Full error response:', JSON.stringify(result, null, 2))
           
           let errorMsg = 'Помилка відправки SMS'
           
           // Extract error details from response
-          if (result.response_status) {
+          if (result.response_status && result.response_status !== 'SUCCESS_MESSAGE_SENT') {
             errorMsg = result.response_status
           } else if (result.message) {
             errorMsg = result.message
           } else if (result.error) {
             errorMsg = result.error
-          } else if (result.response_code) {
-            // Map known error codes
+          } else if (result.response_code && result.response_code !== 801 && result.response_code !== '801') {
+            // Map known error codes (excluding 801 which is success)
             const errorCodes = {
               '1': 'Помилка авторизації - перевірте API Token',
               '2': 'Недостатньо коштів на балансі',
               '3': 'Невірний формат номеру телефону',
               '4': 'Невірний текст повідомлення',
-              '5': 'Невірний sender name (Alpha Name)'
+              '5': 'Невірний sender name (Alpha Name)',
+              '801': 'SUCCESS_MESSAGE_SENT (це успіх, не помилка!)'  // Safety guard
             }
             errorMsg = errorCodes[String(result.response_code)] || `Код помилки: ${result.response_code}`
           }
