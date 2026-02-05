@@ -567,6 +567,9 @@ function subscribeToReviews(productId) {
             const data = doc.data();
             console.log('\n📄 Document ID:', doc.id);
             console.log('   - customerName:', data.customerName);
+            console.log('   - name:', data.name);
+            console.log('   - userName:', data.userName);
+            console.log('   - author:', data.author);
             console.log('   - rating:', data.rating);
             console.log('   - status:', data.status);
             console.log('   - productIds:', data.productIds);
@@ -678,6 +681,9 @@ async function fetchLegacyReviews(productId, arrayReviews = []) {
             const data = doc.data();
             console.log('\n📄 Legacy Document ID:', doc.id);
             console.log('   - customerName:', data.customerName);
+            console.log('   - name:', data.name);
+            console.log('   - userName:', data.userName);
+            console.log('   - author:', data.author);
             console.log('   - rating:', data.rating);
             console.log('   - status:', data.status);
             console.log('   - productId:', data.productId);
@@ -759,10 +765,13 @@ async function fetchReviewsSimple(productId) {
             snapshotArray.forEach(doc => {
                 const data = doc.data();
                 console.log('\n📄 Array Doc ID:', doc.id);
+                console.log('   - customerName:', data.customerName);
+                console.log('   - name:', data.name);
+                console.log('   - userName:', data.userName);
+                console.log('   - author:', data.author);
                 console.log('   - productIds:', data.productIds);
                 console.log('   - productIds type:', typeof data.productIds);
                 console.log('   - is Array:', Array.isArray(data.productIds));
-                console.log('   - customerName:', data.customerName);
                 console.log('   - status:', data.status);
                 
                 allReviews.push({ id: doc.id, ...data });
@@ -788,9 +797,12 @@ async function fetchReviewsSimple(productId) {
             snapshotLegacy.forEach(doc => {
                 const data = doc.data();
                 console.log('\n📄 Legacy Doc ID:', doc.id);
+                console.log('   - customerName:', data.customerName);
+                console.log('   - name:', data.name);
+                console.log('   - userName:', data.userName);
+                console.log('   - author:', data.author);
                 console.log('   - productId:', data.productId);
                 console.log('   - productId type:', typeof data.productId);
-                console.log('   - customerName:', data.customerName);
                 console.log('   - status:', data.status);
                 
                 allReviews.push({ id: doc.id, ...data });
@@ -930,6 +942,35 @@ function renderRatingBreakdown() {
     }).join('');
 }
 
+// ============================================
+// HELPER: Format Display Name
+// ============================================
+/**
+ * Formats full name to "FirstName L." format
+ * Examples:
+ *   "Руслан Яковенко" → "Руслан Я."
+ *   "Марія" → "Марія"
+ *   null/undefined → "Покупець"
+ */
+function formatDisplayName(fullName) {
+    if (!fullName || fullName.trim() === '') {
+        return 'Покупець';
+    }
+    
+    const parts = fullName.trim().split(/\s+/);
+    
+    // If only one word (first name only)
+    if (parts.length === 1) {
+        return parts[0];
+    }
+    
+    // First name + Last initial with dot
+    const firstName = parts[0];
+    const lastInitial = parts[1].charAt(0).toUpperCase() + '.';
+    
+    return `${firstName} ${lastInitial}`;
+}
+
 function renderReviewCard(review) {
     const photos = review.photos || [];
     const photosHTML = photos.length > 0 ? `
@@ -983,7 +1024,21 @@ function renderReviewCard(review) {
         </span>
     ` : '';
 
-    const userName = review.userName || review.author || 'Анонім';
+    // Get customer name from multiple possible fields
+    const rawName = review.customerName || review.name || review.userName || review.author;
+    
+    // Debug logging to see what data we have
+    console.log('🔍 Review name data:', {
+        reviewId: review.id,
+        customerName: review.customerName,
+        name: review.name,
+        userName: review.userName,
+        author: review.author,
+        rawName: rawName,
+        formatted: formatDisplayName(rawName)
+    });
+    
+    const userName = formatDisplayName(rawName);
 
     return `
         <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-md border border-gray-100 hover:shadow-lg hover:border-gray-200 transition-all duration-300">
