@@ -511,6 +511,19 @@
       background-color: rgba(254, 243, 199, 0.3);
     }
 
+    /* ✅ TASK 3: Order Number Column - Ensure proper width and spacing */
+    #review-requests-waiting-table td:first-child,
+    #review-requests-reviewed-table td:first-child {
+      min-width: 140px;
+      max-width: 160px;
+    }
+    
+    #review-requests-waiting-table th:first-child,
+    #review-requests-reviewed-table th:first-child {
+      min-width: 140px;
+      max-width: 160px;
+    }
+
     /* Reset Review Status Button */
     button[onclick^="resetReviewStatus"] {
       font-size: 0.75rem;
@@ -3424,6 +3437,73 @@
                   </div>
                 </div>
 
+                <!-- Section 4: Sending Time Window -->
+                <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-5 border border-amber-100">
+                  <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center">
+                      <i data-lucide="clock" class="w-5 h-5 text-white"></i>
+                    </div>
+                    <div>
+                      <h3 class="font-semibold text-gray-900">Дозволений час відправки СМС</h3>
+                      <p class="text-xs text-gray-600">Налаштуйте часове вікно для відправки SMS клієнтам</p>
+                    </div>
+                  </div>
+
+                  <div class="bg-white rounded-lg p-4 space-y-4">
+                    <!-- Time Window Settings -->
+                    <div class="grid grid-cols-2 gap-4">
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                          <i data-lucide="sunrise" class="w-4 h-4 inline text-amber-600"></i>
+                          Початок робочого дня
+                        </label>
+                        <input 
+                          id="sms-window-start" 
+                          type="time" 
+                          value="09:00"
+                          class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+                        >
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                          <i data-lucide="sunset" class="w-4 h-4 inline text-orange-600"></i>
+                          Кінець робочого дня
+                        </label>
+                        <input 
+                          id="sms-window-end" 
+                          type="time" 
+                          value="17:00"
+                          class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+                        >
+                      </div>
+                    </div>
+
+                    <!-- Info Box -->
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                      <div class="flex items-start gap-2">
+                        <i data-lucide="info" class="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0"></i>
+                        <div class="text-xs text-amber-800">
+                          <p class="font-medium mb-1">Як це працює:</p>
+                          <ul class="space-y-1 list-disc list-inside">
+                            <li>SMS буде надіслано <strong>одразу</strong>, якщо поточний час у вказаному діапазоні</li>
+                            <li>Якщо зараз поза межами вікна, SMS буде <strong>заплановано</strong> на наступний робочий час</li>
+                            <li>Заплановані повідомлення відправляються автоматично</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Preview -->
+                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-200">
+                      <div class="flex items-center gap-2 text-sm">
+                        <i data-lucide="calendar-clock" class="w-4 h-4 text-blue-600"></i>
+                        <span class="font-medium text-blue-900">Поточний статус:</span>
+                        <span id="time-window-status" class="text-blue-700">Завантаження...</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
               </div>
 
               <!-- Modal Footer -->
@@ -5061,7 +5141,8 @@
       setDoc,
       onSnapshot,
       arrayUnion,
-      arrayRemove
+      arrayRemove,
+      deleteField
     } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
     import {
       getStorage,
@@ -5089,6 +5170,22 @@
     const storage = getStorage(app)
     const functions = getFunctions(app)
 
+    // Make Firebase functions available globally for window functions
+    window.db = db
+    window.auth = auth
+    window.storage = storage
+    window.deleteField = deleteField  // ✅ TASK 1: Make deleteField available globally
+    window.doc = doc
+    window.updateDoc = updateDoc
+    window.getDoc = getDoc
+    window.collection = collection
+    window.query = query
+    window.where = where
+    window.getDocs = getDocs
+    window.deleteDoc = deleteDoc
+    window.serverTimestamp = serverTimestamp
+    window.Timestamp = serverTimestamp
+
     console.log('🔥 Firebase initialized')
 
     // ============================================
@@ -5108,6 +5205,9 @@
         appView.classList.remove('hidden')
         lucide.createIcons()
 
+        // Load review settings first (needed for Smart Sending time validation)
+        await loadReviewSettings()
+        
         await loadOrders()
         await loadProducts()
         await loadCategories()
@@ -17693,7 +17793,7 @@
   <!-- ============================================ -->
   <script type="module">
     import { 
-      getFirestore, collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy, limit, serverTimestamp, onSnapshot, setDoc 
+      getFirestore, collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy, limit, serverTimestamp, onSnapshot, setDoc, arrayUnion, Timestamp 
     } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
     import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js'
     import { getApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'
@@ -17721,6 +17821,10 @@
         loadPublishedReviews(),
         loadReviewsVisibility() // Load global visibility toggle
       ])
+      
+      // ✅ Start automatic scheduler for scheduled SMS
+      startScheduler()
+      
       lucide.createIcons()
     }
 
@@ -17932,6 +18036,16 @@
         const orderNumber = order.orderNumber || `#${(index + 1).toString().padStart(4, '0')}`
         const orderId = order.id.substring(0, 8).toUpperCase()
         
+        // ✅ TASK 1 & 2: Format completion date with fallback
+        let completionDateHtml = ''
+        const completedAt = order.completedAt || order.updatedAt || order.createdAt
+        if (completedAt) {
+          const completedDate = completedAt?.toDate ? completedAt.toDate() : new Date(completedAt)
+          const dateStr = completedDate.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit' })
+          const timeStr = completedDate.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })
+          completionDateHtml = `<div class="text-xs text-gray-400 mt-0.5" title="Дата виконання замовлення">📅 ${dateStr} ${timeStr}</div>`
+        }
+        
         // Format items list
         const itemsHtml = formatOrderItems(order.items || [])
         
@@ -17940,14 +18054,39 @@
           ? 'hover:bg-gray-50 transition opacity-70' 
           : 'hover:bg-gray-50 transition'
         
-        // ✅ COMPACT: Format status cell with single-line layout
+        // ✅ TASK 1: Format STATUS cell - SMS delivery state
         const requestCount = order.reviewRequestCount || 0
         const lastSentAt = order.reviewRequestLastSentAt || order.reviewRequestSentAt
         let statusCellHtml = ''
         
         if (category === 'waiting') {
-          // Check if request has been sent
-          if (lastSentAt) {
+          // Check for scheduled status FIRST
+          if (order.reviewRequestStatus === 'scheduled' && order.reviewRequestScheduledFor) {
+            // ✅ SCHEDULED - Show when SMS will be sent with cancel button
+            const scheduledFor = order.reviewRequestScheduledFor?.toDate ? order.reviewRequestScheduledFor.toDate() : new Date(order.reviewRequestScheduledFor)
+            const dateStr = scheduledFor.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit' })
+            const timeStr = scheduledFor.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })
+            
+            statusCellHtml = `
+              <div class="flex items-center gap-2">
+                <span class="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-full text-xs font-medium whitespace-nowrap">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  ⏳ ${dateStr} ${timeStr}
+                </span>
+                <button 
+                  onclick="cancelScheduledSms('${order.id}', event)" 
+                  class="flex items-center justify-center w-6 h-6 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-all duration-200"
+                  type="button"
+                  title="Скасувати заплановану відправку"
+                  style="background: none; border: none; cursor: pointer; font-size: 16px;">
+                  ✕
+                </button>
+              </div>
+            `
+          } else if (lastSentAt) {
             // ✅ SENT: Compact format "📅 05.02 14:30 (№2)" - single line
             const sentDate = lastSentAt?.toDate ? lastSentAt.toDate() : new Date(lastSentAt)
             const dateStr = sentDate.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit' })
@@ -17996,7 +18135,7 @@
           `
         }
 
-        // ✅ TASK 3: Statistics Cell - Track link opened
+        // ✅ TASK 2: STATISTICS Cell - Customer interaction ONLY (link tracking)
         let statisticsCellHtml = ''
         
         if (order.linkOpened) {
@@ -18014,7 +18153,7 @@
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                     <circle cx="12" cy="12" r="3"/>
                   </svg>
-                  Переглянуто
+                  👁️ Переглянуто
                 </span>
                 <span class="text-xs text-gray-500">${dateStr} ${timeStr}</span>
               </div>
@@ -18026,22 +18165,22 @@
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                   <circle cx="12" cy="12" r="3"/>
                 </svg>
-                Переглянуто
+                👁️ Переглянуто
               </span>
             `
           }
-        } else if (lastSentAt) {
-          // ✅ SMS sent but link not opened yet
+        } else if (lastSentAt && !order.reviewRequestStatus) {
+          // ✅ SMS sent but link not opened yet (and not scheduled)
           statisticsCellHtml = `
             <span class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-500 rounded-md text-xs font-medium whitespace-nowrap">
               <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
               </svg>
-              Надіслано
+              📩 Надіслано
             </span>
           `
         } else {
-          // ✅ Nothing sent yet
+          // ✅ Nothing to show - no interaction yet
           statisticsCellHtml = `
             <span class="text-gray-400 text-sm">—</span>
           `
@@ -18052,6 +18191,7 @@
             <td class="px-4 py-4">
               <div class="font-bold text-gray-900">${orderNumber}</div>
               <div class="text-xs text-gray-400 font-mono">${orderId}</div>
+              ${completionDateHtml}
             </td>
             <td class="px-4 py-4">
               <div class="font-medium text-gray-900">${customer.fullName || 'Невідомий'}</div>
@@ -18252,6 +18392,289 @@
     }
 
     // ============================================
+    // SMART SENDING - WORKING HOURS
+    // ============================================
+    
+    // Working hours are now configured in Settings Modal (Section 4)
+    // and stored in reviewSettings.timeWindow { start: 'HH:MM', end: 'HH:MM' }
+    
+    /**
+     * Check if current time is within working hours
+     * @returns {boolean} true if within working hours
+     */
+    function isWorkingHours() {
+      const now = new Date()
+      const currentHour = now.getHours()
+      const currentMinutes = now.getMinutes()
+      
+      // Get time window from settings or use defaults
+      // Safe access with multiple fallback levels
+      const startTime = (reviewSettings && reviewSettings.timeWindow && reviewSettings.timeWindow.start) || '09:00'
+      const endTime = (reviewSettings && reviewSettings.timeWindow && reviewSettings.timeWindow.end) || '17:00'
+      
+      const [startHour, startMin] = startTime.split(':').map(Number)
+      const [endHour, endMin] = endTime.split(':').map(Number)
+      
+      const currentMinTotal = currentHour * 60 + currentMinutes
+      const startMinTotal = startHour * 60 + startMin
+      const endMinTotal = endHour * 60 + endMin
+      
+      const isWorking = currentMinTotal >= startMinTotal && currentMinTotal < endMinTotal
+      
+      console.log('🕒 Time check:', {
+        currentTime: now.toLocaleTimeString('uk-UA'),
+        workingHours: `${startTime} - ${endTime}`,
+        isWorkingHours: isWorking,
+        settingsLoaded: !!reviewSettings?.timeWindow
+      })
+      
+      return isWorking
+    }
+    
+    /**
+     * Calculate next working hours start time
+     * @returns {Date} Next working hours start
+     */
+    function getNextWorkingHoursStart() {
+      const now = new Date()
+      const currentHour = now.getHours()
+      const currentMinutes = now.getMinutes()
+      
+      // Get time window from settings or use defaults
+      // Safe access with multiple fallback levels
+      const startTime = (reviewSettings && reviewSettings.timeWindow && reviewSettings.timeWindow.start) || '09:00'
+      const endTime = (reviewSettings && reviewSettings.timeWindow && reviewSettings.timeWindow.end) || '17:00'
+      
+      const [startHour, startMin] = startTime.split(':').map(Number)
+      const [endHour, endMin] = endTime.split(':').map(Number)
+      
+      const currentMinTotal = currentHour * 60 + currentMinutes
+      const startMinTotal = startHour * 60 + startMin
+      const endMinTotal = endHour * 60 + endMin
+      
+      let nextStart = new Date()
+      nextStart.setSeconds(0)
+      nextStart.setMilliseconds(0)
+      
+      if (currentMinTotal < startMinTotal) {
+        // Before work starts today - schedule for today at start time
+        nextStart.setHours(startHour, startMin)
+      } else {
+        // After work starts/ends - schedule for tomorrow at start time
+        nextStart.setDate(nextStart.getDate() + 1)
+        nextStart.setHours(startHour, startMin)
+      }
+      
+      console.log('📅 Next working hours:', nextStart.toLocaleString('uk-UA'))
+      
+      return nextStart
+    }
+    
+    /**
+     * Schedule SMS sending for next working hours
+     * @param {string} orderId - Order ID
+     * @param {Object} smsData - SMS data (phone, message, etc.)
+     */
+    async function scheduleSmsForWorkingHours(orderId, smsData) {
+      const nextStart = getNextWorkingHoursStart()
+      
+      console.log('⏳ Scheduling SMS for:', nextStart.toLocaleString('uk-UA'))
+      
+      // Update order with scheduled status
+      await updateDoc(doc(db, 'orders', orderId), {
+        reviewRequestStatus: 'scheduled',
+        reviewRequestScheduledFor: Timestamp.fromDate(nextStart),
+        reviewRequestScheduledAt: serverTimestamp(),
+        reviewRequestPhone: smsData.phone,
+        reviewRequestMessage: smsData.message
+      })
+      
+      console.log('✅ SMS scheduled successfully')
+      
+      return nextStart
+    }
+    
+    // ============================================
+    // AUTO SCHEDULER - Process scheduled messages
+    // ============================================
+    
+    let schedulerInterval = null
+    
+    /**
+     * Process scheduled review requests
+     * Sends pending SMS that are scheduled for current time
+     */
+    async function processScheduledReviews() {
+      try {
+        console.log('⏰ [SCHEDULER] Checking for scheduled review requests...')
+        
+        if (!isWorkingHours()) {
+          console.log('⏰ [SCHEDULER] Outside working hours - skipping')
+          return
+        }
+        
+        const now = new Date()
+        
+        // Query orders with scheduled status and time <= now
+        const scheduledQuery = query(
+          collection(db, 'orders'),
+          where('reviewRequestStatus', '==', 'scheduled')
+        )
+        
+        const snapshot = await getDocs(scheduledQuery)
+        console.log(`⏰ [SCHEDULER] Found ${snapshot.size} scheduled requests`)
+        
+        for (const orderDoc of snapshot.docs) {
+          const order = orderDoc.data()
+          const scheduledFor = order.reviewRequestScheduledFor?.toDate()
+          
+          if (!scheduledFor) continue
+          
+          // Check if it's time to send
+          if (scheduledFor <= now) {
+            console.log(`📤 [SCHEDULER] Sending scheduled SMS for order: ${orderDoc.id}`)
+            
+            try {
+              // Send SMS using stored data
+              await sendScheduledSms(orderDoc.id, order)
+              
+              // Update status to remove from scheduled queue
+              await updateDoc(doc(db, 'orders', orderDoc.id), {
+                reviewRequestStatus: 'sent'
+              })
+              
+              console.log(`✅ [SCHEDULER] Successfully sent scheduled SMS for: ${orderDoc.id}`)
+            } catch (error) {
+              console.error(`❌ [SCHEDULER] Failed to send scheduled SMS:`, error)
+              
+              // Update status to failed
+              await updateDoc(doc(db, 'orders', orderDoc.id), {
+                reviewRequestStatus: 'failed',
+                reviewRequestError: error.message
+              })
+            }
+          }
+        }
+        
+      } catch (error) {
+        console.error('❌ [SCHEDULER] Error processing scheduled reviews:', error)
+      }
+    }
+    
+    /**
+     * Send scheduled SMS
+     * @param {string} orderId - Order ID
+     * @param {Object} order - Order data with stored message
+     */
+    async function sendScheduledSms(orderId, order) {
+      const phone = order.reviewRequestPhone
+      const messageText = order.reviewRequestMessage
+      
+      if (!phone || !messageText) {
+        throw new Error('Missing phone or message in scheduled data')
+      }
+      
+      // Get API credentials
+      const settingsDoc = await getDoc(doc(db, 'settings', 'config'))
+      if (!settingsDoc.exists()) {
+        throw new Error('Settings not found')
+      }
+      
+      const settings = settingsDoc.data()
+      const apiKey = settings.turboSmsToken
+      const alphaName = settings.senderName || 'Latiao'
+      
+      // Send SMS via TurboSMS API
+      const response = await fetch('https://api.turbosms.ua/message/send.json', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          recipients: [phone],
+          sms: {
+            sender: alphaName,
+            text: messageText
+          }
+        })
+      })
+      
+      const result = await response.json()
+      
+      // Check success
+      const isSuccess = (
+        result.response_code === 0 || 
+        result.response_code === '0' || 
+        result.response_code === 801 ||
+        result.response_code === '801' ||
+        result.response_status === 'OK' ||
+        result.response_status === 'SUCCESS' ||
+        result.response_status === 'SUCCESS_MESSAGE_SENT'
+      )
+      
+      if (!isSuccess) {
+        throw new Error(result.response_status || 'TurboSMS API error')
+      }
+      
+      // Update order with sent status
+      const newHistoryEntry = {
+        sentAt: new Date().toISOString(),
+        type: 'sms',
+        method: 'turbosms-scheduled',
+        phone: phone,
+        status: 'sent',
+        messageLength: messageText.length,
+        apiResponse: result.response_status || 'OK'
+      }
+      
+      await updateDoc(doc(db, 'orders', orderId), {
+        review_request_sent: true,
+        reviewRequestSent: true,
+        reviewRequestSentAt: serverTimestamp(),
+        reviewRequestLastSentAt: serverTimestamp(),
+        lastReviewRequestSent: serverTimestamp(),
+        reviewRequestMethod: 'turbosms-scheduled',
+        reviewRequestHistory: arrayUnion(newHistoryEntry),
+        reviewRequestCount: (order.reviewRequestCount || 0) + 1
+      })
+    }
+    
+    /**
+     * Start automatic scheduler
+     * Checks every 60 seconds for scheduled messages
+     */
+    function startScheduler() {
+      if (schedulerInterval) {
+        console.log('⏰ [SCHEDULER] Already running')
+        return
+      }
+      
+      console.log('⏰ [SCHEDULER] Starting automatic scheduler...')
+      
+      // Run immediately
+      processScheduledReviews()
+      
+      // Then run every 60 seconds
+      schedulerInterval = setInterval(() => {
+        processScheduledReviews()
+      }, 60000)  // 60 seconds
+      
+      console.log('✅ [SCHEDULER] Scheduler started (checks every 60 seconds)')
+    }
+    
+    /**
+     * Stop automatic scheduler
+     */
+    function stopScheduler() {
+      if (schedulerInterval) {
+        clearInterval(schedulerInterval)
+        schedulerInterval = null
+        console.log('⏰ [SCHEDULER] Scheduler stopped')
+      }
+    }
+    
+    // ============================================
     // RESET REVIEW STATUS
     // ============================================
     window.resetReviewStatus = async function(orderId) {
@@ -18304,6 +18727,60 @@
         
       } catch (error) {
         console.error('❌ Error resetting review status:', error)
+        showToast(`Помилка: ${error.message}`, 'error')
+      }
+    }
+
+    // ============================================
+    // CANCEL SCHEDULED SMS
+    // ============================================
+    window.cancelScheduledSms = async function(orderId, evt) {
+      // Prevent event bubbling
+      if (evt) {
+        evt.stopPropagation()
+      }
+      
+      // Show confirmation dialog
+      const confirmed = confirm(
+        'Ви впевнені, що хочете скасувати заплановану відправку СМС?\n\n' +
+        'Запит на відгук не буде відправлено автоматично.'
+      )
+      
+      if (!confirmed) {
+        return
+      }
+      
+      try {
+        console.log(`🚫 Cancelling scheduled SMS for order: ${orderId}`)
+        
+        // ✅ TASK 3: Update Firestore - remove ALL scheduling fields using deleteField()
+        await updateDoc(doc(db, 'orders', orderId), {
+          reviewRequestStatus: window.deleteField(),
+          reviewRequestScheduledFor: window.deleteField(),
+          reviewRequestScheduledAt: window.deleteField(),
+          reviewRequestPhone: window.deleteField(),
+          reviewRequestMessage: window.deleteField()
+        })
+        
+        console.log('✅ Scheduled SMS cancelled in Firestore')
+        
+        // Update local cache - remove scheduling properties
+        const orderIndex = deliveredOrders.findIndex(o => o.id === orderId)
+        if (orderIndex !== -1) {
+          delete deliveredOrders[orderIndex].reviewRequestStatus
+          delete deliveredOrders[orderIndex].reviewRequestScheduledFor
+          delete deliveredOrders[orderIndex].reviewRequestScheduledAt
+          delete deliveredOrders[orderIndex].reviewRequestPhone
+          delete deliveredOrders[orderIndex].reviewRequestMessage
+        }
+        
+        // Refresh table UI - will show "Очікує запиту" status
+        renderReviewRequests()
+        
+        showToast('✅ Відправку скасовано', 'success')
+        
+      } catch (error) {
+        console.error('❌ Error cancelling scheduled SMS:', error)
         showToast(`Помилка: ${error.message}`, 'error')
       }
     }
@@ -18409,6 +18886,66 @@
 
         console.log('📤 Sending SMS to:', phone)
         console.log('📝 Message:', messageText)
+
+        // ✅ TASK 1: TIME CHECK LOGIC - Smart Sending
+        console.log('═══════════════════════════════════════')
+        console.log('🕒 SMART SENDING - Checking working hours...')
+        console.log('═══════════════════════════════════════')
+        
+        if (!isWorkingHours()) {
+          // ❌ OUTSIDE WORKING HOURS - Schedule for later
+          console.log('⚠️  Outside working hours - scheduling SMS...')
+          
+          const nextStart = await scheduleSmsForWorkingHours(orderId, {
+            phone: phone,
+            message: messageText,
+            customerName: customerName,
+            orderNumber: orderNumber
+          })
+          
+          // Get scheduled time for display
+          const scheduledTimeStr = nextStart.toLocaleTimeString('uk-UA', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          })
+          
+          // ✅ TASK 2: UI FEEDBACK - Show scheduled status
+          if (button) {
+            button.disabled = false
+            button.classList.remove('btn-loading', 'btn-error')
+            button.classList.add('btn-success')
+            button.innerHTML = `
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              <span>⏳ Заплановано на ${scheduledTimeStr}</span>
+            `
+          }
+          
+          // Update local cache
+          const idx = deliveredOrders.findIndex(o => o.id === orderId)
+          if (idx !== -1) {
+            deliveredOrders[idx].reviewRequestStatus = 'scheduled'
+            deliveredOrders[idx].reviewRequestScheduledFor = nextStart
+          }
+          
+          // Refresh table
+          renderReviewRequests()
+          
+          // Show notification
+          const timeStr = nextStart.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })
+          showToast(`⏳ Зараз неробочий час. СМС буде надіслано автоматично о ${timeStr}`, 'info')
+          
+          console.log('✅ SMS scheduled successfully for:', nextStart.toLocaleString('uk-UA'))
+          console.log('═══════════════════════════════════════')
+          
+          return  // Exit early - don't send now
+        }
+        
+        // ✅ WITHIN WORKING HOURS - Send immediately
+        console.log('✅ Within working hours - sending SMS immediately...')
+        console.log('═══════════════════════════════════════')
 
         // Send SMS via TurboSMS API
         const response = await fetch('https://api.turbosms.ua/message/send.json', {
@@ -18734,6 +19271,7 @@
     // ============================================
     // REVIEW SETTINGS MODAL
     // ============================================
+    // Global configuration object with defaults
     let reviewSettings = {
       templates: [],
       automation: {
@@ -18744,6 +19282,10 @@
       reviewLink: {
         enabled: true,
         baseUrl: 'https://latiao-snack.com.ua/review'
+      },
+      timeWindow: {
+        start: '09:00',
+        end: '17:00'
       }
     }
 
@@ -18759,8 +19301,73 @@
       // Render templates
       renderTemplatesList()
       
+      // Update time window status
+      updateTimeWindowStatus()
+      
+      // Add event listeners for time inputs to update status in real-time
+      const startInput = document.getElementById('sms-window-start')
+      const endInput = document.getElementById('sms-window-end')
+      
+      if (startInput && endInput) {
+        // Remove old listeners if any
+        startInput.removeEventListener('change', handleTimeWindowChange)
+        endInput.removeEventListener('change', handleTimeWindowChange)
+        
+        // Add new listeners
+        startInput.addEventListener('change', handleTimeWindowChange)
+        endInput.addEventListener('change', handleTimeWindowChange)
+      }
+      
       // Re-initialize icons
       lucide.createIcons()
+    }
+    
+    /**
+     * Handle time window input changes
+     */
+    function handleTimeWindowChange() {
+      // Update reviewSettings with new values
+      const startTime = document.getElementById('sms-window-start').value
+      const endTime = document.getElementById('sms-window-end').value
+      
+      if (reviewSettings && reviewSettings.timeWindow) {
+        reviewSettings.timeWindow.start = startTime
+        reviewSettings.timeWindow.end = endTime
+      }
+      
+      // Update status display
+      updateTimeWindowStatus()
+    }
+    
+    /**
+     * Update time window status display
+     */
+    function updateTimeWindowStatus() {
+      const statusEl = document.getElementById('time-window-status')
+      if (!statusEl) return
+      
+      const now = new Date()
+      const currentTime = now.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })
+      
+      const startTime = reviewSettings?.timeWindow?.start || '09:00'
+      const endTime = reviewSettings?.timeWindow?.end || '17:00'
+      
+      const currentHour = now.getHours()
+      const currentMinutes = now.getMinutes()
+      const [startHour, startMin] = startTime.split(':').map(Number)
+      const [endHour, endMin] = endTime.split(':').map(Number)
+      
+      const currentMinTotal = currentHour * 60 + currentMinutes
+      const startMinTotal = startHour * 60 + startMin
+      const endMinTotal = endHour * 60 + endMin
+      
+      const isWorking = currentMinTotal >= startMinTotal && currentMinTotal < endMinTotal
+      
+      if (isWorking) {
+        statusEl.innerHTML = `\n          <span class=\"inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium\">\n            <span class=\"w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse\"></span>\n            Робочий час (\u0437\u0430\u0440\u0430\u0437 ${currentTime})\n          </span>\n        `
+      } else {
+        statusEl.innerHTML = `\n          <span class=\"inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-medium\">\n            <span class=\"w-1.5 h-1.5 bg-amber-500 rounded-full\"></span>\n            \u041d\u0435\u0440\u043e\u0431\u043e\u0447\u0438\u0439 \u0447\u0430\u0441 (\u0437\u0430\u0440\u0430\u0437 ${currentTime})\n          </span>\n        `
+      }
     }
 
     // Close Settings Modal
@@ -18773,18 +19380,37 @@
     // Load Settings from Firestore
     async function loadReviewSettings() {
       try {
+        console.log('🔄 Loading review settings from Firestore...')
         const settingsDoc = await getDoc(doc(db, 'settings', 'review_automation'))
+        
         if (settingsDoc.exists()) {
           const data = settingsDoc.data()
           reviewSettings = {
             templates: data.templates || [],
             automation: data.automation || { enabled: false, days: 1, hours: 0 },
-            reviewLink: data.reviewLink || { enabled: true, baseUrl: 'https://latiao-snack.com.ua/review' }
+            reviewLink: data.reviewLink || { enabled: true, baseUrl: 'https://latiao-snack.com.ua/review' },
+            timeWindow: data.timeWindow || { start: '09:00', end: '17:00' }
           }
           
-          // Update UI
-          document.getElementById('auto-send-days').value = reviewSettings.automation.days
-          document.getElementById('auto-send-hours').value = reviewSettings.automation.hours
+          console.log('✅ Review settings loaded:', {
+            timeWindow: reviewSettings.timeWindow,
+            automation: reviewSettings.automation.enabled,
+            templates: reviewSettings.templates.length
+          })
+          
+          // Update UI elements if they exist (modal might not be open)
+          const daysInput = document.getElementById('auto-send-days')
+          const hoursInput = document.getElementById('auto-send-hours')
+          const startInput = document.getElementById('sms-window-start')
+          const endInput = document.getElementById('sms-window-end')
+          
+          if (daysInput) daysInput.value = reviewSettings.automation.days
+          if (hoursInput) hoursInput.value = reviewSettings.automation.hours
+          if (startInput) startInput.value = reviewSettings.timeWindow.start
+          if (endInput) endInput.value = reviewSettings.timeWindow.end
+          
+          // Update time window status if element exists
+          updateTimeWindowStatus()
           
           if (reviewSettings.automation.enabled) {
             enableAutoSendUI()
@@ -18800,10 +19426,17 @@
           }
           
           updateTimingPreview()
+        } else {
+          console.log('⚠️ No settings document found, using defaults')
+          // Ensure defaults are set even if document doesn't exist
+          reviewSettings.timeWindow = { start: '09:00', end: '17:00' }
         }
       } catch (error) {
-        console.error('Error loading review settings:', error)
-        showToast('Помилка завантаження налаштувань', 'error')
+        console.error('❌ Error loading review settings:', error)
+        // Ensure timeWindow exists even on error
+        if (!reviewSettings.timeWindow) {
+          reviewSettings.timeWindow = { start: '09:00', end: '17:00' }
+        }
       }
     }
 
@@ -18814,11 +19447,24 @@
         reviewSettings.automation.days = parseInt(document.getElementById('auto-send-days').value) || 0
         reviewSettings.automation.hours = parseInt(document.getElementById('auto-send-hours').value) || 0
         
+        // ✅ NEW: Collect time window settings
+        reviewSettings.timeWindow = {
+          start: document.getElementById('sms-window-start').value,
+          end: document.getElementById('sms-window-end').value
+        }
+        
+        // Validate time window
+        if (!reviewSettings.timeWindow.start || !reviewSettings.timeWindow.end) {
+          showToast('Вкажіть початок та кінець робочого дня', 'warning')
+          return
+        }
+        
         // Save to Firestore
         await setDoc(doc(db, 'settings', 'review_automation'), {
           templates: reviewSettings.templates,
           automation: reviewSettings.automation,
           reviewLink: reviewSettings.reviewLink,
+          timeWindow: reviewSettings.timeWindow,  // ✅ NEW
           updatedAt: serverTimestamp()
         })
         
