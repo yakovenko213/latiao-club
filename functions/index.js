@@ -540,20 +540,38 @@ exports.adminPanel = functions.https.onRequest(app);
  * Can be called from manual trigger or scheduled function
  */
 async function performProductSync() {
+  const startTime = new Date();
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('🔄 Starting KeyCRM Sync at:', startTime.toISOString());
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  
   try {
     console.log('🔗 Starting KeyCRM Products Sync...');
 
     // 1. Fetch API Key from Firestore settings
+    console.log('📥 Fetching KeyCRM API Key from Firestore settings/config...');
     const settingsDoc = await admin.firestore().collection('settings').doc('config').get();
 
-    if (!settingsDoc.exists || !settingsDoc.data().keycrmApiKey) {
-      throw new Error('API Key not found in settings');
+    if (!settingsDoc.exists) {
+      const error = 'Settings document (settings/config) does not exist';
+      console.error('❌', error);
+      throw new Error(error);
     }
 
-    const apiKey = settingsDoc.data().keycrmApiKey;
-    console.log('✅ API Key loaded from settings');
+    const settingsData = settingsDoc.data();
+    console.log('📄 Settings doc exists. Keys available:', Object.keys(settingsData || {}));
+
+    if (!settingsData.keycrmApiKey) {
+      const error = 'KeyCRM API Key not found in settings/config. Please add it in Settings > Інтеграції';
+      console.error('❌', error);
+      throw new Error(error);
+    }
+
+    const apiKey = settingsData.keycrmApiKey;
+    console.log('✅ API Key loaded from settings (length:', apiKey.length, 'chars)');
 
     // 2. Fetch products with pagination from KeyCRM
+    console.log('📦 Starting pagination fetch from KeyCRM API...');
     const allCrmProducts = [];
     let currentPage = 1;
     let hasMorePages = true;
@@ -563,41 +581,46 @@ async function performProductSync() {
       const targetUrl = `https://openapi.keycrm.app/v1/offers?limit=${limit}&page=${currentPage}`;
       console.log(`📄 Fetching page ${currentPage}:`, targetUrl);
 
-      const response = await fetch(targetUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      try {
+        const response = await fetch(targetUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        });
 
-      console.log(`📡 Page ${currentPage} response:`, response.status, response.statusText);
+        console.log(`📡 Page ${currentPage} response:`, response.status, response.statusText);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Response error body:', errorText);
-        throw new Error(`KeyCRM API error: ${response.status} ${response.statusText}`);
-      }
-
-      const pageData = await response.json();
-      console.log(`📊 Page ${currentPage} data received`);
-
-      const pageProducts = pageData.data || pageData.products || pageData || [];
-
-      if (Array.isArray(pageProducts) && pageProducts.length > 0) {
-        // DEBUG: Log first product to see structure
-        if (currentPage === 1 && pageProducts.length > 0) {
-          console.log('🔍 DEBUG: First product structure from KeyCRM:', JSON.stringify(pageProducts[0], null, 2));
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ Response error body:', errorText);
+          throw new Error(`KeyCRM API error: ${response.status} ${response.statusText} - ${errorText}`);
         }
 
-        allCrmProducts.push(...pageProducts);
-        console.log(`✅ Page ${currentPage}: Added ${pageProducts.length} products (Total: ${allCrmProducts.length})`);
+        const pageData = await response.json();
+        console.log(`📊 Page ${currentPage} data received`);
 
-        hasMorePages = pageProducts.length === limit;
-        currentPage++;
-      } else {
-        console.log(`🛑 Page ${currentPage}: No more data. Stopping pagination.`);
-        hasMorePages = false;
+        const pageProducts = pageData.data || pageData.products || pageData || [];
+
+        if (Array.isArray(pageProducts) && pageProducts.length > 0) {
+          // DEBUG: Log first product to see structure
+          if (currentPage === 1 && pageProducts.length > 0) {
+            console.log('🔍 DEBUG: First product structure from KeyCRM:', JSON.stringify(pageProducts[0], null, 2));
+          }
+
+          allCrmProducts.push(...pageProducts);
+          console.log(`✅ Page ${currentPage}: Added ${pageProducts.length} products (Total: ${allCrmProducts.length})`);
+
+          hasMorePages = pageProducts.length === limit;
+          currentPage++;
+        } else {
+          console.log(`🛑 Page ${currentPage}: No more data. Stopping pagination.`);
+          hasMorePages = false;
+        }
+      } catch (pageError) {
+        console.error(`❌ Error fetching page ${currentPage}:`, getSafeErrorMessage(pageError));
+        throw pageError;
       }
 
     } while (hasMorePages);
@@ -698,6 +721,11 @@ async function performProductSync() {
       console.log(`🎉 Sync completed! Updated ${updates.length} products`);
     }
 
+    const endTime = new Date();
+    const duration = endTime - startTime;
+    console.log('✅ Sync finished at:', endTime.toISOString());
+    console.log(`⏱️ Total sync duration: ${duration}ms (${(duration / 1000).toFixed(2)}s)`);
+
     return {
       success: true,
       products: allCrmProducts, // Return products array for client-side processing
@@ -706,11 +734,34 @@ async function performProductSync() {
       productsMatched: matched.length,
       productsUpdated: updates.length,
       productsNotFound: notFound.length,
-      notFoundSKUs: notFound.slice(0, 10) // Return first 10 for logging
+      notFoundSKUs: notFound.slice(0, 10), // Return first 10 for logging
+      syncDuration: duration
     };
 
   } catch (error) {
-    console.error('❌ KeyCRM Products Sync failed:', getSafeErrorMessage(error));
+    const errorMessage = getSafeErrorMessage(error);
+    const errorStack = error.stack || 'No stack trace';
+    
+    console.error('❌ KeyCRM Products Sync failed:', errorMessage);
+    console.error('📚 Stack trace:', errorStack);
+
+    // ✅ TASK 1.4: Log error to dedicated Firestore collection
+    try {
+      await admin.firestore().collection('logs').doc('sync_errors').collection('errors').add({
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        error: errorMessage,
+        stack: errorStack,
+        type: 'keycrm_sync_error',
+        context: {
+          function: 'performProductSync',
+          stage: error.stage || 'unknown'
+        }
+      });
+      console.log('📝 Error logged to Firestore logs/sync_errors');
+    } catch (logError) {
+      console.error('⚠️ Failed to log error to Firestore:', getSafeErrorMessage(logError));
+    }
+
     throw error;
   }
 }
@@ -834,7 +885,26 @@ exports.scheduledStockSync = onSchedule({
 
     return null;
   } catch (error) {
-    console.error('❌ Scheduled 30-min sync failed:', getSafeErrorMessage(error));
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('❌ CRITICAL: Scheduled 30-min sync failed');
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('Error message:', getSafeErrorMessage(error));
+    console.error('Error stack:', error.stack);
+
+    // Log DETAILED error to dedicated collection for debugging
+    try {
+      await admin.firestore().collection('logs').doc('sync_errors').collection('errors').add({
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        isoTimestamp: new Date().toISOString(),
+        type: 'scheduled_30min_sync',
+        errorMessage: getSafeErrorMessage(error),
+        errorStack: error.stack || null,
+        environment: 'cloud_function'
+      });
+      console.log('✅ Error logged to logs/sync_errors collection');
+    } catch (logError) {
+      console.error('⚠️ Failed to log error to Firestore:', getSafeErrorMessage(logError));
+    }
 
     // Update sync stats with error
     await admin.firestore().collection('settings').doc('stockSyncStats').set({
@@ -846,7 +916,7 @@ exports.scheduledStockSync = onSchedule({
       nextScheduledSync: new Date(Date.now() + 30 * 60 * 1000).toISOString()
     }, { merge: true });
 
-    // Log error to Firestore
+    // Log error to Firestore (backward compatibility)
     await admin.firestore().collection('sync_logs').add({
       type: 'scheduled_30min',
       timestamp: admin.firestore.FieldValue.serverTimestamp(),

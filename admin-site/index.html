@@ -5287,6 +5287,8 @@
           loadPages()
         } else if (target === 'categories') {
           loadCategories()
+        } else if (target === 'products') {
+          loadProducts()
         } else if (target === 'inventory') {
           renderWarehouse()
         } else if (target === 'orders') {
@@ -11415,6 +11417,8 @@
     let syncStatsUnsubscribe = null;
 
     function setupSyncStatsListener() {
+      console.log('🎯 Setting up sync stats listener...');
+      
       // Clean up existing listener
       if (syncStatsUnsubscribe) {
         syncStatsUnsubscribe();
@@ -11423,22 +11427,43 @@
       const lastSyncTimeEl = document.getElementById('last-sync-time');
       const nextSyncTimeEl = document.getElementById('next-sync-time');
 
+      if (!lastSyncTimeEl || !nextSyncTimeEl) {
+        console.error('❌ Sync time elements not found in DOM');
+        return;
+      }
+
+      // ✅ FIXED: Migrated to Firebase v9+ modular syntax
       // Listen to real-time updates from Firestore
-      syncStatsUnsubscribe = db.collection('settings').doc('stockSyncStats')
-        .onSnapshot((doc) => {
-          if (!doc.exists) {
-            lastSyncTimeEl.textContent = 'Немає даних';
-            lastSyncTimeEl.classList.remove('text-orange-600', 'text-red-600');
-            nextSyncTimeEl.textContent = 'Очікування...';
-            return;
-          }
+      try {
+        const docRef = window.doc(window.db, 'settings', 'stockSyncStats');
+        console.log('📡 Starting onSnapshot listener for settings/stockSyncStats...');
+        
+        syncStatsUnsubscribe = window.onSnapshot(docRef, 
+          (doc) => {
+            console.log('📥 Received snapshot update:', doc.exists ? 'Document exists' : 'No document');
+            
+            if (!doc.exists) {
+              console.warn('⚠️ stockSyncStats document does not exist');
+              lastSyncTimeEl.textContent = 'Немає даних';
+              lastSyncTimeEl.classList.remove('text-orange-600', 'text-red-600');
+              nextSyncTimeEl.textContent = 'Очікування першої синхронізації...';
+              return;
+            }
 
           const data = doc.data();
-          const lastSyncTimestamp = data.lastSyncTimestamp?.toDate();
+          console.log('📄 Sync stats data:', data);
+          
+          // Handle Firestore Timestamp conversion
+          let lastSyncTimestamp = null;
+          if (data.lastSyncTimestamp) {
+            // Check if it's a Firestore Timestamp object
+            lastSyncTimestamp = data.lastSyncTimestamp.toDate ? data.lastSyncTimestamp.toDate() : new Date(data.lastSyncTimestamp);
+          }
 
           if (lastSyncTimestamp) {
             const now = new Date();
             const diffMinutes = Math.floor((now - lastSyncTimestamp) / 1000 / 60);
+            console.log('⏰ Last sync was', diffMinutes, 'minutes ago');
             
             // Format time
             const timeStr = lastSyncTimestamp.toLocaleString('uk-UA', {
@@ -11472,14 +11497,26 @@
               nextSyncTimeEl.innerHTML = `<span class="text-green-600">Зараз ⏳</span>`;
             }
           } else {
+            console.warn('⚠️ lastSyncTimestamp is missing in document');
             lastSyncTimeEl.textContent = 'Немає даних';
             nextSyncTimeEl.textContent = 'Очікування...';
           }
-        }, (error) => {
-          console.error('❌ Error listening to sync stats:', error);
-          lastSyncTimeEl.textContent = 'Помилка завантаження';
-          nextSyncTimeEl.textContent = 'Помилка';
+        }, 
+        (error) => {
+          console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.error('❌ CRITICAL: Error listening to sync stats');
+          console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.error('Error:', error);
+          console.error('Error message:', error.message);
+          console.error('Error code:', error.code);
+          lastSyncTimeEl.innerHTML = '<span class="text-red-600">❌ Помилка підключення</span>';
+          nextSyncTimeEl.innerHTML = '<span class="text-red-600">Помилка</span>';
         });
+      } catch (error) {
+        console.error('❌ Failed to setup listener:', error);
+        lastSyncTimeEl.textContent = 'Помилка ініціалізації';
+        nextSyncTimeEl.textContent = 'Помилка';
+      }
     }
 
     // Initialize sync stats listener when inventory view is loaded
