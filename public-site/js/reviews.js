@@ -519,56 +519,316 @@ function injectReviewsSection() {
 // ============================================
 
 function subscribeToReviews(productId) {
+    // TASK 2: Force String Type Conversion (CRITICAL FIX)
+    const productIdStr = String(productId).trim();
+    
+    // Enhanced Debug Logging
+    console.log('\n========================================');
+    console.log('🔍 FETCHING REVIEWS FOR PRODUCT PAGE');
+    console.log('========================================');
+    console.log('📝 Product ID (Original):', productId);
+    console.log('📝 Product ID (Original Type):', typeof productId);
+    console.log('📝 Current Product Page ID:', productIdStr);
+    console.log('📝 Product ID Type (After String()):', typeof productIdStr);
+    console.log('📝 Product ID Length:', productIdStr.length);
+    console.log('📝 Product ID (JSON):', JSON.stringify(productIdStr));
+    console.log('� Product ID Format:', productIdStr.length > 10 ? 'Firestore Doc ID ✅' : 'Short ID (SKU?) ⚠️');
+    console.log('🔍 Query: productIds array-contains "' + productIdStr + '" AND status == "approved"');
+    console.log('🔍 Expecting productIds array to contain this exact string!');
+    console.log('========================================\n');
+    
     if (unsubscribeReviews) {
         unsubscribeReviews();
     }
     
+    // Validate productId
+    if (!productIdStr || productIdStr === 'undefined' || productIdStr === 'null') {
+        console.error('❌ Invalid productId:', productIdStr);
+        renderEmptyState();
+        return;
+    }
+    
     const reviewsRef = collection(db, REVIEWS_COLLECTION);
-    const q = query(
+    
+    // Try the new array-contains query first (for reviews from post-purchase links)
+    const qArray = query(
         reviewsRef,
-        where('productId', '==', productId),
+        where('productIds', 'array-contains', productIdStr),
         where('status', '==', 'approved'),
         orderBy('createdAt', 'desc')
     );
     
-    unsubscribeReviews = onSnapshot(q, (snapshot) => {
-        reviews = [];
+    unsubscribeReviews = onSnapshot(qArray, (snapshot) => {
+        console.log('\n📊 ARRAY QUERY RESULTS:');
+        console.log('📊 Total documents found:', snapshot.size);
+        
+        const arrayReviews = [];
         snapshot.forEach(doc => {
-            reviews.push({ id: doc.id, ...doc.data() });
+            const data = doc.data();
+            console.log('\n📄 Document ID:', doc.id);
+            console.log('   - customerName:', data.customerName);
+            console.log('   - rating:', data.rating);
+            console.log('   - status:', data.status);
+            console.log('   - productIds:', data.productIds);
+            console.log('   - productIds type:', typeof data.productIds);
+            console.log('   - productIds is Array:', Array.isArray(data.productIds));
+            
+            // CRITICAL: Log each ID in the array to verify type and matching
+            if (Array.isArray(data.productIds)) {
+                console.log('   - productIds contents:');
+                data.productIds.forEach((id, idx) => {
+                    console.log(`      [${idx}] "${id}" (type: ${typeof id})`);
+                });
+                console.log(`   - Does it contain "${productIdStr}"?`, data.productIds.includes(productIdStr));
+            }
+            
+            arrayReviews.push({ id: doc.id, ...data });
         });
-        renderAll();
-    }, (error) => {
-        console.error('❌ Error fetching reviews:', error);
-        if (error.code === 'failed-precondition') {
-            console.log('⚠️ Falling back to simpler query (no index)');
-            fetchReviewsSimple(productId);
+        
+        console.log('\n📦 Reviews with productIds array:', arrayReviews.length);
+        
+        // TASK 3: If no reviews found, fetch ALL approved reviews for debugging
+        if (arrayReviews.length === 0) {
+            console.warn('\n⚠️ NO REVIEWS FOUND! Fetching ALL approved reviews for debugging...');
+            debugFetchAllReviews(productIdStr);
         }
+        
+        // Now fetch legacy reviews with single productId field
+        fetchLegacyReviews(productIdStr, arrayReviews);
+        
+    }, (error) => {
+        console.error('\n❌ ERROR IN ARRAY QUERY:');
+        console.error('   - Error Code:', error.code);
+        console.error('   - Error Message:', error.message);
+        console.error('   - Full Error:', error);
+        
+        if (error.code === 'failed-precondition') {
+            console.log('⚠️ Missing index for productIds. Falling back to simple fetch.');
+            console.log('⚠️ Create index: https://console.firebase.google.com/project/_/firestore/indexes');
+        }
+        
+        // Fallback to simple fetch
+        fetchReviewsSimple(productIdStr);
     });
 }
 
-async function fetchReviewsSimple(productId) {
+// TASK 3: Debug function to fetch ALL approved reviews and compare IDs
+async function debugFetchAllReviews(searchingForId) {
     try {
+        console.log('\n🔍 DEBUG: Fetching ALL approved reviews...');
         const reviewsRef = collection(db, REVIEWS_COLLECTION);
-        const q = query(reviewsRef, where('productId', '==', productId));
+        const qAll = query(reviewsRef, where('status', '==', 'approved'));
+        const snapshot = await getDocs(qAll);
         
-        const snapshot = await getDocs(q);
-        reviews = [];
-        snapshot.forEach(doc => {
+        console.log('📊 Total approved reviews in database:', snapshot.size);
+        console.log('🎯 We are searching for Product ID:', searchingForId);
+        console.log('🎯 Search ID type:', typeof searchingForId);
+        console.log('🎯 Search ID length:', searchingForId.length);
+        console.log('🎯 Search ID format:', searchingForId.length > 10 ? 'Firestore Doc ID ✅' : 'Short ID ⚠️');
+        console.log('\n📋 All approved reviews productIds:');
+        
+        snapshot.forEach((doc, index) => {
             const data = doc.data();
-            if (data.status === 'approved') {
-                reviews.push({ id: doc.id, ...data });
+            console.log(`\n[${index + 1}] Review ID: ${doc.id}`);
+            console.log('   - Customer:', data.customerName);
+            console.log('   - productIds:', data.productIds);
+            console.log('   - productIds type:', typeof data.productIds);
+            console.log('   - is Array:', Array.isArray(data.productIds));
+            
+            if (Array.isArray(data.productIds)) {
+                console.log('   - Array contents:');
+                data.productIds.forEach((id, idx) => {
+                    const matches = id === searchingForId;
+                    const idFormat = id.length > 10 ? 'Firestore ID' : 'Short ID';
+                    console.log(`      [${idx}] "${id}" (type: ${typeof id}, length: ${id.length}, format: ${idFormat}) ${matches ? '✅ MATCH!' : '❌ no match'}`);
+                });
+            } else if (data.productId) {
+                // Legacy format
+                const idFormat = data.productId.length > 10 ? 'Firestore ID' : 'Short ID';
+                console.log('   - Legacy productId:', data.productId, '(type:', typeof data.productId, 'length:', data.productId.length, 'format:', idFormat + ')');
+                console.log('   - Matches search?', data.productId === searchingForId ? '✅ YES' : '❌ NO');
             }
         });
         
-        reviews.sort((a, b) => {
+        console.log('\n========================================\n');
+    } catch (error) {
+        console.error('❌ Error in debug fetch:', error);
+    }
+}
+
+// Helper function to fetch legacy reviews and merge with new ones
+async function fetchLegacyReviews(productId, arrayReviews = []) {
+    try {
+        console.log('\n🔄 FETCHING LEGACY REVIEWS...');
+        console.log('🔍 Query: productId == "' + productId + '" AND status == "approved"');
+        
+        const reviewsRef = collection(db, REVIEWS_COLLECTION);
+        const qLegacy = query(
+            reviewsRef,
+            where('productId', '==', productId),
+            where('status', '==', 'approved'),
+            orderBy('createdAt', 'desc')
+        );
+        
+        const snapshot = await getDocs(qLegacy);
+        console.log('📊 Legacy query results:', snapshot.size);
+        
+        const legacyReviews = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            console.log('\n📄 Legacy Document ID:', doc.id);
+            console.log('   - customerName:', data.customerName);
+            console.log('   - rating:', data.rating);
+            console.log('   - status:', data.status);
+            console.log('   - productId:', data.productId);
+            console.log('   - productId type:', typeof data.productId);
+            
+            legacyReviews.push({ id: doc.id, ...data });
+        });
+        
+        console.log('\n📝 Legacy reviews found:', legacyReviews.length);
+        
+        // TASK 2: Merge and deduplicate
+        const allReviews = [...arrayReviews, ...legacyReviews];
+        const uniqueReviews = [];
+        const seenIds = new Set();
+        
+        for (const review of allReviews) {
+            if (!seenIds.has(review.id)) {
+                seenIds.add(review.id);
+                uniqueReviews.push(review);
+            }
+        }
+        
+        // Sort by date (newest first)
+        uniqueReviews.sort((a, b) => {
             const dateA = a.createdAt?.toDate?.() || new Date(0);
             const dateB = b.createdAt?.toDate?.() || new Date(0);
             return dateB - dateA;
         });
         
+        reviews = uniqueReviews;
+        console.log('\n✅ FINAL RESULT:');
+        console.log('   - Array-based reviews:', arrayReviews.length);
+        console.log('   - Legacy reviews:', legacyReviews.length);
+        console.log('   - Total unique reviews:', reviews.length);
+        console.log('========================================\n');
+        
+        renderAll();
+        
+    } catch (error) {
+        console.error('\n❌ ERROR IN LEGACY FETCH:');
+        console.error('   - Error Code:', error.code);
+        console.error('   - Error Message:', error.message);
+        console.error('   - Full Error:', error);
+        
+        // If legacy query fails, just use array reviews
+        reviews = arrayReviews;
+        console.log('⚠️ Using only array-based reviews:', reviews.length);
+        console.log('========================================\n');
+        renderAll();
+    }
+}
+
+async function fetchReviewsSimple(productId) {
+    // TASK 2: Force String Type Conversion
+    const productIdStr = String(productId).trim();
+    
+    console.log('\n🔄 SIMPLE FETCH MODE (FALLBACK)');
+    console.log('🔍 Product ID:', productIdStr);
+    console.log('🔍 Product ID Type:', typeof productIdStr);
+    console.log('🔍 Query Params: status == "approved"');
+    
+    try {
+        const reviewsRef = collection(db, REVIEWS_COLLECTION);
+        const allReviews = [];
+        
+        // TASK 2: Fetch both legacy and new format reviews
+        
+        // 1. Try to fetch reviews with productIds array (new format)
+        console.log('\n📦 Attempting array-contains query...');
+        try {
+            const qArray = query(
+                reviewsRef,
+                where('productIds', 'array-contains', productIdStr),
+                where('status', '==', 'approved')
+            );
+            const snapshotArray = await getDocs(qArray);
+            console.log('📊 Array query results:', snapshotArray.size);
+            
+            snapshotArray.forEach(doc => {
+                const data = doc.data();
+                console.log('\n📄 Array Doc ID:', doc.id);
+                console.log('   - productIds:', data.productIds);
+                console.log('   - productIds type:', typeof data.productIds);
+                console.log('   - is Array:', Array.isArray(data.productIds));
+                console.log('   - customerName:', data.customerName);
+                console.log('   - status:', data.status);
+                
+                allReviews.push({ id: doc.id, ...data });
+            });
+            console.log('✅ Array-based reviews added:', snapshotArray.size);
+        } catch (arrayError) {
+            console.error('❌ Array query failed:');
+            console.error('   - Code:', arrayError.code);
+            console.error('   - Message:', arrayError.message);
+        }
+        
+        // 2. Fetch reviews with single productId (legacy format)
+        console.log('\n📝 Attempting legacy productId query...');
+        try {
+            const qLegacy = query(
+                reviewsRef,
+                where('productId', '==', productIdStr),
+                where('status', '==', 'approved')
+            );
+            const snapshotLegacy = await getDocs(qLegacy);
+            console.log('📊 Legacy query results:', snapshotLegacy.size);
+            
+            snapshotLegacy.forEach(doc => {
+                const data = doc.data();
+                console.log('\n📄 Legacy Doc ID:', doc.id);
+                console.log('   - productId:', data.productId);
+                console.log('   - productId type:', typeof data.productId);
+                console.log('   - customerName:', data.customerName);
+                console.log('   - status:', data.status);
+                
+                allReviews.push({ id: doc.id, ...data });
+            });
+            console.log('✅ Legacy reviews added:', snapshotLegacy.size);
+        } catch (legacyError) {
+            console.error('❌ Legacy query failed:');
+            console.error('   - Code:', legacyError.code);
+            console.error('   - Message:', legacyError.message);
+        }
+        
+        // Deduplicate by review ID
+        const uniqueReviews = [];
+        const seenIds = new Set();
+        for (const review of allReviews) {
+            if (!seenIds.has(review.id)) {
+                seenIds.add(review.id);
+                uniqueReviews.push(review);
+            }
+        }
+        
+        // Sort by date
+        uniqueReviews.sort((a, b) => {
+            const dateA = a.createdAt?.toDate?.() || new Date(0);
+            const dateB = b.createdAt?.toDate?.() || new Date(0);
+            return dateB - dateA;
+        });
+        
+        reviews = uniqueReviews;
+        console.log('\n✅ SIMPLE FETCH FINAL RESULT:');
+        console.log('   - Total unique reviews:', reviews.length);
+        console.log('========================================\n');
+        
         renderAll();
     } catch (error) {
-        console.error('❌ Error in simple fetch:', error);
+        console.error('\n❌ FATAL ERROR IN SIMPLE FETCH:');
+        console.error('   - Error:', error);
+        console.log('========================================\n');
         renderEmptyState();
     }
 }

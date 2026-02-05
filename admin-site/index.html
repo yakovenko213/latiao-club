@@ -442,6 +442,36 @@
       color: #2563eb;
       text-decoration: underline;
     }
+
+    /* Review Card Responsive Styles - Mobile Optimization */
+    @media (max-width: 640px) {
+      .review-card-modern .review-header-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+      }
+      
+      .review-card-modern .review-status-badge {
+        margin-left: 0 !important;
+        align-self: flex-start;
+      }
+      
+      .review-card-modern h3 {
+        font-size: 16px !important;
+      }
+      
+      .review-card-modern .review-order-link {
+        font-size: 11px !important;
+        padding: 5px 12px !important;
+      }
+    }
+
+    /* Tablet optimization */
+    @media (min-width: 641px) and (max-width: 1024px) {
+      .review-card-modern h3 {
+        font-size: 17px !important;
+      }
+    }
   </style>
 </head>
 
@@ -3302,6 +3332,24 @@
               <div>
                 <h4 class="font-semibold text-yellow-800">Модерація відгуків</h4>
                 <p class="text-sm text-yellow-700">Нові відгуки з'являються тут. Перевірте вміст перед публікацією на сайті.</p>
+              </div>
+            </div>
+
+            <!-- Filters Section -->
+            <div class="bg-white border border-gray-200 rounded-xl p-4">
+              <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                  <i data-lucide="filter" class="w-5 h-5 text-gray-500"></i>
+                  <h4 class="font-semibold text-gray-700">Фільтри</h4>
+                </div>
+                <div class="flex items-center gap-3">
+                  <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" id="filter-orders-only" onchange="filterPendingReviews()" 
+                      class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                    <span class="text-sm text-gray-700 font-medium">📦 Тільки з замовлень</span>
+                  </label>
+                  <span id="verified-count-badge" class="hidden px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">0</span>
+                </div>
               </div>
             </div>
 
@@ -18685,26 +18733,93 @@
       }
     }
     
-    function renderPendingReviews() {
+    // ============================================
+    // FILTER PENDING REVIEWS BY ORDER STATUS
+    // ============================================
+    function filterPendingReviews() {
+      const checkbox = document.getElementById('filter-orders-only')
+      const isOrdersOnly = checkbox?.checked || false
+      
+      console.log('🔍 Filtering reviews - Orders only:', isOrdersOnly)
+      
+      renderPendingReviews(isOrdersOnly)
+    }
+    
+    // ============================================
+    // NAVIGATE TO SPECIFIC ORDER FROM REVIEW
+    // ============================================
+    window.navigateToOrder = function(orderId) {
+      console.log('📦 Navigating to order:', orderId)
+      
+      // Switch to orders view
+      showView('orders')
+      
+      // Wait for orders to load, then highlight the specific order
+      setTimeout(() => {
+        const orderCard = document.querySelector(`[data-order-id="${orderId}"]`)
+        if (orderCard) {
+          orderCard.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          orderCard.classList.add('ring-4', 'ring-blue-400', 'ring-offset-2')
+          setTimeout(() => {
+            orderCard.classList.remove('ring-4', 'ring-blue-400', 'ring-offset-2')
+          }, 3000)
+        } else {
+          console.warn('⚠️ Order card not found in DOM, may need to load orders first')
+          // Reload orders view to ensure data is loaded
+          if (typeof loadOrders === 'function') {
+            loadOrders()
+          }
+        }
+      }, 300)
+    }
+
+    function renderPendingReviews(ordersOnly = false) {
       const grid = document.getElementById('pending-reviews-grid')
       
       console.log('🔍 Rendering pending reviews:', pendingReviews)
       console.log('🖼️ First review photos:', pendingReviews[0]?.photos, pendingReviews[0]?.photoUrl)
+      console.log('🔍 Filter ordersOnly:', ordersOnly)
       
-      if (pendingReviews.length === 0) {
+      // Filter reviews if ordersOnly is enabled
+      let reviewsToShow = pendingReviews
+      if (ordersOnly) {
+        reviewsToShow = pendingReviews.filter(review => review.orderId)
+        console.log(`📦 Filtered to ${reviewsToShow.length} reviews from orders`)
+      }
+      
+      // Update verified count badge
+      const verifiedCount = pendingReviews.filter(r => r.orderId).length
+      const verifiedBadge = document.getElementById('verified-count-badge')
+      if (verifiedBadge) {
+        if (verifiedCount > 0) {
+          verifiedBadge.textContent = verifiedCount
+          verifiedBadge.classList.remove('hidden')
+        } else {
+          verifiedBadge.classList.add('hidden')
+        }
+      }
+      
+      if (reviewsToShow.length === 0) {
+        const emptyMessage = ordersOnly 
+          ? 'Немає відгуків з замовлень на модерацію'
+          : 'Все перевірено! 🎉'
+        const emptySubtext = ordersOnly
+          ? 'Спробуйте вимкнути фільтр "Тільки з замовлень"'
+          : 'Немає нових відгуків на модерацію'
+        
         grid.innerHTML = `
           <div class="col-span-full text-center py-16">
             <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <i data-lucide="check-circle" class="w-10 h-10 text-green-500"></i>
             </div>
-            <h3 class="text-lg font-semibold text-gray-700 mb-2">Все перевірено! 🎉</h3>
-            <p class="text-gray-500">Немає нових відгуків на модерацію</p>
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">${emptyMessage}</h3>
+            <p class="text-gray-500">${emptySubtext}</p>
           </div>`
         lucide.createIcons()
         return
       }
 
-      grid.innerHTML = pendingReviews.map(review => {
+      grid.innerHTML = reviewsToShow.map(review => {
         const stars = '★'.repeat(review.rating || 0) + '☆'.repeat(5 - (review.rating || 0))
         const date = review.createdAt?.toDate?.() || new Date()
         const dateStr = date.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -18718,110 +18833,418 @@
         // Support both photoUrl (single) and photos (array)
         const photos = review.photos || (review.photoUrl ? [review.photoUrl] : [])
         const hasPhotos = photos.length > 0
+        
+        // Get products list from review data
+        const products = review.products || []
+        const hasProducts = products.length > 0
 
         return `
-          <div class="bg-white rounded-xl border-2 border-yellow-200 shadow-sm overflow-hidden hover:shadow-lg transition group" data-review-id="${review.id}">
+          <!-- ========================================
+               POLISHED REVIEW CARD - Professional UI
+               ======================================== -->
+          <div class="review-card-modern" data-review-id="${review.id}" style="
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+            transition: all 0.3s ease;
+          " onmouseenter="this.style.boxShadow='0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'" 
+             onmouseleave="this.style.boxShadow='0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'">
+            
+            <!-- Photos Section (if exists) -->
             ${hasPhotos ? `
-              <div class="p-3 bg-gray-50 border-b border-gray-100">
-                <div class="flex gap-2 overflow-x-auto">
+              <div style="padding: 16px; background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                <div style="display: flex; gap: 8px; overflow-x: auto;">
                   ${photos.map((photo, idx) => `
-                    <a href="${photo}" target="_blank" class="flex-shrink-0">
-                      <img src="${photo}" alt="Фото ${idx + 1}" class="w-20 h-20 object-cover rounded-lg border-2 border-gray-200 hover:border-orange-400 transition cursor-pointer">
+                    <a href="${photo}" target="_blank" style="flex-shrink: 0;">
+                      <img src="${photo}" alt="Фото ${idx + 1}" style="
+                        width: 80px;
+                        height: 80px;
+                        object-fit: cover;
+                        border-radius: 8px;
+                        border: 2px solid #e5e7eb;
+                        cursor: pointer;
+                        transition: border-color 0.2s;
+                      " onmouseenter="this.style.borderColor='#fb923c'" 
+                         onmouseleave="this.style.borderColor='#e5e7eb'">
                     </a>
                   `).join('')}
                 </div>
-                <p class="text-xs text-gray-500 mt-2"><i data-lucide="image" class="w-3 h-3 inline"></i> ${photos.length} фото</p>
+                <p style="font-size: 11px; color: #6b7280; margin-top: 8px;">
+                  <i data-lucide="image" style="width: 12px; height: 12px; display: inline;"></i> 
+                  ${photos.length} фото
+                </p>
               </div>
             ` : ''}
             
-            <div class="p-5">
-              <!-- Product badge if exists -->
-              ${review.productId ? `
-                <div class="mb-3 pb-3 border-b border-gray-100">
-                  <span class="inline-flex items-center gap-2 px-3 py-1.5 bg-orange-50 text-orange-700 rounded-lg text-sm font-medium">
-                    <i data-lucide="package" class="w-4 h-4"></i>
-                    ${productName || `Товар: ${review.productId.substring(0, 8)}...`}
-                  </span>
+            <!-- Card Body -->
+            <div style="padding: 20px;">
+              
+              <!-- Header Section: Fixed Layout with No Overlapping -->
+              <div style="margin-bottom: 15px;">
+                
+                <!-- Row 1: Customer Name + Verified Badge + Stars + Status Badge -->
+                <div class="review-header-row" style="
+                  display: flex;
+                  flex-wrap: wrap;
+                  align-items: center;
+                  gap: 10px;
+                  margin-bottom: 10px;
+                ">
+                  <!-- Customer Name -->
+                  <h3 style="
+                    font-size: 18px;
+                    font-weight: 700;
+                    color: #111827;
+                    margin: 0;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+                  ">${review.customerName || review.userName || 'Анонімний клієнт'}</h3>
+                  
+                  <!-- Verified Badge (if order exists) -->
+                  ${review.orderId ? `
+                    <span style="
+                      display: inline-flex;
+                      align-items: center;
+                      gap: 4px;
+                      padding: 3px 10px;
+                      background: #d1fae5;
+                      color: #065f46;
+                      border-radius: 6px;
+                      font-size: 11px;
+                      font-weight: 600;
+                      white-space: nowrap;
+                    " title="Підтверджена покупка">
+                      <i data-lucide="shield-check" style="width: 12px; height: 12px;"></i>
+                      Verified
+                    </span>
+                  ` : ''}
+                  
+                  <!-- Star Rating -->
+                  <div style="
+                    color: #fbbf24;
+                    font-size: 16px;
+                    letter-spacing: 2px;
+                    white-space: nowrap;
+                  ">${stars}</div>
+                  
+                  <!-- Status Badge (pushed to right on desktop, wraps on mobile) -->
+                  <span class="review-status-badge" style="
+                    display: inline-flex;
+                    align-items: center;
+                    padding: 6px 12px;
+                    background: #fef3c7;
+                    color: #92400e;
+                    border-radius: 9999px;
+                    font-size: 11px;
+                    font-weight: 700;
+                    white-space: nowrap;
+                    margin-left: auto;
+                    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+                  ">⏳ На модерації</span>
+                </div>
+                
+                <!-- Row 2: Order ID Link (separate line, no overlap) -->
+                ${review.orderId ? `
+                  <div style="display: block; margin-top: 8px;">
+                    <a href="#orders" onclick="navigateToOrder('${review.orderId}')" class="review-order-link" style="
+                      display: inline-flex;
+                      align-items: center;
+                      gap: 6px;
+                      background: #eff6ff;
+                      color: #1e40af;
+                      border-radius: 9999px;
+                      padding: 6px 14px;
+                      font-size: 12px;
+                      font-weight: 500;
+                      text-decoration: none;
+                      transition: all 0.2s;
+                      cursor: pointer;
+                      border: 1px solid #bfdbfe;
+                    " onmouseenter="this.style.background='#dbeafe'; this.style.transform='translateY(-1px)'" 
+                       onmouseleave="this.style.background='#eff6ff'; this.style.transform='translateY(0)'">
+                      <i data-lucide="package" style="width: 14px; height: 14px;"></i>
+                      Замовлення #${review.orderId.substring(0, 8).toUpperCase()}
+                      <i data-lucide="external-link" style="width: 12px; height: 12px; opacity: 0.6;"></i>
+                    </a>
+                  </div>
+                ` : ''}
+                
+              </div>
+              
+              <!-- Review Text (with better typography) -->
+              <div style="
+                background: #f9fafb;
+                border-radius: 8px;
+                padding: 16px;
+                margin-bottom: 16px;
+              ">
+                <p style="
+                  color: #374151;
+                  line-height: 1.6;
+                  margin: 0;
+                  font-size: 14px;
+                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+                ">${review.text || '<span style="font-style: italic; color: #9ca3af;">Без тексту</span>'}</p>
+              </div>
+              
+              <!-- Product Selection with Checkboxes (NEW - Task 1) -->
+              ${hasProducts ? `
+                <div style="
+                  margin-bottom: 16px;
+                  padding: 14px;
+                  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+                  border-radius: 10px;
+                  border: 2px solid #f59e0b;
+                  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.15);
+                ">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <i data-lucide="tag" style="width: 14px; height: 14px; color: #92400e;"></i>
+                    <p style="
+                      font-size: 12px;
+                      font-weight: 700;
+                      color: #92400e;
+                      margin: 0;
+                      text-transform: uppercase;
+                      letter-spacing: 0.5px;
+                    ">Прив'язати відгук до товарів:</p>
+                  </div>
+                  
+                  <!-- Checkbox Grid -->
+                  <div style="display: grid; gap: 10px;" id="product-selection-${review.id}">
+                    ${products.map((product, index) => {
+                      // TASK 3: Simplified checkbox rendering
+                      // The checkbox will store SKU/ID from the review data
+                      // During approval, we'll look up the Firestore Document ID via database query
+                      
+                      console.log(`🔍 Product [${index}]:`, {
+                        'product.id': product.id,
+                        'product.productId': product.productId,
+                        'product.sku': product.sku,
+                        'product.name': product.name
+                      });
+                      
+                      // Use whatever ID/SKU is available in the review data
+                      // Priority: product.id > product.productId > product.sku
+                      const checkboxValue = product.id || product.productId || product.sku || '';
+                      const hasValue = checkboxValue && checkboxValue !== '' && checkboxValue !== 'undefined';
+                      const isLikelyDocId = checkboxValue.length > 10;
+                      
+                      console.log(`   → Checkbox value: "${checkboxValue}" (${isLikelyDocId ? 'Doc ID' : 'SKU - will convert on approval'})`);
+                      
+                      return `
+                      <label style="
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        padding: 10px 12px;
+                        background: white;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                        border: 2px solid transparent;
+                      " 
+                      onmouseover="this.style.borderColor='#f59e0b'; this.style.transform='translateX(4px)'"
+                      onmouseout="this.style.borderColor='transparent'; this.style.transform='translateX(0)'">
+                        
+                        <input 
+                          type="checkbox" 
+                          class="product-checkbox-${review.id}"
+                          name="product-${review.id}"
+                          value="${checkboxValue}"
+                          data-product-name="${product.name || 'Unknown'}"
+                          data-product-sku="${product.sku || ''}"
+                          data-has-valid-id="${hasValue}"
+                          ${hasValue ? 'checked' : ''}
+                          style="
+                            width: 18px;
+                            height: 18px;
+                            cursor: pointer;
+                            accent-color: #f59e0b;
+                          ">
+                        
+                        <div style="flex: 1; display: flex; align-items: center; gap: 8px;">
+                          <i data-lucide="package" style="width: 14px; height: 14px; color: #f59e0b;"></i>
+                          <span style="
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: #374151;
+                          ">${product.name || 'Товар'}</span>
+                          ${product.quantity > 1 ? `
+                            <span style="
+                              padding: 2px 6px;
+                              background: #fef3c7;
+                              color: #92400e;
+                              border-radius: 4px;
+                              font-size: 10px;
+                              font-weight: 700;
+                            ">× ${product.quantity}</span>
+                          ` : ''}
+                          ${!hasValue ? `
+                            <span style="
+                              padding: 2px 6px;
+                              background: #fee2e2;
+                              color: #991b1b;
+                              border-radius: 4px;
+                              font-size: 9px;
+                              font-weight: 700;
+                            ">⚠️ No ID</span>
+                          ` : ''}
+                        </div>
+                        
+                        ${product.sku ? `
+                          <span style="
+                            font-size: 10px;
+                            color: #9ca3af;
+                            font-family: 'Courier New', monospace;
+                          ">${product.sku}</span>
+                        ` : ''}
+                        ${hasValue ? `
+                          <span style="
+                            font-size: 9px;
+                            color: ${isLikelyDocId ? '#10b981' : '#3b82f6'};
+                            font-family: 'Courier New', monospace;
+                            font-weight: ${isLikelyDocId ? '400' : '600'};
+                            background: ${isLikelyDocId ? 'transparent' : '#dbeafe'};
+                            padding: ${isLikelyDocId ? '0' : '2px 4px'}; 
+                            border-radius: ${isLikelyDocId ? '0' : '3px'};
+                          " title="${isLikelyDocId ? 'Firestore Doc ID' : 'SKU - will be converted to Doc ID on approval'}">${isLikelyDocId ? '✅ ID' : '🔄 SKU'}: ${checkboxValue}</span>
+                        ` : ''}
+                      </label>`
+                    }).join('')}
+                  </div>
+                  
+                  <!-- Helper Text -->
+                  <p style="
+                    font-size: 10px;
+                    color: #92400e;
+                    margin: 10px 0 0 0;
+                    font-style: italic;
+                  ">
+                    <i data-lucide="info" style="width: 10px; height: 10px; display: inline; margin-right: 4px;"></i>
+                    Відгук з'явиться на сторінках обраних товарів. Якщо нічого не обрано — відгук буде загальним.
+                  </p>
                 </div>
               ` : ''}
               
-              <!-- Header with status badge -->
-              <div class="flex items-start justify-between mb-3">
-                <div>
-                  <div class="font-bold text-gray-900 text-lg">${review.customerName || review.userName || 'Анонімний клієнт'}</div>
-                  <div class="text-yellow-500 text-xl tracking-wide">${stars}</div>
-                </div>
-                <span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold animate-pulse">
-                  ⏳ На модерації
-                </span>
-              </div>
-              
-              <!-- Review text -->
-              <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                <p class="text-gray-700 leading-relaxed">${review.text || '<span class="italic text-gray-400">Без тексту</span>'}</p>
-              </div>
-              
-              <!-- Tags if any -->
-              ${review.tags && review.tags.length > 0 ? `
-                <div class="flex flex-wrap gap-2 mb-4">
-                  ${review.tags.map(tag => `<span class="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">${tag}</span>`).join('')}
-                </div>
-              ` : ''}
-              
-              <!-- Date picker for publication date -->
-              <div class="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                <label class="block text-xs font-semibold text-blue-700 mb-2">
-                  <i data-lucide="calendar" class="w-3 h-3 inline mr-1"></i>
+              <!-- Date picker -->
+              <div style="margin-bottom: 16px; padding: 12px; background: #eff6ff; border-radius: 8px; border: 1px solid #bfdbfe;">
+                <label style="display: block; font-size: 11px; font-weight: 600; color: #1e40af; margin-bottom: 8px;">
+                  <i data-lucide="calendar" style="width: 12px; height: 12px; display: inline; margin-right: 4px;"></i>
                   Дата публікації відгуку:
                 </label>
                 <input type="datetime-local" 
                   id="review-date-${review.id}" 
                   value="${date.toISOString().slice(0, 16)}"
-                  class="w-full px-3 py-2 border border-blue-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
-                <p class="text-xs text-blue-500 mt-1">Ця дата буде показана на сайті</p>
+                  style="
+                    width: 100%;
+                    padding: 8px 12px;
+                    border: 1px solid #bfdbfe;
+                    border-radius: 6px;
+                    font-size: 13px;
+                    background: white;
+                  ">
+                <p style="font-size: 10px; color: #3b82f6; margin: 4px 0 0 0;">Ця дата буде показана на сайті</p>
               </div>
               
-              <!-- Admin reply field -->
-              <div class="mb-4 p-3 bg-orange-50 rounded-lg border border-orange-100">
-                <label class="block text-xs font-semibold text-orange-700 mb-2">
-                  <i data-lucide="message-circle" class="w-3 h-3 inline mr-1"></i>
+              <!-- Admin reply -->
+              <div style="margin-bottom: 16px; padding: 12px; background: #fef3c7; border-radius: 8px; border: 1px solid #fde68a;">
+                <label style="display: block; font-size: 11px; font-weight: 600; color: #92400e; margin-bottom: 8px;">
+                  <i data-lucide="message-circle" style="width: 12px; height: 12px; display: inline; margin-right: 4px;"></i>
                   Відповідь магазину (необов'язково):
                 </label>
                 <textarea 
                   id="review-reply-${review.id}" 
                   rows="2"
                   placeholder="Напишіть відповідь клієнту..."
-                  class="w-full px-3 py-2 border border-orange-200 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white resize-none">${review.adminReply || ''}</textarea>
-                <p class="text-xs text-orange-500 mt-1">Буде показана під відгуком на сайті</p>
+                  style="
+                    width: 100%;
+                    padding: 8px 12px;
+                    border: 1px solid #fde68a;
+                    border-radius: 6px;
+                    font-size: 13px;
+                    background: white;
+                    resize: none;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+                  ">${review.adminReply || ''}</textarea>
+                <p style="font-size: 10px; color: #ca8a04; margin: 4px 0 0 0;">Буде показана під відгуком на сайті</p>
               </div>
               
               <!-- Meta info -->
-              <div class="flex items-center justify-between text-xs text-gray-400 mb-4">
-                <span class="flex items-center gap-1">
-                  <i data-lucide="clock" class="w-3 h-3"></i>
+              <div style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 11px;
+                color: #9ca3af;
+                margin-bottom: 16px;
+                padding-bottom: 16px;
+                border-bottom: 1px solid #e5e7eb;
+              ">
+                <span style="display: flex; align-items: center; gap: 4px;">
+                  <i data-lucide="clock" style="width: 12px; height: 12px;"></i>
                   Надіслано: ${dateStr} о ${timeStr}
                 </span>
-                ${review.orderId ? `
-                  <span class="flex items-center gap-1">
-                    <i data-lucide="shopping-bag" class="w-3 h-3"></i>
-                    #${review.orderId.substring(0, 8).toUpperCase()}
+                ${review.source ? `
+                  <span style="
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                    padding: 2px 8px;
+                    background: #f3f4f6;
+                    border-radius: 4px;
+                    color: #6b7280;
+                  ">
+                    <i data-lucide="link" style="width: 12px; height: 12px;"></i>
+                    ${review.source === 'post-purchase-link' ? 'Посилання' : review.source}
                   </span>
                 ` : ''}
               </div>
               
-              <!-- Action buttons -->
-              <div class="flex gap-3 pt-4 border-t border-gray-100">
-                <button onclick="approveReview('${review.id}')" 
-                  class="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold hover:from-green-600 hover:to-emerald-700 transition shadow-md hover:shadow-lg">
-                  <i data-lucide="check" class="w-5 h-5"></i>
+              <!-- Action Buttons (Task 4 - Bottom Right Aligned) -->
+              <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                <button onclick="approveReview('${review.id}')" style="
+                  display: inline-flex;
+                  align-items: center;
+                  justify-content: center;
+                  gap: 6px;
+                  padding: 10px 20px;
+                  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                  color: white;
+                  border: none;
+                  border-radius: 8px;
+                  font-size: 14px;
+                  font-weight: 600;
+                  cursor: pointer;
+                  transition: all 0.2s;
+                  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+                " onmouseenter="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.4)'" 
+                   onmouseleave="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.3)'">
+                  <i data-lucide="check" style="width: 16px; height: 16px;"></i>
                   Підтвердити
                 </button>
-                <button onclick="rejectReview('${review.id}')" 
-                  class="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-xl font-bold hover:from-red-600 hover:to-rose-700 transition shadow-md hover:shadow-lg">
-                  <i data-lucide="x" class="w-5 h-5"></i>
+                <button onclick="rejectReview('${review.id}')" style="
+                  display: inline-flex;
+                  align-items: center;
+                  justify-content: center;
+                  gap: 6px;
+                  padding: 10px 20px;
+                  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                  color: white;
+                  border: none;
+                  border-radius: 8px;
+                  font-size: 14px;
+                  font-weight: 600;
+                  cursor: pointer;
+                  transition: all 0.2s;
+                  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+                " onmouseenter="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 8px rgba(239, 68, 68, 0.4)'" 
+                   onmouseleave="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(239, 68, 68, 0.3)'">
+                  <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
                   Видалити
                 </button>
               </div>
+              
             </div>
           </div>`
       }).join('')
@@ -18843,15 +19266,61 @@
       lucide.createIcons()
     }
     
-    // Approve review
-    window.approveReview = async function(reviewId) {
+    // ============================================
+    // TASK 1: SKU to Firestore Document ID Lookup
+    // ============================================
+    async function getDocIdBySku(sku) {
+      if (!sku) return null;
+      
+      console.log(`🔍 Looking up Firestore Doc ID for SKU: "${sku}"`);
+      
       try {
-        // Add visual feedback
-        const card = document.querySelector(`[data-review-id="${reviewId}"]`)
-        if (card) {
-          card.style.opacity = '0.5'
-          card.style.pointerEvents = 'none'
+        const q = query(collection(db, 'products'), where('sku', '==', String(sku)));
+        const snap = await getDocs(q);
+        
+        if (!snap.empty) {
+          const docId = snap.docs[0].id;
+          console.log(`✅ Found Document ID: "${docId}" for SKU "${sku}"`);
+          return docId; // Returns the long Firestore ID (e.g., MjKARny...)
+        } else {
+          console.warn(`⚠️ No product document found with SKU: "${sku}"`);
+          return null;
         }
+      } catch (error) {
+        console.error(`❌ Error looking up SKU "${sku}":`, error);
+        return null;
+      }
+    }
+    
+    // ============================================
+    // APPROVE REVIEW WITH SKU-TO-ID CONVERSION
+    // ============================================
+    window.approveReview = async function(reviewId) {
+      // TASK 3: Disable button immediately to prevent multiple clicks
+      const card = document.querySelector(`[data-review-id="${reviewId}"]`)
+      const approveButton = card?.querySelector('button[onclick*="approveReview"]');
+      
+      if (approveButton) {
+        approveButton.disabled = true;
+        approveButton.innerHTML = `
+          <svg class="animate-spin h-4 w-4 inline-block mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Зачекайте...
+        `;
+      }
+      
+      if (card) {
+        card.style.opacity = '0.5'
+        card.style.pointerEvents = 'none'
+      }
+      
+      try {
+        console.log('\n========================================')
+        console.log('🔧 ADMIN PANEL: APPROVING REVIEW')
+        console.log('========================================')
+        console.log('📋 Review ID:', reviewId)
         
         // Get selected publication date
         const dateInput = document.getElementById(`review-date-${reviewId}`)
@@ -18864,34 +19333,182 @@
         const replyInput = document.getElementById(`review-reply-${reviewId}`)
         const adminReply = replyInput ? replyInput.value.trim() : ''
         
-        // Use Firestore Timestamp for the publication date
+        // ========================================
+        // TASK 1: FORCED SKU-TO-FIRESTORE-ID LOOKUP
+        // ========================================
+        const finalDocIds = [];
+        
+        // Get all checked checkboxes
+        const productSelectionContainer = document.getElementById(`product-selection-${reviewId}`)
+        
+        if (productSelectionContainer) {
+          const checkedBoxes = productSelectionContainer.querySelectorAll('input[type="checkbox"]:checked')
+          
+          console.log(`\n📦 Found ${checkedBoxes.length} checked products`)
+          console.log('🔄 Starting SKU to Firestore Document ID conversion...\n')
+          
+          // TASK 1: Loop through each checked box using for...of to allow await
+          for (const cb of checkedBoxes) {
+            const skuValue = String(cb.value).trim();
+            
+            if (!skuValue || skuValue === '' || skuValue === 'undefined' || skuValue === 'null') {
+              console.warn(`⚠️ Skipping empty checkbox value`);
+              continue;
+            }
+            
+            console.log(`🔍 Processing: "${skuValue}"`);
+            
+            // Check if it's already a Firestore Doc ID (long string)
+            if (skuValue.length > 10) {
+              console.log(`   ✅ Already a Firestore Doc ID (length: ${skuValue.length})`);
+              finalDocIds.push(skuValue);
+              continue;
+            }
+            
+            // It's a SKU - query the products collection
+            console.log(`   🔎 Querying products collection for SKU: "${skuValue}"`);
+            
+            try {
+              const q = query(collection(db, 'products'), where('sku', '==', String(skuValue)));
+              const snap = await getDocs(q);
+              
+              if (!snap.empty) {
+                const docId = snap.docs[0].id;
+                finalDocIds.push(docId);
+                console.log(`   ✅ Converted SKU "${skuValue}" → Firestore ID "${docId}"`);
+              } else {
+                console.error(`   ❌ Could not find product with SKU: "${skuValue}"`);
+                console.warn(`   ⚠️ Fallback: Keeping SKU "${skuValue}" (reviews won't appear!)`);
+                finalDocIds.push(skuValue); // Fallback: keep SKU if not found
+              }
+            } catch (error) {
+              console.error(`   ❌ Error querying SKU "${skuValue}":`, error);
+              console.warn(`   ⚠️ Fallback: Keeping SKU "${skuValue}"`);
+              finalDocIds.push(skuValue);  // Fallback on error
+            }
+          }
+          
+          console.log('\n========================================')
+          console.log('📊 CONVERSION SUMMARY')
+          console.log('========================================')
+          console.log(`Total products checked: ${checkedBoxes.length}`)
+          console.log(`Converted to IDs: ${finalDocIds.length}`)
+          console.log('Final IDs Array:', finalDocIds)
+          
+          // TASK 2: Validate - ensure NO short IDs (SKUs) remain
+          const validDocIds = finalDocIds.filter(id => id.length > 10);
+          const stillSkus = finalDocIds.filter(id => id.length <= 10);
+          
+          console.log(`\n✅ Valid Firestore Doc IDs (>10 chars): ${validDocIds.length}`)
+          console.log(`❌ Still SKUs (<=10 chars): ${stillSkus.length}`)
+          
+          if (stillSkus.length > 0) {
+            console.error('\n🚨 CRITICAL WARNING: Some SKUs could not be converted!');
+            console.error('   SKUs that remain:', stillSkus);
+            console.error('   These reviews will NOT appear on product pages!');
+            
+            const shouldContinue = confirm(
+              '⚠️ КРИТИЧНА ПОМИЛКА!\n\n' +
+              `Деякі товари НЕ ЗНАЙДЕНО в базі даних:\n\n` +
+              `✅ Знайдено: ${validDocIds.length}\n` +
+              `❌ НЕ знайдено: ${stillSkus.length}\n\n` +
+              `SKU без відповідності: ${stillSkus.join(', ')}\n\n` +
+              `Відгуки з цими SKU НЕ БУДУТЬ відображатись!\n\n` +
+              `Можливі причини:\n` +
+              `• Товари видалені з бази\n` +
+              `• SKU не співпадають\n` +
+              `• Помилка в даних замовлення\n\n` +
+              `Продовжити збереження попри помилку?`
+            );
+            
+            if (!shouldContinue) {
+              console.log('✋ Admin cancelled approval');
+              throw new Error('Admin cancelled due to failed SKU conversion');
+            }
+          } else {
+            console.log('\n✅ SUCCESS: All SKUs successfully converted to Firestore Document IDs!');
+          }
+        } else {
+          console.log('⚠️ No product selection container found - review will be general (no products)');
+        }
+        
+        // Determine if this is a general review
+        const isGeneralReview = finalDocIds.length === 0
+        console.log(`\n🏷️ Is General Review: ${isGeneralReview}`)
+        
+        // TASK 2: Prepare Firestore update with CONVERTED IDs
         const { Timestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')
         
         const updateData = {
           status: 'approved',
           createdAt: Timestamp.fromDate(publicationDate),
           moderatedAt: serverTimestamp(),
-          moderatedBy: 'admin'
+          moderatedBy: 'admin',
+          productIds: finalDocIds, // ← TASK 2: Using converted IDs
+          isGeneralReview: isGeneralReview
         }
         
-        // Add admin reply if provided
         if (adminReply) {
           updateData.adminReply = adminReply
         }
         
+        // TASK 2: Enhanced logging before save
+        console.log('\n========================================')
+        console.log('💾 FINAL FIRESTORE PAYLOAD')
+        console.log('========================================')
+        console.log('Status:', updateData.status)
+        console.log('🚨 FINAL CONVERTED IDs:', finalDocIds);
+        console.log('ProductIds (JSON):', JSON.stringify(updateData.productIds))
+        console.log('Is Array:', Array.isArray(updateData.productIds))
+        console.log('Array Length:', updateData.productIds.length)
+        console.log('Is General Review:', updateData.isGeneralReview)
+        
+        if (updateData.productIds.length > 0) {
+          console.log('\n📋 Product IDs Detail:')
+          updateData.productIds.forEach((id, idx) => {
+            const isValidLength = id.length > 10;
+            console.log(`   [${idx}] "${id}" (length: ${id.length}) ${isValidLength ? '✅ VALID' : '❌ INVALID (SKU)'}`)
+          })
+        }
+        
+        console.log('\n🚀 Saving to Firestore...')
+        console.log('========================================\n')
+        
+        // TASK 2: Save to Firestore with CONVERTED IDs
         await updateDoc(doc(db, 'reviews', reviewId), updateData)
         
-        showToast('✅ Відгук опубліковано!', 'success')
+        console.log('✅ Review successfully approved and saved!')
+        console.log('🔍 Firestore Document ID:', reviewId)
+        console.log('📦 Product IDs saved:', JSON.stringify(finalDocIds))
         
-        // Refresh published reviews
+        // Success message
+        let successMessage = '✅ Відгук опубліковано!'
+        if (finalDocIds.length > 0) {
+          successMessage += ` Прив'язано до ${finalDocIds.length} товару(-ів).`
+        } else {
+          successMessage += ' (Загальний відгук)'
+        }
+        
+        showToast(successMessage, 'success')
+        
+        // Refresh the reviews list
         loadPublishedReviews()
         
       } catch (error) {
-        console.error('Error approving review:', error)
-        showToast('Помилка при підтвердженні', 'error')
+        console.error('\n❌ ERROR APPROVING REVIEW:', error)
+        showToast('Помилка при підтвердженні: ' + error.message, 'error')
+        
+        // TASK 3: Re-enable button on error
+        if (approveButton) {
+          approveButton.disabled = false;
+          approveButton.innerHTML = `
+            <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
+            Підтвердити
+          `;
+          lucide.createIcons();
+        }
         
         // Restore card
-        const card = document.querySelector(`[data-review-id="${reviewId}"]`)
         if (card) {
           card.style.opacity = '1'
           card.style.pointerEvents = 'auto'
@@ -18901,7 +19518,7 @@
     
     // Reject/Delete review
     window.rejectReview = async function(reviewId) {
-      if (!confirm('Ви впевнені, що хочете видалити цей відгук?')) return
+      if (!confirm('Ві впевнені, що хочете видалити цей відгук?')) return
       
       try {
         const card = document.querySelector(`[data-review-id="${reviewId}"]`)
@@ -18958,6 +19575,7 @@
             <i data-lucide="alert-circle" class="w-8 h-8 mx-auto mb-2"></i>
             <p>Помилка завантаження: ${error.message}</p>
           </div>`
+        lucide.createIcons()
       }
     }
 

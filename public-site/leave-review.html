@@ -894,6 +894,39 @@
         const productIds = productsArray.map(p => p.id).filter(id => id !== '')
         const timestamp = window.dbFunctions.serverTimestamp()
         
+        // TASK 4: Enhanced debug logging for productIds and ID format validation
+        console.log('\n========================================')
+        console.log('🔧 LEAVE-REVIEW: CREATING REVIEW')
+        console.log('========================================')
+        console.log('📦 Order Items (Raw):', orderData?.items)
+        console.log('📦 Products Array:', productsArray)
+        console.log('📊 Product IDs extracted:', productIds)
+        console.log('📊 Product IDs Type:', typeof productIds)
+        console.log('📊 Is Array:', Array.isArray(productIds))
+        console.log('📊 Array Length:', productIds.length)
+        
+        // Validate each ID
+        productIds.forEach((id, index) => {
+          const isFirestoreId = id.length > 10 // Firestore IDs are typically 15-20 chars
+          const idType = isFirestoreId ? 'Firestore Doc ID ✅' : 'SKU or short ID ⚠️'
+          console.log(`   [${index}] Product ID: "${id}" (type: ${typeof id}, length: ${id.length}) - ${idType}`)
+        })
+        
+        // CRITICAL: Check if we have Firestore Document IDs or SKUs
+        const firestoreIds = productIds.filter(id => id.length > 10)
+        const shortIds = productIds.filter(id => id.length <= 10)
+        
+        if (shortIds.length > 0) {
+          console.warn('\n⚠️ WARNING: Some product IDs are SHORT (likely SKUs, not Firestore Doc IDs)')
+          console.warn('   - Short IDs:', shortIds)
+          console.warn('   - Firestore IDs:', firestoreIds)
+          console.warn('   - Product pages expect Firestore Doc IDs like: "MjKARnyFq1pADjbukThy"')
+          console.warn('   - Check order.items structure - should have .id field with Firestore Doc ID!')
+        } else {
+          console.log('\n✅ All product IDs appear to be Firestore Document IDs')
+        }
+        console.log('========================================\n')
+        
         // =======================================================
         // BUILD REVIEW PAYLOAD
         // =======================================================
@@ -960,8 +993,22 @@
         const { collection, addDoc } = window.dbFunctions
         const reviewsRef = collection(window.db, 'reviews')
         
+        console.log('\n💾 SAVING REVIEW TO FIRESTORE:')
+        console.log('   - productIds:', reviewPayload.productIds)
+        console.log('   - productIds type:', typeof reviewPayload.productIds)
+        console.log('   - productIds is Array:', Array.isArray(reviewPayload.productIds))
+        console.log('   - Full Payload:', JSON.stringify({
+          orderId: reviewPayload.orderId,
+          rating: reviewPayload.rating,
+          customerName: reviewPayload.customerName,
+          productIds: reviewPayload.productIds,
+          products: reviewPayload.products,
+          status: reviewPayload.status
+        }, null, 2))
+        
         const docRef = await addDoc(reviewsRef, reviewPayload)
-        console.log('✅ Review saved:', docRef.id)
+        console.log('✅ Review saved with ID:', docRef.id)
+        console.log('========================================\n')
         
         // Optional: Try to update order status (non-critical)
         try {
