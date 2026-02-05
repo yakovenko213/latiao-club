@@ -12,7 +12,7 @@
   <!-- Firebase -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js'
-    import { getFirestore, doc, getDoc, collection, addDoc, query, where, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js'
+    import { getFirestore, doc, getDoc, updateDoc, setDoc, collection, addDoc, query, where, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js'
     import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js'
 
     const firebaseConfig = {
@@ -30,7 +30,7 @@
 
     window.db = db
     window.storage = storage
-    window.dbFunctions = { doc, getDoc, collection, addDoc, query, where, getDocs, serverTimestamp, ref, uploadBytes, getDownloadURL }
+    window.dbFunctions = { doc, getDoc, updateDoc, setDoc, collection, addDoc, query, where, getDocs, serverTimestamp, ref, uploadBytes, getDownloadURL }
   </script>
 
   <style>
@@ -358,6 +358,89 @@
     }
 
     // ============================================
+    // TRACK LINK OPENING (Always runs on page load)
+    // ============================================
+    async function trackLinkOpening(orderId) {
+      try {
+        console.log('═══════════════════════════════════════')
+        console.log('📊 [TRACKING] Starting link opening tracking...')
+        console.log('═══════════════════════════════════════')
+        console.log('🎯 Order ID:', orderId)
+        
+        const { doc, getDoc, updateDoc, setDoc, serverTimestamp } = window.dbFunctions
+        
+        // Create document reference
+        const orderRef = doc(window.db, 'orders', orderId)
+        console.log('📋 Document reference created:', orderRef.path)
+        
+        // Check current status
+        const currentDoc = await getDoc(orderRef)
+        const currentData = currentDoc.data()
+        const alreadyOpened = currentData?.linkOpened
+        
+        console.log('🔍 Current linkOpened status:', alreadyOpened)
+        console.log('🔍 Current linkOpenedAt:', currentData?.linkOpenedAt)
+        
+        if (!alreadyOpened) {
+          // First time opening - set both fields
+          console.log('🎯 First time opening - setting linkOpened = true')
+          
+          const trackingData = {
+            linkOpened: true,
+            linkOpenedAt: serverTimestamp()
+          }
+          
+          // ✅ STRATEGY: Try updateDoc first, fallback to setDoc with merge
+          try {
+            console.log('🔄 Attempting updateDoc...')
+            await updateDoc(orderRef, trackingData)
+            console.log('✅ [SUCCESS] updateDoc worked!')
+          } catch (updateError) {
+            console.warn('⚠️  updateDoc failed:', updateError.code, updateError.message)
+            console.log('🔄 Trying setDoc with merge...')
+            
+            // Fallback: Use setDoc with merge option
+            await setDoc(orderRef, trackingData, { merge: true })
+            console.log('✅ [SUCCESS] setDoc with merge worked!')
+          }
+          
+          console.log('✅ [SUCCESS] Link opening tracked successfully!')
+          console.log('   • linkOpened: true')
+          console.log('   • linkOpenedAt: serverTimestamp()')
+          console.log('═══════════════════════════════════════')
+          
+          // ✅ TASK 3: Debugging alert
+          if (window.location.search.includes('debug')) {
+            alert('✅ Tracking signal sent to Firestore for order: ' + orderId)
+          }
+        } else {
+          console.log('✅ Link was already opened before')
+          console.log('   • First opened at:', currentData.linkOpenedAt)
+          console.log('   • Skip updating to preserve original timestamp')
+          console.log('═══════════════════════════════════════')
+        }
+        
+      } catch (error) {
+        console.error('═══════════════════════════════════════')
+        console.error('❌ [ERROR] Failed to track link opening')
+        console.error('═══════════════════════════════════════')
+        console.error('Error object:', error)
+        console.error('Error message:', error.message)
+        console.error('Error code:', error.code)
+        console.error('Error stack:', error.stack)
+        console.error('═══════════════════════════════════════')
+        
+        // Show debugging alert on error
+        if (window.location.search.includes('debug')) {
+          alert('❌ Tracking failed: ' + error.message)
+        }
+        
+        // Non-critical error - don't block user experience
+        console.warn('⚠️  Continuing despite tracking error (non-critical)...')
+      }
+    }
+
+    // ============================================
     // STEP 2: WAIT FOR FIREBASE INITIALIZATION
     // ============================================
     async function waitForFirebase(maxAttempts = 10) {
@@ -504,7 +587,20 @@
         console.log('   • orderNumber:', orderData.orderNumber)
         console.log('   • status:', orderData.status)
         console.log('   • total:', orderData.total || orderData.summary?.total)
+        console.log('   • linkOpened (BEFORE):', orderData.linkOpened)
+        console.log('   • linkOpenedAt (BEFORE):', orderData.linkOpenedAt)
         console.log('')
+        
+        // ✅ TASK 1: TRACK LINK OPENING (Always runs on page load)
+        console.log('═══════════════════════════════════════')
+        console.log('🚀 CALLING trackLinkOpening() - This happens AUTOMATICALLY on page load')
+        console.log('═══════════════════════════════════════')
+        
+        await trackLinkOpening(orderId)
+        
+        console.log('═══════════════════════════════════════')
+        console.log('✅ trackLinkOpening() completed')
+        console.log('═══════════════════════════════════════')
         
         // Validate required fields
         const hasCustomer = !!orderData.customer

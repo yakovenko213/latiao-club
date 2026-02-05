@@ -97,8 +97,17 @@ service cloud.firestore {
       // This is needed for dashboard.html with phone-based auth
       allow list: if true;
       
-      // ✅ Only authenticated admins can update/delete
-      allow update, delete: if request.auth != null;
+      // ✅ LINK TRACKING: Allow public update of ONLY linkOpened/linkOpenedAt fields
+      // This is needed for leave-review.html to track when customer opens review link
+      allow update: if request.auth != null  // Admins can update anything
+        || (
+          // OR public users can ONLY update these exact 2 fields (nothing else)
+          // This ensures they cannot modify total, status, customer data, etc.
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['linkOpened', 'linkOpenedAt'])
+        );
+      
+      // ✅ Only authenticated admins can delete
+      allow delete: if request.auth != null;
     }
 
     // =============================================

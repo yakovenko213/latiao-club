@@ -3223,12 +3223,13 @@
                       <th class="px-4 py-3 text-left">Товари</th>
                       <th class="px-4 py-3 text-left">Сума</th>
                       <th class="px-4 py-3 text-left">Статус</th>
+                      <th class="px-4 py-3 text-left">📊 Статистика</th>
                       <th class="px-4 py-3 text-center">Дії</th>
                     </tr>
                   </thead>
                   <tbody id="review-requests-waiting-table" class="divide-y divide-gray-100">
                     <tr>
-                      <td colspan="6" class="px-4 py-12 text-center text-gray-400">
+                      <td colspan="7" class="px-4 py-12 text-center text-gray-400">
                         <i data-lucide="loader-2" class="w-8 h-8 mx-auto mb-2 animate-spin"></i>
                         <p>Завантаження...</p>
                       </td>
@@ -3256,12 +3257,13 @@
                       <th class="px-4 py-3 text-left">Товари</th>
                       <th class="px-4 py-3 text-left">Сума</th>
                       <th class="px-4 py-3 text-left">Статус</th>
+                      <th class="px-4 py-3 text-left">📊 Статистика</th>
                       <th class="px-4 py-3 text-center">Дії</th>
                     </tr>
                   </thead>
                   <tbody id="review-requests-reviewed-table" class="divide-y divide-gray-100">
                     <tr>
-                      <td colspan="6" class="px-4 py-12 text-center text-gray-400">
+                      <td colspan="7" class="px-4 py-12 text-center text-gray-400">
                         <i data-lucide="loader-2" class="w-8 h-8 mx-auto mb-2 animate-spin"></i>
                         <p>Завантаження...</p>
                       </td>
@@ -17862,7 +17864,7 @@
       } catch (error) {
         console.error('Error loading review requests:', error)
         document.getElementById('review-requests-waiting-table').innerHTML = `
-          <tr><td colspan="6" class="px-4 py-12 text-center text-red-500">
+          <tr><td colspan="7" class="px-4 py-12 text-center text-red-500">
             <i data-lucide="alert-circle" class="w-8 h-8 mx-auto mb-2"></i>
             <p>Помилка завантаження: ${error.message}</p>
           </td></tr>`
@@ -17915,7 +17917,7 @@
           : 'Ще немає отриманих відгуків'
         
         tbody.innerHTML = `
-          <tr><td colspan="6" class="px-4 py-12 text-center text-gray-400">
+          <tr><td colspan="7" class="px-4 py-12 text-center text-gray-400">
             <i data-lucide="${category === 'waiting' ? 'party-popper' : 'inbox'}" class="w-12 h-12 mx-auto mb-3"></i>
             <p>${emptyMessage}</p>
           </td></tr>`
@@ -17994,6 +17996,57 @@
           `
         }
 
+        // ✅ TASK 3: Statistics Cell - Track link opened
+        let statisticsCellHtml = ''
+        
+        if (order.linkOpened) {
+          // ✅ Link was opened - show green badge with date
+          const openedAt = order.linkOpenedAt
+          if (openedAt) {
+            const openedDate = openedAt?.toDate ? openedAt.toDate() : new Date(openedAt)
+            const dateStr = openedDate.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit' })
+            const timeStr = openedDate.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })
+            
+            statisticsCellHtml = `
+              <div class="flex flex-col items-start gap-1">
+                <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-md text-xs font-medium whitespace-nowrap">
+                  <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  Переглянуто
+                </span>
+                <span class="text-xs text-gray-500">${dateStr} ${timeStr}</span>
+              </div>
+            `
+          } else {
+            statisticsCellHtml = `
+              <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-md text-xs font-medium whitespace-nowrap">
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                Переглянуто
+              </span>
+            `
+          }
+        } else if (lastSentAt) {
+          // ✅ SMS sent but link not opened yet
+          statisticsCellHtml = `
+            <span class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-500 rounded-md text-xs font-medium whitespace-nowrap">
+              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+              </svg>
+              Надіслано
+            </span>
+          `
+        } else {
+          // ✅ Nothing sent yet
+          statisticsCellHtml = `
+            <span class="text-gray-400 text-sm">—</span>
+          `
+        }
+
         return `
           <tr class="${rowClass}">
             <td class="px-4 py-4">
@@ -18015,6 +18068,9 @@
             </td>
             <td class="px-4 py-4">
               ${statusCellHtml}
+            </td>
+            <td class="px-4 py-4">
+              ${statisticsCellHtml}
             </td>
             <td class="px-4 py-4 text-center">
               ${category === 'waiting' ? `
