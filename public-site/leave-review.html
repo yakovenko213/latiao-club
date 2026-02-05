@@ -9,6 +9,9 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   
+  <!-- Canvas Confetti for Success Animation -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  
   <!-- Firebase -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js'
@@ -34,53 +37,201 @@
   </script>
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800&display=swap');
     
     * {
-      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
 
-    /* Star Rating Styles */
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    /* ============================================
+       ANIMATIONS & TRANSITIONS
+       ============================================ */
+    
+    * {
+      transition: all 0.3s ease;
+    }
+
+    /* Fade in animation */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInScale {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -1000px 0; }
+      100% { background-position: 1000px 0; }
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    .animate-fade-in-scale {
+      animation: fadeInScale 0.5s ease-out;
+    }
+
+    .animate-slide-up {
+      animation: slideUp 0.5s ease-out;
+    }
+
+    /* ============================================
+       STAR RATING - ANIMATED WITH GRADIENT
+       ============================================ */
+    
+    .star-rating-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
     .star-rating {
       display: flex;
-      gap: 8px;
-      font-size: 2.5rem;
+      gap: 12px;
+      font-size: 3.5rem;
+      justify-content: center;
+    }
+
+    @media (max-width: 640px) {
+      .star-rating {
+        font-size: 2.8rem;
+        gap: 8px;
+      }
     }
 
     .star {
       cursor: pointer;
-      transition: all 0.2s ease;
-      color: #d1d5db;
-    }
-
-    .star.active,
-    .star:hover {
-      color: #fbbf24;
-      transform: scale(1.1);
-    }
-
-    .star:hover ~ .star {
-      color: #d1d5db;
-      transform: scale(1);
-    }
-
-    /* Photo Upload Preview */
-    .photo-preview {
+      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      color: #E5E7EB;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
       position: relative;
+    }
+
+    .star:hover {
+      transform: scale(1.2) rotate(10deg);
+      filter: drop-shadow(0 4px 12px rgba(251, 146, 60, 0.5));
+    }
+
+    .star.active {
+      background: linear-gradient(135deg, #FFA726 0%, #FF6B35 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      transform: scale(1.15);
+      filter: drop-shadow(0 4px 16px rgba(255, 107, 53, 0.6));
+      animation: pulse 1s infinite;
+    }
+
+    /* Rating label with dynamic colors */
+    .rating-label {
+      font-size: 1.25rem;
+      font-weight: 600;
+      min-height: 32px;
+      transition: all 0.3s ease;
+    }
+
+    .rating-label.rating-1 { color: #EF4444; }
+    .rating-label.rating-2 { color: #F97316; }
+    .rating-label.rating-3 { color: #FBBF24; }
+    .rating-label.rating-4 { color: #10B981; }
+    .rating-label.rating-5 { color: #8B5CF6; }
+
+    /* ============================================
+       PROGRESSIVE DISCLOSURE - Form Sections
+       ============================================ */
+    
+    .form-section {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.5s ease, opacity 0.5s ease, margin 0.5s ease;
+    }
+
+    .form-section.visible {
+      max-height: 2000px;
+      opacity: 1;
+      margin-top: 24px;
+    }
+
+    /* ============================================
+       INSTAGRAM-STYLE PHOTO UPLOAD
+       ============================================ */
+    
+    .photo-drop-zone {
+      border: 2px dashed #E5E7EB;
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: linear-gradient(135deg, #FAFAFA 0%, #F9FAFB 100%);
+    }
+
+    .photo-drop-zone:hover {
+      border-color: #FF6B35;
+      background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
+      transform: scale(1.02);
+      box-shadow: 0 8px 24px rgba(255, 107, 53, 0.1);
+    }
+
+    .photo-drop-zone.drag-over {
+      border-color: #FF6B35;
+      background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
+      box-shadow: 0 12px 32px rgba(255, 107, 53, 0.2);
+    }
+
+    .photo-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .photo-preview-item {
+      position: relative;
+      aspect-ratio: 1;
       border-radius: 12px;
       overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
     }
 
-    .photo-preview img {
+    .photo-preview-item:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+
+    .photo-preview-item img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
 
-    .photo-preview .remove-photo {
+    .photo-remove-btn {
       position: absolute;
-      top: 8px;
-      right: 8px;
+      top: 6px;
+      right: 6px;
       background: rgba(0, 0, 0, 0.7);
       color: white;
       border-radius: 50%;
@@ -90,221 +241,389 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all 0.2s;
+      opacity: 0;
+      transition: all 0.3s ease;
     }
 
-    .photo-preview .remove-photo:hover {
-      background: rgba(239, 68, 68, 0.9);
+    .photo-preview-item:hover .photo-remove-btn {
+      opacity: 1;
+    }
+
+    .photo-remove-btn:hover {
+      background: #EF4444;
       transform: scale(1.1);
     }
 
-    /* Loading Animation */
-    .spinner {
-      border: 3px solid rgba(255, 107, 0, 0.1);
-      border-top: 3px solid #ff6b00;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
+    /* ============================================
+       SUBMIT BUTTON - PULSE ANIMATION
+       ============================================ */
+    
+    .submit-btn {
+      background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+      color: white;
+      font-size: 1.125rem;
+      font-weight: 700;
+      padding: 18px 32px;
+      border-radius: 16px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(255, 107, 53, 0.3);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
     }
 
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    .submit-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 40px rgba(255, 107, 53, 0.4);
     }
 
-    /* Success Checkmark Animation */
-    @keyframes checkmark {
-      0% {
-        stroke-dashoffset: 100;
-      }
-      100% {
-        stroke-dashoffset: 0;
-      }
+    .submit-btn:active:not(:disabled) {
+      transform: translateY(0);
     }
 
-    .checkmark {
-      stroke-dasharray: 100;
-      stroke-dashoffset: 100;
-      animation: checkmark 0.5s ease-in-out forwards;
+    .submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
 
-    /* Modal Animation */
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+    .submit-btn::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      animation: shimmer 2s infinite;
     }
 
-    @keyframes slideUp {
-      from { 
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to { 
-        opacity: 1;
-        transform: translateY(0);
-      }
+    /* ============================================
+       CHARACTER COUNTER
+       ============================================ */
+    
+    .char-counter {
+      font-size: 0.875rem;
+      color: #9CA3AF;
+      text-align: right;
+      margin-top: 8px;
     }
 
+    .char-counter.warning {
+      color: #F59E0B;
+    }
+
+    .char-counter.danger {
+      color: #EF4444;
+    }
+
+    /* ============================================
+       PRODUCT THUMBNAILS - ROUNDED & PREMIUM
+       ============================================ */
+    
+    .product-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      transition: all 0.3s ease;
+    }
+
+    .product-card:hover {
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      transform: translateY(-2px);
+    }
+
+    .product-thumbnail {
+      width: 64px;
+      height: 64px;
+      border-radius: 12px;
+      object-fit: cover;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    /* ============================================
+       MODAL & OVERLAY
+       ============================================ */
+    
     .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 16px;
       animation: fadeIn 0.3s ease;
     }
 
     .modal-content {
-      animation: slideUp 0.3s ease;
+      background: white;
+      border-radius: 24px;
+      padding: 40px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      animation: fadeInScale 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+
+    /* ============================================
+       LOADING SPINNER
+       ============================================ */
+    
+    .spinner {
+      border: 3px solid rgba(255, 107, 53, 0.1);
+      border-top-color: #FF6B35;
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ============================================
+       PREMIUM CARD DESIGN
+       ============================================ */
+    
+    .review-card {
+      background: white;
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 640px) {
+      .review-card {
+        padding: 24px;
+        border-radius: 20px;
+      }
+    }
+
+    /* ============================================
+       TEXT AREA MODERN STYLING
+       ============================================ */
+    
+    .modern-textarea {
+      width: 100%;
+      padding: 16px;
+      border: 2px solid #E5E7EB;
+      border-radius: 16px;
+      font-size: 1rem;
+      font-family: 'Inter', sans-serif;
+      resize: none;
+      transition: all 0.3s ease;
+    }
+
+    .modern-textarea:focus {
+      outline: none;
+      border-color: #FF6B35;
+      box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.1);
+    }
+
+    .modern-textarea::placeholder {
+      color: #9CA3AF;
+    }
+
+    /* ============================================
+       CHECKMARK ANIMATION
+       ============================================ */
+    
+    @keyframes checkmark {
+      0% { stroke-dashoffset: 100; }
+      100% { stroke-dashoffset: 0; }
+    }
+
+    .checkmark-path {
+      stroke-dasharray: 100;
+      stroke-dashoffset: 100;
+      animation: checkmark 0.6s ease-in-out forwards;
     }
   </style>
 </head>
-<body class="bg-gradient-to-br from-orange-50 via-white to-yellow-50 min-h-screen">
+<body class="bg-gradient-to-br from-orange-50 via-white to-amber-50 min-h-screen">
 
-  <!-- Loading Screen -->
+  <!-- ============================================
+       LOADING SCREEN
+       ============================================ -->
   <div id="loading-screen" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
-    <div class="text-center">
-      <div class="spinner mx-auto mb-4"></div>
-      <p class="text-lg font-semibold text-gray-700">Завантаження...</p>
+    <div class="text-center animate-fade-in">
+      <div class="spinner mx-auto mb-6"></div>
+      <p class="text-xl font-semibold text-gray-700">Завантаження...</p>
+      <p class="text-sm text-gray-500 mt-2">Готуємо форму відгуку для вас</p>
     </div>
   </div>
 
-  <!-- Error Screen -->
+  <!-- ============================================
+       ERROR SCREEN
+       ============================================ -->
   <div id="error-screen" class="hidden fixed inset-0 bg-white z-50 flex items-center justify-center px-4">
-    <div class="text-center max-w-md">
-      <div class="text-6xl mb-4">😔</div>
-      <h1 class="text-2xl font-bold text-gray-900 mb-2">Помилка</h1>
-      <p id="error-message" class="text-gray-600 mb-4">Замовлення не знайдено</p>
-      <p id="error-details" class="text-xs text-gray-400 font-mono mb-6"></p>
-      <div class="flex flex-col gap-3">
-        <button 
-          onclick="retryLoading()" 
-          class="w-full px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition flex items-center justify-center gap-2">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-          </svg>
-          <span>Спробувати ще раз</span>
-        </button>
-        <a href="https://latiao-snack.com.ua" class="w-full px-6 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition text-center">
-          Повернутися на головну
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <!-- Already Reviewed Screen -->
-  <div id="already-reviewed-screen" class="hidden fixed inset-0 bg-white z-50 flex items-center justify-center px-4">
-    <div class="text-center max-w-md">
-      <div class="text-6xl mb-4">✅</div>
-      <h1 class="text-2xl font-bold text-gray-900 mb-2">Дякуємо!</h1>
-      <p class="text-gray-600 mb-6">Ви вже залишили відгук на це замовлення. Дякуємо за ваш час! 🧡</p>
-      <a href="https://latiao-snack.com.ua" class="inline-block px-6 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition">
-        Повернутися на головну
-      </a>
-    </div>
-  </div>
-
-  <!-- Success Modal -->
-  <div id="success-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center px-4 modal-overlay">
-    <div class="bg-white rounded-2xl p-8 max-w-md w-full text-center modal-content">
-      <div class="mb-6">
-        <svg class="mx-auto w-20 h-20" viewBox="0 0 52 52">
-          <circle cx="26" cy="26" r="25" fill="none" stroke="#10b981" stroke-width="2"/>
-          <path class="checkmark" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" d="M14 27l7.5 7.5L38 18"/>
+    <div class="text-center max-w-md animate-fade-in-scale">
+      <div class="text-7xl mb-6">😔</div>
+      <h1 class="text-3xl font-bold text-gray-900 mb-3">Упс...</h1>
+      <p id="error-message" class="text-lg text-gray-600 mb-6">Щось пішло не так</p>
+      <p id="error-details" class="text-xs text-gray-400 font-mono mb-8"></p>
+      <button onclick="retryLoading()" class="submit-btn mx-auto flex items-center gap-3">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
         </svg>
-      </div>
-      <h2 class="text-2xl font-bold text-gray-900 mb-2">Дякуємо! 🧡</h2>
-      <p class="text-gray-600 mb-6">Ваш відгук допоможе іншим покупцям зробити правильний вибір!</p>
-      <button onclick="closeSuccessModal()" class="w-full px-6 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition">
-        Чудово!
+        <span>Спробувати ще раз</span>
       </button>
     </div>
   </div>
 
-  <!-- Main Content -->
-  <div id="main-content" class="hidden">
-    <div class="container mx-auto px-4 py-8 max-w-3xl">
+  <!-- ============================================
+       ALREADY REVIEWED SCREEN
+       ============================================ -->
+  <div id="already-reviewed-screen" class="hidden fixed inset-0 bg-gradient-to-br from-green-50 to-emerald-50 z-50 flex items-center justify-center px-4">
+    <div class="text-center max-w-md animate-fade-in-scale">
+      <div class="text-8xl mb-6">✨</div>
+      <h1 class="text-4xl font-bold text-gray-900 mb-4">Дякуємо!</h1>
+      <p class="text-xl text-gray-600 mb-8">Ви вже залишили відгук на це замовлення. Ваш голос почутий! 🎉</p>
+      <a href="https://latiao-snack.com.ua" class="submit-btn inline-flex items-center gap-2">
+        <span>Повернутися на головну</span>
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- ============================================
+       SUCCESS MODAL
+       ============================================ -->
+  <div id="success-modal" class="hidden modal-overlay">
+    <div class="modal-content text-center">
+      <svg class="mx-auto w-24 h-24 mb-6" viewBox="0 0 52 52">
+        <circle cx="26" cy="26" r="25" fill="none" stroke="#10B981" stroke-width="2"/>
+        <path class="checkmark-path" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" d="M14 27l7.5 7.5L38 18"/>
+      </svg>
+      <h2 class="text-3xl font-bold text-gray-900 mb-3">Дякуємо! 🎉</h2>
+      <p class="text-lg text-gray-600 mb-8">Ваш відгук успішно додано. Ви допомагаєте спільноті поціновувачів Latiao!</p>
+      <button onclick="closeSuccessModal()" class="submit-btn w-full flex items-center justify-center gap-2">
+        <span>Чудово!</span>
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================================
+       MAIN CONTENT
+       ============================================ -->
+  <div id="main-content" class="hidden min-h-screen py-12 px-4">
+    <div class="container mx-auto max-w-4xl">
       
-      <!-- Header -->
-      <div class="text-center mb-8">
-        <a href="https://latiao-snack.com.ua" class="inline-block mb-4">
-          <span class="text-5xl">🌶️</span>
+      <!-- Brand Logo -->
+      <div class="text-center mb-8 animate-fade-in">
+        <a href="https://latiao-snack.com.ua" class="inline-block mb-6 hover:scale-110 transition-transform">
+          <span class="text-7xl filter drop-shadow-lg">🌶️</span>
         </a>
-        <h1 id="greeting" class="text-3xl font-bold text-gray-900 mb-2">Привіт! 👋</h1>
-        <p id="thank-you-message" class="text-gray-600">Дякуємо за ваше замовлення! Будемо вдячні за ваш відгук!</p>
-      </div>
-
-      <!-- Order Products -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <span>📦</span>
-          <span>Ваше замовлення</span>
-        </h2>
-        <div id="products-list" class="space-y-3">
-          <!-- Products will be inserted here -->
-        </div>
-      </div>
-
-      <!-- Review Form -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-6">Ваш відгук ⭐</h2>
         
-        <!-- Star Rating -->
-        <div class="mb-6">
-          <label class="block text-sm font-medium text-gray-700 mb-3">Оцініть наші снеки</label>
-          <div class="star-rating" id="star-rating">
-            <span class="star" data-rating="1">★</span>
-            <span class="star" data-rating="2">★</span>
-            <span class="star" data-rating="3">★</span>
-            <span class="star" data-rating="4">★</span>
-            <span class="star" data-rating="5">★</span>
+        <!-- ✅ TASK 1: Psychological Header with Personalization -->
+        <h1 id="greeting" class="text-4xl md:text-5xl font-black text-gray-900 mb-4" style="font-family: 'Outfit', sans-serif; line-height: 1.2;">
+          Ваша думка робить нас кращими! ✨
+        </h1>
+        <p id="subtitle" class="text-lg md:text-xl text-gray-600 font-medium">
+          Допоможіть іншим обрати найкраще та отримайте нашу щиру вдячність.
+        </p>
+      </div>
+
+      <!-- ✅ TASK 3: Product Thumbnails - Remind What They Bought -->
+      <div id="products-section" class="mb-8 animate-slide-up" style="animation-delay: 0.2s;">
+        <div class="review-card">
+          <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-3">
+            <span class="text-3xl">📦</span>
+            <span>Ви оцінюєте:</span>
+          </h2>
+          <div id="products-list" class="space-y-3">
+            <!-- Products will be inserted here -->
           </div>
-          <p id="rating-text" class="text-sm text-gray-500 mt-2">Оберіть кількість зірок</p>
+        </div>
+      </div>
+
+      <!-- ✅ TASK 2: Review Form - Modern Card Design -->
+      <div class="review-card animate-slide-up" style="animation-delay: 0.4s;">
+        
+        <!-- ✅ TASK 2: Star Rating - Animated with Emotional Labels -->
+        <div class="mb-8">
+          <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">Як вам наші снеки?</h2>
+          <div class="star-rating-container">
+            <div class="star-rating" id="star-rating">
+              <span class="star" data-rating="1">★</span>
+              <span class="star" data-rating="2">★</span>
+              <span class="star" data-rating="3">★</span>
+              <span class="star" data-rating="4">★</span>
+              <span class="star" data-rating="5">★</span>
+            </div>
+            <p id="rating-label" class="rating-label text-gray-400">Натисніть на зірки</p>
+          </div>
         </div>
 
-        <!-- Comment -->
-        <div class="mb-6">
-          <label for="review-comment" class="block text-sm font-medium text-gray-700 mb-2">
-            Ваш відгук <span class="text-red-500">*</span>
+        <!-- ✅ TASK 2: Progressive Disclosure - Text Area (Hidden Initially) -->
+        <div id="comment-section" class="form-section">
+          <label class="block text-lg font-semibold text-gray-900 mb-3">
+            Розкажіть детальніше 📝
           </label>
           <textarea 
             id="review-comment" 
-            rows="4" 
-            class="w-full border border-gray-300 rounded-xl p-4 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition resize-none"
-            placeholder="Розкажіть, що вам сподобалось або що можна покращити..." 
-            required></textarea>
-          <p class="text-xs text-gray-500 mt-1">Це поле обов'язкове для заповнення</p>
+            rows="5" 
+            class="modern-textarea"
+            placeholder="Що вам сподобалось? Смак, упаковка, доставка? Чим більше деталей, тим корисніше для інших! 😊"
+            maxlength="1000"></textarea>
+          <div class="char-counter" id="char-counter">0 / 1000 символів</div>
+          <p class="text-xs text-gray-500 mt-2">💡 Детальні відгуки допомагають на 80% краще!</p>
         </div>
 
-        <!-- Photo Upload -->
-        <div class="mb-6">
-          <label class="block text-sm font-medium text-gray-700 mb-3">
-            Додати фото <span class="text-gray-400">(необов'язково)</span>
+        <!-- ✅ TASK 2: Progressive Disclosure - Photo Upload (Hidden Initially) -->
+        <div id="photo-section" class="form-section">
+          <label class="block text-lg font-semibold text-gray-900 mb-3">
+            Покажіть ваші смаколики! 📸
           </label>
-          <div class="grid grid-cols-3 gap-3 mb-3" id="photos-preview">
-            <!-- Photo previews will be inserted here -->
-          </div>
-          <label for="photo-input" class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg cursor-pointer transition">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <p class="text-sm text-gray-600 mb-4">
+            Фото відгуки допомагають на <strong>80% більше</strong> іншим покупцям зробити вибір.
+          </p>
+          
+          <!-- Instagram-style Drop Zone -->
+          <div class="photo-drop-zone" id="photo-drop-zone" onclick="document.getElementById('photo-input').click()">
+            <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
             </svg>
-            <span>Додати фото</span>
-          </label>
+            <p class="text-lg font-semibold text-gray-700 mb-1">Перетягніть фото сюди</p>
+            <p class="text-sm text-gray-500">або натисніть для вибору (до 5 фото)</p>
+          </div>
           <input type="file" id="photo-input" accept="image/*" multiple class="hidden" onchange="handlePhotoSelect(event)">
-          <p class="text-xs text-gray-500 mt-2">Можна додати до 5 фото (макс. 5 МБ кожне)</p>
+          
+          <!-- Photo Previews -->
+          <div class="photo-preview-grid" id="photos-preview"></div>
         </div>
 
-        <!-- Submit Button -->
-        <button 
-          id="submit-btn"
-          onclick="submitReview()" 
-          class="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-4 rounded-xl transition shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-          </svg>
-          <span>Надіслати відгук</span>
-        </button>
+        <!-- ✅ TASK 2: Submit Button - Large, Rounded, Pulse Animation -->
+        <div id="submit-section" class="form-section">
+          <button id="submit-btn" onclick="submitReview()" class="submit-btn w-full flex items-center justify-center gap-3" disabled>
+            <span class="text-xl">🚀</span>
+            <span>Опублікувати відгук</span>
+          </button>
+          <p class="text-center text-sm text-gray-500 mt-4">
+            Натискаючи кнопку, ви допомагаєте тисячам людей
+          </p>
+        </div>
+
       </div>
 
       <!-- Footer -->
-      <div class="text-center text-gray-500 text-sm">
+      <div class="text-center text-gray-500 text-sm mt-12 animate-fade-in" style="animation-delay: 0.6s;">
         <p>© 2026 Latiao Snack. Дякуємо, що обрали нас! 🌶️</p>
       </div>
 
@@ -312,6 +631,9 @@
   </div>
 
   <script>
+    // ============================================
+    // GLOBAL STATE
+    // ============================================
     let currentRating = 0
     let selectedPhotos = []
     let orderData = null
@@ -321,491 +643,195 @@
     let errorTimeout = null
 
     // ============================================
-    // STEP 1: EXTRACT ORDER ID FROM URL
+    // INITIALIZATION
     // ============================================
-    console.log('═══════════════════════════════════════')
-    console.log('🔍 LEAVE REVIEW PAGE - INITIALIZATION')
-    console.log('═══════════════════════════════════════')
-    console.log('📅 Timestamp:', new Date().toISOString())
-    console.log('🌐 Full URL:', window.location.href)
-    console.log('🔗 Query String:', window.location.search)
-    
+    console.log('🌶️ Latiao Review Form - Modern Version')
+    console.log('Timestamp:', new Date().toISOString())
+    console.log('URL:', window.location.href)
+
     const urlParams = new URLSearchParams(window.location.search)
     orderId = urlParams.get('orderId')
-    
-    console.log('📋 Current URL ID:', orderId)
-    console.log('📋 OrderId Type:', typeof orderId)
-    console.log('📋 OrderId Length:', orderId ? orderId.length : 0)
-    console.log('📋 OrderId Trimmed:', orderId ? orderId.trim() : null)
-    console.log('═══════════════════════════════════════')
+    console.log('Order ID:', orderId)
 
-    // Retry loading function
+    // Retry function
     window.retryLoading = function() {
-      console.log('═══════════════════════════════════════')
-      console.log('🔄 RETRY LOADING TRIGGERED')
-      console.log('═══════════════════════════════════════')
       retryCount++
-      
-      // Clear any pending error timeout
-      if (errorTimeout) {
-        clearTimeout(errorTimeout)
-        errorTimeout = null
-      }
-      
+      if (errorTimeout) clearTimeout(errorTimeout)
       document.getElementById('error-screen').classList.add('hidden')
       document.getElementById('loading-screen').classList.remove('hidden')
       initPage()
     }
 
     // ============================================
-    // TRACK LINK OPENING (Always runs on page load)
+    // TRACK LINK OPENING
     // ============================================
     async function trackLinkOpening(orderId) {
       try {
-        console.log('═══════════════════════════════════════')
-        console.log('📊 [TRACKING] Starting link opening tracking...')
-        console.log('═══════════════════════════════════════')
-        console.log('🎯 Order ID:', orderId)
-        
+        console.log('📊 Tracking link opening for order:', orderId)
         const { doc, getDoc, updateDoc, setDoc, serverTimestamp } = window.dbFunctions
-        
-        // Create document reference
         const orderRef = doc(window.db, 'orders', orderId)
-        console.log('📋 Document reference created:', orderRef.path)
-        
-        // Check current status
         const currentDoc = await getDoc(orderRef)
-        const currentData = currentDoc.data()
-        const alreadyOpened = currentData?.linkOpened
-        
-        console.log('🔍 Current linkOpened status:', alreadyOpened)
-        console.log('🔍 Current linkOpenedAt:', currentData?.linkOpenedAt)
-        
+        const alreadyOpened = currentDoc.data()?.linkOpened
+
         if (!alreadyOpened) {
-          // First time opening - set both fields
-          console.log('🎯 First time opening - setting linkOpened = true')
-          
           const trackingData = {
             linkOpened: true,
             linkOpenedAt: serverTimestamp()
           }
           
-          // ✅ STRATEGY: Try updateDoc first, fallback to setDoc with merge
           try {
-            console.log('🔄 Attempting updateDoc...')
             await updateDoc(orderRef, trackingData)
-            console.log('✅ [SUCCESS] updateDoc worked!')
           } catch (updateError) {
-            console.warn('⚠️  updateDoc failed:', updateError.code, updateError.message)
-            console.log('🔄 Trying setDoc with merge...')
-            
-            // Fallback: Use setDoc with merge option
             await setDoc(orderRef, trackingData, { merge: true })
-            console.log('✅ [SUCCESS] setDoc with merge worked!')
           }
-          
-          console.log('✅ [SUCCESS] Link opening tracked successfully!')
-          console.log('   • linkOpened: true')
-          console.log('   • linkOpenedAt: serverTimestamp()')
-          console.log('═══════════════════════════════════════')
-          
-          // ✅ TASK 3: Debugging alert
-          if (window.location.search.includes('debug')) {
-            alert('✅ Tracking signal sent to Firestore for order: ' + orderId)
-          }
-        } else {
-          console.log('✅ Link was already opened before')
-          console.log('   • First opened at:', currentData.linkOpenedAt)
-          console.log('   • Skip updating to preserve original timestamp')
-          console.log('═══════════════════════════════════════')
+          console.log('✅ Link opening tracked')
         }
-        
       } catch (error) {
-        console.error('═══════════════════════════════════════')
-        console.error('❌ [ERROR] Failed to track link opening')
-        console.error('═══════════════════════════════════════')
-        console.error('Error object:', error)
-        console.error('Error message:', error.message)
-        console.error('Error code:', error.code)
-        console.error('Error stack:', error.stack)
-        console.error('═══════════════════════════════════════')
-        
-        // Show debugging alert on error
-        if (window.location.search.includes('debug')) {
-          alert('❌ Tracking failed: ' + error.message)
-        }
-        
-        // Non-critical error - don't block user experience
-        console.warn('⚠️  Continuing despite tracking error (non-critical)...')
+        console.warn('⚠️ Tracking error (non-critical):', error.message)
       }
     }
 
     // ============================================
-    // STEP 2: WAIT FOR FIREBASE INITIALIZATION
+    // WAIT FOR FIREBASE
     // ============================================
     async function waitForFirebase(maxAttempts = 10) {
-      console.log('⏳ Waiting for Firebase SDK initialization...')
-      
       for (let i = 0; i < maxAttempts; i++) {
-        console.log(`   Attempt ${i + 1}/${maxAttempts}:`, {
-          'window.db': !!window.db,
-          'window.dbFunctions': !!window.dbFunctions,
-          'window.storage': !!window.storage
-        })
-        
         if (window.db && window.dbFunctions) {
-          console.log('✅ Firebase SDK initialized successfully!')
-          console.log('📦 Available functions:', Object.keys(window.dbFunctions))
+          console.log('✅ Firebase ready')
           return true
         }
-        
         await new Promise(resolve => setTimeout(resolve, 500))
       }
-      
-      console.error('❌ Firebase SDK failed to initialize after', maxAttempts, 'attempts')
       return false
     }
 
     // ============================================
-    // STEP 3: MAIN INITIALIZATION FUNCTION
+    // MAIN INITIALIZATION
     // ============================================
     async function initPage() {
-      console.log('═══════════════════════════════════════')
-      console.log(`🚀 INIT PAGE - ATTEMPT ${retryCount + 1}/${MAX_RETRIES + 1}`)
-      console.log('═══════════════════════════════════════')
+      console.log(`🚀 Init attempt ${retryCount + 1}/${MAX_RETRIES + 1}`)
 
-      // Validate orderId from URL
       if (!orderId || orderId.trim() === '') {
-        console.error('❌ VALIDATION FAILED: Missing orderId')
-        console.error('   URL:', window.location.href)
-        console.error('   Query Params:', window.location.search)
-        
-        showErrorDelayed(
-          'Посилання невалідне. Відсутній ID замовлення.',
-          'URL parameter ?orderId= is missing or empty'
-        )
+        showError('Посилання невалідне. Відсутній ID замовлення.')
         return
       }
 
-      // Wait for Firebase initialization
       const firebaseReady = await waitForFirebase()
       if (!firebaseReady) {
-        console.error('❌ Firebase SDK not available')
-        
         if (retryCount < MAX_RETRIES) {
-          console.log(`♻️ Auto-retry in 2 seconds... (${retryCount + 1}/${MAX_RETRIES})`)
           setTimeout(() => retryLoading(), 2000)
           return
         } else {
-          showErrorDelayed(
-            'Помилка ініціалізації Firebase. Перезавантажте сторінку.',
-            'Firebase SDK not loaded after multiple retries'
-          )
+          showError('Помилка ініціалізації. Перезавантажте сторінку.')
           return
         }
       }
 
       try {
-        console.log('═══════════════════════════════════════')
-        console.log('📡 FETCHING ORDER FROM FIRESTORE')
-        console.log('═══════════════════════════════════════')
-        console.log('📋 Order ID:', orderId)
-        console.log('📋 Collection:', 'orders')
-        console.log('📋 Full Path:', `orders/${orderId}`)
-        
-        // Verify collection name (case-sensitive)
-        console.log('⚠️  Note: Collection name is case-sensitive!')
-        console.log('   Trying: "orders" (lowercase)')
-
-        // Get Firestore functions
         const { doc, getDoc } = window.dbFunctions
-        console.log('✅ Firestore functions loaded:', { doc: typeof doc, getDoc: typeof getDoc })
-
-        // Create document reference
         const orderRef = doc(window.db, 'orders', orderId)
-        console.log('📌 Document reference created')
-        console.log('   Path:', orderRef.path)
-        console.log('   ID:', orderRef.id)
-
-        // Fetch with timeout protection
-        console.log('⏱️  Setting 15-second timeout...')
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Firestore request timeout after 15 seconds')), 15000)
-        })
-
-        console.log('🔄 Executing getDoc()...')
-        const orderSnap = await Promise.race([
-          getDoc(orderRef),
-          timeoutPromise
-        ])
-
-        console.log('═══════════════════════════════════════')
-        console.log('📦 FIRESTORE RESPONSE RECEIVED')
-        console.log('═══════════════════════════════════════')
-        console.log('📊 Response Object:', orderSnap)
-        console.log('📊 Document exists:', orderSnap.exists())
-        console.log('📊 Document ID:', orderSnap.id)
-        console.log('📊 Document metadata:', orderSnap.metadata)
+        const orderSnap = await getDoc(orderRef)
 
         if (!orderSnap.exists()) {
-          console.warn('⚠️  Document with this ID does not exist in collection "orders"')
-          console.warn('   Searched for:', orderId)
-          console.warn('   Collection:', 'orders')
-          console.warn('   Full path:', `orders/${orderId}`)
-          console.warn('')
-          console.warn('💡 Possible causes:')
-          console.warn('   1. Wrong order ID in URL')
-          console.warn('   2. Order was deleted')
-          console.warn('   3. Collection name typo (check case: orders vs Orders)')
-          console.warn('   4. Order exists in different Firebase project')
-          
-          showErrorDelayed(
-            'Замовлення не знайдено. Можливо, посилання застаріло.',
-            `Document 'orders/${orderId}' does not exist in Firestore`
-          )
+          showError('Замовлення не знайдено.')
           return
         }
 
-        // Extract and validate order data
-        console.log('═══════════════════════════════════════')
-        console.log('📄 EXTRACTING ORDER DATA')
-        console.log('═══════════════════════════════════════')
-        
-        const rawData = orderSnap.data()
-        console.log('📦 Raw Firestore Data:', rawData)
-        console.dir(rawData)
-        
-        orderData = { id: orderSnap.id, ...rawData }
-        console.log('✅ Order data retrieved:', orderData)
-        console.log('')
-        console.log('🔍 Data Structure Analysis:')
-        console.log('   • customer:', orderData.customer)
-        console.log('   • customer.fullName:', orderData.customer?.fullName)
-        console.log('   • customer.phone:', orderData.customer?.phone)
-        console.log('   • items:', orderData.items)
-        console.log('   • items.length:', orderData.items?.length)
-        console.log('   • orderNumber:', orderData.orderNumber)
-        console.log('   • status:', orderData.status)
-        console.log('   • total:', orderData.total || orderData.summary?.total)
-        console.log('   • linkOpened (BEFORE):', orderData.linkOpened)
-        console.log('   • linkOpenedAt (BEFORE):', orderData.linkOpenedAt)
-        console.log('')
-        
-        // ✅ TASK 1: TRACK LINK OPENING (Always runs on page load)
-        console.log('═══════════════════════════════════════')
-        console.log('🚀 CALLING trackLinkOpening() - This happens AUTOMATICALLY on page load')
-        console.log('═══════════════════════════════════════')
-        
-        await trackLinkOpening(orderId)
-        
-        console.log('═══════════════════════════════════════')
-        console.log('✅ trackLinkOpening() completed')
-        console.log('═══════════════════════════════════════')
-        
-        // Validate required fields
-        const hasCustomer = !!orderData.customer
-        const hasItems = Array.isArray(orderData.items) && orderData.items.length > 0
-        
-        console.log('✅ Data Validation:')
-        console.log('   • Has customer object:', hasCustomer)
-        console.log('   • Has items array:', hasItems)
-        
-        if (!hasCustomer) {
-          console.warn('⚠️  Warning: No customer data found')
-        }
-        
-        if (!hasItems) {
-          console.warn('⚠️  Warning: No items found in order')
-        }
+        orderData = { id: orderSnap.id, ...orderSnap.data() }
+        console.log('✅ Order loaded:', orderData)
 
-        // Check if review already exists
-        console.log('═══════════════════════════════════════')
-        console.log('🔍 CHECKING FOR EXISTING REVIEW')
-        console.log('═══════════════════════════════════════')
-        
+        await trackLinkOpening(orderId)
+
         const reviewExists = await checkExistingReview()
-        console.log('📊 Review exists:', reviewExists)
-        
         if (reviewExists) {
-          console.log('⚠️  Review already submitted for this order')
           showAlreadyReviewed()
           return
         }
 
-        console.log('✅ No existing review found - proceeding to form')
-
-        // Populate page with order data
-        console.log('═══════════════════════════════════════')
-        console.log('🎨 POPULATING PAGE UI')
-        console.log('═══════════════════════════════════════')
-        
         populatePage()
-        
-        console.log('✅ UI populated successfully')
-
-        // Show main content
-        console.log('✅ Hiding loading screen')
-        console.log('✅ Showing main content')
         
         document.getElementById('loading-screen').classList.add('hidden')
         document.getElementById('main-content').classList.remove('hidden')
 
-        console.log('═══════════════════════════════════════')
-        console.log('🎉 PAGE INITIALIZATION COMPLETE!')
-        console.log('═══════════════════════════════════════')
+        console.log('🎉 Page ready!')
 
       } catch (error) {
-        console.log('═══════════════════════════════════════')
-        console.error('❌ ERROR CAUGHT IN INIT PAGE')
-        console.log('═══════════════════════════════════════')
-        console.error('Error Object:', error)
-        console.error('Error Name:', error.name)
-        console.error('Error Message:', error.message)
-        console.error('Error Code:', error.code)
-        console.error('Error Stack:', error.stack)
-        console.log('')
-        console.log('📊 Full Error Object (console.dir):')
-        console.dir(error)
-        console.log('═══════════════════════════════════════')
-
-        // Determine error type and show appropriate message
-        let userMessage = 'Помилка завантаження даних.'
-        let technicalDetails = error.message
-
-        // Check for permission errors
-        if (error.code === 'permission-denied' || 
-            error.message.includes('Missing or insufficient permissions') ||
-            error.message.includes('Missing or insufficient permissions')) {
-          
-          console.error('🔒 PERMISSION DENIED ERROR DETECTED')
-          console.error('   This means Firestore Security Rules are blocking the request')
-          console.error('   Required: Allow public read access to orders collection')
-          
-          userMessage = 'Помилка доступу: Оновіть Security Rules у Firebase Console'
-          technicalDetails = `Firestore permission-denied: ${error.message}`
-          
-          console.log('')
-          console.log('💡 FIX: Update firestore.rules:')
-          console.log('   match /orders/{orderId} {')
-          console.log('     allow get: if true;  // Allow public read for specific order')
-          console.log('   }')
-          
-        } else if (error.message.includes('timeout')) {
-          console.error('⏱️  TIMEOUT ERROR')
-          userMessage = 'Запит перевищив час очікування. Перевірте з\'єднання.'
-          technicalDetails = 'Request timeout - Firestore response took too long'
-          
-        } else if (error.message.includes('network') || error.code === 'unavailable') {
-          console.error('🌐 NETWORK ERROR')
-          userMessage = 'Помилка мережі. Перевірте інтернет-з\'єднання.'
-          technicalDetails = `Network error: ${error.message}`
-          
-        } else if (!navigator.onLine) {
-          console.error('📡 DEVICE OFFLINE')
-          userMessage = 'Немає інтернет-з\'єднання.'
-          technicalDetails = 'Device is offline (navigator.onLine = false)'
-        }
-
-        // Show retry option if retries available
-        if (retryCount < MAX_RETRIES) {
-          console.log(`♻️  Retry available (${retryCount + 1}/${MAX_RETRIES} attempts used)`)
-        } else {
-          console.log('🚫 Max retries reached - no more auto-retry')
-        }
-
-        showErrorDelayed(userMessage, technicalDetails)
+        console.error('❌ Init error:', error)
+        showError('Помилка завантаження. Спробуйте ще раз.')
       }
     }
 
-    // Check if review already exists
+    // ============================================
+    // CHECK EXISTING REVIEW
+    // ============================================
     async function checkExistingReview() {
-      console.log('🔍 Checking for existing review...')
-      console.log('   Querying collection: reviews')
-      console.log('   Where: orderId == ', orderId)
-      
       try {
         const { collection, query, where, getDocs } = window.dbFunctions
         const reviewsRef = collection(window.db, 'reviews')
         const q = query(reviewsRef, where('orderId', '==', orderId))
-        
-        console.log('   Executing query...')
         const snapshot = await getDocs(q)
-        
-        console.log('   Query results:')
-        console.log('     • Empty:', snapshot.empty)
-        console.log('     • Size:', snapshot.size)
-        
-        if (!snapshot.empty) {
-          console.log('   ⚠️  Found existing review(s):')
-          snapshot.forEach(doc => {
-            console.log('     • Review ID:', doc.id)
-            console.log('     • Created:', doc.data().createdAt)
-            console.log('     • Rating:', doc.data().rating)
-          })
-        }
-        
         return !snapshot.empty
       } catch (error) {
-        console.error('❌ Error checking existing review:', error)
-        console.dir(error)
-        return false  // Allow form to show on error
+        console.error('Error checking review:', error)
+        return false
       }
     }
 
-    // Populate page with order data
+    // ============================================
+    // POPULATE PAGE - WITH PERSONALIZATION
+    // ============================================
     function populatePage() {
-      console.log('🎨 populatePage() - Starting UI population')
-      console.log('📦 Order Data:', orderData)
-      
       const customerName = orderData.customer?.fullName?.split(' ')[0] || 'шановний покупець'
       const orderNumber = orderData.orderNumber || `#${orderId.substring(0, 8).toUpperCase()}`
+
+      // ✅ TASK 1: Personalized Greeting
+      document.getElementById('greeting').innerHTML = `
+        Ваша думка робить нас кращими, <span style="background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${customerName}</span>! ✨
+      `
       
-      console.log('   • Customer first name:', customerName)
-      console.log('   • Order number:', orderNumber)
+      document.getElementById('subtitle').textContent = 
+        `Замовлення ${orderNumber} · Допоможіть іншим обрати найкраще`
 
-      // Set greeting
-      document.getElementById('greeting').textContent = `Привіт, ${customerName}! 👋`
-      document.getElementById('thank-you-message').textContent = 
-        `Дякуємо за ваше замовлення ${orderNumber}. Будемо вдячні за ваш відгук!`
-
-      // Populate products list
+      // ✅ TASK 3: Product Thumbnails
       const productsList = document.getElementById('products-list')
       const items = orderData.items || []
 
       if (items.length === 0) {
-        productsList.innerHTML = '<p class="text-gray-500 text-sm">Немає товарів у замовленні</p>'
+        productsList.innerHTML = '<p class="text-gray-500">Немає товарів</p>'
         return
       }
 
       productsList.innerHTML = items.map(item => `
-        <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
+        <div class="product-card">
           <img 
-            src="${item.imageUrl || item.image || 'https://via.placeholder.com/80?text=No+Image'}" 
+            src="${item.imageUrl || item.image || 'https://via.placeholder.com/64?text=No+Image'}" 
             alt="${item.name || item.title}"
-            class="w-16 h-16 object-cover rounded-lg shadow-sm"
-            onerror="this.src='https://via.placeholder.com/80?text=No+Image'">
+            class="product-thumbnail"
+            onerror="this.src='https://via.placeholder.com/64?text=🌶️'">
           <div class="flex-1">
-            <h3 class="font-medium text-gray-900">${item.name || item.title || 'Товар'}</h3>
+            <h3 class="font-semibold text-gray-900">${item.name || item.title || 'Товар'}</h3>
             <p class="text-sm text-gray-500">Кількість: ${item.quantity || 1} шт.</p>
           </div>
-          <div class="text-orange-600 font-semibold">
+          <div class="text-orange-600 font-bold text-lg">
             ${((item.price || 0) * (item.quantity || 1)).toFixed(0)} ₴
           </div>
         </div>
       `).join('')
     }
 
-    // Star rating functionality
+    // ============================================
+    // STAR RATING - WITH EMOTIONAL LABELS
+    // ============================================
     document.addEventListener('DOMContentLoaded', () => {
       const stars = document.querySelectorAll('.star')
-      const ratingText = document.getElementById('rating-text')
+      const ratingLabel = document.getElementById('rating-label')
 
       stars.forEach(star => {
         star.addEventListener('click', () => {
           const rating = parseInt(star.getAttribute('data-rating'))
           currentRating = rating
 
-          // Update star visuals
+          // Update stars
           stars.forEach((s, index) => {
             if (index < rating) {
               s.classList.add('active')
@@ -814,61 +840,109 @@
             }
           })
 
-          // Update text
-          const ratingLabels = {
-            1: 'Погано 😞',
-            2: 'Непогано 😐',
-            3: 'Добре 🙂',
-            4: 'Дуже добре 😊',
-            5: 'Чудово! 🤩'
+          // ✅ TASK 2: Dynamic Emotional Labels
+          const labels = {
+            1: { text: 'Жахливо 😞', class: 'rating-1' },
+            2: { text: 'Так собі 😐', class: 'rating-2' },
+            3: { text: 'Нормально 🙂', class: 'rating-3' },
+            4: { text: 'Дуже добре! 😊', class: 'rating-4' },
+            5: { text: 'Це любов! 😍', class: 'rating-5' }
           }
-          ratingText.textContent = ratingLabels[rating] || 'Оберіть кількість зірок'
+
+          ratingLabel.textContent = labels[rating].text
+          ratingLabel.className = `rating-label ${labels[rating].class}`
+
+          // ✅ TASK 2: Progressive Disclosure - Show Comment Section
+          document.getElementById('comment-section').classList.add('visible')
+          document.getElementById('photo-section').classList.add('visible')
+          document.getElementById('submit-section').classList.add('visible')
+
+          // Enable submit button
+          document.getElementById('submit-btn').disabled = false
         })
+      })
+
+      // Character counter
+      const textarea = document.getElementById('review-comment')
+      const counter = document.getElementById('char-counter')
+
+      textarea.addEventListener('input', () => {
+        const length = textarea.value.length
+        counter.textContent = `${length} / 1000 символів`
+
+        if (length > 800) {
+          counter.classList.add('warning')
+        } else {
+          counter.classList.remove('warning')
+        }
+
+        if (length >= 1000) {
+          counter.classList.add('danger')
+        } else {
+          counter.classList.remove('danger')
+        }
+      })
+
+      // Drag & Drop for photos
+      const dropZone = document.getElementById('photo-drop-zone')
+
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault()
+        dropZone.classList.add('drag-over')
+      })
+
+      dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('drag-over')
+      })
+
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault()
+        dropZone.classList.remove('drag-over')
+        const files = Array.from(e.dataTransfer.files)
+        processFiles(files)
       })
     })
 
-    // Photo selection
+    // ============================================
+    // PHOTO HANDLING
+    // ============================================
     function handlePhotoSelect(event) {
       const files = Array.from(event.target.files)
-      
-      // Check total photo count
+      processFiles(files)
+      event.target.value = ''
+    }
+
+    function processFiles(files) {
       if (selectedPhotos.length + files.length > 5) {
         alert('Можна додати максимум 5 фото')
         return
       }
 
-      // Validate each file
       files.forEach(file => {
         if (file.size > 5 * 1024 * 1024) {
-          alert(`Файл ${file.name} занадто великий. Максимум 5 МБ`)
+          alert(`${file.name} занадто великий (макс. 5 МБ)`)
           return
         }
 
         if (!file.type.startsWith('image/')) {
-          alert(`Файл ${file.name} не є зображенням`)
+          alert(`${file.name} не є зображенням`)
           return
         }
 
         selectedPhotos.push(file)
       })
 
-      // Update preview
       renderPhotoPreview()
-      
-      // Clear input
-      event.target.value = ''
     }
 
-    // Render photo preview
     function renderPhotoPreview() {
       const preview = document.getElementById('photos-preview')
-      
       preview.innerHTML = selectedPhotos.map((file, index) => {
         const url = URL.createObjectURL(file)
         return `
-          <div class="photo-preview aspect-square bg-gray-100 rounded-lg">
-            <img src="${url}" alt="Preview ${index + 1}">
-            <div class="remove-photo" onclick="removePhoto(${index})">
+          <div class="photo-preview-item">
+            <img src="${url}" alt="Photo ${index + 1}" loading="lazy">
+            <div class="photo-remove-btn" onclick="removePhoto(${index})">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
               </svg>
@@ -878,450 +952,175 @@
       }).join('')
     }
 
-    // Remove photo
     function removePhoto(index) {
       selectedPhotos.splice(index, 1)
       renderPhotoPreview()
     }
 
-    // Submit review
-    // =====================================================
-    // SUBMIT REVIEW - Main Function
-    // =====================================================
-    // FLOW:
-    // 1. Collect form data (rating, comment text, customer info)
-    // 2. Validate required fields (rating, comment text required)
-    // 3. Upload photos to Storage (if any)
-    // 4. Build clean payload object
-    // 5. Save review to Firestore 'reviews' collection ← CRITICAL STEP
-    // 6. (Optional) Try to update order status ← CAN FAIL, IT'S OK!
-    // 7. Show success modal and reset form
-    //
-    // IMPORTANT: The order update (step 6) will likely fail with
-    // "permission-denied" because clients can't write to 'orders'.
-    // This is expected and safe - the review is already saved!
-    // =====================================================
-    
+    // ============================================
+    // SUBMIT REVIEW
+    // ============================================
     async function submitReview() {
-      console.log('═══════════════════════════════════════')
-      console.log('📤 SUBMIT REVIEW - START')
-      console.log('═══════════════════════════════════════')
-      
-      // STEP 1: Collect all data from form FIRST
       const rating = currentRating
-      const commentElement = document.getElementById('review-comment')
-      const reviewTextValue = commentElement ? commentElement.value.trim() : ''
-      const customerName = orderData?.customer?.fullName || 'Гість'
-      const customerPhone = orderData?.customer?.phone || ''
-      const orderIdValue = String(orderId || '')
-      
-      // Log collected data
-      console.log('📋 Form data collected:', {
-        rating,
-        textLength: reviewTextValue.length,
-        customerName,
-        orderId: orderIdValue,
-        photos: selectedPhotos.length
-      })
-      
-      // STEP 2: Validate required fields
-      if (!rating || rating === 0) {
-        console.error('❌ No rating selected')
-        alert('Будь ласка, оберіть оцінку зірками')
+      const comment = document.getElementById('review-comment').value.trim()
+
+      if (!rating) {
+        alert('Оберіть оцінку')
         return
       }
-      
-      // MANDATORY: Review text must not be empty
-      if (!reviewTextValue || reviewTextValue === '') {
-        console.error('❌ Review text is empty')
-        alert('Будь ласка, напишіть ваш відгук перед відправкою')
-        
-        // Highlight the textarea
-        if (commentElement) {
-          commentElement.style.borderColor = '#ef4444'
-          commentElement.focus()
-          setTimeout(() => {
-            commentElement.style.borderColor = ''
-          }, 3000)
-        }
-        return
-      }
-      
-      if (!orderIdValue || orderIdValue === '') {
-        console.error('❌ OrderId is missing')
-        alert('Помилка: не вдалося визначити номер замовлення')
-        return
-      }
-      
-      if (!customerName || customerName === '') {
-        console.error('❌ CustomerName is missing')
-        alert('Помилка: не вдалося визначити ім\'я покупця')
+
+      if (!comment) {
+        alert('Напишіть ваш відгук')
         return
       }
 
       const submitBtn = document.getElementById('submit-btn')
-      const originalText = submitBtn.innerHTML
+      submitBtn.disabled = true
+      submitBtn.innerHTML = `
+        <div class="spinner mx-auto" style="width: 20px; height: 20px; border-width: 2px;"></div>
+        <span>Надсилаємо...</span>
+      `
 
       try {
-        // STEP 3: Disable button and show loading
-        submitBtn.disabled = true
-        submitBtn.innerHTML = `
-          <div class="spinner mx-auto" style="width: 20px; height: 20px; border-width: 2px;"></div>
-          <span>Надсилаємо...</span>
-        `
-
-        // STEP 4: Upload photos (if any)
+        // Upload photos
         let photoUrls = []
         if (selectedPhotos.length > 0) {
-          console.log('📸 Uploading', selectedPhotos.length, 'photos...')
           photoUrls = await uploadPhotos()
-          console.log('✅ Photos uploaded:', photoUrls.length)
         }
 
-        // STEP 5: Build payload
+        // Build payload
         const productsArray = (orderData?.items || []).map(item => ({
           id: String(item.id || item.productId || ''),
-          name: String(item.name || item.title || 'Невідомий товар'),
+          name: String(item.name || item.title || ''),
           sku: String(item.sku || item.article || ''),
           price: Number(item.price || 0),
           quantity: Number(item.quantity || 1)
         }))
-        
-        const productIds = productsArray.map(p => p.id).filter(id => id !== '')
-        const timestamp = window.dbFunctions.serverTimestamp()
-        
-        // TASK 4: Enhanced debug logging for productIds and ID format validation
-        console.log('\n========================================')
-        console.log('🔧 LEAVE-REVIEW: CREATING REVIEW')
-        console.log('========================================')
-        console.log('📦 Order Items (Raw):', orderData?.items)
-        console.log('📦 Products Array:', productsArray)
-        console.log('📊 Product IDs extracted:', productIds)
-        console.log('📊 Product IDs Type:', typeof productIds)
-        console.log('📊 Is Array:', Array.isArray(productIds))
-        console.log('📊 Array Length:', productIds.length)
-        
-        // Validate each ID
-        productIds.forEach((id, index) => {
-          const isFirestoreId = id.length > 10 // Firestore IDs are typically 15-20 chars
-          const idType = isFirestoreId ? 'Firestore Doc ID ✅' : 'SKU or short ID ⚠️'
-          console.log(`   [${index}] Product ID: "${id}" (type: ${typeof id}, length: ${id.length}) - ${idType}`)
-        })
-        
-        // CRITICAL: Check if we have Firestore Document IDs or SKUs
-        const firestoreIds = productIds.filter(id => id.length > 10)
-        const shortIds = productIds.filter(id => id.length <= 10)
-        
-        if (shortIds.length > 0) {
-          console.warn('\n⚠️ WARNING: Some product IDs are SHORT (likely SKUs, not Firestore Doc IDs)')
-          console.warn('   - Short IDs:', shortIds)
-          console.warn('   - Firestore IDs:', firestoreIds)
-          console.warn('   - Product pages expect Firestore Doc IDs like: "MjKARnyFq1pADjbukThy"')
-          console.warn('   - Check order.items structure - should have .id field with Firestore Doc ID!')
-        } else {
-          console.log('\n✅ All product IDs appear to be Firestore Document IDs')
-        }
-        console.log('========================================\n')
-        
-        // =======================================================
-        // BUILD REVIEW PAYLOAD
-        // =======================================================
-        // CRITICAL FIELD MAPPING:
-        //   - text: PRIMARY field (used by Admin Panel)
-        //   - comment: BACKUP field (for compatibility)
-        //   - Both fields contain the same review text value
-        // =======================================================
-        
+
         const reviewPayload = {
-          // Required fields
-          orderId: String(orderIdValue),
+          orderId: String(orderId),
           rating: Number(rating),
-          customerName: String(customerName),
-          
-          // CRITICAL: Admin Panel uses 'text' field to display reviews!
-          text: String(reviewTextValue),        // ← PRIMARY (Admin Panel expects this)
-          comment: String(reviewTextValue),     // ← BACKUP (for compatibility)
-          
-          status: 'pending',  // Admin Panel filters by this
-          createdAt: timestamp,
-          
-          // Optional fields
-          customerPhone: String(customerPhone),
-          photos: Array.isArray(photoUrls) ? photoUrls : [],
-          photoCount: Number(photoUrls.length || 0),
-          
-          // Order metadata
-          orderNumber: String(orderData?.orderNumber || `#${orderIdValue.substring(0, 8).toUpperCase()}`),
-          orderTotal: Number(orderData?.summary?.total || orderData?.total || 0),
+          customerName: String(orderData.customer?.fullName || 'Гість'),
+          text: String(comment),
+          comment: String(comment),
+          status: 'pending',
+          createdAt: window.dbFunctions.serverTimestamp(),
+          customerPhone: String(orderData.customer?.phone || ''),
+          photos: photoUrls,
+          photoCount: photoUrls.length,
+          orderNumber: String(orderData.orderNumber || `#${orderId.substring(0, 8)}`),
+          orderTotal: Number(orderData.summary?.total || orderData.total || 0),
           products: productsArray,
-          productIds: productIds,
-          
-          // Review metadata
+          productIds: productsArray.map(p => p.id).filter(id => id !== ''),
           verified: true,
           helpful: 0,
           notHelpful: 0,
           source: 'post-purchase-link'
         }
-        
-        console.log('📤 Submitting review:', {
-          orderId: reviewPayload.orderId,
-          rating: reviewPayload.rating,
-          textLength: reviewPayload.text.length,
-          status: reviewPayload.status
-        })
 
-        // Validate required fields
-        const requiredFields = {
-          orderId: reviewPayload.orderId,
-          rating: reviewPayload.rating,
-          customerName: reviewPayload.customerName,
-          text: reviewPayload.text,  // Admin Panel primary field
-          status: reviewPayload.status
-        }
-        
-        for (const [key, value] of Object.entries(requiredFields)) {
-          if (!value || value === '') {
-            throw new Error(`Missing required field: ${key}`)
-          }
-        }
-
-        // STEP 7: Save to Firestore
+        // Save to Firestore
         const { collection, addDoc } = window.dbFunctions
         const reviewsRef = collection(window.db, 'reviews')
-        
-        console.log('\n💾 SAVING REVIEW TO FIRESTORE:')
-        console.log('   - productIds:', reviewPayload.productIds)
-        console.log('   - productIds type:', typeof reviewPayload.productIds)
-        console.log('   - productIds is Array:', Array.isArray(reviewPayload.productIds))
-        console.log('   - Full Payload:', JSON.stringify({
-          orderId: reviewPayload.orderId,
-          rating: reviewPayload.rating,
-          customerName: reviewPayload.customerName,
-          productIds: reviewPayload.productIds,
-          products: reviewPayload.products,
-          status: reviewPayload.status
-        }, null, 2))
-        
-        const docRef = await addDoc(reviewsRef, reviewPayload)
-        console.log('✅ Review saved with ID:', docRef.id)
-        console.log('========================================\n')
-        
-        // Optional: Try to update order status (non-critical)
-        try {
-          const { doc } = window.dbFunctions
-          const { updateDoc } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js')
-          const orderRef = doc(window.db, 'orders', orderId)
-          await updateDoc(orderRef, {
-            reviewReceived: true,
-            reviewReceivedAt: window.dbFunctions.serverTimestamp()
-          })
-        } catch (updateError) {
-          // Expected - clients don't have permission to update orders
-          // Review is already saved, so this is fine
-        }
+        await addDoc(reviewsRef, reviewPayload)
 
-        // STEP 8: Show success and reset UI
-        
-        // Clear star rating
-        currentRating = 0
-        document.querySelectorAll('.star').forEach(star => {
-          star.classList.remove('active')
-        })
-        document.getElementById('rating-text').textContent = 'Оберіть кількість зірок'
-        
-        // Clear comment
-        if (commentElement) {
-          commentElement.value = ''
-        }
-        
-        // Clear photos
-        selectedPhotos = []
-        document.getElementById('photos-preview').innerHTML = ''
-        
-        // Keep button disabled (prevent re-submission)
-        submitBtn.disabled = true
+        console.log('✅ Review saved!')
+
+        // Keep button disabled
         submitBtn.innerHTML = `
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
           </svg>
           <span>Відгук надіслано!</span>
         `
-        
-        // Show success modal immediately
-        showSuccessModal()
+
+        // ✅ TASK 3: Confetti Animation
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#FF6B35', '#FF8C42', '#FFA726', '#FFB74D', '#FFCC80']
+        })
+
+        setTimeout(() => {
+          confetti({
+            particleCount: 100,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0 },
+            colors: ['#FF6B35', '#FF8C42']
+          })
+        }, 200)
+
+        setTimeout(() => {
+          confetti({
+            particleCount: 100,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1 },
+            colors: ['#FFA726', '#FFB74D']
+          })
+        }, 400)
+
+        // Show success modal
+        setTimeout(() => {
+          showSuccessModal()
+        }, 1000)
 
       } catch (error) {
-        console.log('═══════════════════════════════════════')
-        console.error('❌ SUBMISSION FAILED')
-        console.log('═══════════════════════════════════════')
-        console.error('Error Object:', error)
-        console.error('Error Name:', error.name)
-        console.error('Error Message:', error.message)
-        console.error('Error Code:', error.code)
-        console.error('Error Stack:', error.stack)
-        console.log('')
-        console.log('📊 Full Error (console.dir):')
-        console.dir(error)
-        console.log('═══════════════════════════════════════')
-
-        // Determine error type
-        let userMessage = 'Помилка відправки відгуку. Спробуйте ще раз.'
-
-        // Check for permission errors
-        if (error.code === 'permission-denied' || 
-            error.message.includes('Missing or insufficient permissions') ||
-            error.message.includes('insufficient permissions')) {
-          
-          console.error('🔒 PERMISSION DENIED ERROR')
-          console.error('   Firestore Security Rules are blocking the write operation')
-          console.error('   Current Rules Status:')
-          console.error('     - Collection: reviews')
-          console.error('     - Required: allow create: if true')
-          console.error('     - Error Code:', error.code)
-          console.error('')
-          console.error('💡 DEBUGGING STEPS:')
-          console.error('   1. Check Firebase Console → Firestore → Rules')
-          console.error('   2. Verify rules were deployed: firebase deploy --only firestore:rules')
-          console.error('   3. Check payload data for invalid fields')
-          console.error('   4. Ensure serverTimestamp() is allowed')
-          console.error('')
-          console.error('📊 Payload that was rejected:')
-          console.dir(reviewPayload)
-          
-          userMessage = 'Конфігурація сервера: Будь ласка, повідомте адміністратора про помилку доступу до бази.'
-          
-          alert(userMessage)
-        } 
-        // Check for quota errors
-        else if (error.code === 'resource-exhausted') {
-          console.error('💸 QUOTA EXCEEDED')
-          userMessage = 'Перевищено ліміт запитів. Спробуйте через кілька хвилин.'
-          alert(userMessage)
-        }
-        // Storage errors
-        else if (error.message.includes('storage') || error.code?.includes('storage')) {
-          console.error('📦 STORAGE ERROR')
-          console.error('   Photo upload may have failed')
-          userMessage = 'Помилка завантаження фото. Спробуйте без фото або з меншими файлами.'
-          alert(userMessage)
-        }
-        // Network errors
-        else if (error.message.includes('network') || error.code === 'unavailable') {
-          console.error('🌐 NETWORK ERROR')
-          userMessage = 'Помилка мережі. Перевірте інтернет-з\'єднання.'
-          alert(userMessage)
-        }
-        // Generic errors
-        else {
-          console.error('❓ UNKNOWN ERROR TYPE')
-          alert(userMessage + '\n\nТехнічна інформація: ' + error.message)
-        }
-
-        // Re-enable button on error
-        console.log('♻️ Re-enabling submit button for retry')
+        console.error('❌ Submit error:', error)
+        alert('Помилка відправки. Спробуйте ще раз.')
         submitBtn.disabled = false
-        submitBtn.innerHTML = originalText
+        submitBtn.innerHTML = `
+          <span class="text-xl">🚀</span>
+          <span>Опублікувати відгук</span>
+        `
       }
     }
 
-    // Upload photos to Firebase Storage
+    // ============================================
+    // UPLOAD PHOTOS
+    // ============================================
     async function uploadPhotos() {
-      console.log('📸 uploadPhotos() - Starting upload sequence')
-      console.log('   Total files:', selectedPhotos.length)
-      
       const { ref, uploadBytes, getDownloadURL } = window.dbFunctions
       const uploadPromises = selectedPhotos.map(async (file, index) => {
         const fileName = `reviews/${orderId}/${Date.now()}_${index}_${file.name}`
         const storageRef = ref(window.storage, fileName)
-        
-        console.log(`   [${index + 1}/${selectedPhotos.length}] Uploading:`, file.name)
-        console.log('      Size:', (file.size / 1024).toFixed(2), 'KB')
-        console.log('      Type:', file.type)
-        console.log('      Storage path:', fileName)
-        
-        try {
-          const snapshot = await uploadBytes(storageRef, file)
-          console.log(`      ✅ Upload complete [${index + 1}]`)
-          
-          const downloadURL = await getDownloadURL(snapshot.ref)
-          console.log(`      🔗 URL obtained [${index + 1}]:`, downloadURL.substring(0, 80) + '...')
-          
-          return downloadURL
-        } catch (uploadError) {
-          console.error(`      ❌ Upload failed [${index + 1}]:`, uploadError)
-          throw new Error(`Failed to upload ${file.name}: ${uploadError.message}`)
-        }
+        const snapshot = await uploadBytes(storageRef, file)
+        return await getDownloadURL(snapshot.ref)
       })
-
-      console.log('⏳ Waiting for all uploads to complete...')
-      const urls = await Promise.all(uploadPromises)
-      
-      console.log('✅ All uploads completed successfully')
-      console.log('   Total URLs:', urls.length)
-      
-      return urls
+      return await Promise.all(uploadPromises)
     }
 
-    // Show success modal
+    // ============================================
+    // MODALS & SCREENS
+    // ============================================
     function showSuccessModal() {
       document.getElementById('success-modal').classList.remove('hidden')
     }
 
-    // Close success modal
     function closeSuccessModal() {
       window.location.href = 'https://latiao-snack.com.ua'
     }
 
-    // Show error screen with 3-second delay (gives database time to respond)
-    function showErrorDelayed(message, technicalDetails = '') {
-      console.error('═══════════════════════════════════════')
-      console.error('🚨 SHOWING ERROR TO USER')
-      console.error('═══════════════════════════════════════')
-      console.error('User message:', message)
-      console.error('Technical details:', technicalDetails)
-      console.error('Delay before showing error: 3 seconds')
-      console.error('═══════════════════════════════════════')
+    function showError(message, details = '') {
+      if (errorTimeout) clearTimeout(errorTimeout)
       
-      // Cancel any existing error timeout
-      if (errorTimeout) {
-        clearTimeout(errorTimeout)
-      }
-      
-      // Wait 3 seconds before showing error (gives Firestore time to respond)
       errorTimeout = setTimeout(() => {
-        console.log('⏰ 3-second delay complete - showing error screen now')
-        
         document.getElementById('loading-screen').classList.add('hidden')
         document.getElementById('error-message').textContent = message
-        
-        // Show technical details for debugging
-        const detailsEl = document.getElementById('error-details')
-        if (technicalDetails && detailsEl) {
-          detailsEl.textContent = `Debug: ${technicalDetails}`
-          detailsEl.classList.remove('hidden')
-        } else if (detailsEl) {
-          detailsEl.classList.add('hidden')
+        if (details) {
+          document.getElementById('error-details').textContent = `Debug: ${details}`
         }
-        
         document.getElementById('error-screen').classList.remove('hidden')
-        
-        console.log('✅ Error screen displayed to user')
-      }, 3000)
+      }, 2000)
     }
 
-    // Show already reviewed screen
     function showAlreadyReviewed() {
-      console.log('═══════════════════════════════════════')
-      console.log('⚠️  SHOWING ALREADY REVIEWED SCREEN')
-      console.log('═══════════════════════════════════════')
-      
       document.getElementById('loading-screen').classList.add('hidden')
       document.getElementById('already-reviewed-screen').classList.remove('hidden')
-      
-      console.log('✅ Already reviewed screen displayed')
     }
 
-    // Initialize on page load
+    // Start initialization
     initPage()
   </script>
 
