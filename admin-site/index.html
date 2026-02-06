@@ -5530,7 +5530,11 @@
         lucide.createIcons()
 
         // Load review settings first (needed for Smart Sending time validation)
-        await loadReviewSettings()
+        if (typeof loadReviewSettings === 'function') {
+          await loadReviewSettings()
+        } else {
+          console.warn('⚠️ Review module not ready yet, skipping loadReviewSettings')
+        }
         
         await loadOrders()
         await loadProducts()
@@ -5628,7 +5632,7 @@
           // Dynamically load CRM module
           if (typeof window.crmModule === 'undefined') {
             console.log('📦 Loading CRM module...')
-            import('./js/crm-module.js').then(module => {
+            import('/js/crm-module.js').then(module => {
               window.crmModule = module
               module.initCRM()
             }).catch(err => {

@@ -1743,6 +1743,9 @@ async function loadReviewSettings() {
   }
 }
 
+// Export to window for use in main admin initialization
+window.loadReviewSettings = loadReviewSettings
+
 // Save Settings to Firestore
 window.saveReviewSettings = async function() {
   try {
@@ -1928,7 +1931,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Preload CRM module for manual transfer functionality
   console.log('📦 Preloading CRM module...')
-  import('./js/crm-module.js').then(module => {
+ import('/js/crm-module.js').then(module => {
     window.crmModule = module
     console.log('✅ CRM module preloaded and ready for manual transfers')
   }).catch(err => {
