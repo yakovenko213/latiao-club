@@ -5213,7 +5213,7 @@
         await loadCategories()
         await loadPages()
         await loadPromoCodes()
-        await loadPersonalPromos()
+        // ℹ️ Personal promos will load when 'Промокоди' tab is opened
       } else {
         loadingScreen.classList.add('hidden')
         loginView.classList.remove('hidden')
@@ -5295,6 +5295,7 @@
           loadOrders()
         } else if (target === 'promos') {
           loadPromoCodes()
+          loadPersonalPromos()
         } else if (target === 'abandoned') {
           loadAbandonedOrders()
         } else if (target === 'abandoned-carts') {
@@ -15113,8 +15114,7 @@
         document.getElementById('personal-promo-form').reset()
         document.getElementById('personal-promo-expiry-container').classList.add('hidden')
         
-        // Reload personal promos list
-        loadPersonalPromos()
+        // ✅ No need to call loadPersonalPromos() - onSnapshot will auto-update
         
       } catch (error) {
         console.error('Error creating personal promo:', error)
@@ -15122,22 +15122,59 @@
       }
     })
 
-    // Load Personal Promo Codes
-    window.loadPersonalPromos = async () => {
+    // Load Personal Promo Codes (Real-time)
+    let personalPromosUnsubscribe = null
+    
+    window.loadPersonalPromos = () => {
       try {
+        // Unsubscribe from previous listener to avoid duplicates
+        if (personalPromosUnsubscribe) {
+          personalPromosUnsubscribe()
+        }
+        
+        // Show loading state
+        const tbody = document.getElementById('personal-promos-list')
+        if (tbody) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                <i data-lucide="loader" class="w-8 h-8 mx-auto mb-3 text-purple-500 animate-spin"></i>
+                <p>Завантаження персональних промокодів...</p>
+              </td>
+            </tr>
+          `
+          lucide.createIcons()
+        }
+        
         const promosRef = collection(db, 'personal_promocodes')
         const q = query(promosRef, orderBy('createdAt', 'desc'))
-        const snapshot = await getDocs(q)
         
-        const promos = []
-        snapshot.forEach(doc => {
-          promos.push({ id: doc.id, ...doc.data() })
+        // ✅ Use onSnapshot for real-time updates
+        personalPromosUnsubscribe = onSnapshot(q, (snapshot) => {
+          const promos = []
+          snapshot.forEach(doc => {
+            promos.push({ id: doc.id, ...doc.data() })
+          })
+          
+          console.log('🎟️ Personal promos loaded:', promos.length)
+          renderPersonalPromos(promos)
+        }, (error) => {
+          console.error('❌ Error loading personal promos:', error)
+          if (tbody) {
+            tbody.innerHTML = `
+              <tr>
+                <td colspan="7" class="px-6 py-12 text-center text-red-500">
+                  <i data-lucide="alert-circle" class="w-8 h-8 mx-auto mb-3"></i>
+                  <p>Помилка завантаження: ${error.message}</p>
+                </td>
+              </tr>
+            `
+            lucide.createIcons()
+          }
         })
         
-        renderPersonalPromos(promos)
-        
       } catch (error) {
-        console.error('Error loading personal promos:', error)
+        console.error('❌ Error initializing personal promos listener:', error)
       }
     }
 
@@ -15245,7 +15282,7 @@
       try {
         const promoRef = doc(db, 'personal_promocodes', promoId)
         await updateDoc(promoRef, { isActive: newStatus })
-        loadPersonalPromos()
+        // ✅ onSnapshot will auto-update the list
       } catch (error) {
         console.error('Error toggling personal promo status:', error)
         alert('Помилка зміни статусу: ' + error.message)
@@ -15258,7 +15295,7 @@
       
       try {
         await deleteDoc(doc(db, 'personal_promocodes', promoId))
-        loadPersonalPromos()
+        // ✅ onSnapshot will auto-update the list
         
         const toast = document.createElement('div')
         toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg z-[100]'
