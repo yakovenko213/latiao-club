@@ -3347,6 +3347,43 @@
           <!-- Tab Content: Review Requests -->
           <div id="review-requests-content" class="space-y-6">
             
+            <!-- Tab Navigation -->
+            <div class="flex items-center justify-between gap-4 bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div class="flex items-stretch">
+                <!-- Active Tab -->
+                <button 
+                  id="review-active-tab"
+                  onclick="switchReviewArchiveTab('active')" 
+                  class="flex items-center gap-2 px-6 py-4 bg-orange-100 text-orange-700 font-semibold border-b-4 border-orange-500 transition-all hover:bg-orange-50"
+                  type="button">
+                  <i data-lucide="inbox" class="w-4 h-4"></i>
+                  <span>📥 Активні</span>
+                  <span id="active-orders-count" class="inline-flex items-center justify-center min-w-[24px] h-6 px-2 bg-orange-200 text-orange-900 rounded-full text-xs font-bold">0</span>
+                </button>
+                
+                <!-- Archive Tab -->
+                <button 
+                  id="review-archive-tab"
+                  onclick="switchReviewArchiveTab('archive')" 
+                  class="flex items-center gap-2 px-6 py-4 bg-gray-50 text-gray-500 font-medium border-b-4 border-transparent transition-all hover:bg-gray-100"
+                  type="button">
+                  <i data-lucide="archive" class="w-4 h-4"></i>
+                  <span>📁 Архів</span>
+                  <span id="archived-orders-count" class="inline-flex items-center justify-center min-w-[24px] h-6 px-2 bg-gray-200 text-gray-600 rounded-full text-xs font-bold">0</span>
+                </button>
+              </div>
+              
+              <!-- Bulk Archive Button (only visible in active view) -->
+              <button 
+                id="bulk-archive-btn"
+                onclick="bulkArchiveOrders()" 
+                class="inline-flex items-center gap-2 px-4 py-2 mx-4 bg-orange-500 text-white hover:bg-orange-600 rounded-lg font-medium text-sm transition-all"
+                type="button">
+                <i data-lucide="package-check" class="w-4 h-4"></i>
+                <span>Архівувати всі опрацьовані</span>
+              </button>
+            </div>
+            
             <!-- Section 1: Waiting for Review -->
             <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
               <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-amber-50 to-orange-50">

@@ -41,6 +41,7 @@ let currentReviewRating = 5
 let allReviews = []
 let pendingReviews = []
 let deliveredOrders = []
+let currentView = 'active'  // 'active' or 'archive'
 
 // ============================================
 // MAIN LOAD FUNCTION
@@ -117,7 +118,7 @@ async function loadReviewRequests() {
     console.log('🔄 Unsubscribed from review requests listener')
   }
   
-  console.log('📡 Initializing review requests real-time listener...')
+  console.log(`📡 Initializing review requests real-time listener... (Current view: ${currentView})`)
   
   try {
     // STEP 1: Fetch all reviews and store orderIds in Set
@@ -133,13 +134,27 @@ async function loadReviewRequests() {
     
     console.log(`✅ Loaded ${reviewedOrderIds.size} reviewed orders`)
     
-    // STEP 2: Query for completed orders
-    const ordersQuery = query(
-      collection(db, 'orders'),
-      where('status', 'in', ['completed', 'delivered', 'Доставлено', 'Виконано']),
-      orderBy('createdAt', 'desc'),
-      limit(100)
-    )
+    // STEP 2: Query for completed orders (with archive filter)
+    let ordersQuery
+    
+    if (currentView === 'archive') {
+      // Show ONLY archived orders
+      ordersQuery = query(
+        collection(db, 'orders'),
+        where('status', 'in', ['completed', 'delivered', 'Доставлено', 'Виконано']),
+        where('isArchived', '==', true),
+        orderBy('createdAt', 'desc'),
+        limit(100)
+      )
+    } else {
+      // Show non-archived orders (active view)
+      ordersQuery = query(
+        collection(db, 'orders'),
+        where('status', 'in', ['completed', 'delivered', 'Доставлено', 'Виконано']),
+        orderBy('createdAt', 'desc'),
+        limit(100)
+      )
+    }
 
     // Real-time listener
     reviewRequestsUnsubscribe = onSnapshot(ordersQuery, (snapshot) => {
@@ -147,11 +162,24 @@ async function loadReviewRequests() {
       
       deliveredOrders = []
       snapshot.forEach(doc => {
-        deliveredOrders.push({ id: doc.id, ...doc.data() })
+        const orderData = doc.data()
+        // Filter based on current view
+        if (currentView === 'archive') {
+          // In archive view, show only archived
+          if (orderData.isArchived === true) {
+            deliveredOrders.push({ id: doc.id, ...orderData })
+          }
+        } else {
+          // In active view, exclude archived
+          if (!orderData.isArchived) {
+            deliveredOrders.push({ id: doc.id, ...orderData })
+          }
+        }
       })
 
       renderReviewRequests()
       updateReviewRequestsCounts()
+      updateArchiveTabsUI()
       
     }, (error) => {
       console.error('❌ Review requests listener error:', error)
@@ -180,27 +208,50 @@ async function loadReviewRequestsOnce() {
     
     console.log(`✅ Loaded ${reviewedOrderIds.size} reviewed orders (fallback)`)
     
-    const ordersQuery = query(
-      collection(db, 'orders'),
-      where('status', 'in', ['completed', 'delivered', 'Доставлено', 'Виконано']),
-      orderBy('createdAt', 'desc'),
-      limit(100)
-    )
+    // Query with archive filter
+    let ordersQuery
+    if (currentView === 'archive') {
+      ordersQuery = query(
+        collection(db, 'orders'),
+        where('status', 'in', ['completed', 'delivered', 'Доставлено', 'Виконано']),
+        where('isArchived', '==', true),
+        orderBy('createdAt', 'desc'),
+        limit(100)
+      )
+    } else {
+      ordersQuery = query(
+        collection(db, 'orders'),
+        where('status', 'in', ['completed', 'delivered', 'Доставлено', 'Виконано']),
+        orderBy('createdAt', 'desc'),
+        limit(100)
+      )
+    }
 
     const snapshot = await getDocs(ordersQuery)
     deliveredOrders = []
 
     snapshot.forEach(doc => {
-      deliveredOrders.push({ id: doc.id, ...doc.data() })
+      const orderData = doc.data()
+      // Double-check filter
+      if (currentView === 'archive') {
+        if (orderData.isArchived === true) {
+          deliveredOrders.push({ id: doc.id, ...orderData })
+        }
+      } else {
+        if (!orderData.isArchived) {
+          deliveredOrders.push({ id: doc.id, ...orderData })
+        }
+      }
     })
 
     renderReviewRequests()
     updateReviewRequestsCounts()
+    updateArchiveTabsUI()
 
   } catch (error) {
     console.error('Error loading review requests:', error)
     document.getElementById('review-requests-waiting-table').innerHTML = `
-      <tr><td colspan="7" class="px-4 py-12 text-center text-red-500">
+      <tr><td colspan="8" class="px-4 py-12 text-center text-red-500">
         <i data-lucide="alert-circle" class="w-8 h-8 mx-auto mb-2"></i>
         <p>Помилка завантаження: ${error.message}</p>
       </td></tr>`
@@ -211,6 +262,227 @@ async function loadReviewRequestsOnce() {
 // Manual refresh
 window.refreshReviewRequests = function() {
   loadReviewRequests()
+}
+
+// ============================================
+// ARCHIVE MANAGEMENT
+// ============================================
+
+/**
+ * Switch between Active and Archive tabs
+ */
+window.switchReviewArchiveTab = function(view) {
+  if (view !== 'active' && view !== 'archive') {
+    console.error('Invalid view:', view)
+    return
+  }
+  
+  currentView = view
+  console.log(`📑 Switched to ${view} view`)
+  
+  // Reload data with new filter
+  loadReviewRequests()
+}
+
+/**
+ * Update tab UI styling and counter badges
+ */
+function updateArchiveTabsUI() {
+  const activeTab = document.getElementById('review-active-tab')
+  const archiveTab = document.getElementById('review-archive-tab')
+  const bulkArchiveBtn = document.getElementById('bulk-archive-btn')
+  
+  if (!activeTab || !archiveTab) return
+  
+  if (currentView === 'active') {
+    // Style Active tab as selected
+    activeTab.className = 'flex items-center gap-2 px-6 py-4 bg-orange-100 text-orange-700 font-semibold border-b-4 border-orange-500 transition-all hover:bg-orange-50'
+    archiveTab.className = 'flex items-center gap-2 px-6 py-4 bg-gray-50 text-gray-500 font-medium border-b-4 border-transparent transition-all hover:bg-gray-100'
+    
+    // Show bulk archive button in active view
+    if (bulkArchiveBtn) {
+      bulkArchiveBtn.classList.remove('hidden')
+    }
+  } else {
+    // Style Archive tab as selected
+    activeTab.className = 'flex items-center gap-2 px-6 py-4 bg-gray-50 text-gray-500 font-medium border-b-4 border-transparent transition-all hover:bg-gray-100'
+    archiveTab.className = 'flex items-center gap-2 px-6 py-4 bg-blue-100 text-blue-700 font-semibold border-b-4 border-blue-500 transition-all hover:bg-blue-50'
+    
+    // Hide bulk archive button in archive view
+    if (bulkArchiveBtn) {
+      bulkArchiveBtn.classList.add('hidden')
+    }
+  }
+  
+  lucide.createIcons()
+}
+
+/**
+ * Archive a single order
+ */
+window.archiveOrder = async function(orderId, event) {
+  if (event) {
+    event.preventDefault()
+    event.stopPropagation()
+  }
+  
+  if (!confirm('Перенести це замовлення в архів?\\n\\nВи зможете повернути його пізніше через перегляд архіву.')) {
+    return
+  }
+  
+  console.log('📁 Archiving order:', orderId)
+  
+  try {
+    const orderRef = doc(db, 'orders', orderId)
+    await updateDoc(orderRef, {
+      isArchived: true,
+      archivedAt: serverTimestamp()
+    })
+    
+    console.log('✅ Order archived successfully')
+    
+    if (window.showToast) {
+      window.showToast('Замовлення переміщено в архів', 'success')
+    }
+    
+    // Real-time listener will auto-update UI
+    
+  } catch (error) {
+    console.error('❌ Error archiving order:', error)
+    alert('Помилка: ' + error.message)
+  }
+}
+
+/**
+ * Restore order from archive
+ */
+window.restoreOrder = async function(orderId, event) {
+  if (event) {
+    event.preventDefault()
+    event.stopPropagation()
+  }
+  
+  if (!confirm('Відновити це замовлення з архіву?')) {
+    return
+  }
+  
+  console.log('📤 Restoring order:', orderId)
+  
+  try {
+    const orderRef = doc(db, 'orders', orderId)
+    await updateDoc(orderRef, {
+      isArchived: false,
+      archivedAt: null
+    })
+    
+    console.log('✅ Order restored successfully')
+    
+    if (window.showToast) {
+      window.showToast('Замовлення відновлено з архіву', 'success')
+    }
+    
+    // Real-time listener will auto-update UI
+    
+  } catch (error) {
+    console.error('❌ Error restoring order:', error)
+    alert('Помилка: ' + error.message)
+  }
+}
+
+/**
+ * Bulk archive orders (older than 30 days or already reviewed)
+ */
+window.bulkArchiveOrders = async function() {
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  
+  // Find orders to archive
+  const ordersToArchive = deliveredOrders.filter(order => {
+    // Skip already archived
+    if (order.isArchived) return false
+    
+    // Archive if has review
+    if (reviewedOrderIds.has(order.id)) return true
+    
+    // Archive if older than 30 days
+    const completedAt = order.completedAt || order.updatedAt || order.createdAt
+    if (completedAt) {
+      const completedDate = completedAt?.toDate ? completedAt.toDate() : new Date(completedAt)
+      if (completedDate < thirtyDaysAgo) return true
+    }
+    
+    return false
+  })
+  
+  if (ordersToArchive.length === 0) {
+    alert('Немає замовлень для архівування.\\n\\nКритерії: старше 30 днів або вже отримано відгук.')
+    return
+  }
+  
+  const message = `Знайдено ${ordersToArchive.length} замовлень для архівування:\\n\\n` +
+    `• Відгуки отримано: ${ordersToArchive.filter(o => reviewedOrderIds.has(o.id)).length}\\n` +
+    `• Старше 30 днів: ${ordersToArchive.filter(o => {
+      const completedAt = o.completedAt || o.updatedAt || o.createdAt
+      if (!completedAt) return false
+      const completedDate = completedAt?.toDate ? completedAt.toDate() : new Date(completedAt)
+      return completedDate < thirtyDaysAgo && !reviewedOrderIds.has(o.id)
+    }).length}\\n\\n` +
+    'Продовжити архівування?'
+  
+  if (!confirm(message)) {
+    return
+  }
+  
+  console.log(`📦 Bulk archiving ${ordersToArchive.length} orders...`)
+  
+  const bulkBtn = document.getElementById('bulk-archive-btn')
+  const originalHTML = bulkBtn ? bulkBtn.innerHTML : ''
+  
+  if (bulkBtn) {
+    bulkBtn.disabled = true
+    bulkBtn.innerHTML = `
+      <div class="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+      <span>Архівування...</span>
+    `
+  }
+  
+  try {
+    let successCount = 0
+    let errorCount = 0
+    
+    for (const order of ordersToArchive) {
+      try {
+        const orderRef = doc(db, 'orders', order.id)
+        await updateDoc(orderRef, {
+          isArchived: true,
+          archivedAt: serverTimestamp()
+        })
+        successCount++
+      } catch (error) {
+        console.error(`Error archiving order ${order.id}:`, error)
+        errorCount++
+      }
+    }
+    
+    console.log(`✅ Bulk archive complete: ${successCount} archived, ${errorCount} failed`)
+    
+    if (window.showToast) {
+      window.showToast(
+        `Архівовано: ${successCount} замовлень` + (errorCount > 0 ? ` (${errorCount} помилок)` : ''),
+        errorCount > 0 ? 'warning' : 'success'
+      )
+    }
+    
+  } catch (error) {
+    console.error('❌ Bulk archive error:', error)
+    alert('Помилка масового архівування: ' + error.message)
+  } finally {
+    if (bulkBtn) {
+      bulkBtn.disabled = false
+      bulkBtn.innerHTML = originalHTML
+      lucide.createIcons()
+    }
+  }
 }
 
 // ============================================
@@ -272,6 +544,48 @@ function updateReviewRequestsCounts() {
   document.getElementById('waiting-count').textContent = waitingOrders.length
   document.getElementById('reviewed-count').textContent = reviewedOrders.length
   document.getElementById('requests-count-badge').textContent = deliveredOrders.length
+  
+  // Update tab counters
+  updateArchiveCounters()
+}
+
+/**
+ * Update counter badges on tabs
+ * Shows total active and archived order counts
+ */
+async function updateArchiveCounters() {
+  try {
+    // Query ALL completed orders to get accurate counts
+    const allOrdersQuery = query(
+      collection(db, 'orders'),
+      where('status', 'in', ['completed', 'delivered', 'Доставлено', 'Виконано'])
+    )
+    
+    const snapshot = await getDocs(allOrdersQuery)
+    
+    let activeCount = 0
+    let archivedCount = 0
+    
+    snapshot.forEach(doc => {
+      const orderData = doc.data()
+      if (orderData.isArchived === true) {
+        archivedCount++
+      } else {
+        activeCount++
+      }
+    })
+    
+    const activeCountEl = document.getElementById('active-orders-count')
+    const archivedCountEl = document.getElementById('archived-orders-count')
+    
+    if (activeCountEl) activeCountEl.textContent = activeCount
+    if (archivedCountEl) archivedCountEl.textContent = archivedCount
+    
+    console.log(`📊 Tab counters updated: ${activeCount} active, ${archivedCount} archived`)
+    
+  } catch (error) {
+    console.error('Error updating archive counters:', error)
+  }
 }
 
 function renderReviewRequests() {
@@ -517,17 +831,45 @@ function renderOrdersTable(tableId, orders, category) {
         </td>
         <td class="px-4 py-4 text-center">
           ${category === 'waiting' ? `
-            <button 
-              onclick="sendReviewRequest('${order.id}', event)" 
-              data-order-id="${order.id}"
-              class="review-request-btn btn-base"
-              type="button">
-              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
-              </svg>
-              <span class="btn-text-desktop">Надіслати запит</span>
-              <span class="btn-text-mobile">Надіслати</span>
-            </button>
+            <div class="flex flex-col items-center gap-2">
+              <button 
+                onclick="sendReviewRequest('${order.id}', event)" 
+                data-order-id="${order.id}"
+                class="review-request-btn btn-base"
+                type="button">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                </svg>
+                <span class="btn-text-desktop">Надіслати запит</span>
+                <span class="btn-text-mobile">Надіслати</span>
+              </button>
+              ${currentView === 'active' ? `
+                <button 
+                  onclick="archiveOrder('${order.id}', event)" 
+                  class="inline-flex items-center gap-1 px-3 py-1.5 text-xs text-orange-600 hover:text-orange-800 hover:bg-orange-50 rounded-lg transition-colors border border-orange-300"
+                  type="button"
+                  title="Перемістити в архів">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                    <rect x="1" y="3" width="22" height="5"></rect>
+                    <line x1="10" y1="12" x2="14" y2="12"></line>
+                  </svg>
+                  В архів
+                </button>
+              ` : `
+                <button 
+                  onclick="restoreOrder('${order.id}', event)" 
+                  class="inline-flex items-center gap-1 px-3 py-1.5 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors border border-blue-300"
+                  type="button"
+                  title="Відновити з архіву">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 14 4 9 9 4"></polyline>
+                    <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
+                  </svg>
+                  Відновити
+                </button>
+              `}
+            </div>
           ` : `
             <div class="flex flex-col items-center gap-2">
               <span class="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium border border-green-200">
@@ -546,6 +888,32 @@ function renderOrdersTable(tableId, orders, category) {
                 </svg>
                 Скинути статус
               </button>
+              ${currentView === 'active' ? `
+                <button 
+                  onclick="archiveOrder('${order.id}', event)" 
+                  class="inline-flex items-center gap-1 px-3 py-1.5 text-xs text-orange-600 hover:text-orange-800 hover:bg-orange-50 rounded-lg transition-colors border border-orange-300"
+                  type="button"
+                  title="Перемістити в архів">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                    <rect x="1" y="3" width="22" height="5"></rect>
+                    <line x1="10" y1="12" x2="14" y2="12"></line>
+                  </svg>
+                  В архів
+                </button>
+              ` : `
+                <button 
+                  onclick="restoreOrder('${order.id}', event)" 
+                  class="inline-flex items-center gap-1 px-3 py-1.5 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors border border-blue-300"
+                  type="button"
+                  title="Відновити з архіву">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 14 4 9 9 4"></polyline>
+                    <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
+                  </svg>
+                  Відновити
+                </button>
+              `}
             </div>
           `}
         </td>
