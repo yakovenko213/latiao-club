@@ -37,6 +37,37 @@ const auth = window.auth;
 console.log('🎟️ Promo Module: Initialized');
 
 // ============================================
+// CODE GENERATION
+// ============================================
+
+/**
+ * Generate random promo code
+ * @param {string} type - 'alphanumeric' or 'numeric'
+ */
+window.generatePromoCode = (type) => {
+  const codeInput = document.getElementById('promo-code');
+  let code = '';
+
+  if (type === 'alphanumeric') {
+    // Letters + Numbers (8 characters)
+    // Removed similar looking characters: I, O, 0, 1
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+  } else if (type === 'numeric') {
+    // Only numbers (6 digits)
+    for (let i = 0; i < 6; i++) {
+      code += Math.floor(Math.random() * 10);
+    }
+  }
+
+  codeInput.value = code;
+  codeInput.focus();
+  lucide.createIcons();
+};
+
+// ============================================
 // UNIVERSAL PROMO CODES
 // ============================================
 
@@ -640,6 +671,27 @@ function normalizePhone(phone) {
  * Initialize event listeners
  */
 function initializeEventListeners() {
+  // Update discount example live
+  const typeSelect = document.getElementById('discount-type');
+  const valueInput = document.getElementById('discount-value');
+  const exampleEl = document.getElementById('discount-example');
+
+  if (typeSelect && valueInput && exampleEl) {
+    const updateExample = () => {
+      const type = typeSelect.value;
+      const value = valueInput.value || 0;
+
+      if (type === 'percent') {
+        exampleEl.textContent = `Знижка ${value}% від суми замовлення`;
+      } else {
+        exampleEl.textContent = `Знижка ${value} грн від суми замовлення`;
+      }
+    };
+
+    typeSelect.addEventListener('change', updateExample);
+    valueInput.addEventListener('input', updateExample);
+  }
+
   // Create/Edit Promo Code Form
   const createPromoForm = document.getElementById('create-promo-form');
   if (createPromoForm) {
