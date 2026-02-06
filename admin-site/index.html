@@ -3191,6 +3191,29 @@
               >
             </div>
           </div>
+
+          <!-- Optional: SMS Notification -->
+          <div class="mt-4 pt-4 border-t border-purple-200">
+            <label class="flex items-center gap-3">
+              <input type="checkbox" id="personal-promo-sms-toggle" class="w-5 h-5 text-purple-600 rounded">
+              <span class="text-sm text-gray-600 font-medium flex items-center gap-2">
+                <i data-lucide="message-circle" class="w-4 h-4"></i>
+                Відправити SMS клієнту
+              </span>
+            </label>
+            <div id="personal-promo-sms-container" class="hidden mt-3">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Текст SMS повідомлення</label>
+              <textarea 
+                id="personal-promo-sms-message"
+                rows="3"
+                placeholder="Привіт! Ми даруємо вам персональний промокод [CODE] на знижку [DISCOUNT]! Використайте його при наступному замовленні."
+                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+              >Привіт! Ми даруємо вам персональний промокод [CODE] на знижку [DISCOUNT]! Використайте його при наступному замовленні.</textarea>
+              <p class="text-xs text-gray-500 mt-2">
+                <b>Доступні плейсхолдери:</b> [CODE] - промокод, [DISCOUNT] - розмір знижки
+              </p>
+            </div>
+          </div>
         </div>
 
         <!-- Personal Promos List -->
@@ -15330,6 +15353,150 @@
       }
     })
 
+    // Toggle SMS notification input visibility
+    document.getElementById('personal-promo-sms-toggle')?.addEventListener('change', (e) => {
+      const container = document.getElementById('personal-promo-sms-container')
+      if (e.target.checked) {
+        container.classList.remove('hidden')
+      } else {
+        container.classList.add('hidden')
+      }
+    })
+
+    // ============================================
+    // SMS HELPER FUNCTIONS
+    // ============================================
+
+    /**
+     * Fetch TurboSMS credentials from Firestore settings
+     * Credentials are stored in TWO separate documents:
+     * - Token: settings/sms_settings → turboSmsToken
+     * - Sender: settings/config → senderName
+     * @returns {Promise<{apiToken: string, sender: string}>}
+     */
+    async function fetchTurboSmsCredentials() {
+      try {
+        console.log('🔍 Fetching TurboSMS credentials from multiple documents...')
+        
+        // Fetch Token from settings/sms_settings
+        const smsSnap = await getDoc(doc(db, "settings", "sms_settings"))
+        const token = smsSnap.exists() ? smsSnap.data().turboSmsToken : null
+        
+        console.log('📄 Document settings/sms_settings:', smsSnap.exists() ? 'EXISTS' : 'NOT FOUND')
+        if (smsSnap.exists()) {
+          console.log('   Available fields:', Object.keys(smsSnap.data()))
+        }
+        console.log('🔑 Token found:', !!token)
+
+        // Fetch Sender Name from settings/config
+        const configSnap = await getDoc(doc(db, "settings", "config"))
+        const sender = configSnap.exists() ? configSnap.data().senderName : null
+        
+        console.log('📄 Document settings/config:', configSnap.exists() ? 'EXISTS' : 'NOT FOUND')
+        if (configSnap.exists()) {
+          console.log('   Available fields:', Object.keys(configSnap.data()))
+        }
+        console.log('📤 Sender Name found:', !!sender)
+
+        // Validate both credentials are present
+        if (!token || !sender) {
+          const missingParts = []
+          if (!token) missingParts.push('токен у settings/sms_settings')
+          if (!sender) missingParts.push("ім'я відправника у settings/config")
+          
+          const errorMsg = `Не знайдено ${missingParts.join(' та ')}`
+          console.error('❌ Missing credentials:', { token: !!token, sender: !!sender })
+          throw new Error(errorMsg)
+        }
+
+        // Log for verification (secure - only first 5 chars of token)
+        console.log('✅ TurboSMS credentials loaded successfully')
+        console.log('🔑 Using Token:', token.substring(0, 5) + '...')
+        console.log('📤 Using Sender:', sender)
+
+        return { apiToken: token, sender: sender }
+        
+      } catch (error) {
+        console.error('❌ Error in fetchTurboSmsCredentials:', error)
+        throw error
+      }
+    }
+
+    /**
+     * Send SMS via TurboSMS API
+     * @param {string} phone - Customer phone number
+     * @param {string} message - SMS message text
+     * @returns {Promise<{success: boolean, message: string}>}
+     */
+    async function sendPromoSms(phone, message) {
+      try {
+        console.log('📤 Preparing to send promo SMS...')
+        console.log('📞 Phone:', phone)
+        console.log('💬 Message:', message)
+        
+        // Fetch credentials from Firestore
+        const { apiToken, sender } = await fetchTurboSmsCredentials()
+        
+        // Prepare API request with correct field names
+        const payload = {
+          recipients: [phone],
+          sms: {
+            sender: sender,          // Using senderName from Firestore
+            text: message
+          }
+        }
+        
+        console.log('📦 TurboSMS Payload:', JSON.stringify(payload, null, 2))
+        
+        // Send SMS via TurboSMS API
+        const response = await fetch('https://api.turbosms.ua/message/send.json', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiToken}`,  // Using turboSmsToken from Firestore
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        })
+        
+        // Parse response
+        const result = await response.json()
+        console.log('📥 TurboSMS Response:', JSON.stringify(result, null, 2))
+        
+        // Check success
+        const isSuccess = (
+          result.response_code === 0 ||
+          result.response_code === 1 ||
+          result.response_code === '0' ||
+          result.response_code === '1' ||
+          result.response_status === 'OK' ||
+          result.success === true ||
+          (result.response_result && result.response_result.length > 0)
+        )
+        
+        if (isSuccess) {
+          console.log('✅ SMS sent successfully via TurboSMS')
+          return {
+            success: true,
+            message: 'SMS відправлено успішно'
+          }
+        } else {
+          console.warn('⚠️ TurboSMS API returned non-success status:', result)
+          throw new Error(result.response_status || result.message || 'TurboSMS API error')
+        }
+        
+      } catch (error) {
+        console.error('❌ Error sending promo SMS:', error)
+        
+        // Preserve detailed error messages (especially field availability info)
+        let errorMsg = error.message || 'Невідома помилка при відправці SMS'
+        
+        return {
+          success: false,
+          message: errorMsg
+        }
+      }
+    }
+
     // Normalize phone number to +380XXXXXXXXX format
     function normalizePhone(phone) {
       if (!phone) return ''
@@ -15355,6 +15522,8 @@
       const discount = parseInt(document.getElementById('personal-promo-discount').value) || 0
       const hasExpiry = document.getElementById('personal-promo-expiry-toggle').checked
       const expiryDateInput = document.getElementById('personal-promo-expiry').value
+      const sendSms = document.getElementById('personal-promo-sms-toggle')?.checked || false
+      const smsMessage = document.getElementById('personal-promo-sms-message')?.value || ''
       
       // Validation
       if (!phoneInput) {
@@ -15377,8 +15546,20 @@
         alert('⚠️ Невірний формат номера телефону')
         return
       }
+
+      // Show loading state
+      const submitBtn = e.target.querySelector('button[type="submit"]')
+      const originalBtnText = submitBtn.innerHTML
+      submitBtn.disabled = true
+      submitBtn.innerHTML = `
+        <svg class="animate-spin w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        <span>Обробка...</span>
+      `
       
       try {
+        // Step 1: Create promo code in Firestore
         const promoData = {
           code: code,
           discount: discount,
@@ -15396,30 +15577,120 @@
         }
         
         await addDoc(collection(db, 'personal_promocodes'), promoData)
+        console.log('✅ Promo code created successfully:', code)
         
-        // Success notification
+        // Step 2: Send SMS if requested
+        let smsStatus = null
+        if (sendSms && smsMessage) {
+          console.log('📤 Attempting to send SMS notification...')
+          
+          // Replace placeholders in message
+          let finalMessage = smsMessage
+            .replace(/\[CODE\]/g, code)
+            .replace(/\[DISCOUNT\]/g, `${discount} грн`)
+          
+          console.log('💬 Final SMS message:', finalMessage)
+          
+          smsStatus = await sendPromoSms(normalizedPhone, finalMessage)
+          console.log('📊 SMS Status:', smsStatus)
+        }
+        
+        // Step 3: Show success notification
         const toast = document.createElement('div')
-        toast.className = 'fixed top-4 right-4 bg-purple-600 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3'
-        toast.innerHTML = `
-          <i data-lucide="gift" class="w-6 h-6"></i>
-          <div>
-            <p class="font-bold">Промокод видано!</p>
-            <p class="text-sm opacity-90">${code} → ${normalizedPhone}</p>
-          </div>
-        `
+        toast.className = 'fixed top-4 right-4 bg-purple-600 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3 animate-slide-in'
+        
+        let toastContent = ''
+        if (sendSms) {
+          if (smsStatus && smsStatus.success) {
+            toastContent = `
+              <i data-lucide="check-circle" class="w-6 h-6"></i>
+              <div>
+                <p class="font-bold">Промокод видано. SMS відправлено ✓</p>
+                <p class="text-sm opacity-90">${code} → ${normalizedPhone}</p>
+              </div>
+            `
+          } else {
+            toastContent = `
+              <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+              <div>
+                <p class="font-bold">Промокод видано. SMS не відправлено</p>
+                <p class="text-sm opacity-90">Помилка: ${smsStatus?.message || 'Невідома помилка'}</p>
+              </div>
+            `
+            toast.className = toast.className.replace('bg-purple-600', 'bg-orange-600')
+          }
+        } else {
+          toastContent = `
+            <i data-lucide="gift" class="w-6 h-6"></i>
+            <div>
+              <p class="font-bold">Промокод видано!</p>
+              <p class="text-sm opacity-90">${code} → ${normalizedPhone}</p>
+            </div>
+          `
+        }
+        
+        toast.innerHTML = toastContent
         document.body.appendChild(toast)
         lucide.createIcons()
-        setTimeout(() => toast.remove(), 4000)
+        setTimeout(() => {
+          toast.style.opacity = '0'
+          toast.style.transform = 'translateX(100%)'
+          setTimeout(() => toast.remove(), 300)
+        }, 5000)
+        
+        // Log SMS status for debugging
+        if (sendSms) {
+          console.log('📊 SMS Notification Status:', smsStatus)
+        }
         
         // Reset form
         document.getElementById('personal-promo-form').reset()
         document.getElementById('personal-promo-expiry-container').classList.add('hidden')
+        document.getElementById('personal-promo-sms-container').classList.add('hidden')
+        
+        // Restore default SMS message
+        const smsTextarea = document.getElementById('personal-promo-sms-message')
+        if (smsTextarea) {
+          smsTextarea.value = 'Привіт! Ми даруємо вам персональний промокод [CODE] на знижку [DISCOUNT]! Використайте його при наступному замовленні.'
+        }
         
         // ✅ No need to call loadPersonalPromos() - onSnapshot will auto-update
         
       } catch (error) {
-        console.error('Error creating personal promo:', error)
-        alert('❌ Помилка створення промокоду: ' + error.message)
+        console.error('❌ Error creating personal promo:', error)
+        
+        // Enhanced error message for credential issues
+        let errorMessage = error.message
+        let errorTitle = 'Помилка створення промокоду'
+        
+        // Check if this is a credentials-related error
+        if (errorMessage.includes('Не знайдено') && (errorMessage.includes('sms_settings') || errorMessage.includes('config'))) {
+          errorTitle = 'Помилка налаштувань SMS'
+          errorMessage = `Помилка: ${errorMessage}`
+        } else if (errorMessage.includes('Available fields in DB are:')) {
+          errorTitle = 'Помилка налаштувань SMS'
+          errorMessage = `Налаштування SMS некоректні. ${errorMessage}`
+        }
+        
+        // Show error notification with detailed info
+        const errorToast = document.createElement('div')
+        errorToast.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3 max-w-md'
+        errorToast.innerHTML = `
+          <i data-lucide="x-circle" class="w-6 h-6 flex-shrink-0"></i>
+          <div class="flex-1">
+            <p class="font-bold">${errorTitle}</p>
+            <p class="text-sm opacity-90 break-words">${errorMessage}</p>
+            ${errorMessage.includes('sms_settings') || errorMessage.includes('config') ? '<p class="text-xs mt-1 opacity-75">Перевірте: Firestore → settings → sms_settings і config</p>' : ''}
+          </div>
+        `
+        document.body.appendChild(errorToast)
+        lucide.createIcons()
+        setTimeout(() => errorToast.remove(), 8000)  // Longer timeout for error messages
+      } finally {
+        // Restore button state
+        submitBtn.disabled = false
+        submitBtn.innerHTML = originalBtnText
+        lucide.createIcons()
       }
     })
 
