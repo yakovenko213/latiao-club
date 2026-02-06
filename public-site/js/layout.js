@@ -930,9 +930,45 @@ window.addToCart = async function (product, source = null) {
   // ============================================
   // TRACK FIRST ITEM TIME (for cart-to-checkout analytics)
   // ============================================
-  if (window.cart.length === 0 && !localStorage.getItem('cart_started_at')) {
+  const isFirstItemInCart = window.cart.length === 0;
+  
+  if (isFirstItemInCart && !localStorage.getItem('cart_started_at')) {
     localStorage.setItem('cart_started_at', Date.now().toString());
     console.log('⏱️ Cart started - timestamp saved');
+    
+    // ============================================
+    // 📊 TRACK TIME TO THINK (first view → add to cart)
+    // ============================================
+    try {
+      const firstProductView = localStorage.getItem('first_product_view');
+      if (firstProductView && window.firebaseInit) {
+        const timeToThinkMs = Date.now() - parseInt(firstProductView);
+        const timeToThinkSeconds = Math.round(timeToThinkMs / 100) / 10; // Round to 1 decimal
+        
+        // Only track if reasonable time (1 second to 24 hours)
+        if (timeToThinkSeconds >= 1 && timeToThinkSeconds <= 86400) {
+          const { db, collection, addDoc, serverTimestamp } = window.firebaseInit;
+          
+          await addDoc(collection(db, 'analytics_timings'), {
+            type: 'time_to_cart_add',
+            durationSeconds: timeToThinkSeconds,
+            productId: product.id || null,
+            productName: product.name || null,
+            source: source || 'unknown',
+            timestamp: serverTimestamp(),
+            device: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
+          });
+          
+          console.log('⏱️ Time to think tracked:', timeToThinkSeconds, 'seconds');
+        }
+        
+        // Clear the first view timestamp after tracking
+        localStorage.removeItem('first_product_view');
+      }
+    } catch (trackingError) {
+      console.error('⏱️ Failed to track time to think:', trackingError.message);
+      // Non-blocking - continue with cart addition
+    }
   }
 
   // REFINED LOGIC: Check by ID + isGift status

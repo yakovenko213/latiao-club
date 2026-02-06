@@ -2015,6 +2015,14 @@
     // ============================================
     async function startPage() {
       try {
+        // ============================================
+        // 📊 ANALYTICS: Track first product view timestamp
+        // ============================================
+        if (!localStorage.getItem('first_product_view')) {
+          localStorage.setItem('first_product_view', Date.now().toString());
+          console.log('⏱️ First product view tracked');
+        }
+
         await initPage()
         updateShippingStatus()
         setInterval(updateShippingStatus, 60000)

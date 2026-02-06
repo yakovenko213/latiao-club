@@ -3554,7 +3554,16 @@
           createdAt: serverTimestamp(),
 
           // Optional: Store promo code if applied
-          promo: promoCodeData
+          promo: promoCodeData,
+
+          // ============================================
+          // 📊 BEHAVIOR ANALYTICS: Store timing metrics directly in order
+          // ============================================
+          analytics: {
+            timeToThink: null,      // Will be calculated below (first view → add to cart)
+            purchaseCycle: null,    // Will be calculated below (add to cart → order complete)
+            checkoutDuration: null  // Will be calculated below (checkout load → submit)
+          }
         }
 
         console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #9C27B0; font-weight: bold; font-size: 16px;');
@@ -3640,6 +3649,39 @@
         // This ensures Admin Panel, Client Cabinet, and Thank You Page all show the same ID
         orderData.id = orderId;
         orderData.orderId = orderId;
+
+        // ============================================
+        // 📊 CALCULATE AND STORE TIMING METRICS IN ORDER
+        // ============================================
+        try {
+          // 1. TIME TO THINK (first product view → add to cart)
+          // Note: This is already tracked in analytics_timings when first item is added
+          // Here we just note that it was tracked (optional)
+          
+          // 2. PURCHASE CYCLE (add to cart → order complete)
+          const cartStartedAt = localStorage.getItem('cart_started_at');
+          if (cartStartedAt) {
+            const cycleDurationMs = Date.now() - parseInt(cartStartedAt);
+            const cycleDurationSeconds = Math.round(cycleDurationMs / 100) / 10;
+            if (cycleDurationSeconds >= 10 && cycleDurationSeconds <= 86400) {
+              orderData.analytics.purchaseCycle = cycleDurationSeconds;
+            }
+          }
+          
+          // 3. CHECKOUT DURATION (checkout page load → submit)
+          const checkoutLoadTime = localStorage.getItem('checkout_load_time');
+          if (checkoutLoadTime) {
+            const checkoutDurationMs = Date.now() - parseInt(checkoutLoadTime);
+            const checkoutDurationSeconds = Math.round(checkoutDurationMs / 100) / 10;
+            if (checkoutDurationSeconds >= 5 && checkoutDurationSeconds <= 1800) {
+              orderData.analytics.checkoutDuration = checkoutDurationSeconds;
+            }
+          }
+          
+          console.log('📊 Order analytics:', orderData.analytics);
+        } catch (analyticsError) {
+          console.error('⚠️ Failed to calculate order analytics:', analyticsError.message);
+        }
 
         // ============================================
         // CHECK PREPAYMENT SETTING FOR COD ORDERS

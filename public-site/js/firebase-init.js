@@ -20,7 +20,8 @@ import {
     orderBy,
     limit,
     serverTimestamp,
-    Timestamp
+    Timestamp,
+    increment
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
@@ -69,7 +70,8 @@ window.firebaseInit = {
     orderBy,
     limit,
     serverTimestamp,
-    Timestamp
+    Timestamp,
+    increment
 };
 
 // Export to global scope for admin-chat.js and others
@@ -88,6 +90,7 @@ window.query = query;
 window.orderBy = orderBy;
 window.Timestamp = Timestamp;
 window.serverTimestamp = serverTimestamp;
+window.increment = increment;
 
 // ============================================
 // MODULE EXPORTS FOR ES6 IMPORTS
@@ -112,7 +115,8 @@ export {
     limit,
     serverTimestamp,
     Timestamp,
-    httpsCallable
+    httpsCallable,
+    increment
 };
 
 // ============================================
@@ -153,3 +157,79 @@ async function initializeChatConfig() {
 initializeChatConfig();
 
 console.log("🔥 Firebase initialized successfully (Clean Mode)");
+
+// ============================================
+// 📱 DEVICE TRACKING SYSTEM
+// ============================================
+// Track what devices users are using to visit the site
+// Data stored in: statistics/devices
+
+async function trackDevice() {
+  try {
+    // Check if already tracked in this session
+    if (sessionStorage.getItem('deviceTracked')) {
+      console.log('📱 Device already tracked in this session');
+      return;
+    }
+
+    const userAgent = navigator.userAgent;
+    let deviceType = 'Unknown';
+
+    // Device detection logic
+    if (/iPhone/.test(userAgent)) {
+      deviceType = 'iPhone';
+    } else if (/iPad/.test(userAgent)) {
+      deviceType = 'iPad';
+    } else if (/Android/.test(userAgent) && /Mobile/.test(userAgent)) {
+      deviceType = 'Android';
+    } else if (/Android/.test(userAgent)) {
+      deviceType = 'Android Tablet';
+    } else if (/Windows/.test(userAgent)) {
+      deviceType = 'Desktop (Windows)';
+    } else if (/Macintosh|Mac OS X/.test(userAgent)) {
+      deviceType = 'Desktop (Mac)';
+    } else if (/Linux/.test(userAgent)) {
+      deviceType = 'Desktop (Linux)';
+    }
+
+    console.log('📱 Detected device:', deviceType);
+
+    // ✅ TASK 3: Use increment() to prevent race conditions
+    // Update Firestore counter with atomic increment
+    const deviceStatsRef = doc(db, 'statistics', 'devices');
+    
+    try {
+      // Try to increment - will create field if doesn't exist
+      await setDoc(deviceStatsRef, {
+        [deviceType]: increment(1),
+        lastUpdated: serverTimestamp()
+      }, { merge: true });
+      
+      console.log('✅ Device counter incremented atomically:', deviceType);
+    } catch (incrementError) {
+      // Fallback: create document if it doesn't exist
+      console.warn('⚠️ Increment failed, creating document...', incrementError);
+      await setDoc(deviceStatsRef, {
+        [deviceType]: 1,
+        lastUpdated: serverTimestamp(),
+        createdAt: serverTimestamp()
+      });
+    }
+
+    // Mark as tracked in this session
+    sessionStorage.setItem('deviceTracked', 'true');
+    console.log('✅ Device tracked successfully:', deviceType);
+
+  } catch (error) {
+    console.error('❌ Error tracking device:', error);
+  }
+}
+
+// Run device tracking when page loads
+window.addEventListener('load', () => {
+  // Small delay to ensure Firebase is fully ready
+  setTimeout(trackDevice, 500);
+});
+
+// Export function for manual calls if needed
+window.trackDevice = trackDevice;
