@@ -5083,7 +5083,7 @@
         
         <!-- Order History Section -->
         <div class="p-6 border-b">
-          <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">📦 Історія замовлень</h4>
+          <h4 id="customer-orders-header" class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">📦 Історія замовлень</h4>
           
           <div id="customer-modal-orders-list" class="space-y-3">
             <!-- Orders will be injected here -->
@@ -7263,23 +7263,26 @@
       
       orders.forEach(order => {
         try {
+          // ✅ Support both flat and nested customer structure
+          const customerPhone = order.customerPhone || order.customer?.phone || order.phone
+          const customerEmail = order.customerEmail || order.customer?.email || order.email
+          const customerName = order.customerName || order.customer?.fullName || order.fullName || 'Невідомий'
+          
           // Skip incomplete orders
-          if (!order.customerPhone && !order.customerEmail) {
+          if (!customerPhone && !customerEmail) {
             console.warn('⚠️ Order missing customer identifier:', order.id)
             return
           }
           
           // Use phone as primary identifier, fallback to email
-          const customerId = order.customerPhone || order.customerEmail
-          const customerName = order.customerName || order.fullName || 'Невідомий'
-          const customerEmail = order.customerEmail || ''
+          const customerId = customerPhone || customerEmail
           
           // Get or create customer entry
           if (!customerMap.has(customerId)) {
             customerMap.set(customerId, {
               id: customerId,
-              phone: order.customerPhone || customerId,
-              email: customerEmail,
+              phone: customerPhone || customerId,
+              email: customerEmail || '',
               fullName: customerName,
               orders: [],
               totalSpent: 0,
@@ -7295,7 +7298,7 @@
           customer.ordersCount++
           
           // Calculate total spent (handle different price field names)
-          const orderTotal = order.totalPrice || order.total || order.totalCost || 0
+          const orderTotal = order.totalPrice || order.total || order.summary?.total || order.totalCost || 0
           customer.totalSpent += Number(orderTotal) || 0
           
           // Update last order date
@@ -7322,7 +7325,11 @@
       // Convert Map to Array
       const customers = Array.from(customerMap.values())
       
+      // ✅ Debug logging
       console.log('✅ Aggregated customers:', customers.length)
+      console.log('📊 Sample customer data:', customers[0])
+      console.log(`📈 Total unique customers: ${customers.length} from ${orders.length} orders`)
+      
       return customers
     }
 
@@ -7336,26 +7343,38 @@
       const sortSelect = document.getElementById('customers-sort')
       const sortBy = sortSelect ? sortSelect.value : 'totalSpent'
       
-      list.innerHTML = '<tr><td colspan="6" class="text-center py-10"><div class="animate-spin w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full mx-auto"></div></td></tr>'
+      list.innerHTML = '<tr><td colspan="6" class="text-center py-10"><div class="animate-spin w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-2"></div><p class="text-sm text-gray-500">Генерація списку клієнтів з замовлень...</p></td></tr>'
       
       try {
-        // ✅ TASK 1: Use aggregated data from orders instead of customers collection
         let customers = []
         
-        // Try to use cached orders first (faster)
-        if (allOrdersCache && allOrdersCache.length > 0) {
-          console.log('📦 Using cached orders for customer aggregation:', allOrdersCache.length)
-          customers = aggregateCustomerMetrics(allOrdersCache)
-        } else {
-          // Fetch fresh orders if cache is empty
-          console.log('📦 Fetching fresh orders for customer aggregation...')
-          const ordersSnap = await getDocs(collection(db, 'orders'))
-          const orders = ordersSnap.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }))
-          customers = aggregateCustomerMetrics(orders)
+        // ✅ TASK 1: Always fetch fresh from Firestore for accuracy
+        console.log('📦 Fetching orders for customer aggregation...')
+        const ordersSnap = await getDocs(collection(db, 'orders'))
+        
+        if (ordersSnap.empty) {
+          list.innerHTML = `
+            <tr>
+              <td colspan="6" class="text-center py-10">
+                <div class="text-gray-400 mb-2">
+                  <i data-lucide="users" class="w-12 h-12 mx-auto"></i>
+                </div>
+                <p class="text-gray-500 font-medium">Клієнтів поки немає</p>
+                <p class="text-gray-400 text-sm">Вони з'являться автоматично після першого замовлення</p>
+              </td>
+            </tr>`
+          lucide.createIcons()
+          updateCustomerStats([])
+          return
         }
+        
+        const orders = ordersSnap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        
+        console.log(`📊 Processing ${orders.length} orders for customer aggregation...`)
+        customers = aggregateCustomerMetrics(orders)
         
         if (customers.length === 0) {
           list.innerHTML = `
@@ -7631,19 +7650,39 @@
     // Load customer's order history
     async function loadCustomerOrders(phone) {
       const container = document.getElementById('customer-modal-orders-list')
+      const headerEl = document.getElementById('customer-orders-header')
       
       try {
-        // Query orders by customer phone
-        const ordersRef = collection(db, 'orders')
-        const ordersQuery = query(ordersRef, orderBy('createdAt', 'desc'))
-        const snap = await getDocs(ordersQuery)
+        let allOrders = []
+        
+        // ✅ Use cached orders if available (much faster!)
+        if (window.allOrdersCache && window.allOrdersCache.length > 0) {
+          console.log('📦 Using cached orders:', window.allOrdersCache.length)
+          allOrders = window.allOrdersCache.map(order => ({
+            id: order.id || order.docId,
+            data: order
+          }))
+        } else {
+          // Fallback: fetch from Firestore
+          console.log('🔄 Fetching orders from Firestore...')
+          const ordersRef = collection(db, 'orders')
+          const ordersQuery = query(ordersRef, orderBy('createdAt', 'desc'))
+          const snap = await getDocs(ordersQuery)
+          allOrders = snap.docs.map(doc => ({ id: doc.id, data: doc.data() }))
+        }
         
         // Filter by phone (since Firestore can't query nested fields efficiently)
-        const customerOrders = snap.docs.filter(doc => {
-          const order = doc.data()
-          const orderPhone = (order.customer?.phone || '').replace(/[\s\-\(\)\+]/g, '')
-          return orderPhone === phone || orderPhone === phone.replace(/^380/, '') || '380' + orderPhone === phone
+        const customerOrders = allOrders.filter(({ data: order }) => {
+          // Support both nested and flat structures
+          const orderPhone = (order.customer?.phone || order.customerPhone || order.phone || '').replace(/[\s\-\(\)\+]/g, '')
+          const normalizedPhone = phone.replace(/[\s\-\(\)\+]/g, '')
+          return orderPhone === normalizedPhone || orderPhone === normalizedPhone.replace(/^380/, '') || '380' + orderPhone === normalizedPhone
         })
+        
+        // Update header with count
+        if (headerEl) {
+          headerEl.textContent = `📦 Історія замовлень (${customerOrders.length})`
+        }
         
         if (customerOrders.length === 0) {
           container.innerHTML = `
@@ -7658,10 +7697,7 @@
         
         let html = ''
         
-        customerOrders.forEach(docSnap => {
-          const order = docSnap.data()
-          const orderId = docSnap.id
-          
+        customerOrders.forEach(({ id: orderId, data: order }) => {
           // Format date
           let dateStr = '—'
           if (order.createdAt?.toDate) {
@@ -7681,8 +7717,8 @@
             ? items.slice(0, 2).map(i => `${i.name} x${i.quantity}`).join(', ') + (items.length > 2 ? ` +${items.length - 2}` : '')
             : 'Немає товарів'
           
-          // Total
-          const total = order.summary?.total || 0
+          // Total (support multiple field names)
+          const total = order.summary?.total || order.totalPrice || order.total || 0
           
           // Status badge
           const status = order.status || 'pending'
@@ -7697,11 +7733,11 @@
           const statusInfo = statusConfig[status] || statusConfig['pending']
           
           html += `
-            <div class="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-purple-300 transition-colors">
+            <div class="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-purple-300 hover:shadow-md transition-all cursor-pointer" onclick="viewOrderDetails('${orderId}')">
               <div class="flex items-start justify-between gap-4">
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-1">
-                    <span class="text-xs font-mono text-gray-400">#${orderId.slice(-6).toUpperCase()}</span>
+                    <span class="text-xs font-mono text-purple-600 font-bold hover:text-purple-700" title="Клікніть щоб відкрити деталі">#${orderId.slice(-6).toUpperCase()}</span>
                     <span class="px-2 py-0.5 rounded-full text-xs font-semibold ${statusInfo.bg} ${statusInfo.text}">
                       ${statusInfo.label}
                     </span>
@@ -7711,6 +7747,7 @@
                 </div>
                 <div class="text-right flex-shrink-0">
                   <p class="text-lg font-bold text-gray-900">${total.toLocaleString('uk-UA')} ₴</p>
+                  <p class="text-xs text-purple-600 mt-1">→ Переглянути</p>
                 </div>
               </div>
             </div>
