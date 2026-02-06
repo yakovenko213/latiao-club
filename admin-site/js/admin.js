@@ -21,7 +21,8 @@ import {
     onSnapshot,
     writeBatch,
     increment,
-    arrayUnion 
+    arrayUnion,
+    deleteField 
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 import { 
     getAuth, 
@@ -57,6 +58,20 @@ const auth = getAuth(app);
 const storage = getStorage(app);
 
 console.log('🔥 Firebase initialized successfully (admin.js)');
+
+// ============================================
+// GLOBAL EXPORTS FOR EXTERNAL MODULES
+// ============================================
+// Export Firebase instances and functions for use in other modules (e.g., reviews module)
+window.db = db;
+window.doc = doc;
+window.updateDoc = updateDoc;
+window.deleteField = deleteField;
+window.collection = collection;
+window.getDocs = getDocs;
+window.serverTimestamp = serverTimestamp;
+
+console.log('✅ Global Firebase exports initialized (for external modules)');
 
 // ============================================
 // MARK BROWSER AS ADMIN (Maintenance Mode Bypass)
@@ -864,6 +879,9 @@ function showToast(message, type = 'info') {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
+
+// Export showToast for external modules (e.g., reviews module)
+window.showToast = showToast;
 
 // ============================================
 // TOGGLE PRODUCT VISIBILITY
