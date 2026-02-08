@@ -44,6 +44,152 @@ let deliveredOrders = []
 let currentView = 'active'  // 'active' or 'archive'
 
 // ============================================
+// PRODUCTS CACHE FOR REVIEW PRODUCT INFO
+// ============================================
+const reviewProductsCache = new Map()
+
+/**
+ * Fetch product by ID from Firestore with caching
+ * @param {string} productId - The product document ID
+ * @returns {Promise<Object|null>} Product data or null if not found
+ */
+async function fetchProductById(productId) {
+  if (!productId) return null
+  
+  // Check cache first
+  if (reviewProductsCache.has(productId)) {
+    return reviewProductsCache.get(productId)
+  }
+  
+  try {
+    const productDoc = await getDoc(doc(db, 'products', productId))
+    if (productDoc.exists()) {
+      const productData = { id: productDoc.id, ...productDoc.data() }
+      reviewProductsCache.set(productId, productData)
+      return productData
+    } else {
+      // Mark as deleted in cache to avoid repeated lookups
+      reviewProductsCache.set(productId, { deleted: true, id: productId })
+      return { deleted: true, id: productId }
+    }
+  } catch (error) {
+    console.error(`❌ Error fetching product ${productId}:`, error)
+    return null
+  }
+}
+
+/**
+ * Fetch multiple products by IDs (batch optimization)
+ * @param {string[]} productIds - Array of product IDs
+ * @returns {Promise<Map<string, Object>>} Map of productId to product data
+ */
+async function fetchProductsByIds(productIds) {
+  const results = new Map()
+  const idsToFetch = []
+  
+  // Check cache first
+  for (const id of productIds) {
+    if (reviewProductsCache.has(id)) {
+      results.set(id, reviewProductsCache.get(id))
+    } else if (id && id.length > 0) {
+      idsToFetch.push(id)
+    }
+  }
+  
+  // Fetch uncached products
+  if (idsToFetch.length > 0) {
+    const fetchPromises = idsToFetch.map(id => fetchProductById(id))
+    const fetchedProducts = await Promise.all(fetchPromises)
+    
+    idsToFetch.forEach((id, index) => {
+      if (fetchedProducts[index]) {
+        results.set(id, fetchedProducts[index])
+      }
+    })
+  }
+  
+  return results
+}
+
+/**
+ * Update product info bar in a review card after fetching product data
+ * @param {string} reviewId - The review ID
+ * @param {string} productId - The product ID to fetch and display
+ */
+async function updateReviewProductInfo(reviewId, productId) {
+  const container = document.getElementById(`product-info-${reviewId}`)
+  if (!container) return
+  
+  const product = await fetchProductById(productId)
+  
+  if (!product) {
+    container.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #fef2f2; border-radius: 8px; border: 1px solid #fecaca;">
+        <span style="font-size: 16px;">⚠️</span>
+        <span style="font-size: 12px; color: #991b1b;">Помилка завантаження товару</span>
+      </div>
+    `
+    return
+  }
+  
+  if (product.deleted) {
+    container.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #fef2f2; border-radius: 8px; border: 1px solid #fecaca;">
+        <span style="font-size: 16px;">📦</span>
+        <div>
+          <span style="font-size: 12px; color: #991b1b; font-weight: 500;">Товар видалено</span>
+          <span style="font-size: 10px; color: #b91c1c; display: block; font-family: monospace;">ID: ${productId.substring(0, 12)}...</span>
+        </div>
+      </div>
+    `
+    return
+  }
+  
+  // Render product with image and name
+  const imageUrl = product.images?.[0] || product.image || product.imageUrl || ''
+  const productName = product.name || 'Без назви'
+  
+  container.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-radius: 8px; border: 1px solid #6ee7b7;">
+      ${imageUrl ? `
+        <img src="${imageUrl}" alt="${productName}" style="
+          width: 40px;
+          height: 40px;
+          object-fit: cover;
+          border-radius: 6px;
+          border: 1px solid #a7f3d0;
+          flex-shrink: 0;
+        " onerror="this.style.display='none'">
+      ` : `
+        <div style="
+          width: 40px;
+          height: 40px;
+          background: #d1fae5;
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        ">
+          <i data-lucide="package" style="width: 20px; height: 20px; color: #059669;"></i>
+        </div>
+      `}
+      <div style="flex: 1; min-width: 0;">
+        <p style="font-size: 13px; font-weight: 600; color: #065f46; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+          ${productName}
+        </p>
+        <p style="font-size: 10px; color: #059669; margin: 2px 0 0 0;">
+          ✓ Відгук на товар
+        </p>
+      </div>
+    </div>
+  `
+  
+  // Reinitialize Lucide icons for the new content
+  lucide.createIcons()
+}
+
+// ============================================
 // MAIN LOAD FUNCTION
 // ============================================
 window.loadReviewsView = async function() {
@@ -2785,6 +2931,20 @@ function renderPendingReviews(ordersOnly = false) {
             
           </div>
           
+          <!-- Dynamic Product Info Bar (for legacy reviews with productId) -->
+          ${review.productId && !hasProducts ? `
+            <div id="product-info-${review.id}" style="margin-bottom: 16px;" data-product-id="${review.productId}">
+              <!-- Skeleton Loader -->
+              <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #f3f4f6; border-radius: 8px; border: 1px solid #e5e7eb; animation: pulse 1.5s infinite;">
+                <div style="width: 40px; height: 40px; background: #e5e7eb; border-radius: 6px; flex-shrink: 0;"></div>
+                <div style="flex: 1;">
+                  <div style="height: 14px; background: #e5e7eb; border-radius: 4px; width: 70%; margin-bottom: 6px;"></div>
+                  <div style="height: 10px; background: #e5e7eb; border-radius: 4px; width: 40%;"></div>
+                </div>
+              </div>
+            </div>
+          ` : ''}
+          
           <!-- Review Text (with better typography) -->
           <div style="
             background: #f9fafb;
@@ -2843,6 +3003,9 @@ function renderPendingReviews(ordersOnly = false) {
                   const hasValue = checkboxValue && checkboxValue !== '' && checkboxValue !== 'undefined';
                   const isLikelyDocId = checkboxValue.length > 10;
                   
+                  // Get product image if available in embedded data
+                  const productImage = product.image || product.imageUrl || product.images?.[0] || '';
+                  
                   console.log(`   → Checkbox value: "${checkboxValue}" (${isLikelyDocId ? 'Doc ID' : 'SKU - will convert on approval'})`);
                   
                   return `
@@ -2876,8 +3039,29 @@ function renderPendingReviews(ordersOnly = false) {
                         accent-color: #f59e0b;
                       ">
                     
+                    <!-- Product Image or Icon -->
+                    <div id="product-img-${review.id}-${index}" 
+                         data-product-id="${isLikelyDocId ? checkboxValue : ''}"
+                         style="flex-shrink: 0;">
+                      ${productImage ? `
+                        <img src="${productImage}" alt="${product.name || 'Товар'}" style="
+                          width: 32px;
+                          height: 32px;
+                          object-fit: cover;
+                          border-radius: 4px;
+                          border: 1px solid #fde68a;
+                        " onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div style="display: none; width: 32px; height: 32px; background: #fef3c7; border-radius: 4px; align-items: center; justify-content: center;">
+                          <i data-lucide="package" style="width: 16px; height: 16px; color: #f59e0b;"></i>
+                        </div>
+                      ` : `
+                        <div style="width: 32px; height: 32px; background: #fef3c7; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+                          <i data-lucide="package" style="width: 16px; height: 16px; color: #f59e0b;"></i>
+                        </div>
+                      `}
+                    </div>
+                    
                     <div style="flex: 1; display: flex; align-items: center; gap: 8px;">
-                      <i data-lucide="package" style="width: 14px; height: 14px; color: #f59e0b;"></i>
                       <span style="
                         font-size: 13px;
                         font-weight: 600;
@@ -2966,20 +3150,55 @@ function renderPendingReviews(ordersOnly = false) {
               <i data-lucide="message-circle" style="width: 12px; height: 12px; display: inline; margin-right: 4px;"></i>
               Відповідь магазину (необов'язково):
             </label>
-            <textarea 
-              id="review-reply-${review.id}" 
-              rows="2"
-              placeholder="Напишіть відповідь клієнту..."
-              style="
-                width: 100%;
-                padding: 8px 12px;
-                border: 1px solid #fde68a;
-                border-radius: 6px;
-                font-size: 13px;
-                background: white;
-                resize: none;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-              ">${review.adminReply || ''}</textarea>
+            <!-- Textarea container with AI button -->
+            <div style="position: relative;">
+              <textarea 
+                id="review-reply-${review.id}" 
+                rows="2"
+                placeholder="Напишіть відповідь клієнту..."
+                style="
+                  width: 100%;
+                  padding: 8px 40px 8px 12px;
+                  border: 1px solid #fde68a;
+                  border-radius: 6px;
+                  font-size: 13px;
+                  background: white;
+                  resize: none;
+                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+                ">${review.adminReply || ''}</textarea>
+              <!-- AI Generation Button -->
+              <button
+                type="button"
+                id="ai-generate-btn-${review.id}"
+                onclick="handleGenerateAIReply('${review.id}')"
+                title="Згенерувати відповідь за допомогою ШІ"
+                class="ai-generate-btn"
+                style="
+                  position: absolute;
+                  top: 6px;
+                  right: 6px;
+                  width: 28px;
+                  height: 28px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+                  border: none;
+                  border-radius: 6px;
+                  cursor: pointer;
+                  transition: all 0.2s ease;
+                  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
+                "
+                onmouseenter="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(139, 92, 246, 0.5)'; this.style.background='linear-gradient(135deg, #7c3aed 0%, #9333ea 100%)'"
+                onmouseleave="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(139, 92, 246, 0.3)'; this.style.background='linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%)'"
+              >
+                <i data-lucide="sparkles" style="width: 16px; height: 16px; color: white;" class="ai-icon"></i>
+                <svg class="ai-spinner hidden" style="width: 16px; height: 16px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </button>
+            </div>
             <p style="font-size: 10px; color: #ca8a04; margin: 4px 0 0 0;">Буде показана під відгуком на сайті</p>
           </div>
           
@@ -3063,6 +3282,47 @@ function renderPendingReviews(ordersOnly = false) {
   }).join('')
 
   lucide.createIcons()
+  
+  // ============================================
+  // DYNAMIC PRODUCT INFO FETCHING
+  // ============================================
+  // After rendering, fetch product info for reviews with productId
+  // This makes product context visible for legacy reviews
+  const productInfoContainers = document.querySelectorAll('#pending-reviews-grid [id^="product-info-"]')
+  productInfoContainers.forEach(container => {
+    const reviewId = container.id.replace('product-info-', '')
+    const productId = container.getAttribute('data-product-id')
+    if (productId) {
+      updateReviewProductInfo(reviewId, productId)
+    }
+  })
+  
+  // Also fetch product images for items in selection checkboxes that don't have images
+  const productImgContainers = document.querySelectorAll('#pending-reviews-grid [id^="product-img-"]')
+  productImgContainers.forEach(async container => {
+    const productId = container.getAttribute('data-product-id')
+    // Only fetch if we have a valid doc ID and container has no image yet
+    if (productId && productId.length > 10) {
+      const existingImg = container.querySelector('img')
+      if (!existingImg || existingImg.style.display === 'none') {
+        const product = await fetchProductById(productId)
+        if (product && !product.deleted) {
+          const imageUrl = product.images?.[0] || product.image || product.imageUrl
+          if (imageUrl) {
+            container.innerHTML = `
+              <img src="${imageUrl}" alt="${product.name || 'Товар'}" style="
+                width: 32px;
+                height: 32px;
+                object-fit: cover;
+                border-radius: 4px;
+                border: 1px solid #fde68a;
+              " onerror="this.parentElement.innerHTML='<div style=\\'width: 32px; height: 32px; background: #fef3c7; border-radius: 4px; display: flex; align-items: center; justify-content: center;\\'><i data-lucide=\\'package\\' style=\\'width: 16px; height: 16px; color: #f59e0b;\\'></i></div>'; lucide.createIcons();">
+            `
+          }
+        }
+      }
+    }
+  })
 }
 
 function renderPendingReviewsError(message) {
@@ -3421,6 +3681,7 @@ function renderPublishedReviews() {
   grid.innerHTML = filtered.map(review => {
     const stars = '★'.repeat(review.rating || 0) + '☆'.repeat(5 - (review.rating || 0))
     const date = review.createdAt?.toDate?.() || new Date()
+    const customerName = review.customerName || review.name || review.userName || 'Анонім'
     const statusClass = {
       'approved': 'bg-green-100 text-green-700',
       'pending': 'bg-yellow-100 text-yellow-700',
@@ -3442,7 +3703,7 @@ function renderPublishedReviews() {
         <div class="p-4">
           <div class="flex items-start justify-between mb-2">
             <div>
-              <div class="font-semibold text-gray-900">${review.customerName || 'Анонім'}</div>
+              <div class="font-semibold text-gray-900">${customerName}</div>
               <div class="text-yellow-500 text-lg">${stars}</div>
             </div>
             <span class="px-2 py-1 ${statusClass[review.status] || statusClass.pending} rounded-full text-xs">
@@ -3550,6 +3811,15 @@ window.openAddReviewModal = function() {
   document.getElementById('review-approved').checked = true
   document.getElementById('review-featured').checked = false
   document.getElementById('review-photo-preview').classList.add('hidden')
+  
+  // Hide admin reply section for new reviews
+  const replySection = document.getElementById('review-admin-reply-section')
+  const replyTextarea = document.getElementById('review-admin-reply')
+  if (replySection && replyTextarea) {
+    replySection.classList.add('hidden')
+    replyTextarea.value = ''
+  }
+  
   setReviewRating(5)
   document.getElementById('review-modal').classList.remove('hidden')
   lucide.createIcons()
@@ -3559,14 +3829,29 @@ window.editReview = function(reviewId) {
   const review = allReviews.find(r => r.id === reviewId)
   if (!review) return
 
-  document.getElementById('review-modal-title').textContent = 'Редагувати відгук'
+  // Get customer name with fallback for different field names
+  const customerName = review.customerName || review.name || review.userName || 'Анонім'
+  
+  // Update modal title to show who is being edited
+  document.getElementById('review-modal-title').textContent = `Редагування відгуку від: ${customerName}`
+  
+  // Populate form fields
   document.getElementById('review-edit-id').value = reviewId
-  document.getElementById('review-customer-name').value = review.customerName || ''
+  document.getElementById('review-customer-name').value = customerName
   document.getElementById('review-text').value = review.text || ''
   document.getElementById('review-order-id').value = review.orderId || ''
   document.getElementById('review-approved').checked = review.status === 'approved'
   document.getElementById('review-featured').checked = review.featured || false
   
+  // Show and populate admin reply section
+  const replySection = document.getElementById('review-admin-reply-section')
+  const replyTextarea = document.getElementById('review-admin-reply')
+  if (replySection && replyTextarea) {
+    replySection.classList.remove('hidden')
+    replyTextarea.value = review.adminReply || review.reply || ''
+  }
+  
+  // Handle photo preview
   if (review.photoUrl) {
     document.getElementById('review-photo-preview').classList.remove('hidden')
     document.getElementById('review-photo-preview').querySelector('img').src = review.photoUrl
@@ -3576,6 +3861,8 @@ window.editReview = function(reviewId) {
   
   setReviewRating(review.rating || 5)
   document.getElementById('review-modal').classList.remove('hidden')
+  
+  console.log('✏️ Editing review:', { id: reviewId, customerName, text: review.text })
   lucide.createIcons()
 }
 
@@ -3618,6 +3905,10 @@ window.saveReview = async function() {
   const approved = document.getElementById('review-approved').checked
   const featured = document.getElementById('review-featured').checked
   const photoInput = document.getElementById('review-photo')
+  
+  // Get admin reply value (only when editing)
+  const adminReplyTextarea = document.getElementById('review-admin-reply')
+  const adminReply = adminReplyTextarea ? adminReplyTextarea.value.trim() : ''
 
   if (!customerName || !text) {
     showToast('Заповніть обов\'язкові поля', 'error')
@@ -3649,6 +3940,15 @@ window.saveReview = async function() {
     if (photoUrl) {
       reviewData.photoUrl = photoUrl
     }
+    
+    // Handle admin reply for edited reviews
+    if (editId && adminReply) {
+      reviewData.adminReply = adminReply
+      reviewData.adminReplyAt = serverTimestamp()
+    } else if (editId && !adminReply) {
+      // Remove reply if textarea is empty when editing
+      reviewData.adminReply = ''
+    }
 
     if (editId) {
       await updateDoc(doc(db, 'reviews', editId), reviewData)
@@ -3675,15 +3975,17 @@ window.openReplyModal = function(reviewId) {
   const review = allReviews.find(r => r.id === reviewId)
   if (!review) return
 
+  const customerName = review.customerName || review.name || review.userName || 'Анонім'
+  
   document.getElementById('reply-review-id').value = reviewId
   document.getElementById('reply-original-review').innerHTML = `
     <div class="flex items-center gap-2 mb-2">
-      <span class="font-medium">${review.customerName}</span>
+      <span class="font-medium">${customerName}</span>
       <span class="text-yellow-500">${'★'.repeat(review.rating)}</span>
     </div>
     <p class="text-gray-600">${review.text}</p>
   `
-  document.getElementById('reply-text').value = review.adminReply || ''
+  document.getElementById('reply-text').value = review.adminReply || review.reply || ''
   document.getElementById('review-reply-modal').classList.remove('hidden')
 }
 
@@ -3718,6 +4020,156 @@ window.submitReply = async function() {
   } catch (error) {
     console.error('Error submitting reply:', error)
     showToast('Помилка збереження', 'error')
+  }
+}
+
+// ============================================
+// AI REPLY GENERATION
+// ============================================
+
+/**
+ * Generate AI-powered reply for a review
+ * @param {string} reviewId - The ID of the review to generate a reply for
+ */
+window.handleGenerateAIReply = async function(reviewId) {
+  console.log('🤖 AI Reply Generation triggered for review:', reviewId)
+  
+  // Find the review data
+  const review = pendingReviews.find(r => r.id === reviewId)
+  if (!review) {
+    console.error('❌ Review not found:', reviewId)
+    showToast('Відгук не знайдено', 'error')
+    return
+  }
+  
+  // Get UI elements
+  const btn = document.getElementById(`ai-generate-btn-${reviewId}`)
+  const textarea = document.getElementById(`review-reply-${reviewId}`)
+  const sparklesIcon = btn?.querySelector('.ai-icon')
+  const spinner = btn?.querySelector('.ai-spinner')
+  
+  if (!btn || !textarea) {
+    console.error('❌ UI elements not found')
+    return
+  }
+  
+  // Extract review context for AI
+  const reviewContext = {
+    reviewId: review.id,
+    reviewText: review.text || '',
+    rating: review.rating || 5,
+    customerName: review.customerName || review.userName || 'Клієнт',
+    orderId: review.orderId || null,
+    products: review.products || [],
+    createdAt: review.createdAt?.toDate?.() || new Date()
+  }
+  
+  console.log('📝 Review context for AI:', reviewContext)
+  
+  // Show loading state
+  if (sparklesIcon) sparklesIcon.classList.add('hidden')
+  if (spinner) {
+    spinner.classList.remove('hidden')
+    spinner.classList.add('animate-spin')
+  }
+  btn.disabled = true
+  btn.style.cursor = 'wait'
+  btn.style.opacity = '0.7'
+  
+  try {
+    // ============================================
+    // PLACEHOLDER: AI API Integration
+    // ============================================
+    // This is where you would call your AI service (OpenAI, Gemini, etc.)
+    // For now, we'll simulate a response with a delay
+    
+    const generatedReply = await generateAIReplyPlaceholder(reviewContext)
+    
+    // Insert the generated reply into the textarea
+    textarea.value = generatedReply
+    textarea.focus()
+    
+    // Highlight the textarea briefly to show the change
+    textarea.style.transition = 'all 0.3s ease'
+    textarea.style.boxShadow = '0 0 0 3px rgba(139, 92, 246, 0.5)'
+    setTimeout(() => {
+      textarea.style.boxShadow = 'none'
+    }, 1500)
+    
+    showToast('ШІ відповідь згенеровано!', 'success')
+    console.log('✅ AI reply generated successfully')
+    
+  } catch (error) {
+    console.error('❌ AI generation error:', error)
+    showToast('Помилка генерації відповіді', 'error')
+    
+  } finally {
+    // Reset button state
+    if (sparklesIcon) sparklesIcon.classList.remove('hidden')
+    if (spinner) {
+      spinner.classList.add('hidden')
+      spinner.classList.remove('animate-spin')
+    }
+    btn.disabled = false
+    btn.style.cursor = 'pointer'
+    btn.style.opacity = '1'
+  }
+}
+
+/**
+ * Placeholder function for AI reply generation
+ * Replace this with actual API call to OpenAI, Gemini, or other AI service
+ * 
+ * @param {Object} context - Review context containing text, rating, customer info
+ * @returns {Promise<string>} Generated reply text
+ */
+async function generateAIReplyPlaceholder(context) {
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 1500))
+  
+  // ============================================
+  // TODO: Replace with actual AI API call
+  // Example with OpenAI:
+  // 
+  // const response = await fetch('/api/generate-reply', {
+  //   method: 'POST',
+  //   headers: { 'Content-Type': 'application/json' },
+  //   body: JSON.stringify({
+  //     prompt: `Generate a professional, friendly store reply for this customer review:
+  //     Rating: ${context.rating}/5
+  //     Review: "${context.reviewText}"
+  //     Customer: ${context.customerName}
+  //     
+  //     The reply should:
+  //     - Be in Ukrainian language
+  //     - Thank the customer
+  //     - Address their feedback specifically
+  //     - Be warm but professional
+  //     - Be 2-3 sentences max`,
+  //   })
+  // })
+  // const data = await response.json()
+  // return data.reply
+  // ============================================
+  
+  // Generate contextual placeholder response based on rating
+  const { rating, customerName, reviewText } = context
+  const name = customerName.split(' ')[0] // Use first name only
+  
+  if (rating >= 4) {
+    // Positive review response
+    const positiveResponses = [
+      `Дякуємо за чудовий відгук, ${name}! 🌶️ Ми раді, що вам сподобалося. Завжди чекаємо вас знову!`,
+      `${name}, щиро вдячні за теплі слова! Ваша підтримка надихає нас ставати ще кращими. До нових смачних зустрічей! 🔥`,
+      `Дякуємо за високу оцінку, ${name}! Ми завжди намагаємося радувати наших клієнтів найкращою якістю. Гарного вам дня! ✨`,
+    ]
+    return positiveResponses[Math.floor(Math.random() * positiveResponses.length)]
+  } else if (rating >= 3) {
+    // Neutral review response
+    return `Дякуємо за відгук, ${name}! Ми цінуємо вашу думку та постійно працюємо над покращенням. Якщо маєте побажання — будемо раді почути! 💬`
+  } else {
+    // Negative review response
+    return `${name}, дякуємо за чесний відгук. Нам дуже шкода, що ваш досвід не відповідав очікуванням. Ми обов'язково врахуємо ваші зауваження. Будь ласка, зв'яжіться з нами для вирішення питання. 🙏`
   }
 }
 

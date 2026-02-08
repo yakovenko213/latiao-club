@@ -505,6 +505,9 @@
     import { db } from './js/firebase-init.js'
     import { collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
 
+    // Import View Tracker for analytics
+    import './js/view-tracker.js'
+
     // ============================================
     // GLOBAL UI HELPERS
     // ============================================
@@ -641,6 +644,11 @@
           document.getElementById('category-title').textContent = categoryData.name
           document.getElementById('category-desc').textContent = categoryData.description || 'Найкращі снеки в цій категорії'
           document.getElementById('breadcrumb-current').textContent = categoryData.name
+          
+          // 🔥 Track view count for this category
+          if (window.incrementViewCount) {
+            window.incrementViewCount('categories', categorySlug)
+          }
         } else {
           console.warn('⚠️ Категорію не знайдено в базі')
           document.getElementById('category-title').textContent = "Категорію не знайдено"

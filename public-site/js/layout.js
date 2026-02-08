@@ -303,10 +303,10 @@ const headerTemplate = `
   </style>
 
   <!-- Cart Overlay -->
-  <div id="cart-overlay" onclick="window.closeCart()" class="fixed inset-0 bg-black/50 z-[80] pointer-events-auto hidden transition-opacity"></div>
+  <div id="cart-overlay" onclick="window.closeCart()" class="fixed inset-0 bg-black/50 z-[80] pointer-events-none hidden opacity-0 transition-opacity duration-300"></div>
 
   <!-- Cart Sidebar -->
-  <div id="cart-sidebar" class="fixed top-0 right-0 h-full w-full md:w-[500px] bg-white shadow-2xl z-[85] pointer-events-auto transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+  <div id="cart-sidebar" class="fixed top-0 right-0 h-full w-full md:w-[500px] bg-white shadow-2xl z-[85] pointer-events-none transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
     <header class="sticky top-0 bg-white z-40 px-5 py-4 border-b border-gray-100">
       <div class="flex items-center justify-between">
         <div>
@@ -1207,7 +1207,10 @@ window.openCart = async function () {
 
   if (sidebar && overlay) {
     sidebar.classList.remove('translate-x-full');
+    sidebar.classList.remove('pointer-events-none'); // ✅ Enable interactions
     overlay.classList.remove('hidden');
+    overlay.classList.remove('opacity-0');
+    overlay.classList.add('pointer-events-auto'); // ✅ Enable overlay clicks
     document.body.style.overflow = 'hidden';
 
     // Hide support widget with smooth transition
@@ -1232,7 +1235,10 @@ window.closeCart = function () {
 
   if (sidebar && overlay) {
     sidebar.classList.add('translate-x-full');
+    sidebar.classList.add('pointer-events-none'); // ✅ Disable interactions
     overlay.classList.add('hidden');
+    overlay.classList.add('opacity-0');
+    overlay.classList.remove('pointer-events-auto'); // ✅ Disable overlay clicks
     document.body.style.overflow = '';
 
     // Show support widget with smooth transition
@@ -1273,13 +1279,15 @@ window.toggleMobileMenu = function () {
     console.log('✅ Opening menu...');
     menu.classList.remove('translate-x-full');
     overlay.classList.remove('hidden');
-    document.body.style.overflow = 'hidden'; // Prevent body scroll
+    document.body.style.overflow = 'hidden'; // ✅ Prevent body scroll
+    document.body.classList.add('overflow-hidden'); // ✅ Additional class for safety
   } else {
     // Close the menu
     console.log('✅ Closing menu...');
     menu.classList.add('translate-x-full');
     overlay.classList.add('hidden');
-    document.body.style.overflow = ''; // Restore body scroll
+    document.body.style.overflow = ''; // ✅ Restore body scroll
+    document.body.classList.remove('overflow-hidden'); // ✅ Remove overflow class
   }
 };
 

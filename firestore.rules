@@ -56,13 +56,25 @@ service cloud.firestore {
     // Categories - PUBLIC READ for navigation
     match /categories/{categoryId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      // Allow public to update viewCount and lastViewed fields only (for tracking)
+      // This enables auto-creation of viewCount field via setDoc with merge
+      allow update: if request.auth == null 
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewCount', 'lastViewed'])
+                    && request.resource.data.viewCount is number;
+      // Allow authenticated users (admins) to update any field
+      allow create, delete, update: if request.auth != null;
     }
     
     // Pages/Content - PUBLIC READ for static pages
     match /pages/{pageId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      // Allow public to update viewCount and lastViewed fields only (for tracking)
+      // This enables auto-creation of viewCount field via setDoc with merge
+      allow update: if request.auth == null 
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewCount', 'lastViewed'])
+                    && request.resource.data.viewCount is number;
+      // Allow authenticated users (admins) to update any field
+      allow create, delete, update: if request.auth != null;
     }
     
     // Settings - PUBLIC READ for site config (gifts, delivery, etc.)
