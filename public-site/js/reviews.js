@@ -118,13 +118,6 @@ const getReviewsHTML = () => `
             </div>
             <span class="hidden sm:block text-gray-300">|</span>
             <span id="total-reviews-desktop" class="hidden sm:block text-gray-500">0 відгуків</span>
-            <span class="hidden sm:block text-gray-300">|</span>
-            <span class="text-emerald-600 flex items-center gap-1 text-sm sm:text-base">
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-              </svg>
-              <span id="verified-count">0 верифікованих</span>
-            </span>
           </div>
         </div>
 
@@ -912,10 +905,8 @@ function renderAverageStars() {
 
 function renderTotalReviews() {
     const total = reviews.length;
-    const verified = reviews.filter(r => r.isVerified).length;
     document.getElementById('total-reviews-mobile').textContent = `(${total})`;
     document.getElementById('total-reviews-desktop').textContent = `${total} відгуків`;
-    document.getElementById('verified-count').textContent = `${verified} верифікованих`;
 }
 
 function renderRatingBreakdown() {
@@ -1007,22 +998,29 @@ function renderReviewCard(review) {
         </div>
     ` : '';
 
-    const verifiedBadgeCompact = review.isVerified ? `
-        <span class="sm:hidden inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white" title="Верифікований покупець">
-            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+    // 🧪 TESTING MODE: Показуємо бейдж для ВСІХ відгуків (без перевірки isVerified)
+    // Після тестування поверніть умову: review.isVerified ? `...` : ''
+    
+    // 🎨 PREMIUM VERIFIED BADGE - Emerald gradient with shield icon
+    const verifiedBadgeCompact = `
+        <div class="sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gradient-to-br from-emerald-50 to-teal-100 text-emerald-700 border border-emerald-200/60 shadow-sm transition-all hover:scale-105" title="Підтверджений покупець">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="drop-shadow-sm">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <path d="m9 12 2 2 4-4"></path>
             </svg>
-        </span>
-    ` : '';
+            <span class="text-[11px] font-semibold tracking-wide uppercase leading-none">Верифіковано</span>
+        </div>
+    `;
 
-    const verifiedBadgeFull = review.isVerified ? `
-        <span class="hidden sm:inline-flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+    const verifiedBadgeFull = `
+        <div class="hidden sm:inline-flex items-center gap-1.5 ml-2 px-2.5 py-1 rounded-lg bg-gradient-to-br from-emerald-50 to-teal-100 text-emerald-700 border border-emerald-200/60 shadow-sm transition-all hover:scale-105" title="Підтверджений покупець">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="drop-shadow-sm">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <path d="m9 12 2 2 4-4"></path>
             </svg>
-            Верифіковано
-        </span>
-    ` : '';
+            <span class="text-[11px] font-semibold tracking-wide uppercase leading-none">Верифіковано</span>
+        </div>
+    `;
 
     // Get customer name from multiple possible fields
     const rawName = review.customerName || review.name || review.userName || review.author;
@@ -1049,13 +1047,12 @@ function renderReviewCard(review) {
                         <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-spicy to-flame flex items-center justify-center text-white font-bold text-sm shadow-md">
                             ${userName.charAt(0).toUpperCase()}
                         </div>
-                        ${review.isVerified ? `
-                            <div class="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-4 h-4 sm:w-5 sm:h-5 bg-emerald-500 rounded-full flex items-center justify-center border-2 border-white">
-                                <svg class="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                        ` : ''}
+                        <div class="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center border-2 border-white shadow-md">
+                            <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-linecap="round" stroke-linejoin="round"></path>
+                                <path d="m9 12 2 2 4-4" stroke-linecap="round" stroke-linejoin="round"></path>
+                            </svg>
+                        </div>
                     </div>
                     <div class="min-w-0">
                         <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
@@ -1212,7 +1209,7 @@ function toggleVerifiedFilter() {
     const btn = document.getElementById('filter-verified-btn');
     if (btn) {
         if (filterVerified) {
-            btn.className = 'w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 rounded-full text-sm font-medium transition-all bg-emerald-100 text-emerald-700 border-2 border-emerald-300';
+            btn.className = 'w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 rounded-full text-sm font-medium transition-all bg-green-100 text-green-700 border-2 border-green-300';
         } else {
             btn.className = 'w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 rounded-full text-sm font-medium transition-all bg-white text-gray-600 border-2 border-gray-200 hover:border-gray-300 active:bg-gray-50';
         }

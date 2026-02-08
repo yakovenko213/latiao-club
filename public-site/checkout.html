@@ -2982,12 +2982,11 @@
             // Update document instead of deleting
             await updateDoc(cartRef, {
               isConverted: true,
-              convertedAt: serverTimestamp(),
-              orderId: orderId,
-              orderRef: orderRef.id
+              convertedAt: new Date().toISOString(),
+              convertedOrderId: currentOrderId
             })
             
-            console.log('✅ Abandoned cart marked as converted (preserved for history)')
+            console.log('✅ Abandoned cart marked as converted (preserved for history)', currentOrderId)
           } catch (error) {
             if (error.code !== 'not-found') {
               console.error('⚠️ Failed to update abandoned cart:', error)
