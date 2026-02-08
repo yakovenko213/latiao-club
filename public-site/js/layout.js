@@ -534,13 +534,22 @@ async function fetchAndInjectGifts() {
     const giftsDocRef = doc(db, 'settings', 'global_gifts');
     const giftsDoc = await getDoc(giftsDocRef);
 
-    if (!giftsDoc.exists()) {
-      console.log('ℹ️ Немає активних подарунків');
-      return;
+    // Get active gift IDs (empty array if no document or no gifts)
+    const activeGiftIds = giftsDoc.exists() ? (giftsDoc.data().activeGiftIds || []) : [];
+    
+    // ВАЖЛИВО: Видалити подарунки з кошика, які більше не активні
+    const staleGifts = window.cart.filter(item => 
+      item.isGift === true && !activeGiftIds.includes(item.id)
+    );
+    
+    if (staleGifts.length > 0) {
+      console.log(`🗑️ Видаляємо ${staleGifts.length} неактивних подарунків з кошика`);
+      window.cart = window.cart.filter(item => 
+        !(item.isGift === true && !activeGiftIds.includes(item.id))
+      );
+      saveCart();
+      renderCart();
     }
-
-    const giftsData = giftsDoc.data();
-    const activeGiftIds = giftsData.activeGiftIds || [];
 
     if (activeGiftIds.length === 0) {
       console.log('ℹ️ Список подарунків порожній');

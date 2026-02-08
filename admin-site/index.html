@@ -2191,9 +2191,17 @@
 
           <div class="flex items-center justify-between mb-4">
 
-            <h3 class="text-lg font-bold text-gray-900">Активні подарунки</h3>
-            <span id="active-gifts-count"
-              class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">0 обрано</span>
+            <div class="flex items-center gap-3">
+              <h3 class="text-lg font-bold text-gray-900">Активні подарунки</h3>
+              <span id="active-gifts-count"
+                class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">0 обрано</span>
+            </div>
+            <button onclick="handleRemoveAllGifts()" id="remove-all-gifts-btn"
+              class="flex items-center gap-2 px-4 py-2 border-2 border-red-300 text-red-600 rounded-lg font-medium
+                     hover:bg-red-50 hover:border-red-400 transition disabled:opacity-50 disabled:cursor-not-allowed">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+              <span>Прибрати всі подарунки</span>
+            </button>
 
           </div>
 
@@ -15612,7 +15620,11 @@
         console.log('✅ Gifts saved:', activeGiftIds)
 
         // Show success message
-        alert(`✅ Подарунки збережено!\n\nОбрано товарів: ${activeGiftIds.length}\n\nВони автоматично з'являться в кошику всіх відвідувачів з ціною 0 грн.`)
+        if (activeGiftIds.length > 0) {
+          alert(`✅ Подарунки збережено!\n\nОбрано товарів: ${activeGiftIds.length}\n\nВони автоматично з'являться в кошику всіх відвідувачів з ціною 0 грн.`)
+        } else {
+          alert('✅ Подарунки скасовано!\n\nКошики відвідувачів більше не будуть містити подарунків.')
+        }
 
         saveBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i><span>Збережено!</span>'
         lucide.createIcons()
@@ -15629,6 +15641,61 @@
 
         saveBtn.disabled = false
         saveBtn.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i><span>Зберегти подарунки</span>'
+        lucide.createIcons()
+      }
+    }
+
+    // Remove all gifts - clear all selections and save
+    window.handleRemoveAllGifts = async function () {
+      if (activeGiftIds.length === 0) {
+        alert('ℹ️ Немає активних подарунків для видалення')
+        return
+      }
+
+      const confirmed = confirm(`⚠️ Ви впевнені?\n\nЦе видалить всі ${activeGiftIds.length} подарунків.\nКошики відвідувачів більше не будуть містити цих товарів як подарунки.`)
+
+      if (!confirmed) return
+
+      const removeBtn = document.getElementById('remove-all-gifts-btn')
+
+      try {
+        removeBtn.disabled = true
+        removeBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Видалення...</span>'
+        lucide.createIcons()
+
+        // Clear the array
+        activeGiftIds = []
+
+        // Save empty array to Firestore
+        await setDoc(doc(db, 'settings', 'global_gifts'), {
+          activeGiftIds: [],
+          updatedAt: serverTimestamp(),
+          updatedBy: auth.currentUser.email
+        })
+
+        console.log('✅ All gifts removed')
+
+        // Update UI
+        renderGiftsProducts()
+        updateActiveGiftsPreview()
+
+        alert('✅ Подарунки успішно скасовано!\n\nКошики відвідувачів більше не будуть містити подарунків.')
+
+        removeBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i><span>Видалено!</span>'
+        lucide.createIcons()
+
+        setTimeout(() => {
+          removeBtn.disabled = false
+          removeBtn.innerHTML = '<i data-lucide="trash-2" class="w-4 h-4"></i><span>Прибрати всі подарунки</span>'
+          lucide.createIcons()
+        }, 2000)
+
+      } catch (error) {
+        console.error('Error removing gifts:', error)
+        alert('❌ Помилка видалення: ' + error.message)
+
+        removeBtn.disabled = false
+        removeBtn.innerHTML = '<i data-lucide="trash-2" class="w-4 h-4"></i><span>Прибрати всі подарунки</span>'
         lucide.createIcons()
       }
     }
