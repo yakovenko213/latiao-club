@@ -442,57 +442,82 @@ window.loadProducts = async function() {
 // ============================================
 // BULK DISCOUNT: Selection State & UI
 // ============================================
-let selectedProductIds = [];
+// NOTE: The actual selection state is managed globally in index.html
+// via event delegation. This file only needs to export selectedProductIds
+// for the discount modal to read.
+
+// Make selectedProductIds globally accessible
+if (typeof window.selectedProductIds === 'undefined') {
+    window.selectedProductIds = [];
+}
+
+// Reference the global array
+let selectedProductIds = window.selectedProductIds;
 
 /**
  * Toggle selection of all products
+ * Works with the global selectedProductIds from index.html
  */
 window.toggleSelectAllProducts = function(isChecked) {
     const checkboxes = document.querySelectorAll('.product-checkbox');
-    selectedProductIds = [];
+    
+    // Clear the global array
+    window.selectedProductIds.length = 0;
+    selectedProductIds = window.selectedProductIds;
     
     checkboxes.forEach(checkbox => {
         checkbox.checked = isChecked;
         if (isChecked) {
-            selectedProductIds.push(checkbox.dataset.productId);
+            const productId = checkbox.dataset.productId;
+            if (productId && !window.selectedProductIds.includes(productId)) {
+                window.selectedProductIds.push(productId);
+            }
         }
     });
     
     updateBulkActionBar();
-    console.log(`📦 Select all: ${isChecked}, selected: ${selectedProductIds.length}`);
+    console.log(`📦 Select all: ${isChecked}, selected: ${window.selectedProductIds.length}`);
 };
 
 /**
  * Handle individual product selection
+ * Works with the global selectedProductIds from index.html
  */
 window.handleProductSelection = function(checkbox) {
     const productId = checkbox.dataset.productId;
     
+    // Reference the global array
+    selectedProductIds = window.selectedProductIds;
+    
     if (checkbox.checked) {
-        if (!selectedProductIds.includes(productId)) {
-            selectedProductIds.push(productId);
+        if (productId && !window.selectedProductIds.includes(productId)) {
+            window.selectedProductIds.push(productId);
         }
     } else {
-        selectedProductIds = selectedProductIds.filter(id => id !== productId);
+        const index = window.selectedProductIds.indexOf(productId);
+        if (index > -1) {
+            window.selectedProductIds.splice(index, 1);
+        }
     }
     
     // Update "select all" checkbox state
     const selectAllCheckbox = document.getElementById('select-all-products');
     const allCheckboxes = document.querySelectorAll('.product-checkbox');
     if (selectAllCheckbox) {
-        selectAllCheckbox.checked = selectedProductIds.length === allCheckboxes.length && allCheckboxes.length > 0;
-        selectAllCheckbox.indeterminate = selectedProductIds.length > 0 && selectedProductIds.length < allCheckboxes.length;
+        selectAllCheckbox.checked = window.selectedProductIds.length === allCheckboxes.length && allCheckboxes.length > 0;
+        selectAllCheckbox.indeterminate = window.selectedProductIds.length > 0 && window.selectedProductIds.length < allCheckboxes.length;
     }
     
     updateBulkActionBar();
-    console.log(`📦 Product selection changed, selected: ${selectedProductIds.length}`);
+    console.log(`📦 Product selection changed, selected: ${window.selectedProductIds.length}`);
 };
 
 /**
  * Clear all product selections
  */
 window.clearProductSelection = function() {
-    selectedProductIds = [];
+    window.selectedProductIds.length = 0;
+    selectedProductIds = window.selectedProductIds;
     
     const checkboxes = document.querySelectorAll('.product-checkbox');
     checkboxes.forEach(checkbox => checkbox.checked = false);
@@ -516,11 +541,12 @@ function updateBulkActionBar() {
     
     if (!bar) return;
     
-    if (selectedProductIds.length > 0) {
+    const count = window.selectedProductIds.length;
+    
+    if (count > 0) {
         bar.classList.remove('translate-y-full');
         bar.classList.add('translate-y-0');
         if (countEl) {
-            const count = selectedProductIds.length;
             const word = count === 1 ? 'товар' : count < 5 ? 'товари' : 'товарів';
             countEl.textContent = `${count} ${word}`;
         }

@@ -13023,7 +13023,10 @@
     // ============================================
     // BULK SELECTION: Event Delegation Approach
     // ============================================
-    let selectedProductIds = [];
+    // Initialize global selectedProductIds if not already set by admin.js
+    if (typeof window.selectedProductIds === 'undefined') {
+      window.selectedProductIds = [];
+    }
 
     // Global event listener for ALL checkbox changes (Event Delegation)
     document.addEventListener('change', function(e) {
@@ -13033,20 +13036,20 @@
         const checkboxes = document.querySelectorAll('.product-checkbox');
         
         // Clear selection array
-        selectedProductIds = [];
+        window.selectedProductIds.length = 0;
         
         // Update all checkboxes
         checkboxes.forEach(checkbox => {
           checkbox.checked = isChecked;
           if (isChecked) {
             const productId = checkbox.dataset.productId;
-            if (productId && !selectedProductIds.includes(productId)) {
-              selectedProductIds.push(productId);
+            if (productId && !window.selectedProductIds.includes(productId)) {
+              window.selectedProductIds.push(productId);
             }
           }
         });
         
-        console.log(`✅ Select All: ${isChecked ? 'ON' : 'OFF'}, Selected: ${selectedProductIds.length}`);
+        console.log(`✅ Select All: ${isChecked ? 'ON' : 'OFF'}, Selected: ${window.selectedProductIds.length}`);
         updateBulkDeleteUI();
         return;
       }
@@ -13058,18 +13061,21 @@
         
         if (isChecked) {
           // Add to selection
-          if (productId && !selectedProductIds.includes(productId)) {
-            selectedProductIds.push(productId);
+          if (productId && !window.selectedProductIds.includes(productId)) {
+            window.selectedProductIds.push(productId);
           }
         } else {
           // Remove from selection
-          selectedProductIds = selectedProductIds.filter(id => id !== productId);
+          const index = window.selectedProductIds.indexOf(productId);
+          if (index > -1) {
+            window.selectedProductIds.splice(index, 1);
+          }
         }
         
         // Update "Select All" checkbox state
         updateSelectAllCheckbox();
         
-        console.log(`📦 Product ${productId}: ${isChecked ? 'SELECTED' : 'DESELECTED'}, Total: ${selectedProductIds.length}`);
+        console.log(`📦 Product ${productId}: ${isChecked ? 'SELECTED' : 'DESELECTED'}, Total: ${window.selectedProductIds.length}`);
         updateBulkDeleteUI();
         return;
       }
@@ -13082,7 +13088,7 @@
       
       const allCheckboxes = document.querySelectorAll('.product-checkbox');
       const totalCheckboxes = allCheckboxes.length;
-      const selectedCount = selectedProductIds.length;
+      const selectedCount = window.selectedProductIds.length;
       
       if (selectedCount === 0) {
         selectAllCheckbox.checked = false;
@@ -13103,7 +13109,7 @@
       const bar = document.getElementById('bulk-action-bar');
       const countEl = document.getElementById('selected-count');
       
-      const count = selectedProductIds.length;
+      const count = window.selectedProductIds.length;
       
       // Update counter text with proper Ukrainian pluralization
       if (countEl) {
@@ -13143,7 +13149,7 @@
 
     // Clear selection (called after bulk operations)
     window.clearProductSelection = function() {
-      selectedProductIds = [];
+      window.selectedProductIds.length = 0;
       document.querySelectorAll('.product-checkbox').forEach(cb => cb.checked = false);
       const selectAllCheckbox = document.getElementById('select-all-products');
       if (selectAllCheckbox) {
@@ -13167,7 +13173,7 @@
     };
 
     window.openBulkDiscountModal = function() {
-      if (selectedProductIds.length === 0) {
+      if (window.selectedProductIds.length === 0) {
         alert('Спочатку виберіть товари!');
         return;
       }
@@ -13178,7 +13184,7 @@
       if (modal) {
         modal.classList.remove('hidden');
         if (subtitle) {
-          const count = selectedProductIds.length;
+          const count = window.selectedProductIds.length;
           const word = count === 1 ? 'товар' : count < 5 ? 'товари' : 'товарів';
           subtitle.textContent = `Вибрано: ${count} ${word}`;
         }
@@ -13221,7 +13227,7 @@
     document.getElementById('bulk-discount-value')?.addEventListener('input', updateDiscountPreview);
 
     window.applyBulkDiscount = async function() {
-      if (selectedProductIds.length === 0) {
+      if (window.selectedProductIds.length === 0) {
         alert('Спочатку виберіть товари!');
         return;
       }
@@ -13239,7 +13245,7 @@
         return;
       }
       
-      const count = selectedProductIds.length;
+      const count = window.selectedProductIds.length;
       const discountText = selectedType === 'percentage' ? `${discountValue}%` : `${discountValue}₴`;
       if (!confirm(`Застосувати знижку ${discountText} до ${count} товарів?`)) return;
       
@@ -13254,7 +13260,7 @@
         const batch = writeBatch(db);
         let updatedCount = 0;
         
-        for (const productId of selectedProductIds) {
+        for (const productId of window.selectedProductIds) {
           const productRef = doc(db, 'products', productId);
           const productSnap = await getDoc(productRef);
           
@@ -13302,19 +13308,19 @@
     };
 
     window.removeBulkDiscount = async function() {
-      if (selectedProductIds.length === 0) {
+      if (window.selectedProductIds.length === 0) {
         alert('Спочатку виберіть товари!');
         return;
       }
       
-      const count = selectedProductIds.length;
+      const count = window.selectedProductIds.length;
       if (!confirm(`Зняти знижку з ${count} товарів та повернути оригінальні ціни?`)) return;
       
       try {
         const batch = writeBatch(db);
         let restoredCount = 0;
         
-        for (const productId of selectedProductIds) {
+        for (const productId of window.selectedProductIds) {
           const productRef = doc(db, 'products', productId);
           const productSnap = await getDoc(productRef);
           
@@ -13354,12 +13360,12 @@
     // BULK DELETE PRODUCTS
     // ============================================
     window.deleteSelectedProducts = async function() {
-      if (selectedProductIds.length === 0) {
+      if (window.selectedProductIds.length === 0) {
         alert('Спочатку виберіть товари!');
         return;
       }
       
-      const count = selectedProductIds.length;
+      const count = window.selectedProductIds.length;
       const word = count === 1 ? 'товар' : count < 5 ? 'товари' : 'товарів';
       
       // Confirmation dialog
@@ -13384,7 +13390,7 @@
         const batch = writeBatch(db);
         let deletedCount = 0;
         
-        for (const productId of selectedProductIds) {
+        for (const productId of window.selectedProductIds) {
           const productRef = doc(db, 'products', productId);
           batch.delete(productRef);
           deletedCount++;

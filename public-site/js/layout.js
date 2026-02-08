@@ -85,11 +85,33 @@ const footerTemplate = `
 
 // HTML Template for Header, Mobile Menu, Cart Sidebar, Toast Container
 const headerTemplate = `
+  <!-- Announcement Bar - Valentine's Day -->
+  <div id="announcement-bar" 
+       class="fixed top-0 left-0 right-0 z-[55] bg-gradient-to-r from-rose-600 to-red-500 text-white 
+              text-[11px] xs:text-xs sm:text-sm py-1.5 sm:py-2 pl-3 pr-8 sm:px-4 text-center
+              transition-all duration-300 hover:from-rose-500 hover:to-red-400
+              flex items-center justify-center gap-0.5 xs:gap-1 sm:gap-2">
+    <span class="whitespace-nowrap">❤️</span>
+    <span class="font-medium truncate sm:whitespace-normal">Знижки до Дня закоханих!</span>
+    <a href="https://latiao-snack.com.ua/category.html?slug=us-tovari" 
+       class="font-semibold underline-offset-2 hover:underline transition-all ml-0.5 sm:ml-2 whitespace-nowrap flex-shrink-0">
+      Деталі →
+    </a>
+    <button onclick="window.closeAnnouncementBar()" 
+            class="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 p-1.5 sm:p-1 rounded-full 
+                   hover:bg-white/20 active:bg-white/30 transition-colors duration-200"
+            aria-label="Закрити">
+      <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </button>
+  </div>
+
   <!-- Toast Container -->
-  <div id="toast-container" class="fixed top-4 right-4 z-[60] flex flex-col gap-2"></div>
+  <div id="toast-container" class="fixed top-8 sm:top-12 right-4 z-[60] flex flex-col gap-2"></div>
 
   <!-- Header -->
-  <header class="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md z-50 border-b border-gray-100 dark:bg-gray-900/95 dark:border-gray-800">
+  <header id="main-header" class="fixed top-[24px] sm:top-[36px] left-0 right-0 bg-white/95 backdrop-blur-md z-50 border-b border-gray-100 dark:bg-gray-900/95 dark:border-gray-800">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16 lg:h-20">
         <a href="/index.html" class="flex items-center">
@@ -1251,6 +1273,53 @@ window.closeCart = function () {
   }
 };
 
+// ============================================
+// ANNOUNCEMENT BAR - Close & LocalStorage
+// ============================================
+const ANNOUNCEMENT_STORAGE_KEY = 'valentines-bar-closed-2026';
+
+window.closeAnnouncementBar = function() {
+  const bar = document.getElementById('announcement-bar');
+  const header = document.getElementById('main-header');
+  const toastContainer = document.getElementById('toast-container');
+  
+  if (bar) {
+    bar.style.transition = 'all 0.3s ease-out';
+    bar.style.opacity = '0';
+    bar.style.transform = 'translateY(-100%)';
+    setTimeout(() => {
+      bar.style.display = 'none';
+      // Move header to top
+      if (header) {
+        header.style.top = '0';
+      }
+      // Move toast container
+      if (toastContainer) {
+        toastContainer.style.top = '1rem';
+      }
+    }, 300);
+    localStorage.setItem(ANNOUNCEMENT_STORAGE_KEY, 'true');
+  }
+};
+
+// Initialize announcement bar visibility
+function initAnnouncementBar() {
+  const bar = document.getElementById('announcement-bar');
+  const header = document.getElementById('main-header');
+  const toastContainer = document.getElementById('toast-container');
+  
+  // Check if we're on the homepage
+  const path = window.location.pathname;
+  const isHomePage = path === '/' || path === '/index.html' || path.endsWith('/index.html') || path === '';
+  
+  // Hide bar if not on homepage OR if user closed it before
+  if (!isHomePage || localStorage.getItem(ANNOUNCEMENT_STORAGE_KEY) === 'true') {
+    if (bar) bar.style.display = 'none';
+    if (header) header.style.top = '0';
+    if (toastContainer) toastContainer.style.top = '1rem';
+  }
+}
+
 // Toggle mobile menu (with mutual exclusion)
 window.toggleMobileMenu = function () {
   console.log('🍔 toggleMobileMenu called');
@@ -1584,6 +1653,9 @@ export function loadLayout() {
 
   // Inject header template at the start of body
   document.body.insertAdjacentHTML('afterbegin', headerTemplate);
+
+  // Initialize announcement bar (check if was closed before)
+  initAnnouncementBar();
 
   // Mark layout as loaded
   document.body.setAttribute('data-layout-loaded', 'true');
