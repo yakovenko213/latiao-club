@@ -1038,15 +1038,21 @@ function renderReviewCard(review) {
     
     const userName = formatDisplayName(rawName);
 
+    // Get avatar image URL - use custom avatar if available, otherwise default
+    const avatarUrl = review.avatarUrl || review.customerAvatar || 'images/user-avatar.jpg';
+    
     return `
         <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-md border border-gray-100 hover:shadow-lg hover:border-gray-200 transition-all duration-300">
             <!-- Header -->
             <div class="flex flex-col xs:flex-row xs:items-start xs:justify-between gap-2 xs:gap-0 mb-3">
                 <div class="flex items-center gap-2.5 sm:gap-3">
                     <div class="relative flex-shrink-0">
-                        <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-spicy to-flame flex items-center justify-center text-white font-bold text-sm shadow-md">
-                            ${userName.charAt(0).toUpperCase()}
-                        </div>
+                        <img 
+                            src="${avatarUrl}" 
+                            alt="${userName}"
+                            class="w-10 h-10 sm:w-11 sm:h-11 rounded-full object-cover border-2 border-gray-100 shadow-md"
+                            onerror="this.onerror=null; this.src='images/user-avatar.jpg';"
+                        />
                         <div class="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center border-2 border-white shadow-md">
                             <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-linecap="round" stroke-linejoin="round"></path>
