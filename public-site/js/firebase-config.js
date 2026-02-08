@@ -54,8 +54,10 @@ const firebaseConfig = {
 
 const allowedDomains = [
     'latiao-snack.com.ua',           // Production domain
+    'www.latiao-snack.com.ua',       // WWW subdomain
     'my-magazin-81c96.web.app',      // Firebase Hosting
-    'my-magazin-81c96.firebaseapp.com' // Firebase Auth domain
+    'my-magazin-81c96.firebaseapp.com', // Firebase Auth domain
+    'yakovenko213.github.io'         // GitHub Pages (test domain)
 ];
 
 // ═══════════════════════════════════════════════════════════════════

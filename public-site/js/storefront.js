@@ -19,6 +19,84 @@ const pageLoadTime = Date.now();
 console.log('🛒 Storefront module loaded');
 
 // ============================================
+// 🚀 PERFORMANCE DIAGNOSTICS & CACHING SYSTEM
+// ============================================
+
+// Cache configuration
+const CACHE_CONFIG = {
+    products: { ttl: 5 * 60 * 1000 },    // 5 minutes
+    categories: { ttl: 5 * 60 * 1000 },  // 5 minutes
+    hotProducts: { ttl: 5 * 60 * 1000 }  // 5 minutes
+};
+
+// In-memory cache storage
+const cache = {
+    data: {},
+    timestamps: {}
+};
+
+// Export cache to global scope for manual control
+window.storefrontCache = cache;
+
+/**
+ * Smart cache getter with TTL support
+ * @param {string} key - Cache key
+ * @returns {any|null} - Cached data or null if expired/missing
+ */
+function getCached(key) {
+    const cached = cache.data[key];
+    const timestamp = cache.timestamps[key];
+    const config = CACHE_CONFIG[key];
+    
+    if (!cached || !timestamp || !config) {
+        return null;
+    }
+    
+    const age = Date.now() - timestamp;
+    if (age > config.ttl) {
+        // Cache expired
+        delete cache.data[key];
+        delete cache.timestamps[key];
+        console.log(`💾 Cache EXPIRED for: ${key} (age: ${Math.round(age/1000)}s)`);
+        return null;
+    }
+    
+    console.log(`💾 Cache HIT for: ${key} (age: ${Math.round(age/1000)}s)`);
+    return cached;
+}
+
+/**
+ * Smart cache setter
+ * @param {string} key - Cache key
+ * @param {any} data - Data to cache
+ */
+function setCache(key, data) {
+    cache.data[key] = data;
+    cache.timestamps[key] = Date.now();
+    console.log(`💾 Cache SET for: ${key}`);
+}
+
+/**
+ * Performance timer for Firestore queries
+ * @param {string} operation - Operation name
+ * @param {Function} fn - Async function to measure
+ * @returns {Promise<any>} - Result of the function
+ */
+async function measurePerformance(operation, fn) {
+    const start = performance.now();
+    try {
+        const result = await fn();
+        const duration = performance.now() - start;
+        console.log(`⏱️ ${operation} took: ${Math.round(duration)}ms`);
+        return result;
+    } catch (error) {
+        const duration = performance.now() - start;
+        console.error(`❌ ${operation} FAILED after ${Math.round(duration)}ms:`, error.message);
+        throw error;
+    }
+}
+
+// ============================================
 // ADD TO CART FROM STOREFRONT (with analytics)
 // ============================================
 window.addToCartFromStorefront = function (productId, name, price, image, source, sku) {
@@ -203,6 +281,17 @@ async function renderHotProducts() {
     const container = document.getElementById('hot-products-container');
     if (!container) return;
 
+    // Check cache first
+    const cachedHotProducts = getCached('hotProducts');
+    if (cachedHotProducts) {
+        container.innerHTML = cachedHotProducts;
+        // Re-initialize icons for cached content
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+        return;
+    }
+
     // Show loading
     container.innerHTML = `
         <div class="flex gap-4 overflow-x-auto pb-4 hide-scrollbar">
@@ -223,16 +312,19 @@ async function renderHotProducts() {
     `;
 
     try {
-        const productsQuery = query(
-            collection(db, 'products'),
-            where('isHot', '==', true),
-            where('isVisible', '==', true)
-        );
-
-        const snapshot = await getDocs(productsQuery);
+        const snapshot = await measurePerformance('Fetch Hot Products', async () => {
+            const productsQuery = query(
+                collection(db, 'products'),
+                where('isHot', '==', true),
+                where('isVisible', '==', true)
+            );
+            return await getDocs(productsQuery);
+        });
 
         if (snapshot.empty) {
-            container.innerHTML = '<p class="text-gray-500 text-center py-8">Хіти продажів скоро з\'являться!</p>';
+            const emptyHtml = '<p class="text-gray-500 text-center py-8">Хіти продажів скоро з\'являться!</p>';
+            container.innerHTML = emptyHtml;
+            setCache('hotProducts', emptyHtml);
             return;
         }
 
@@ -246,7 +338,10 @@ async function renderHotProducts() {
         html += '</div>';
         container.innerHTML = html;
 
-        // Initialize Lucide icons
+        // Cache the rendered HTML
+        setCache('hotProducts', html);
+
+        // Initialize Lucide icons ONCE
         if (window.lucide) {
             lucide.createIcons();
         }
@@ -266,6 +361,23 @@ async function renderCategories() {
     const container = document.getElementById('categories-container');
     if (!container) return;
 
+    // Check cache first
+    const cachedCategories = getCached('categories');
+    if (cachedCategories) {
+        container.innerHTML = cachedCategories;
+        // Re-initialize icons for cached content
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+        // Trigger fade-in animations
+        setTimeout(() => {
+            container.querySelectorAll('.fade-in').forEach(el => {
+                el.classList.add('visible');
+            });
+        }, 50);
+        return;
+    }
+
     // Show loading
     container.innerHTML = `
         <div class="space-y-12">
@@ -281,25 +393,26 @@ async function renderCategories() {
     `;
 
     try {
-        // Fetch active categories
-        const categoriesQuery = query(
-            collection(db, 'categories'),
-            where('isActive', '==', true),
-            orderBy('order', 'asc')
-        );
-
-        let categoriesSnapshot;
-        try {
-            categoriesSnapshot = await getDocs(categoriesQuery);
-        } catch (e) {
-            // Fallback without ordering if index doesn't exist
-            console.warn('⚠️ Categories query failed, trying without order:', e.message);
-            const fallbackQuery = query(
+        // Fetch categories with performance measurement
+        const categoriesSnapshot = await measurePerformance('Fetch Categories', async () => {
+            const categoriesQuery = query(
                 collection(db, 'categories'),
-                where('isActive', '==', true)
+                where('isActive', '==', true),
+                orderBy('order', 'asc')
             );
-            categoriesSnapshot = await getDocs(fallbackQuery);
-        }
+
+            try {
+                return await getDocs(categoriesQuery);
+            } catch (e) {
+                // Fallback without ordering if index doesn't exist
+                console.warn('⚠️ Categories query failed, trying without order:', e.message);
+                const fallbackQuery = query(
+                    collection(db, 'categories'),
+                    where('isActive', '==', true)
+                );
+                return await getDocs(fallbackQuery);
+            }
+        });
 
         if (categoriesSnapshot.empty) {
             // If no categories, just show all products
@@ -308,8 +421,11 @@ async function renderCategories() {
             return;
         }
 
-        // Fetch all products
-        const productsSnapshot = await getDocs(collection(db, 'products'));
+        // Fetch products with performance measurement
+        const productsSnapshot = await measurePerformance('Fetch All Products', async () => {
+            return await getDocs(collection(db, 'products'));
+        });
+
         const productsMap = {};
 
         productsSnapshot.forEach(doc => {
@@ -370,9 +486,13 @@ async function renderCategories() {
             `;
         });
 
-        container.innerHTML = html || '<p class="text-gray-500 text-center py-8">Товари скоро з\'являться!</p>';
+        const finalHtml = html || '<p class="text-gray-500 text-center py-8">Товари скоро з\'являться!</p>';
+        container.innerHTML = finalHtml;
 
-        // Initialize Lucide icons
+        // Cache the rendered HTML
+        setCache('categories', finalHtml);
+
+        // Initialize Lucide icons ONCE
         if (window.lucide) {
             lucide.createIcons();
         }
@@ -384,7 +504,7 @@ async function renderCategories() {
             });
         }, 100);
 
-        console.log(`✅ Loaded ${categoriesSnapshot.size} categories`);
+        console.log(`✅ Loaded ${categoriesSnapshot.size} categories with ${productsSnapshot.size} products`);
 
     } catch (error) {
         console.error('❌ Error loading categories:', error);
