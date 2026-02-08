@@ -3154,17 +3154,23 @@ function renderPendingReviews(ordersOnly = false) {
             <div style="position: relative;">
               <textarea 
                 id="review-reply-${review.id}" 
-                rows="2"
+                rows="3"
                 placeholder="Напишіть відповідь клієнту..."
+                oninput="autoExpandTextarea(this)"
+                onfocus="this.style.boxShadow='0 0 0 2px rgba(139, 92, 246, 0.5)'; this.style.borderColor='#a855f7'"
+                onblur="this.style.boxShadow='none'; this.style.borderColor='#fde68a'"
                 style="
                   width: 100%;
-                  padding: 8px 40px 8px 12px;
+                  min-height: 100px;
+                  padding: 10px 44px 10px 12px;
                   border: 1px solid #fde68a;
                   border-radius: 6px;
                   font-size: 13px;
+                  line-height: 1.5;
                   background: white;
-                  resize: none;
+                  resize: vertical;
                   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+                  transition: box-shadow 0.2s ease, border-color 0.2s ease;
                 ">${review.adminReply || ''}</textarea>
               <!-- AI Generation Button -->
               <button
@@ -3175,8 +3181,8 @@ function renderPendingReviews(ordersOnly = false) {
                 class="ai-generate-btn"
                 style="
                   position: absolute;
-                  top: 6px;
-                  right: 6px;
+                  top: 8px;
+                  right: 8px;
                   width: 28px;
                   height: 28px;
                   display: flex;
@@ -3188,6 +3194,7 @@ function renderPendingReviews(ordersOnly = false) {
                   cursor: pointer;
                   transition: all 0.2s ease;
                   box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
+                  z-index: 10;
                 "
                 onmouseenter="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(139, 92, 246, 0.5)'; this.style.background='linear-gradient(135deg, #7c3aed 0%, #9333ea 100%)'"
                 onmouseleave="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(139, 92, 246, 0.3)'; this.style.background='linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%)'"
@@ -4024,6 +4031,36 @@ window.submitReply = async function() {
 }
 
 // ============================================
+// TEXTAREA AUTO-EXPAND HELPER
+// ============================================
+
+/**
+ * Auto-expand textarea to fit its content
+ * Maintains minimum height while growing to accommodate longer text
+ * 
+ * @param {HTMLTextAreaElement} textarea - The textarea element to resize
+ */
+window.autoExpandTextarea = function(textarea) {
+  if (!textarea) return
+  
+  // Store current scroll position
+  const scrollTop = window.scrollY
+  
+  // Reset height to auto to get accurate scrollHeight
+  textarea.style.height = 'auto'
+  
+  // Calculate new height (with minimum of 100px)
+  const minHeight = 100
+  const newHeight = Math.max(textarea.scrollHeight, minHeight)
+  
+  // Set new height
+  textarea.style.height = newHeight + 'px'
+  
+  // Restore scroll position (prevents page jumping)
+  window.scrollTo(0, scrollTop)
+}
+
+// ============================================
 // AI REPLY GENERATION
 // ============================================
 
@@ -4064,6 +4101,23 @@ window.handleGenerateAIReply = async function(reviewId) {
     createdAt: review.createdAt?.toDate?.() || new Date()
   }
   
+  // Fetch product names if available
+  if (review.products && review.products.length > 0) {
+    const productNames = review.products
+      .map(p => p.name)
+      .filter(name => name)
+      .join(', ')
+    reviewContext.productNames = productNames
+  }
+  
+  // If review has productId, fetch product info
+  if (review.productId) {
+    const product = await fetchProductById(review.productId)
+    if (product && !product.deleted) {
+      reviewContext.productNames = product.name
+    }
+  }
+  
   console.log('📝 Review context for AI:', reviewContext)
   
   // Show loading state
@@ -4087,6 +4141,10 @@ window.handleGenerateAIReply = async function(reviewId) {
     
     // Insert the generated reply into the textarea
     textarea.value = generatedReply
+    
+    // Auto-expand textarea to fit content
+    autoExpandTextarea(textarea)
+    
     textarea.focus()
     
     // Highlight the textarea briefly to show the change
@@ -4113,6 +4171,190 @@ window.handleGenerateAIReply = async function(reviewId) {
     btn.disabled = false
     btn.style.cursor = 'pointer'
     btn.style.opacity = '1'
+  }
+}
+
+// ============================================
+// BULK AI REPLY GENERATION
+// ============================================
+
+/**
+ * Generate AI replies for ALL reviews in the moderation queue that don't have replies yet
+ * This creates draft replies - admin must still approve/publish each review manually
+ */
+window.handleBulkGenerateAIReplies = async function() {
+  console.log('🤖 Bulk AI Reply Generation triggered')
+  
+  // Get UI elements for the bulk button
+  const bulkBtn = document.getElementById('bulk-ai-generate-btn')
+  const bulkIcon = bulkBtn?.querySelector('.bulk-ai-icon')
+  const bulkSpinner = bulkBtn?.querySelector('.bulk-ai-spinner')
+  const bulkText = bulkBtn?.querySelector('.bulk-ai-text')
+  
+  if (!bulkBtn) {
+    console.error('❌ Bulk generate button not found')
+    return
+  }
+  
+  // Find reviews that need AI replies (empty textarea or no existing reply)
+  const reviewsNeedingReplies = pendingReviews.filter(review => {
+    const textarea = document.getElementById(`review-reply-${review.id}`)
+    const currentValue = textarea?.value?.trim() || ''
+    // Only generate if textarea is empty
+    return currentValue === ''
+  })
+  
+  if (reviewsNeedingReplies.length === 0) {
+    showToast('Усі відгуки вже мають відповіді', 'info')
+    return
+  }
+  
+  console.log(`📋 Found ${reviewsNeedingReplies.length} reviews needing AI replies`)
+  
+  // Show loading state on bulk button
+  if (bulkIcon) bulkIcon.classList.add('hidden')
+  if (bulkSpinner) bulkSpinner.classList.remove('hidden')
+  if (bulkText) bulkText.textContent = `Обробка... (0/${reviewsNeedingReplies.length})`
+  bulkBtn.disabled = true
+  bulkBtn.style.opacity = '0.8'
+  bulkBtn.style.cursor = 'wait'
+  
+  let successCount = 0
+  let errorCount = 0
+  
+  try {
+    // Process reviews sequentially to avoid overwhelming the API
+    for (let i = 0; i < reviewsNeedingReplies.length; i++) {
+      const review = reviewsNeedingReplies[i]
+      
+      // Update progress text
+      if (bulkText) bulkText.textContent = `Обробка... (${i + 1}/${reviewsNeedingReplies.length})`
+      
+      try {
+        // Generate AI reply for this review
+        await generateSingleAIReplyForBulk(review)
+        successCount++
+      } catch (error) {
+        console.error(`❌ Error generating reply for review ${review.id}:`, error)
+        errorCount++
+      }
+    }
+    
+    // Show success notification
+    if (successCount > 0) {
+      showToast(`✅ Підготовлено чернетки відповідей для ${successCount} відгуків`, 'success')
+    }
+    if (errorCount > 0) {
+      showToast(`⚠️ Не вдалося згенерувати ${errorCount} відповідей`, 'error')
+    }
+    
+    console.log(`✅ Bulk generation complete: ${successCount} success, ${errorCount} errors`)
+    
+  } catch (error) {
+    console.error('❌ Bulk generation failed:', error)
+    showToast('Помилка масової генерації', 'error')
+    
+  } finally {
+    // Reset bulk button state
+    if (bulkIcon) bulkIcon.classList.remove('hidden')
+    if (bulkSpinner) bulkSpinner.classList.add('hidden')
+    if (bulkText) bulkText.textContent = 'Згенерувати відповіді для всіх'
+    bulkBtn.disabled = false
+    bulkBtn.style.opacity = '1'
+    bulkBtn.style.cursor = 'pointer'
+  }
+}
+
+/**
+ * Generate AI reply for a single review (used by bulk generation)
+ * This is a streamlined version that doesn't show individual toasts
+ * 
+ * @param {Object} review - The review object
+ */
+async function generateSingleAIReplyForBulk(review) {
+  const reviewId = review.id
+  
+  // Get UI elements for this specific review
+  const btn = document.getElementById(`ai-generate-btn-${reviewId}`)
+  const textarea = document.getElementById(`review-reply-${reviewId}`)
+  const sparklesIcon = btn?.querySelector('.ai-icon')
+  const spinner = btn?.querySelector('.ai-spinner')
+  
+  if (!textarea) {
+    throw new Error(`Textarea not found for review ${reviewId}`)
+  }
+  
+  // Show loading state on individual button
+  if (btn) {
+    if (sparklesIcon) sparklesIcon.classList.add('hidden')
+    if (spinner) {
+      spinner.classList.remove('hidden')
+      spinner.classList.add('animate-spin')
+    }
+    btn.disabled = true
+    btn.style.opacity = '0.7'
+  }
+  
+  try {
+    // Build context with product information
+    const reviewContext = {
+      reviewId: review.id,
+      reviewText: review.text || '',
+      rating: review.rating || 5,
+      customerName: review.customerName || review.userName || 'Клієнт',
+      orderId: review.orderId || null,
+      products: review.products || [],
+      createdAt: review.createdAt?.toDate?.() || new Date()
+    }
+    
+    // Fetch product names if available
+    if (review.products && review.products.length > 0) {
+      const productNames = review.products
+        .map(p => p.name)
+        .filter(name => name)
+        .join(', ')
+      reviewContext.productNames = productNames
+    }
+    
+    // If review has productId, fetch product info
+    if (review.productId) {
+      const product = await fetchProductById(review.productId)
+      if (product && !product.deleted) {
+        reviewContext.productNames = product.name
+      }
+    }
+    
+    console.log(`📝 Generating AI reply for review ${reviewId}:`, reviewContext)
+    
+    // Generate the AI reply
+    const generatedReply = await generateAIReplyPlaceholder(reviewContext)
+    
+    // Insert the generated reply into the textarea
+    textarea.value = generatedReply
+    
+    // Auto-expand textarea to fit content
+    autoExpandTextarea(textarea)
+    
+    // Brief highlight effect
+    textarea.style.transition = 'all 0.3s ease'
+    textarea.style.boxShadow = '0 0 0 3px rgba(139, 92, 246, 0.5)'
+    setTimeout(() => {
+      textarea.style.boxShadow = 'none'
+    }, 800)
+    
+    console.log(`✅ AI reply generated for review ${reviewId}`)
+    
+  } finally {
+    // Reset individual button state
+    if (btn) {
+      if (sparklesIcon) sparklesIcon.classList.remove('hidden')
+      if (spinner) {
+        spinner.classList.add('hidden')
+        spinner.classList.remove('animate-spin')
+      }
+      btn.disabled = false
+      btn.style.opacity = '1'
+    }
   }
 }
 
@@ -4152,24 +4394,27 @@ async function generateAIReplyPlaceholder(context) {
   // return data.reply
   // ============================================
   
-  // Generate contextual placeholder response based on rating
-  const { rating, customerName, reviewText } = context
+  // Generate contextual placeholder response based on rating and product context
+  const { rating, customerName, reviewText, productNames } = context
   const name = customerName.split(' ')[0] // Use first name only
+  
+  // Add product mention if available
+  const productMention = productNames ? ` Раді, що "${productNames}" вам сподобалось!` : ''
   
   if (rating >= 4) {
     // Positive review response
     const positiveResponses = [
-      `Дякуємо за чудовий відгук, ${name}! 🌶️ Ми раді, що вам сподобалося. Завжди чекаємо вас знову!`,
-      `${name}, щиро вдячні за теплі слова! Ваша підтримка надихає нас ставати ще кращими. До нових смачних зустрічей! 🔥`,
-      `Дякуємо за високу оцінку, ${name}! Ми завжди намагаємося радувати наших клієнтів найкращою якістю. Гарного вам дня! ✨`,
+      `Дякуємо за чудовий відгук, ${name}! 🌶️${productMention} Завжди чекаємо вас знову!`,
+      `${name}, щиро вдячні за теплі слова!${productMention} Ваша підтримка надихає нас ставати ще кращими. До нових смачних зустрічей! 🔥`,
+      `Дякуємо за високу оцінку, ${name}!${productMention} Ми завжди намагаємося радувати наших клієнтів найкращою якістю. Гарного вам дня! ✨`,
     ]
     return positiveResponses[Math.floor(Math.random() * positiveResponses.length)]
   } else if (rating >= 3) {
     // Neutral review response
-    return `Дякуємо за відгук, ${name}! Ми цінуємо вашу думку та постійно працюємо над покращенням. Якщо маєте побажання — будемо раді почути! 💬`
+    return `Дякуємо за відгук, ${name}! Ми цінуємо вашу думку та постійно працюємо над покращенням${productNames ? ` нашого "${productNames}"` : ''}. Якщо маєте побажання — будемо раді почути! 💬`
   } else {
     // Negative review response
-    return `${name}, дякуємо за чесний відгук. Нам дуже шкода, що ваш досвід не відповідав очікуванням. Ми обов'язково врахуємо ваші зауваження. Будь ласка, зв'яжіться з нами для вирішення питання. 🙏`
+    return `${name}, дякуємо за чесний відгук${productNames ? ` щодо "${productNames}"` : ''}. Нам дуже шкода, що ваш досвід не відповідав очікуванням. Ми обов'язково врахуємо ваші зауваження. Будь ласка, зв'яжіться з нами для вирішення питання. 🙏`
   }
 }
 
