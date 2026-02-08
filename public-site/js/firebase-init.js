@@ -194,26 +194,26 @@ async function trackDevice() {
 
     console.log('📱 Detected device:', deviceType);
 
-    // ✅ TASK 3: Use increment() to prevent race conditions
-    // Update Firestore counter with atomic increment
-    const deviceStatsRef = doc(db, 'statistics', 'devices');
+    // ✅ Use addDoc() instead of setDoc() + increment()
+    // This only requires 'create' permission, not 'update' permission
+    // Perfect for unauthenticated visitors
+    const analyticsRef = collection(db, 'analytics_sessions');
     
     try {
-      // Try to increment - will create field if doesn't exist
-      await setDoc(deviceStatsRef, {
-        [deviceType]: increment(1),
-        lastUpdated: serverTimestamp()
-      }, { merge: true });
-      
-      console.log('✅ Device counter incremented atomically:', deviceType);
-    } catch (incrementError) {
-      // Fallback: create document if it doesn't exist
-      console.warn('⚠️ Increment failed, creating document...', incrementError);
-      await setDoc(deviceStatsRef, {
-        [deviceType]: 1,
-        lastUpdated: serverTimestamp(),
-        createdAt: serverTimestamp()
+      // Add a new document to analytics_sessions collection
+      await addDoc(analyticsRef, {
+        deviceType: deviceType,
+        timestamp: serverTimestamp(),
+        page: window.location.pathname,
+        referrer: document.referrer || 'direct',
+        userAgent: navigator.userAgent,
+        trackedBy: 'firebase-init-v1'
       });
+      
+      console.log('✅ Device tracked successfully:', deviceType);
+    } catch (trackError) {
+      console.warn('⚠️ Device tracking failed (permissions?):', trackError.message);
+      // Silently fail - don't block user experience
     }
 
     // Mark as tracked in this session

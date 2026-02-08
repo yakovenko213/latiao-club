@@ -815,7 +815,13 @@ window.trackSessionStart = async function () {
       sessionId: sessionId,
       lastSeen: serverTimestamp(),
       device: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
-      firstVisit: serverTimestamp()
+      firstVisit: serverTimestamp(),
+      pageUrl: window.location.href,
+      referrer: document.referrer || 'direct',
+      userAgent: navigator.userAgent, // 💻 Device detection
+      platform: navigator.platform || 'unknown',
+      screenWidth: window.screen.width,
+      screenHeight: window.screen.height
     }, { merge: true }); // merge: true - update lastSeen, keep firstVisit
 
     // Setup heartbeat every 5 minutes to track "online now"

@@ -502,18 +502,23 @@ async function handleSendCode() {
     
     // Try different possible settings documents
     let turboSmsToken = null;
+    let smsSender = 'latiao_info'; // ✅ Default to approved alpha-name
     
     // Try settings/sms_settings
     const smsSettingsDoc = await getDoc(doc(db, 'settings', 'sms_settings'));
     if (smsSettingsDoc.exists()) {
-      turboSmsToken = smsSettingsDoc.data().turboSmsToken || smsSettingsDoc.data().apiToken || smsSettingsDoc.data().token;
+      const settings = smsSettingsDoc.data();
+      turboSmsToken = settings.turboSmsToken || settings.apiToken || settings.token;
+      smsSender = settings.smsSender || settings.senderName || 'latiao_info'; // ✅ Fallback to approved name
     }
     
     // Fallback to settings/general
     if (!turboSmsToken) {
       const generalDoc = await getDoc(doc(db, 'settings', 'general'));
       if (generalDoc.exists()) {
-        turboSmsToken = generalDoc.data().turboSmsToken || generalDoc.data().smsApiToken;
+        const settings = generalDoc.data();
+        turboSmsToken = settings.turboSmsToken || settings.smsApiToken;
+        smsSender = settings.smsSender || settings.senderName || 'latiao_info'; // ✅ Fallback to approved name
       }
     }
     
@@ -526,6 +531,7 @@ async function handleSendCode() {
     }
     
     console.log('🔑 TurboSMS token found');
+    console.log('📤 SMS Sender:', smsSender);
     
     // ========================================
     // STEP 3: Generate and Send SMS
@@ -533,15 +539,23 @@ async function handleSendCode() {
     generatedCode = generateCode();
     console.log('🔢 Generated code:', generatedCode);
     
-    const smsPayload = {
-      recipients: [fullPhoneNumber],
+    // ✅ CRITICAL: Clean phone number - TurboSMS requires NO '+' sign
+    // Remove ALL non-digit characters: +380965661827 → 380965661827
+    const purePhone = fullPhoneNumber.replace(/\D/g, '');
+    console.log('📞 Original phone:', fullPhoneNumber);
+    console.log('📞 Cleaned phone (no +):', purePhone);
+    
+    // ✅ TurboSMS API v2 Format: recipients MUST be array WITHOUT '+' sign
+    const smsData = {
+      recipients: [purePhone], // ✅ Array of pure digits
       sms: {
-        sender: 'latiao_info',
-        text: `Код входу: ${generatedCode}`
+        sender: smsSender, // ✅ From settings or default 'Msg'
+        text: `Ваш код: ${generatedCode}`
       }
     };
     
-    console.log('📤 Sending SMS via TurboSMS...');
+    console.log('🔍 Final SMS Payload:', JSON.stringify(smsData, null, 2));
+    console.log('📤 Sending SMS via TurboSMS API v2...');
     
     const response = await fetch('https://api.turbosms.ua/message/send.json', {
       method: 'POST',
@@ -549,11 +563,22 @@ async function handleSendCode() {
         'Authorization': 'Bearer ' + turboSmsToken,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(smsPayload)
+      body: JSON.stringify(smsData)
     });
     
     const result = await response.json();
-    console.log('📨 TurboSMS response:', result);
+    console.log('📨 TurboSMS Full Response:', JSON.stringify(result, null, 2));
+    console.log('📨 Response Code:', result.response_code);
+    console.log('📨 Response Status:', result.response_status);
+    
+    // Check for specific errors in response_result array
+    if (result.response_result && Array.isArray(result.response_result)) {
+      result.response_result.forEach((item, idx) => {
+        if (item.error_code) {
+          console.error(`❌ TurboSMS Error [${idx}]:`, item.error_code, item.error_message, item.phone);
+        }
+      });
+    }
     
     if (result.response_code !== 0 && result.response_code !== 800 && result.response_code !== 801) {
       throw new Error(result.response_status || 'SMS sending failed');
@@ -689,17 +714,23 @@ async function handleResendCode() {
     const firebase = await waitForFirebase();
     const { db, doc, getDoc } = firebase;
     
-    // Get token
+    // Get token and sender
     let turboSmsToken = null;
+    let smsSender = 'latiao_info'; // ✅ Default to approved alpha-name
+    
     const smsSettingsDoc = await getDoc(doc(db, 'settings', 'sms_settings'));
     if (smsSettingsDoc.exists()) {
-      turboSmsToken = smsSettingsDoc.data().turboSmsToken || smsSettingsDoc.data().apiToken || smsSettingsDoc.data().token;
+      const settings = smsSettingsDoc.data();
+      turboSmsToken = settings.turboSmsToken || settings.apiToken || settings.token;
+      smsSender = settings.smsSender || settings.senderName || 'latiao_info'; // ✅ Fallback to approved name
     }
     
     if (!turboSmsToken) {
       const generalDoc = await getDoc(doc(db, 'settings', 'general'));
       if (generalDoc.exists()) {
-        turboSmsToken = generalDoc.data().turboSmsToken || generalDoc.data().smsApiToken;
+        const settings = generalDoc.data();
+        turboSmsToken = settings.turboSmsToken || settings.smsApiToken;
+        smsSender = settings.smsSender || settings.senderName || 'latiao_info'; // ✅ Fallback to approved name
       }
     }
     
@@ -711,6 +742,20 @@ async function handleResendCode() {
     generatedCode = generateCode();
     console.log('🔢 New code:', generatedCode);
     
+    // ✅ Clean phone number - remove '+' sign
+    const purePhone = fullPhoneNumber.replace(/\D/g, '');
+    console.log('📞 Resend - Cleaned phone:', purePhone);
+    
+    const smsData = {
+      recipients: [purePhone], // ✅ NO '+' sign
+      sms: {
+        sender: smsSender,
+        text: `Ваш код: ${generatedCode}`
+      }
+    };
+    
+    console.log('🔍 Resend Payload:', JSON.stringify(smsData, null, 2));
+    
     // Send SMS
     const response = await fetch('https://api.turbosms.ua/message/send.json', {
       method: 'POST',
@@ -718,16 +763,11 @@ async function handleResendCode() {
         'Authorization': 'Bearer ' + turboSmsToken,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        recipients: [fullPhoneNumber],
-        sms: {
-          sender: 'latiao_info',
-          text: `Код входу: ${generatedCode}`
-        }
-      })
+      body: JSON.stringify(smsData)
     });
     
     const result = await response.json();
+    console.log('📨 Resend Response:', JSON.stringify(result, null, 2));
     
     if (result.response_code !== 0 && result.response_code !== 800 && result.response_code !== 801) {
       throw new Error(result.response_status || 'SMS sending failed');

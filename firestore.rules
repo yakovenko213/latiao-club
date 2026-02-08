@@ -16,6 +16,7 @@ service cloud.firestore {
     
     // Session Tracking - Track unique visitors
     // Uses setDoc with merge so sessions can be updated
+    // ALSO used for device tracking via addDoc (visitor-tracker.js)
     match /analytics_sessions/{sessionId} {
       allow create, update: if true;          // ✅ Public - track visits & heartbeats
       allow read: if request.auth != null;    // Admin reads for analytics

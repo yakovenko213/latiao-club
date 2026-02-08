@@ -2433,6 +2433,101 @@
             
           </div>
           
+          <!-- ============================================ -->
+          <!-- 💻 DEVICE STATISTICS SECTION -->
+          <!-- ============================================ -->
+          <div class="flex items-center justify-between mb-4 mt-8">
+            <h3 class="text-lg font-bold text-gray-700 flex items-center gap-2">
+              <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+              </svg>
+              💻 Пристрої користувачів
+            </h3>
+            <button onclick="resetDeviceStats()" 
+                    title="Скинути статистику пристроїв"
+                    class="p-1 text-gray-400 hover:text-red-500 transition-colors">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            </button>
+          </div>
+          
+          <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-8">
+            <div class="space-y-5">
+              
+              <!-- Mobile -->
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="smartphone" class="w-5 h-5 text-orange-500"></i>
+                    <span class="text-sm font-semibold text-gray-700">📱 Телефон</span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span id="device-mobile-count" class="text-sm font-medium text-gray-600">0</span>
+                    <span id="device-mobile-percent" class="text-sm font-bold text-orange-600">0%</span>
+                  </div>
+                </div>
+                <div class="relative w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div id="device-mobile-bar" 
+                       class="absolute top-0 left-0 h-full bg-gradient-to-r from-orange-400 to-orange-500 rounded-full transition-all duration-500" 
+                       style="width: 0%"></div>
+                </div>
+              </div>
+              
+              <!-- Desktop -->
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="monitor" class="w-5 h-5 text-purple-500"></i>
+                    <span class="text-sm font-semibold text-gray-700">💻 Комп'ютер</span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span id="device-desktop-count" class="text-sm font-medium text-gray-600">0</span>
+                    <span id="device-desktop-percent" class="text-sm font-bold text-purple-600">0%</span>
+                  </div>
+                </div>
+                <div class="relative w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div id="device-desktop-bar" 
+                       class="absolute top-0 left-0 h-full bg-gradient-to-r from-purple-400 to-purple-500 rounded-full transition-all duration-500" 
+                       style="width: 0%"></div>
+                </div>
+              </div>
+              
+              <!-- Tablet -->
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="tablet" class="w-5 h-5 text-gray-500"></i>
+                    <span class="text-sm font-semibold text-gray-700">📟 Планшет</span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span id="device-tablet-count" class="text-sm font-medium text-gray-600">0</span>
+                    <span id="device-tablet-percent" class="text-sm font-bold text-gray-600">0%</span>
+                  </div>
+                </div>
+                <div class="relative w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div id="device-tablet-bar" 
+                       class="absolute top-0 left-0 h-full bg-gradient-to-r from-gray-400 to-gray-500 rounded-full transition-all duration-500" 
+                       style="width: 0%"></div>
+                </div>
+              </div>
+              
+            </div>
+            
+            <!-- Info -->
+            <div class="mt-6 pt-5 border-t border-gray-100">
+              <div class="flex items-start gap-3">
+                <div class="p-2 bg-purple-50 rounded-lg">
+                  <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </div>
+                <div class="text-xs text-gray-600 leading-relaxed">
+                  <strong class="text-gray-800">Дані визначаються автоматично</strong> на основі User-Agent замовлень та сесій відвідувачів. 
+                  Мобільні пристрої: смартфони на iOS/Android. Планшети: iPad, Android tablets. Комп'ютер: ноутбуки та ПК.
+                </div>
+              </div>
+            </div>
+          </div>
+          
                  <!-- ============================================ -->
           <!-- ⏱️ CUSTOMER BEHAVIOR ANALYTICS SECTION -->
           <!-- ============================================ -->
@@ -8263,6 +8358,233 @@
     // ============================================
 
     // ============================================
+    // ============================================
+    // DEVICE TYPE DETECTION
+    // ============================================
+    
+    /**
+     * Detects device type from User-Agent string
+     * @param {string} userAgent - Browser User-Agent string
+     * @returns {string} - 'mobile', 'tablet', or 'desktop'
+     */
+    function getDeviceType(userAgent) {
+      if (!userAgent) return 'desktop' // Default fallback
+      
+      const ua = userAgent.toLowerCase()
+      
+      // Tablet detection (must come before mobile)
+      const isTablet = (
+        /ipad/.test(ua) || 
+        /(tablet|kindle|playbook|silk|nexus\s+(?:7|9|10))/.test(ua) ||
+        (/android/.test(ua) && !/mobile/.test(ua))
+      )
+      
+      if (isTablet) return 'tablet'
+      
+      // Mobile detection
+      const isMobile = (
+        /mobile|iphone|ipod|android|blackberry|opera\s+mini|iemobile|wpdesktop/.test(ua) ||
+        /phone/.test(ua)
+      )
+      
+      if (isMobile) return 'mobile'
+      
+      // Everything else is desktop
+      return 'desktop'
+    }
+    
+    // ============================================
+    // DEVICE STATISTICS
+    // ============================================
+    
+    /**
+     * Setup real-time device statistics listener
+     * Listens to analytics_sessions collection for live updates
+     */
+    let deviceStatsUnsubscribe = null
+    
+    async function setupDeviceStatsListener(startDate = null, endDate = null) {
+      try {
+        // Unsubscribe from previous listener
+        if (deviceStatsUnsubscribe) {
+          deviceStatsUnsubscribe()
+        }
+        
+        // Build query for analytics_sessions collection (existing collection)
+        let q = collection(db, 'analytics_sessions')
+        
+        console.log('📊 Setting up real-time device statistics listener on analytics_sessions...')
+        
+        // Setup real-time listener
+        deviceStatsUnsubscribe = onSnapshot(q, (snapshot) => {
+          const deviceCounts = {
+            mobile: 0,
+            desktop: 0,
+            tablet: 0
+          }
+          
+          // Process each visit document
+          snapshot.docs.forEach(docSnap => {
+            const data = docSnap.data()
+            
+            // Date filtering (client-side)
+            if (startDate || endDate) {
+              const visitTime = data.timestamp
+              if (!visitTime) return
+              
+              const docDate = visitTime.toDate ? visitTime.toDate() : new Date(visitTime)
+              const docTime = docDate.getTime()
+              
+              if (startDate && docTime < startDate.getTime()) return
+              if (endDate && docTime > endDate.getTime()) return
+            }
+            
+            // Get device type from document
+            const deviceType = data.deviceType || getDeviceType(data.userAgent || '')
+            
+            deviceCounts[deviceType]++
+          })
+          
+          // Calculate total and percentages
+          const total = deviceCounts.mobile + deviceCounts.desktop + deviceCounts.tablet
+          
+          const stats = {
+            mobile: deviceCounts.mobile,
+            desktop: deviceCounts.desktop,
+            tablet: deviceCounts.tablet,
+            total: total,
+            mobilePercent: total > 0 ? Math.round((deviceCounts.mobile / total) * 100) : 0,
+            desktopPercent: total > 0 ? Math.round((deviceCounts.desktop / total) * 100) : 0,
+            tabletPercent: total > 0 ? Math.round((deviceCounts.tablet / total) * 100) : 0
+          }
+          
+          console.log('📊 Real-time device statistics updated:', stats)
+          
+          // Render updated statistics
+          renderDeviceStatistics(stats)
+        }, (error) => {
+          console.error('❌ Device statistics listener error:', error)
+        })
+        
+        console.log('✅ Device statistics real-time listener active')
+        
+      } catch (e) {
+        console.error('❌ Error setting up device statistics listener:', e)
+      }
+    }
+    
+    /**
+     * Fetch and aggregate device statistics (initial load/fallback)
+     * @param {Date|null} startDate - Filter start date (optional)
+     * @param {Date|null} endDate - Filter end date (optional)
+     * @returns {Object} Device counts and percentages
+     */
+    async function fetchDeviceStatistics(startDate = null, endDate = null) {
+      try {
+        const deviceCounts = {
+          mobile: 0,
+          desktop: 0,
+          tablet: 0
+        }
+        
+        // Fetch from analytics_sessions collection (existing collection)
+        try {
+          const sessionsSnap = await getDocs(collection(db, 'analytics_sessions'))
+          
+          sessionsSnap.docs.forEach(docSnap => {
+            const data = docSnap.data()
+            
+            // Date filtering
+            if (startDate || endDate) {
+              const visitTime = data.timestamp || data.firstVisit
+              if (!visitTime) return
+              
+              const docDate = visitTime.toDate ? visitTime.toDate() : new Date(visitTime)
+              const docTime = docDate.getTime()
+              
+              if (startDate && docTime < startDate.getTime()) return
+              if (endDate && docTime > endDate.getTime()) return
+            }
+            
+            // Get device type from document
+            const deviceType = data.deviceType || getDeviceType(data.userAgent || '')
+            
+            deviceCounts[deviceType]++
+          })
+          
+          console.log('📊 Loaded visits from analytics_sessions:', sessionsSnap.size)
+        } catch (e) {
+          console.warn('⚠️ Could not fetch analytics_sessions:', e.message)
+        }
+        
+        // Calculate total and percentages
+        const total = deviceCounts.mobile + deviceCounts.desktop + deviceCounts.tablet
+        
+        const result = {
+          mobile: deviceCounts.mobile,
+          desktop: deviceCounts.desktop,
+          tablet: deviceCounts.tablet,
+          total: total,
+          mobilePercent: total > 0 ? Math.round((deviceCounts.mobile / total) * 100) : 0,
+          desktopPercent: total > 0 ? Math.round((deviceCounts.desktop / total) * 100) : 0,
+          tabletPercent: total > 0 ? Math.round((deviceCounts.tablet / total) * 100) : 0
+        }
+        
+        console.log('📊 Device Statistics:', result)
+        return result
+        
+      } catch (e) {
+        console.error('❌ Error fetching device statistics:', e)
+        return {
+          mobile: 0,
+          desktop: 0,
+          tablet: 0,
+          total: 0,
+          mobilePercent: 0,
+          desktopPercent: 0,
+          tabletPercent: 0
+        }
+      }
+    }
+    
+    /**
+     * Render device statistics in the UI
+     * @param {Object} stats - Device statistics object
+     */
+    function renderDeviceStatistics(stats) {
+      // Mobile
+      const mobileCount = document.getElementById('device-mobile-count')
+      const mobilePercent = document.getElementById('device-mobile-percent')
+      const mobileBar = document.getElementById('device-mobile-bar')
+      
+      if (mobileCount) mobileCount.textContent = stats.mobile.toLocaleString()
+      if (mobilePercent) mobilePercent.textContent = `${stats.mobilePercent}%`
+      if (mobileBar) mobileBar.style.width = `${stats.mobilePercent}%`
+      
+      // Desktop
+      const desktopCount = document.getElementById('device-desktop-count')
+      const desktopPercent = document.getElementById('device-desktop-percent')
+      const desktopBar = document.getElementById('device-desktop-bar')
+      
+      if (desktopCount) desktopCount.textContent = stats.desktop.toLocaleString()
+      if (desktopPercent) desktopPercent.textContent = `${stats.desktopPercent}%`
+      if (desktopBar) desktopBar.style.width = `${stats.desktopPercent}%`
+      
+      // Tablet
+      const tabletCount = document.getElementById('device-tablet-count')
+      const tabletPercent = document.getElementById('device-tablet-percent')
+      const tabletBar = document.getElementById('device-tablet-bar')
+      
+      if (tabletCount) tabletCount.textContent = stats.tablet.toLocaleString()
+      if (tabletPercent) tabletPercent.textContent = `${stats.tabletPercent}%`
+      if (tabletBar) tabletBar.style.width = `${stats.tabletPercent}%`
+      
+      console.log('✅ Device statistics rendered')
+    }
+    
+    // END DEVICE STATISTICS
+    // ============================================
+    
     // STATISTICS DASHBOARD
     // ============================================
     
@@ -8693,6 +9015,14 @@
       const contentEl = document.getElementById('stats-content')
       if (loadingEl) loadingEl.classList.add('hidden')
       if (contentEl) contentEl.classList.remove('hidden')
+      
+      // Setup real-time device statistics listener
+      await setupDeviceStatsListener(startDate, endDate)
+      
+      // Re-initialize Lucide icons
+      if (window.lucide) {
+        lucide.createIcons()
+      }
     }
     
     // Load Statistics View
@@ -8744,6 +9074,9 @@
         console.log('📊 Orders cached, sample:', allOrdersCache[0])
         
         await calculateAndRenderStats(allOrdersCache)
+        
+        // Setup real-time device statistics listener
+        await setupDeviceStatsListener()
         
       } catch (e) {
         console.error('❌ Error loading stats:', e)
@@ -8913,6 +9246,102 @@
       }
       
       console.log('⏱️ Behavior analytics UI updated')
+    }
+    
+    // ============================================
+    // RESET: Clear DEVICE statistics data
+    // ============================================
+    window.resetDeviceStats = async function() {
+      // Confirmation dialog for device stats
+      const confirmed = confirm(
+        '⚠️ Скинути дані про пристрої?\n\n' +
+        'Ця дія безповоротно видалить усі дані про пристрої відвідувачів (analytics_sessions).\n\n' +
+        'Прогрес-бари в віджеті "Пристрої користувачів" буде скинуто до 0%.\n\n' +
+        'Цю дію неможливо скасувати! Продовжити?'
+      )
+      
+      if (!confirmed) {
+        return
+      }
+      
+      console.log('🗑️ Resetting device statistics...')
+      
+      try {
+        const collectionName = 'analytics_sessions'
+        
+        // Fetch all documents from analytics_sessions
+        const snapshot = await getDocs(collection(db, collectionName))
+        
+        if (snapshot.empty) {
+          console.log(`  ℹ️ ${collectionName} is already empty`)
+          showToast('Статистика пристроїв вже порожня', 'info')
+          return
+        }
+        
+        const totalDocs = snapshot.size
+        console.log(`  📊 Found ${totalDocs} documents in ${collectionName}`)
+        
+        // Batch delete (max 500 per batch)
+        const batchSize = 500
+        let deleted = 0
+        let batch = writeBatch(db)
+        let batchCount = 0
+        
+        for (const docSnap of snapshot.docs) {
+          batch.delete(docSnap.ref)
+          batchCount++
+          
+          // Commit batch when it reaches 500
+          if (batchCount === batchSize) {
+            await batch.commit()
+            deleted += batchCount
+            console.log(`  🗑️ Deleted ${deleted}/${totalDocs} from ${collectionName}`)
+            batch = writeBatch(db)
+            batchCount = 0
+          }
+        }
+        
+        // Commit remaining documents
+        if (batchCount > 0) {
+          await batch.commit()
+          deleted += batchCount
+        }
+        
+        console.log(`✅ Deleted ${deleted} device tracking documents`)
+        
+        // Show success toast
+        showToast(`Статистику пристроїв скинуто! Видалено ${deleted} записів.`, 'success')
+        
+        // Refresh device statistics UI to show zeros immediately
+        refreshDeviceStatsUI()
+        
+      } catch (error) {
+        console.error('❌ Error resetting device statistics:', error)
+        showToast('Помилка при скиданні статистики пристроїв: ' + error.message, 'error')
+      }
+    }
+    
+    /**
+     * Refresh DEVICE statistics UI to show zeros
+     */
+    function refreshDeviceStatsUI() {
+      console.log('🔄 Refreshing device statistics UI...')
+      
+      // Reset device statistics to zero
+      renderDeviceStatistics({
+        mobile: 0,
+        desktop: 0,
+        tablet: 0,
+        total: 0,
+        mobilePercent: 0,
+        desktopPercent: 0,
+        tabletPercent: 0
+      })
+      
+      // Restart listener to capture new data
+      setupDeviceStatsListener()
+      
+      console.log('✅ Device statistics UI refreshed to 0%')
     }
     
     // ============================================

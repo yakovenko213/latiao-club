@@ -533,15 +533,30 @@ async function handleSendCode() {
     generatedCode = generateCode();
     console.log('🔢 Generated code:', generatedCode);
     
+    // ✅ CRITICAL: Clean phone number - remove ALL non-digit characters
+    // TurboSMS expects pure digits: 380965661827 (NO '+' sign)
+    const purePhone = fullPhoneNumber.replace(/\D/g, '');
+    console.log('📞 Original phone:', fullPhoneNumber);
+    console.log('📞 Cleaned phone for TurboSMS:', purePhone);
+    
+    // ✅ TurboSMS API v2 Format:
+    // - recipients: ARRAY of phone numbers WITHOUT '+' sign
+    // - sender: Your verified sender name
+    // - text: SMS message content
     const smsPayload = {
-      recipients: [fullPhoneNumber],
+      recipients: [purePhone], // ✅ MUST be array and NO '+' sign
       sms: {
-        sender: 'latiao_info',
-        text: `Код входу: ${generatedCode}`
+        sender: 'latiao_info', // ✅ Approved alpha-name from TurboSMS
+        text: `Ваш код авторизації: ${generatedCode}`
       }
     };
     
-    console.log('📤 Sending SMS via TurboSMS...');
+    // 🔍 DEBUG: Log full payload before sending
+    console.log('📤 Sending SMS via TurboSMS API v2...');
+    console.log('🔍 Full TurboSMS Payload:', JSON.stringify(smsPayload, null, 2));
+    console.log('🔍 Recipients array:', smsPayload.recipients);
+    console.log('🔍 First recipient:', smsPayload.recipients[0]);
+    console.log('🔍 Sender:', smsPayload.sms.sender);
     
     const response = await fetch('https://api.turbosms.ua/message/send.json', {
       method: 'POST',
@@ -553,7 +568,19 @@ async function handleSendCode() {
     });
     
     const result = await response.json();
-    console.log('📨 TurboSMS response:', result);
+    console.log('📨 TurboSMS Full Response:', JSON.stringify(result, null, 2));
+    console.log('📨 Response Code:', result.response_code);
+    console.log('📨 Response Status:', result.response_status);
+    
+    // Check for specific error codes in response_result
+    if (result.response_result && Array.isArray(result.response_result)) {
+      result.response_result.forEach((item, index) => {
+        console.log(`📨 Result [${index}]:`, item);
+        if (item.error_code) {
+          console.error(`❌ TurboSMS Error for recipient ${item.phone}:`, item.error_code, item.error_message);
+        }
+      });
+    }
     
     if (result.response_code !== 0 && result.response_code !== 800 && result.response_code !== 801) {
       throw new Error(result.response_status || 'SMS sending failed');
@@ -711,6 +738,23 @@ async function handleResendCode() {
     generatedCode = generateCode();
     console.log('🔢 New code:', generatedCode);
     
+    // ✅ CRITICAL: Clean phone number - remove ALL non-digit characters
+    const purePhone = fullPhoneNumber.replace(/\D/g, '');
+    console.log('📞 Resend - Original phone:', fullPhoneNumber);
+    console.log('📞 Resend - Cleaned phone:', purePhone);
+    
+    // ✅ TurboSMS API v2 Format
+    const smsPayload = {
+      recipients: [purePhone], // ✅ NO '+' sign
+      sms: {
+        sender: 'latiao_info', // ✅ Approved alpha-name from TurboSMS
+        text: `Ваш код авторизації: ${generatedCode}`
+      }
+    };
+    
+    console.log('📤 Resending SMS via TurboSMS...');
+    console.log('🔍 Resend Payload:', JSON.stringify(smsPayload, null, 2));
+    
     // Send SMS
     const response = await fetch('https://api.turbosms.ua/message/send.json', {
       method: 'POST',
@@ -718,16 +762,11 @@ async function handleResendCode() {
         'Authorization': 'Bearer ' + turboSmsToken,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        recipients: [fullPhoneNumber],
-        sms: {
-          sender: 'latiao_info',
-          text: `Код входу: ${generatedCode}`
-        }
-      })
+      body: JSON.stringify(smsPayload)
     });
     
     const result = await response.json();
+    console.log('📨 Resend TurboSMS Response:', JSON.stringify(result, null, 2));
     
     if (result.response_code !== 0 && result.response_code !== 800 && result.response_code !== 801) {
       throw new Error(result.response_status || 'SMS sending failed');
