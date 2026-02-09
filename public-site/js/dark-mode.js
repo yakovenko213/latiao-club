@@ -621,12 +621,6 @@
         color: #f3f4f6 !important;
       }
       
-      /* Recommended products section */
-      html.dark #recommended-products h2,
-      html.dark .text-2xl.font-bold {
-        color: #f3f4f6 !important;
-      }
-      
       /* Product detail tabs - only for product page */
       html.dark .tab-content.bg-white {
         background-color: #1f2937 !important;
@@ -680,22 +674,6 @@
       html.dark .lightbox-nav {
         background-color: rgba(31, 41, 55, 0.9) !important;
         color: #f3f4f6 !important;
-      }
-      
-      /* Recommended product cards (Premium Design) */
-      html.dark #recommended-products > div {
-        background-color: #1f2937 !important;
-        border: none !important;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
-      }
-      
-      html.dark #recommended-products > div:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
-      }
-      
-      /* Card image area in dark mode */
-      html.dark #recommended-products .bg-gray-50 {
-        background-color: #111827 !important;
       }
       
       /* Card content text */
@@ -1734,6 +1712,90 @@
       html.dark [class*="shadow-xl"],
       html.dark [class*="shadow-md"] {
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+      }
+
+      /* ============================================
+         UPSELL BUNDLE SECTION - DARK MODE
+         ============================================ */
+      
+      /* Bundle container */
+      html.dark #upsell-bundle-section > div {
+        background-color: #1f2937 !important;
+        border-color: #374151 !important;
+      }
+      
+      /* Bundle badge */
+      html.dark #upsell-bundle-section .from-red-500 {
+        --tw-gradient-from: #dc2626 !important;
+      }
+      
+      html.dark #upsell-bundle-section .to-red-600 {
+        --tw-gradient-to: #b91c1c !important;
+      }
+      
+      /* Bundle title and text */
+      html.dark #upsell-bundle-section h3 {
+        color: #f3f4f6 !important;
+      }
+      
+      html.dark #upsell-bundle-section p {
+        color: #d1d5db !important;
+      }
+      
+      /* Product image containers */
+      html.dark #upsell-bundle-section .bg-gray-50 {
+        background-color: #374151 !important;
+        border-color: #4b5563 !important;
+      }
+      
+      /* Plus icon container */
+      html.dark #upsell-bundle-section .from-orange-100 {
+        --tw-gradient-from: rgba(251, 146, 60, 0.3) !important;
+      }
+      
+      html.dark #upsell-bundle-section .to-orange-200 {
+        --tw-gradient-to: rgba(251, 146, 60, 0.4) !important;
+      }
+      
+      /* Product names */
+      html.dark #upsell-bundle-section .text-gray-700 {
+        color: #d1d5db !important;
+      }
+      
+      /* Pricing container background */
+      html.dark #upsell-bundle-section .bg-gray-50:last-of-type {
+        background-color: #374151 !important;
+      }
+      
+      /* Pricing text */
+      html.dark #upsell-bundle-section .text-gray-500 {
+        color: #9ca3af !important;
+      }
+      
+      /* Green elements in bundle */
+      html.dark #upsell-bundle-section .bg-green-50 {
+        background-color: rgba(34, 197, 94, 0.2) !important;
+      }
+      
+      html.dark #upsell-bundle-section .text-green-600 {
+        color: #4ade80 !important;
+      }
+      
+      /* Bundle button gradients */
+      html.dark #add-bundle-to-cart.from-green-500 {
+        --tw-gradient-from: #22c55e !important;
+      }
+      
+      html.dark #add-bundle-to-cart.to-green-600 {
+        --tw-gradient-to: #16a34a !important;
+      }
+      
+      html.dark #add-bundle-to-cart:hover.hover\\:from-green-600 {
+        --tw-gradient-from: #16a34a !important;
+      }
+      
+      html.dark #add-bundle-to-cart:hover.hover\\:to-green-700 {
+        --tw-gradient-to: #15803d !important;
       }
     `;
     

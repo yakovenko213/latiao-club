@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 Створення тестового Upsell правила</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css"></script>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-6">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">🔥 Тестове Upsell Правило</h1>
+        
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <h2 class="font-semibold text-blue-800 mb-2">📋 Що робитиме цей скрипт:</h2>
+            <ul class="text-blue-700 text-sm space-y-1">
+                <li>• Створить тестове upsell правило у Firestore</li>
+                <li>• Налаштує комбо "Класичний + Гострий Latiao"</li>
+                <li>• Встановить 15% знижку на комплект</li>
+                <li>• Активує правило для тестування</li>
+            </ul>
+        </div>
+        
+        <button id="createRule" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+            🚀 Створити тестове правило
+        </button>
+        
+        <div id="status" class="mt-4 p-4 rounded-lg hidden"></div>
+        
+        <div class="mt-6 text-sm text-gray-600">
+            <p><strong>Після створення:</strong></p>
+            <ol class="list-decimal list-inside space-y-1 mt-2">
+                <li>Відкрийте сторінку продукту з ID: <code class="bg-gray-100 px-2 py-1 rounded">latiao-classic-original</code></li>
+                <li>Прокрутіть до кнопки "Додати в кошик"</li>
+                <li>Побачите блок "🔥 Частіше купують разом"</li>
+                <li>Протестуйте функціональність bundle</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'
+        import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyApbhPzlLiJGXKN1m7mxhfXJcJWvl5YqHg",
+            authDomain: "latiao-snack.firebaseapp.com",
+            projectId: "latiao-snack",
+            storageBucket: "latiao-snack.appspot.com",
+            messagingSenderId: "129061757346",
+            appId: "1:129061757346:web:3e7bc5838cc5f7bda992fb"
+        }
+
+        const app = initializeApp(firebaseConfig)
+        const db = getFirestore(app)
+
+        // Create test upsell rule
+        document.getElementById('createRule').addEventListener('click', async () => {
+            const button = document.getElementById('createRule')
+            const status = document.getElementById('status')
+            
+            button.disabled = true
+            button.textContent = '⏳ Створюю...'
+            
+            try {
+                // Get all products first to see what's available
+                console.log('📦 [DEBUG] Завантаження списку продуктів...')
+                const allProducts = await getDocs(collection(db, 'products'))
+                const products = []
+                
+                allProducts.forEach(doc => {
+                    const data = doc.data()
+                    console.log('📦 [DEBUG] Продукт:', doc.id, data.name, data.price, 'Visible:', data.isVisible)
+                    if (data.isVisible !== false) {
+                        products.push({ 
+                            id: doc.id, 
+                            name: data.name, 
+                            price: data.price,
+                            image: data.features?.[0]?.image || data.thumbnail || data.image || '/assets/default-product.png'
+                        })
+                    }
+                })
+                
+                console.log('✅ [DEBUG] Знайдено видимих продуктів:', products.length)
+                
+                if (products.length < 2) {
+                    throw new Error('Недостатньо продуктів для створення upsell правила. Потрібно мінімум 2.')
+                }
+                
+                const testUpsellRule = {
+                    name: 'Автотест комбо-пропозиція',
+                    description: `${products[0].name} + ${products[1].name} = ідеальна пара! 🌶️`,
+                    triggerProductIds: [products[0].id, products[1].id], // Обидва товари можуть бути тригерами
+                    suggestedProductId: products[1].id, // Другий товар як пропозиція для першого
+                    discount: 15,
+                    isActive: true,
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp()
+                }
+                
+                console.log('🎯 [DEBUG] Створюю правило:', testUpsellRule)
+                const docRef = await addDoc(collection(db, 'upsells'), testUpsellRule)
+                
+                status.className = 'mt-4 p-4 rounded-lg bg-green-50 border border-green-200'
+                status.innerHTML = `
+                    <h3 class="font-semibold text-green-800">✅ Успішно створено!</h3>
+                    <p class="text-green-700 text-sm mt-1">ID правила: <code class="bg-green-100 px-2 py-1 rounded">${docRef.id}</code></p>
+                    <p class="text-green-700 text-sm mt-2">
+                        <strong>Тригер:</strong> ${products[0].name} (${products[0].id})<br>
+                        <strong>Пропозиція:</strong> ${products[1].name} (${products[1].id})<br>
+                        <strong>Знижка:</strong> 15%
+                    </p>
+                    <p class="text-green-700 text-sm mt-2 font-semibold">
+                        Тепер відкрийте: 
+                        <br><a href="product.html?id=${products[0].id}" class="text-blue-600 hover:underline" target="_blank">
+                            product.html?id=${products[0].id}
+                        </a>
+                    </p>
+                    <p class="text-xs text-gray-600 mt-2">
+                        Відкрийте Developer Tools (F12) та подивіться в Console для детального логу завантаження.
+                    </p>
+                `
+                
+                button.textContent = '✅ Готово!'
+                button.className = 'w-full bg-green-500 text-white font-bold py-3 px-6 rounded-lg'
+                
+            } catch (error) {
+                console.error('❌ Помилка створення правила:', error)
+                
+                status.className = 'mt-4 p-4 rounded-lg bg-red-50 border border-red-200'
+                status.innerHTML = `
+                    <h3 class="font-semibold text-red-800">❌ Помилка створення</h3>
+                    <p class="text-red-700 text-sm mt-1">${error.message}</p>
+                    <p class="text-red-600 text-xs mt-2">Спробуйте створити правило вручну в адмін-панелі</p>
+                `
+                
+                button.disabled = false
+                button.textContent = '🔄 Спробувати знову'
+                button.className = 'w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition-colors'
+            }
+        })
+    </script>
+</body>
+</html>

@@ -1659,6 +1659,19 @@ export async function confirmCreateOrder() {
         const orderDoc = await addDoc(ordersRef, orderData);
         console.log('✅ Order created:', orderDoc.id);
         
+        // 1.5. Sync customer profile (prevents duplicates using phone as unique ID)
+        if (window.syncCustomerFromOrder && typeof window.syncCustomerFromOrder === 'function') {
+            try {
+                const customerSyncResult = await window.syncCustomerFromOrder(orderData, orderDoc.id);
+                console.log('👤 Customer sync result:', customerSyncResult);
+            } catch (syncError) {
+                console.warn('⚠️ Customer sync warning (non-critical):', syncError);
+                // Don't fail the order creation if customer sync fails
+            }
+        } else {
+            console.warn('⚠️ syncCustomerFromOrder not available');
+        }
+        
         // 2. Fetch CRM automation settings
         let targetSuccessColumnId = null;
         let targetSuccessColumnName = null;

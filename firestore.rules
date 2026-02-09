@@ -2,6 +2,30 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
+    // ============================================
+    // CUSTOMERS COLLECTION - ENHANCED SECURITY
+    // ============================================
+    match /customers/{customerId} {
+      // Read: Allow authenticated users to read
+      allow read: if request.auth != null;
+      
+      // Write: Allow authenticated users + phone validation
+      allow write: if request.auth != null 
+        && isValidCustomerData(request.resource.data);
+    }
+    
+    // Validation function for customer data
+    function isValidCustomerData(data) {
+      return data.phone is string
+        && data.phone.size() >= 10
+        && data.phone.size() <= 13
+        && data.phone.matches('^[0-9+]+$') // Only digits and plus
+        && (data.fullName is string || !('fullName' in data))
+        && (data.email is string || !('email' in data))
+        && data.ordersCount is number
+        && data.totalSpent is number;
+    }
+    
     // =============================================
     // 📊 ANALYTICS - MUST BE FIRST (Public Write)
     // =============================================
@@ -100,7 +124,13 @@ service cloud.firestore {
       allow write: if request.auth != null;
     }
     
-    // =============================================
+    // Upsells - PUBLIC READ for product recommendations
+    match /upsells/{upsellId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // ==============================================
     // 🛒 ORDERS (Public read for phone-based auth)
     // =============================================
     

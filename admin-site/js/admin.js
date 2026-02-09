@@ -74,6 +74,17 @@ window.serverTimestamp = serverTimestamp;
 console.log('✅ Global Firebase exports initialized (for external modules)');
 
 // ============================================
+// IMPORT PHONE UTILS
+// ============================================
+// Load centralized phone normalization utility
+if (!window.PhoneUtils) {
+  const script = document.createElement('script');
+  script.src = '/shared/phone-utils.js';
+  script.async = false;
+  document.head.appendChild(script);
+}
+
+// ============================================
 // MARK BROWSER AS ADMIN (Maintenance Mode Bypass)
 // ============================================
 // This tag allows admins to view the site even when Maintenance Mode is ON
@@ -85,100 +96,189 @@ console.log('✅ Browser marked as Admin - Maintenance Mode bypass enabled');
 // ============================================
 /**
  * Automatically creates or updates a Customer profile when an Order is saved.
- * Uses PHONE NUMBER as the Document ID (normalized).
- * Uses setDoc with merge:true for atomic upsert operations.
+ * Uses NORMALIZED PHONE NUMBER as the Document ID to prevent duplicates.
+ * BEFORE creating a new customer, searches for existing ones with the same phone.
  * 
  * @param {Object} orderData - The order data object
  * @param {Object} orderData.customer - Customer info { phone, fullName, email }
  * @param {Object} orderData.summary - Order summary { total }
  * @param {string} [orderId] - Optional: The Firestore document ID of the order
+ * @returns {Promise<Object>} - Result object with action details
  */
 window.syncCustomerFromOrder = async function(orderData, orderId = null) {
     try {
+        // Wait for PhoneUtils to load
+        if (!window.PhoneUtils) {
+            await new Promise(resolve => {
+                const checkUtils = () => {
+                    if (window.PhoneUtils) resolve();
+                    else setTimeout(checkUtils, 100);
+                };
+                checkUtils();
+            });
+        }
+        
         // Extract customer data
         const customer = orderData.customer || {};
         const rawPhone = customer.phone || '';
         
-        // Normalize phone number - use as Document ID
-        // Remove all non-digit characters except leading +
-        const phone = rawPhone.replace(/[^\d]/g, '').trim();
+        // ============================================
+        // STEP 1: NORMALIZE AND VALIDATE PHONE
+        // ============================================
+        const normalizedPhone = window.PhoneUtils.normalizePhone(rawPhone);
         
-        if (!phone || phone.length < 9) {
-            console.warn('⚠️ syncCustomerFromOrder: Invalid phone number, skipping.');
-            return null;
+        if (!normalizedPhone || !window.PhoneUtils.isValidUkrainianPhone(normalizedPhone)) {
+            console.warn('⚠️ syncCustomerFromOrder: Invalid phone number:', rawPhone);
+            return { action: 'error', error: 'Invalid phone number' };
         }
         
         const fullName = (customer.fullName || customer.name || '').trim();
         const email = (customer.email || customer.telegram || '').trim();
         const orderTotal = parseFloat(orderData.summary?.total) || 0;
         
-        console.log(`👤 Mini-CRM: Syncing customer [${phone}] - ${fullName}`);
+        console.log(`👤 Mini-CRM: Processing customer [${normalizedPhone}] - ${fullName}`);
         
-        // Use phone as document ID
-        const customerRef = doc(db, 'customers', phone);
+        // ============================================
+        // STEP 2: SEARCH FOR EXISTING CUSTOMER BY PHONE VARIANTS
+        // ============================================
+        const phoneVariants = window.PhoneUtils.getPhoneVariants(normalizedPhone);
+        let existingCustomer = null;
+        let existingCustomerRef = null;
         
-        // Check if customer exists to determine if this is create or update
-        const customerSnap = await getDoc(customerRef);
+        // First, try the normalized phone as document ID
+        const primaryRef = doc(db, 'customers', normalizedPhone);
+        const primarySnap = await getDoc(primaryRef);
         
-        if (!customerSnap.exists()) {
+        if (primarySnap.exists()) {
+            existingCustomer = primarySnap.data();
+            existingCustomerRef = primaryRef;
+            console.log(`📍 Found existing customer by normalized phone: ${normalizedPhone}`);
+        } else {
+            // Search using phone variants (for legacy data)
+            const customersRef = collection(db, 'customers');
+            
+            for (const variant of phoneVariants) {
+                const q = query(customersRef, where('phone', '==', variant));
+                const snapshot = await getDocs(q);
+                
+                if (!snapshot.empty) {
+                    existingCustomer = snapshot.docs[0].data();
+                    existingCustomerRef = snapshot.docs[0].ref;
+                    console.log(`📍 Found existing customer by phone variant: ${variant} (Doc ID: ${snapshot.docs[0].id})`);
+                    break;
+                }
+            }
+        }
+        
+        // ============================================
+        // STEP 3: CREATE OR UPDATE CUSTOMER
+        // ============================================
+        
+        if (!existingCustomer) {
             // ============================================
-            // NEW CUSTOMER - Create with initial values
+            // NEW CUSTOMER - Create with normalized phone as ID
             // ============================================
-            console.log('🆕 Creating new customer...');
+            console.log('🆕 Creating new customer with normalized phone...');
             
             const newCustomerData = {
-                phone: phone,
+                phone: normalizedPhone, // Always store normalized format
+                phoneDisplay: window.PhoneUtils.formatPhoneDisplay(normalizedPhone),
                 fullName: fullName,
                 email: email,
                 ordersCount: 1,
                 totalSpent: orderTotal,
-                orderIds: orderId ? [orderId] : [],
+                orderHistory: orderId ? [orderId] : [], // Renamed from orderIds for clarity
                 firstOrderDate: serverTimestamp(),
                 lastOrderDate: serverTimestamp(),
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
             };
             
-            await setDoc(customerRef, newCustomerData);
-            console.log(`✅ New customer created: ${phone}`);
+            const newCustomerRef = doc(db, 'customers', normalizedPhone);
+            await setDoc(newCustomerRef, newCustomerData);
             
-            return { action: 'created', customerId: phone };
+            console.log(`✅ New customer created: ${normalizedPhone}`);
+            return { action: 'created', customerId: normalizedPhone };
             
         } else {
             // ============================================
-            // EXISTING CUSTOMER - Update with merge
+            // EXISTING CUSTOMER - Update and possibly migrate
             // ============================================
-            console.log('🔄 Updating existing customer...');
+            const currentDocId = existingCustomerRef.id;
             
-            const updateData = {
-                // Increment counters
-                ordersCount: increment(1),
-                totalSpent: increment(orderTotal),
-                // Update timestamps
-                lastOrderDate: serverTimestamp(),
-                updatedAt: serverTimestamp()
-            };
-            
-            // Add order ID to array (arrayUnion prevents duplicates)
-            if (orderId) {
-                updateData.orderIds = arrayUnion(orderId);
+            if (currentDocId !== normalizedPhone) {
+                // ============================================ 
+                // MIGRATE: Customer found with old phone format
+                // ============================================
+                console.log(`🔄 Migrating customer from ${currentDocId} to ${normalizedPhone}`);
+                
+                const migratedData = {
+                    ...existingCustomer,
+                    phone: normalizedPhone, // Update to normalized format
+                    phoneDisplay: window.PhoneUtils.formatPhoneDisplay(normalizedPhone),
+                    // Increment counters
+                    ordersCount: (existingCustomer.ordersCount || 0) + 1,
+                    totalSpent: (existingCustomer.totalSpent || 0) + orderTotal,
+                    // Update order history
+                    orderHistory: orderId ? 
+                        [...(existingCustomer.orderHistory || existingCustomer.orderIds || []), orderId] :
+                        (existingCustomer.orderHistory || existingCustomer.orderIds || []),
+                    // Update name/email if current ones are better
+                    fullName: fullName || existingCustomer.fullName,
+                    email: email || existingCustomer.email,
+                    // Timestamps
+                    lastOrderDate: serverTimestamp(),
+                    updatedAt: serverTimestamp()
+                };
+                
+                // Create new document with correct ID
+                const newCustomerRef = doc(db, 'customers', normalizedPhone);
+                await setDoc(newCustomerRef, migratedData);
+                
+                // Delete old document
+                await deleteDoc(existingCustomerRef);
+                
+                console.log(`✅ Customer migrated from ${currentDocId} to ${normalizedPhone}`);
+                return { action: 'migrated', oldId: currentDocId, newId: normalizedPhone };
+                
+            } else {
+                // ============================================
+                // STANDARD UPDATE - Customer already has correct ID
+                // ============================================
+                console.log('🔄 Updating existing customer...');
+                
+                const updateData = {
+                    // Ensure phone is in normalized format
+                    phone: normalizedPhone,
+                    phoneDisplay: window.PhoneUtils.formatPhoneDisplay(normalizedPhone),
+                    // Increment counters
+                    ordersCount: increment(1),
+                    totalSpent: increment(orderTotal),
+                    // Update timestamps
+                    lastOrderDate: serverTimestamp(),
+                    updatedAt: serverTimestamp()
+                };
+                
+                // Add order ID to history (arrayUnion prevents duplicates)
+                if (orderId) {
+                    updateData.orderHistory = arrayUnion(orderId);
+                }
+                
+                // Only update name/email if current values are empty
+                if (!existingCustomer.fullName && fullName) {
+                    updateData.fullName = fullName;
+                }
+                if (!existingCustomer.email && email) {
+                    updateData.email = email;
+                }
+                
+                await setDoc(existingCustomerRef, updateData, { merge: true });
+                
+                const newCount = (existingCustomer.ordersCount || 0) + 1;
+                console.log(`✅ Customer updated: ${normalizedPhone} (Orders: ${newCount})`);
+                
+                return { action: 'updated', customerId: normalizedPhone, ordersCount: newCount };
             }
-            
-            // Only update name/email if they were empty before
-            const existingData = customerSnap.data();
-            if (!existingData.fullName && fullName) {
-                updateData.fullName = fullName;
-            }
-            if (!existingData.email && email) {
-                updateData.email = email;
-            }
-            
-            await setDoc(customerRef, updateData, { merge: true });
-            
-            const newCount = (existingData.ordersCount || 0) + 1;
-            console.log(`✅ Customer updated: ${phone} (Orders: ${newCount})`);
-            
-            return { action: 'updated', customerId: phone, ordersCount: newCount };
         }
         
     } catch (error) {

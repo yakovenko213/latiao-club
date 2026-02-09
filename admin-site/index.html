@@ -19,6 +19,9 @@
   <!-- SortableJS for Drag & Drop -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
+  <!-- Centralized Phone Utilities for Customer Deduplication -->
+  <script src="/shared/phone-utils.js"></script>
+
   <script>
     tailwind.config = {
       theme: { extend: { colors: { spicy: '#ff6b00' } } }
@@ -896,6 +899,10 @@
           <span>⭐ Відгуки</span>
           <span id="reviews-pending-badge" class="hidden absolute -top-1 -right-1 bg-yellow-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">0</span>
         </a>
+        <a href="#upsells" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+          <i data-lucide="trending-up" class="w-5 h-5"></i>
+          <span>🔥 Допродажі</span>
+        </a>
 
       </nav>
       <!-- Bottom Section: Logout (Sticky Footer) -->
@@ -1409,6 +1416,12 @@
               <p class="text-sm text-gray-500 mt-1">Автоматично оновлюється при кожному замовленні</p>
             </div>
             <div class="flex items-center gap-3">
+              <a href="/admin-site/customer-deduplication-migration.html" target="_blank" 
+                 class="flex items-center gap-2 px-3 py-2 bg-purple-100 text-purple-700 rounded-lg text-sm font-medium hover:bg-purple-200 transition"
+                 title="Інструмент для об'єднання дублікатів клієнтів за номером телефону">
+                <i data-lucide="git-merge" class="w-4 h-4"></i>
+                <span>Дедуплікація</span>
+              </a>
               <button onclick="loadCustomers()" class="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition">
                 <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                 <span>Оновити</span>
@@ -5783,7 +5796,8 @@
       'gifts': '🎁 Подарунки',
       'merchandising': '🎯 Мерчандайзинг',
       'live-chat': '💬 Онлайн чат | ШІ',
-      'reviews': '⭐ Відгуки'
+      'reviews': '⭐ Відгуки',
+      'upsells': '🔥 Допродажі'
     }
 
     sidebarLinks.forEach(link => {
@@ -7771,6 +7785,7 @@
     // ============================================
     /**
      * Aggregates order data into customer profiles with LTV, order count, etc.
+     * Uses PhoneUtils for centralized phone normalization to prevent duplicates.
      * @param {Array} orders - Array of order objects
      * @returns {Array} Array of customer objects with aggregated metrics
      */
@@ -7786,24 +7801,39 @@
       orders.forEach(order => {
         try {
           // ✅ Support both flat and nested customer structure
-          const customerPhone = order.customerPhone || order.customer?.phone || order.phone
+          const rawPhone = order.customerPhone || order.customer?.phone || order.phone || ''
           const customerEmail = order.customerEmail || order.customer?.email || order.email
           const customerName = order.customerName || order.customer?.fullName || order.fullName || 'Невідомий'
           
           // Skip incomplete orders
-          if (!customerPhone && !customerEmail) {
+          if (!rawPhone && !customerEmail) {
             console.warn('⚠️ Order missing customer identifier:', order.id)
             return
           }
           
-          // Use phone as primary identifier, fallback to email
-          const customerId = customerPhone || customerEmail
+          // ✅ CRITICAL: Normalize phone number using centralized utility
+          let normalizedPhone = null
+          let phoneDisplay = rawPhone
+          
+          if (rawPhone && window.PhoneUtils) {
+            normalizedPhone = window.PhoneUtils.normalizePhone(rawPhone)
+            if (normalizedPhone) {
+              phoneDisplay = window.PhoneUtils.formatPhoneDisplay(normalizedPhone)
+            }
+          } else if (rawPhone) {
+            // Fallback: basic normalization if PhoneUtils not loaded
+            normalizedPhone = rawPhone.replace(/[\s\-\(\)\+]/g, '')
+          }
+          
+          // Use normalized phone as primary identifier (prevents duplicates!)
+          const customerId = normalizedPhone || customerEmail
           
           // Get or create customer entry
           if (!customerMap.has(customerId)) {
             customerMap.set(customerId, {
               id: customerId,
-              phone: customerPhone || customerId,
+              phone: normalizedPhone || rawPhone || customerId,
+              phoneDisplay: phoneDisplay,
               email: customerEmail || '',
               fullName: customerName,
               orders: [],
@@ -7941,6 +7971,9 @@
         customers.forEach((customer, index) => {
           const name = customer.fullName || 'Невідомий'
           const phone = customer.phone || customer.id || '-'
+          // Use formatted phone display if available, otherwise format on the fly
+          const phoneDisplay = customer.phoneDisplay || 
+            (window.PhoneUtils && phone ? window.PhoneUtils.formatPhoneDisplay(phone) : '+' + phone)
           const ordersCount = customer.ordersCount || 0
           const totalSpent = customer.totalSpent || 0
           const email = customer.email || ''
@@ -7984,7 +8017,7 @@
               </td>
               <td class="px-6 py-4">
                 <a href="tel:+${phone}" class="text-blue-600 hover:underline font-mono text-sm">
-                  +${phone}
+                  ${phoneDisplay}
                 </a>
               </td>
               <td class="px-6 py-4 text-center">
@@ -8047,6 +8080,105 @@
     // ============================================
     // CUSTOMER DETAILS MODAL
     // ============================================
+    // ============================================
+    // CALCULATE REAL CUSTOMER STATISTICS
+    // ============================================
+    /**
+     * Calculate accurate customer statistics directly from orders collection
+     * @param {string} phone - Customer phone number (will be normalized)
+     * @returns {Promise<Object>} Real-time statistics
+     */
+    async function calculateRealCustomerStats(phone) {
+      try {
+        console.log('📊 Calculating real statistics for phone:', phone)
+        
+        // Normalize phone for accurate matching
+        const normalizedPhone = window.PhoneUtils 
+          ? window.PhoneUtils.normalizePhone(phone)
+          : phone.replace(/[\s\-\(\)\+]/g, '')
+        
+        console.log('📞 Normalized phone:', normalizedPhone)
+        
+        // Get all orders for this phone number
+        let allOrders = []
+        
+        // Use cached orders if available (much faster!)
+        if (window.allOrdersCache && window.allOrdersCache.length > 0) {
+          console.log('📦 Using cached orders:', window.allOrdersCache.length)
+          allOrders = window.allOrdersCache.map(order => ({
+            id: order.id || order.docId,
+            data: order
+          }))
+        } else {
+          // Fallback: fetch from Firestore
+          console.log('🔄 Fetching orders from Firestore...')
+          const ordersRef = collection(db, 'orders')
+          const ordersQuery = query(ordersRef, orderBy('createdAt', 'desc'))
+          const snap = await getDocs(ordersQuery)
+          allOrders = snap.docs.map(doc => ({ id: doc.id, data: doc.data() }))
+        }
+        
+        // Filter orders by normalized phone
+        const customerOrders = allOrders.filter(({ data: order }) => {
+          const orderPhone = order.customer?.phone || order.customerPhone || order.phone || ''
+          const normalizedOrderPhone = window.PhoneUtils 
+            ? window.PhoneUtils.normalizePhone(orderPhone)
+            : orderPhone.replace(/[\s\-\(\)\+]/g, '')
+          
+          return normalizedOrderPhone === normalizedPhone
+        })
+        
+        console.log('✅ Found orders:', customerOrders.length)
+        
+        // Calculate statistics
+        let totalSpent = 0
+        let firstOrderDate = null
+        let lastOrderDate = null
+        
+        customerOrders.forEach(({ data: order }) => {
+          // Sum total amount (support multiple field names)
+          const orderTotal = order.summary?.total || order.totalPrice || order.total || 0
+          totalSpent += orderTotal
+          
+          // Track first and last order dates
+          if (order.createdAt) {
+            const orderDate = order.createdAt.toDate ? order.createdAt.toDate() : new Date(order.createdAt)
+            
+            if (!firstOrderDate || orderDate < firstOrderDate) {
+              firstOrderDate = orderDate
+            }
+            
+            if (!lastOrderDate || orderDate > lastOrderDate) {
+              lastOrderDate = orderDate
+            }
+          }
+        })
+        
+        const ordersCount = customerOrders.length
+        const avgOrder = ordersCount > 0 ? Math.round(totalSpent / ordersCount) : 0
+        
+        return {
+          ordersCount,
+          totalSpent,
+          avgOrder,
+          firstOrderDate,
+          lastOrderDate,
+          orders: customerOrders
+        }
+        
+      } catch (error) {
+        console.error('❌ Error calculating customer stats:', error)
+        return {
+          ordersCount: 0,
+          totalSpent: 0,
+          avgOrder: 0,
+          firstOrderDate: null,
+          lastOrderDate: null,
+          orders: []
+        }
+      }
+    }
+    
     async function viewCustomerDetails(customerId) {
       console.log('📋 Opening customer details:', customerId)
       
@@ -8069,73 +8201,86 @@
       lucide.createIcons()
       
       try {
-        // ✅ Try to fetch from customers collection first (for backward compatibility)
-        let customer = null
+        // ============================================
+        // STEP 1: Get customer profile (for name, email)
+        // ============================================
         let phone = customerId
         let fullName = 'Невідомий клієнт'
         let email = ''
-        let ordersCount = 0
-        let totalSpent = 0
-        let firstOrderDate = null
-        let customerOrders = []
+        let customerProfile = null
         
         try {
           const customerRef = doc(db, 'customers', customerId)
           const customerSnap = await getDoc(customerRef)
           
           if (customerSnap.exists()) {
-            customer = customerSnap.data()
-            phone = customer.phone || customerId
-            fullName = customer.fullName || 'Невідомий клієнт'
-            email = customer.email || ''
-            ordersCount = customer.ordersCount || 0
-            totalSpent = customer.totalSpent || 0
-            firstOrderDate = customer.firstOrderDate
+            customerProfile = customerSnap.data()
+            phone = customerProfile.phone || customerId
+            fullName = customerProfile.fullName || 'Невідомий клієнт'
+            email = customerProfile.email || ''
+            console.log('✅ Customer profile found:', fullName)
+          } else {
+            console.log('ℹ️ Customer not in customers collection, using ID as phone')
+            phone = customerId
           }
         } catch (err) {
-          console.log('ℹ️ Customer not in customers collection, will aggregate from orders')
+          console.log('⚠️ Error fetching customer profile:', err.message)
         }
         
-        // ✅ If not found in customers collection, aggregate from orders
-        if (!customer) {
-          console.log('📊 Aggregating customer data from orders...')
-          const allCustomers = aggregateCustomerMetrics(allOrdersCache || [])
-          customer = allCustomers.find(c => c.id === customerId || c.phone === customerId)
-          
-          if (!customer) {
-            throw new Error('Клієнта не знайдено')
-          }
-          
-          phone = customer.phone || customerId
-          fullName = customer.fullName || 'Невідомий клієнт'
-          email = customer.email || ''
-          ordersCount = customer.ordersCount || 0
-          totalSpent = customer.totalSpent || 0
-          firstOrderDate = customer.lastOrderDate // Use last order as reference
-          customerOrders = customer.orders || []
+        // ============================================
+        // STEP 2: Calculate REAL statistics from orders
+        // ============================================
+        console.log('📊 Calculating real-time statistics...')
+        const stats = await calculateRealCustomerStats(phone)
+        
+        const { ordersCount, totalSpent, avgOrder, firstOrderDate, lastOrderDate, orders } = stats
+        
+        console.log('📈 Statistics:', { ordersCount, totalSpent, avgOrder })
+        
+        // If we got name/email from orders but not from profile
+        if (orders.length > 0 && fullName === 'Невідомий клієнт') {
+          const firstOrder = orders[0].data
+          fullName = firstOrder.customer?.fullName || firstOrder.customerName || 'Невідомий клієнт'
+          email = firstOrder.customer?.email || firstOrder.customerEmail || email
         }
         
-        const avgOrder = ordersCount > 0 ? Math.round(totalSpent / ordersCount) : 0
-        
-        // Format first order date
-        let sinceStr = ''
-        if (firstOrderDate) {
-          const date = firstOrderDate.toDate ? firstOrderDate.toDate() : (firstOrderDate instanceof Date ? firstOrderDate : new Date(firstOrderDate))
-          sinceStr = `Клієнт з ${date.toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' })}`
-        }
-        
-        // Update modal header
+        // ============================================
+        // STEP 3: Update modal header
+        // ============================================
         document.getElementById('customer-modal-avatar').textContent = fullName.charAt(0).toUpperCase()
         document.getElementById('customer-modal-name').textContent = fullName
+        
+        // Format "Customer since" text
+        let sinceStr = ''
+        if (firstOrderDate) {
+          sinceStr = `Клієнт з ${firstOrderDate.toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' })}`
+        }
+        if (lastOrderDate) {
+          const daysSince = Math.floor((new Date() - lastOrderDate) / (1000 * 60 * 60 * 24))
+          if (daysSince === 0) {
+            sinceStr += ' • Останнє замовлення сьогодні'
+          } else if (daysSince === 1) {
+            sinceStr += ' • Останнє замовлення вчора'
+          } else if (daysSince < 30) {
+            sinceStr += ` • Останнє замовлення ${daysSince} днів тому`
+          } else {
+            sinceStr += ` • Останнє: ${lastOrderDate.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric' })}`
+          }
+        }
         document.getElementById('customer-modal-since').textContent = sinceStr
         
-        // Update contact info
+        // ============================================
+        // STEP 4: Update contact info
+        // ============================================
         const phoneLink = document.getElementById('customer-modal-phone')
-        phoneLink.textContent = '+' + phone
-        phoneLink.href = 'tel:+' + phone
+        const displayPhone = window.PhoneUtils 
+          ? window.PhoneUtils.formatPhoneDisplay(phone)
+          : '+' + phone
+        phoneLink.textContent = displayPhone
+        phoneLink.href = 'tel:+' + phone.replace(/\D/g, '')
         
         const telegramLink = document.getElementById('customer-modal-telegram')
-        telegramLink.href = 'https://t.me/+' + phone
+        telegramLink.href = 'https://t.me/+' + phone.replace(/\D/g, '')
         
         const emailRow = document.getElementById('customer-modal-email-row')
         if (email) {
@@ -8145,15 +8290,21 @@
           emailRow.classList.add('hidden')
         }
         
-        // Update metrics
+        // ============================================
+        // STEP 5: Update metrics with REAL data
+        // ============================================
         document.getElementById('customer-modal-orders').textContent = ordersCount
         document.getElementById('customer-modal-ltv').textContent = totalSpent.toLocaleString('uk-UA') + ' ₴'
         document.getElementById('customer-modal-avg').textContent = avgOrder.toLocaleString('uk-UA') + ' ₴'
         
-        // Render activity log
-        renderActivityLog(customer.accessLog || [])
+        // ============================================
+        // STEP 6: Render activity log
+        // ============================================
+        renderActivityLog(customerProfile?.accessLog || [])
         
-        // Fetch customer orders
+        // ============================================
+        // STEP 7: Render customer orders
+        // ============================================
         await loadCustomerOrders(phone)
         
       } catch (error) {
@@ -8193,12 +8344,18 @@
           allOrders = snap.docs.map(doc => ({ id: doc.id, data: doc.data() }))
         }
         
-        // Filter by phone (since Firestore can't query nested fields efficiently)
+        // ✅ FIXED: Use PhoneUtils for proper phone matching (prevents duplicates)
+        const normalizedTargetPhone = window.PhoneUtils 
+          ? window.PhoneUtils.normalizePhone(phone)
+          : phone.replace(/[\s\-\(\)\+]/g, '')
+        
         const customerOrders = allOrders.filter(({ data: order }) => {
-          // Support both nested and flat structures
-          const orderPhone = (order.customer?.phone || order.customerPhone || order.phone || '').replace(/[\s\-\(\)\+]/g, '')
-          const normalizedPhone = phone.replace(/[\s\-\(\)\+]/g, '')
-          return orderPhone === normalizedPhone || orderPhone === normalizedPhone.replace(/^380/, '') || '380' + orderPhone === normalizedPhone
+          const orderPhone = order.customer?.phone || order.customerPhone || order.phone || ''
+          const normalizedOrderPhone = window.PhoneUtils 
+            ? window.PhoneUtils.normalizePhone(orderPhone)
+            : orderPhone.replace(/[\s\-\(\)\+]/g, '')
+          
+          return normalizedOrderPhone === normalizedTargetPhone
         })
         
         // Update header with count
