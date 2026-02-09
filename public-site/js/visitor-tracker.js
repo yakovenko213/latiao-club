@@ -26,14 +26,47 @@ function detectDeviceType() {
   return 'desktop';
 }
 
+// ============================================
+// CLOUDFLARE WORKER URL - Update after deployment
+// Deploy the worker from /cloudflare-worker/ directory
+// ============================================
+const CLOUDFLARE_GEO_WORKER_URL = 'https://latiao-geo-api.latiao.workers.dev';
+
 /**
- * Fetch location data from IP Geolocation API
- * Uses ip-api.com (more stable for Ukraine)
+ * Fetch location data using Cloudflare Worker (primary)
+ * Falls back to ip-api.com if worker is unavailable
  * @returns {Promise<Object>} Location data with city, regionName
  */
 async function fetchLocationData() {
-  let geoData = { city: 'Київ (Default)', regionName: 'Київська обл.' };
+  const defaults = { city: 'Unknown', regionName: 'Unknown' };
   
+  // 1. Try Cloudflare Worker first (most accurate, using CF headers)
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    
+    const response = await fetch(CLOUDFLARE_GEO_WORKER_URL, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.city && data.city !== 'Unknown') {
+        console.log('✅ Cloudflare Geo success:', data);
+        return { 
+          city: data.city, 
+          regionName: normalizeUkrainianRegion(data.region || data.regionCode) 
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('⚠️ Cloudflare Worker unavailable, trying fallback:', err.message);
+  }
+  
+  // 2. Fallback to ip-api.com (free tier, HTTP only)
   try {
     const response = await fetch('http://ip-api.com/json/?fields=status,regionName,city', {
       method: 'GET',
@@ -43,19 +76,63 @@ async function fetchLocationData() {
     const data = await response.json();
     
     if (data.status === 'success') {
-      geoData = { 
-        city: data.city || 'Київ (Default)', 
-        regionName: data.regionName || 'Київська обл.' 
+      console.log('✅ ip-api.com fallback success:', data);
+      return { 
+        city: data.city || defaults.city, 
+        regionName: normalizeUkrainianRegion(data.regionName) || defaults.regionName 
       };
-      console.log('✅ Geo-IP success:', geoData);
-    } else {
-      console.warn('⚠️ Geo-IP status not success, using defaults');
     }
   } catch (err) {
-    console.warn('⚠️ Geo API blocked or failed, using defaults:', err);
+    console.warn('⚠️ ip-api.com fallback failed:', err.message);
   }
   
-  return geoData;
+  // 3. Return defaults if all methods fail
+  console.warn('⚠️ All geo methods failed, using defaults');
+  return defaults;
+}
+
+/**
+ * Normalize Ukrainian region names to consistent format
+ * Converts English names to Ukrainian with "область" suffix
+ * @param {string} region - Region name from API
+ * @returns {string} Normalized Ukrainian region name
+ */
+function normalizeUkrainianRegion(region) {
+  if (!region || region === 'Unknown') return 'Unknown';
+  
+  // Map of English region names to Ukrainian
+  const regionMap = {
+    'Kyiv City': 'м. Київ',
+    'Kyiv Oblast': 'Київська область',
+    'Lviv Oblast': 'Львівська область',
+    'Odessa Oblast': 'Одеська область',
+    'Kharkiv Oblast': 'Харківська область',
+    'Dnipropetrovsk Oblast': 'Дніпропетровська область',
+    'Donetsk Oblast': 'Донецька область',
+    'Zaporizhia Oblast': 'Запорізька область',
+    'Poltava Oblast': 'Полтавська область',
+    'Vinnytsia Oblast': 'Вінницька область',
+    'Zhytomyr Oblast': 'Житомирська область',
+    'Cherkasy Oblast': 'Черкаська область',
+    'Chernihiv Oblast': 'Чернігівська область',
+    'Chernivtsi Oblast': 'Чернівецька область',
+    'Volyn Oblast': 'Волинська область',
+    'Rivne Oblast': 'Рівненська область',
+    'Khmelnytskyi Oblast': 'Хмельницька область',
+    'Ternopil Oblast': 'Тернопільська область',
+    'Ivano-Frankivsk Oblast': 'Івано-Франківська область',
+    'Zakarpattia Oblast': 'Закарпатська область',
+    'Sumy Oblast': 'Сумська область',
+    'Kirovohrad Oblast': 'Кіровоградська область',
+    'Mykolaiv Oblast': 'Миколаївська область',
+    'Kherson Oblast': 'Херсонська область',
+    'Luhansk Oblast': 'Луганська область',
+    'Crimea': 'Автономна Республіка Крим',
+    'Sevastopol': 'м. Севастополь'
+  };
+  
+  // Return mapped value or original if already in Ukrainian
+  return regionMap[region] || region;
 }
 
 /**

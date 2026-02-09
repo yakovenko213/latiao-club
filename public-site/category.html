@@ -508,6 +508,9 @@
     // Import View Tracker for analytics
     import './js/view-tracker.js'
 
+    // 🎯 AI-Powered Personalized Recommendations (category tracking)
+    import { trackProductView } from './js/personalized-recommendations.js'
+
     // ============================================
     // GLOBAL UI HELPERS
     // ============================================
@@ -568,6 +571,13 @@
         document.getElementById('loading-state').style.display = 'none'
         document.getElementById('products-grid').innerHTML = '<div class="col-span-full text-center py-10 text-gray-500">❌ Категорію не вказано в URL</div>'
         return
+      }
+
+      // 🎯 Track category view for personalization (time spent tracking)
+      try {
+        trackProductView(null, categorySlug, null);
+      } catch (e) {
+        console.log('ℹ️ Category tracking skipped');
       }
 
       // Cancel any ongoing requests from previous category

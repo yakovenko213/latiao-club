@@ -682,10 +682,36 @@
         color: #f3f4f6 !important;
       }
       
-      /* Recommended product cards */
+      /* Recommended product cards (Premium Design) */
       html.dark #recommended-products > div {
         background-color: #1f2937 !important;
-        border-color: #374151 !important;
+        border: none !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+      }
+      
+      html.dark #recommended-products > div:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+      }
+      
+      /* Card image area in dark mode */
+      html.dark #recommended-products .bg-gray-50 {
+        background-color: #111827 !important;
+      }
+      
+      /* Card content text */
+      html.dark #recommended-products .text-gray-800 {
+        color: #f3f4f6 !important;
+      }
+      
+      /* Quick add button in dark mode */
+      html.dark #recommended-products button.bg-white {
+        background-color: #374151 !important;
+        color: #f3f4f6 !important;
+      }
+      
+      html.dark #recommended-products button.bg-white:hover {
+        background-color: #f97316 !important;
+        color: white !important;
       }
       
       /* Reviews section on product page */

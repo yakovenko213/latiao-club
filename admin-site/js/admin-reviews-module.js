@@ -4101,6 +4101,26 @@ window.handleGenerateAIReply = async function(reviewId) {
     createdAt: review.createdAt?.toDate?.() || new Date()
   }
   
+  // Try to fetch customer city from order if available
+  if (review.orderId) {
+    try {
+      const orderDoc = await getDoc(doc(db, 'orders', review.orderId))
+      if (orderDoc.exists()) {
+        const orderData = orderDoc.data()
+        // Check various possible city field names
+        const customerCity = orderData.city || orderData.customerCity || 
+          orderData.deliveryAddress?.city || orderData.shippingAddress?.city || 
+          orderData.billing?.city || 'український'
+        reviewContext.customerCity = customerCity
+      }
+    } catch (error) {
+      console.log('Could not fetch customer city from order:', error)
+      reviewContext.customerCity = 'український'
+    }
+  } else {
+    reviewContext.customerCity = 'український'
+  }
+  
   // Fetch product names if available
   if (review.products && review.products.length > 0) {
     const productNames = review.products
@@ -4307,6 +4327,26 @@ async function generateSingleAIReplyForBulk(review) {
       createdAt: review.createdAt?.toDate?.() || new Date()
     }
     
+    // Try to fetch customer city from order if available
+    if (review.orderId) {
+      try {
+        const orderDoc = await getDoc(doc(db, 'orders', review.orderId))
+        if (orderDoc.exists()) {
+          const orderData = orderDoc.data()
+          // Check various possible city field names
+          const customerCity = orderData.city || orderData.customerCity || 
+            orderData.deliveryAddress?.city || orderData.shippingAddress?.city || 
+            orderData.billing?.city || 'український'
+          reviewContext.customerCity = customerCity
+        }
+      } catch (error) {
+        console.log('Could not fetch customer city from order:', error)
+        reviewContext.customerCity = 'український'
+      }
+    } else {
+      reviewContext.customerCity = 'український'
+    }
+    
     // Fetch product names if available
     if (review.products && review.products.length > 0) {
       const productNames = review.products
@@ -4359,62 +4399,122 @@ async function generateSingleAIReplyForBulk(review) {
 }
 
 /**
- * Placeholder function for AI reply generation
- * Replace this with actual API call to OpenAI, Gemini, or other AI service
+ * Generate AI reply for customer review using Gemini API with detailed Ukrainian persona
  * 
  * @param {Object} context - Review context containing text, rating, customer info
  * @returns {Promise<string>} Generated reply text
  */
 async function generateAIReplyPlaceholder(context) {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1500))
-  
-  // ============================================
-  // TODO: Replace with actual AI API call
-  // Example with OpenAI:
-  // 
-  // const response = await fetch('/api/generate-reply', {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify({
-  //     prompt: `Generate a professional, friendly store reply for this customer review:
-  //     Rating: ${context.rating}/5
-  //     Review: "${context.reviewText}"
-  //     Customer: ${context.customerName}
-  //     
-  //     The reply should:
-  //     - Be in Ukrainian language
-  //     - Thank the customer
-  //     - Address their feedback specifically
-  //     - Be warm but professional
-  //     - Be 2-3 sentences max`,
-  //   })
-  // })
-  // const data = await response.json()
-  // return data.reply
-  // ============================================
-  
-  // Generate contextual placeholder response based on rating and product context
-  const { rating, customerName, reviewText, productNames } = context
-  const name = customerName.split(' ')[0] // Use first name only
-  
-  // Add product mention if available
-  const productMention = productNames ? ` Раді, що "${productNames}" вам сподобалось!` : ''
-  
-  if (rating >= 4) {
-    // Positive review response
-    const positiveResponses = [
-      `Дякуємо за чудовий відгук, ${name}! 🌶️${productMention} Завжди чекаємо вас знову!`,
-      `${name}, щиро вдячні за теплі слова!${productMention} Ваша підтримка надихає нас ставати ще кращими. До нових смачних зустрічей! 🔥`,
-      `Дякуємо за високу оцінку, ${name}!${productMention} Ми завжди намагаємося радувати наших клієнтів найкращою якістю. Гарного вам дня! ✨`,
-    ]
-    return positiveResponses[Math.floor(Math.random() * positiveResponses.length)]
-  } else if (rating >= 3) {
-    // Neutral review response
-    return `Дякуємо за відгук, ${name}! Ми цінуємо вашу думку та постійно працюємо над покращенням${productNames ? ` нашого "${productNames}"` : ''}. Якщо маєте побажання — будемо раді почути! 💬`
-  } else {
-    // Negative review response
-    return `${name}, дякуємо за чесний відгук${productNames ? ` щодо "${productNames}"` : ''}. Нам дуже шкода, що ваш досвід не відповідав очікуванням. Ми обов'язково врахуємо ваші зауваження. Будь ласка, зв'яжіться з нами для вирішення питання. 🙏`
+  try {
+    // Extract context data
+    const { reviewText, customerName, productNames, rating } = context
+    const customerCity = context.customerCity || 'Український'
+    const productName = productNames || 'товари'
+    
+    // New detailed Ukrainian persona system prompt
+    const systemPrompt = `Ти - досвідчений представник служби підтримки клієнтів інтернет-магазину смачних закусок і соусів із Дніпра. Твоя роль - створювати щирі, людські відповіді на відгуки покупців, які допомагають будувати довірливі відносини та збільшувати лояльність.
+
+ТВОЯ ОСОБИСТІСТЬ:
+• Досвідчення: 8+ років у сфері обслуговування клієнтів, глибоко розумієш психологію споживачів
+• Стиль: Теплий, щирий, з легким дружелюбним гумором, але завжди професійний
+• Підхід: Особистий контакт, звертання по імені, адаптація тону під настрій клієнта
+• Експертиза: Відмінно знаєш асортимент, можеш дати корисні поради щодо використання продуктів
+
+ПРИНЦИПИ СПІЛКУВАННЯ:
+• Завжди починай із щирої подяки за час і зусилля клієнта
+• Звертайся до клієнта по імені (використовуй тільки ім'я, без прізвища)
+• Адаптуй тон відповідно до настрою відгуку: радісний для позитивних, співчутливий для негативних
+• Включай конкретні деталі з відгуку, показуючи, що ти дійсно його прочитав
+• Завершуй особистим побажанням або запрошенням до подальшої взаємодії
+
+АЛГОРИТМ ВІДПОВІДІ:
+1. Особиста подяка з ім'ям клієнта
+2. Відзеркалення конкретних деталей з відгуку
+3. Емоційний відгук відповідно до настрою
+4. Корисна інформація (поради, рекомендації, пояснення)
+5. Особисте запрошення до подальшого діалогу
+
+ОБМЕЖЕННЯ:
+• Відповідь має бути 2-4 речення (не більше 280 символів)
+• Уникай банальних фраз та шаблонних відповідей
+• Не використовуй звернення "пан/пані" - тільки ім'я
+• Емодзі використовуй помірно (1-2 максимум)
+• Відповідь має відчуватися як від живої людини, а не робота`;
+
+    // User prompt with context variables
+    const userPrompt = `Напиши відповідь на цей відгук клієнта:
+
+Ім'я клієнта: ${customerName}
+Місто: ${customerCity}  
+Товар: ${productName}
+Оцінка: ${rating}/5
+Текст відгуку: "${reviewText}"
+
+Створи персоналізовану відповідь, яка буде відчуватися як від справжньої людини, враховуючи всі деталі відгуку та настрій клієнта.`;
+
+    // Call Gemini API using global constants
+    const GEMINI_API_KEY = window.GEMINI_API_KEY || 'AIzaSyA11Wu1XUxEXXeCz3t_NfOr0ygoEblvbhY'
+    const GEMINI_API_URL = window.GEMINI_API_URL || 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
+    
+    if (GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY_HERE') {
+      throw new Error('API ключ не налаштовано')
+    }
+
+    const requestBody = {
+      contents: [{
+        parts: [{
+          text: `${systemPrompt}\n\n${userPrompt}`
+        }]
+      }],
+      generationConfig: {
+        temperature: 0.8,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 300
+      }
+    }
+
+    console.log('🤖 Calling Gemini API for review reply generation...')
+    
+    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.error?.message || `API Error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    
+    // Extract text from Gemini response
+    const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text
+    
+    if (!generatedText) {
+      throw new Error('No text generated by AI')
+    }
+
+    console.log('✅ AI reply generated successfully')
+    return generatedText.trim()
+    
+  } catch (error) {
+    console.error('❌ Error generating AI reply:', error)
+    
+    // Fallback to simple response if AI fails
+    const { customerName, rating, productNames } = context
+    const name = customerName ? customerName.split(' ')[0] : 'друже'
+    
+    if (rating >= 4) {
+      return `Дякую за відгук, ${name}! Радіємо, що вам сподобалось${productNames ? ` "${productNames}"` : ''}! 😊`
+    } else if (rating >= 3) {
+      return `Дякуємо за відгук, ${name}! Плануємо покращення і будемо раді вашим порадам. 💙`
+    } else {
+      return `${name}, дякуємо за чесність! Ми виправимо недоліки - зв'яжіться з нами. 🙏`
+    }
   }
 }
 

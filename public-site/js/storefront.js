@@ -13,6 +13,9 @@ import {
     serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
+// 🎯 AI-Powered Personalized Recommendations
+import { trackCartAdd } from './personalized-recommendations.js';
+
 // Track when page was loaded for time_to_cart analytics
 const pageLoadTime = Date.now();
 
@@ -99,7 +102,7 @@ async function measurePerformance(operation, fn) {
 // ============================================
 // ADD TO CART FROM STOREFRONT (with analytics)
 // ============================================
-window.addToCartFromStorefront = function (productId, name, price, image, source, sku) {
+window.addToCartFromStorefront = function (productId, name, price, image, source, sku, category = null) {
     if (window.addToCart) {
         window.addToCart({
             id: productId,
@@ -109,10 +112,30 @@ window.addToCartFromStorefront = function (productId, name, price, image, source
             sku: sku || '' // Save SKU
         }, source);
 
+        // 🎯 Track cart interaction for personalization
+        try {
+          const productCategory = category || getCurrentCategoryFromUrl() || 'latiao';
+          trackCartAdd(productId, price, productCategory);
+        } catch (e) {
+          console.log('ℹ️ Personalization tracking skipped');
+        }
+
         // Track time to cart (fire-and-forget, non-blocking)
         trackTimeToCartFromStorefront(productId, name, source);
     }
 };
+
+/**
+ * Get current category from URL
+ */
+function getCurrentCategoryFromUrl() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('category') || params.get('cat') || null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Track time from page load to add-to-cart action

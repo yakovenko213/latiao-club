@@ -284,68 +284,89 @@
         });
         
         displayedPopups.add(popup.id);
+        
+        // Track view in Firestore
+        trackPopupEvent(popup.id, 'view');
 
         // Create modal HTML with premium design
         const modal = document.createElement('div');
         modal.id = `popup-modal-${popup.id}`;
-        modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4';
+        modal.className = 'fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
         modal.style.animation = 'fadeIn 0.3s ease-out';
+        
+        // Close on backdrop click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                window.closePopup(popup.id, true);
+            }
+        });
 
         const hasImage = popup.imageUrl && popup.imageUrl.trim() !== '';
         const hasButton = popup.buttonText && popup.buttonText.trim() !== '';
 
         modal.innerHTML = `
-            <div class="relative bg-white rounded-2xl w-full max-w-md mx-4 shadow-2xl overflow-hidden transform transition-all" style="animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)">
+            <div class="relative flex flex-col bg-white rounded-2xl w-full max-w-md max-w-[90vw] max-h-[85vh] shadow-2xl overflow-hidden transform transition-all" 
+                 style="animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)">
                 
                 <!-- Close Button - Top Right Corner -->
-                <button onclick="closePopup('${popup.id}')" class="absolute top-4 right-4 z-10 p-2 rounded-full hover:bg-gray-100 transition-all duration-200 group">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 group-hover:text-gray-600 transition-colors">
+                <button onclick="closePopup('${popup.id}', true)" 
+                        class="absolute top-3 right-3 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-white/90 hover:bg-gray-100 shadow-lg transition-all duration-200 group"
+                        aria-label="Закрити">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-500 group-hover:text-gray-700 transition-colors">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                 </button>
 
                 ${hasImage ? `
-                    <!-- Hero Image Banner -->
-                    <div class="relative w-full h-56 bg-gradient-to-br from-orange-50 to-orange-100 overflow-hidden">
+                    <!-- Hero Image Banner (Fixed Height) -->
+                    <div class="relative w-full h-40 sm:h-48 md:h-56 flex-shrink-0 bg-gradient-to-br from-orange-50 to-orange-100 overflow-hidden">
                         <img src="${popup.imageUrl}" 
                              alt="${escapeHtml(popup.title)}" 
                              class="w-full h-full object-cover"
-                             loading="lazy">
+                             loading="lazy"
+                             onerror="this.style.display='none'">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                     </div>
                 ` : ''}
                 
-                <!-- Content Section -->
-                <div class="p-8 text-center">
-                    
-                    <!-- Title -->
-                    <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4 leading-tight">
-                        ${escapeHtml(popup.title)}
-                    </h2>
-                    
-                    <!-- Description -->
-                    <p class="text-gray-600 text-base leading-relaxed mb-6 whitespace-pre-wrap max-w-sm mx-auto">
-                        ${escapeHtml(popup.content)}
-                    </p>
-                    
-                    <!-- CTA Buttons -->
-                    ${hasButton ? `
-                        <div class="flex flex-col gap-3">
-                            ${popup.buttonLink ? `
-                                <a href="${popup.buttonLink}" 
-                                   class="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-orange-600 hover:to-red-600 transform hover:scale-105 hover:shadow-xl transition-all duration-300 inline-block text-center">
-                                    ${escapeHtml(popup.buttonText)}
-                                </a>
-                            ` : `
-                                <button onclick="closePopup('${popup.id}')" 
-                                        class="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-orange-600 hover:to-red-600 transform hover:scale-105 hover:shadow-xl transition-all duration-300">
-                                    ${escapeHtml(popup.buttonText)}
-                                </button>
-                            `}
-                        </div>
-                    ` : ''}
+                <!-- Content Section (Scrollable) -->
+                <div class="flex-1 overflow-y-auto p-6 md:p-8">
+                    <div class="space-y-4 text-center">
+                        
+                        <!-- Title -->
+                        <h2 class="text-xl md:text-2xl font-bold text-gray-900 leading-tight">
+                            ${escapeHtml(popup.title)}
+                        </h2>
+                        
+                        <!-- Description -->
+                        <p class="text-sm md:text-base text-gray-600 leading-relaxed whitespace-pre-wrap">
+                            ${escapeHtml(popup.content)}
+                        </p>
+                    </div>
                 </div>
+                
+                <!-- Footer with CTA Button (Fixed at bottom) -->
+                ${hasButton ? `
+                    <div class="flex-shrink-0 p-6 pt-0 md:p-8 md:pt-0">
+                        ${popup.buttonLink ? `
+                            <a href="${popup.buttonLink}" 
+                               onclick="trackPopupClick('${popup.id}')"
+                               class="block w-full bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-4 rounded-xl font-semibold text-base md:text-lg text-center
+                                      hover:from-orange-600 hover:to-red-600 hover:-translate-y-0.5 hover:shadow-xl
+                                      active:translate-y-0 transition-all duration-200">
+                                ${escapeHtml(popup.buttonText)}
+                            </a>
+                        ` : `
+                            <button onclick="closePopup('${popup.id}', false, true)" 
+                                    class="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-4 rounded-xl font-semibold text-base md:text-lg
+                                           hover:from-orange-600 hover:to-red-600 hover:-translate-y-0.5 hover:shadow-xl
+                                           active:translate-y-0 transition-all duration-200">
+                                ${escapeHtml(popup.buttonText)}
+                            </button>
+                        `}
+                    </div>
+                ` : ''}
             </div>
         `;
 
@@ -361,9 +382,17 @@
     }
 
     // Close popup modal
-    window.closePopup = function(popupId) {
+    window.closePopup = function(popupId, trackClose = false, trackClick = false) {
         const modal = document.getElementById(`popup-modal-${popupId}`);
         if (modal) {
+            // Track close or click event
+            if (trackClose) {
+                trackPopupEvent(popupId, 'close');
+            }
+            if (trackClick) {
+                trackPopupEvent(popupId, 'click');
+            }
+            
             // Fade out animation
             modal.style.animation = 'fadeOut 0.2s ease-out';
             setTimeout(() => {
@@ -375,6 +404,46 @@
             }, 200);
         }
     };
+    
+    // Track popup click (for links)
+    window.trackPopupClick = function(popupId) {
+        trackPopupEvent(popupId, 'click');
+    };
+    
+    // Track popup events to Firestore
+    async function trackPopupEvent(popupId, eventType) {
+        try {
+            if (!window.firebaseInit) {
+                console.warn('⚠️ Firebase not available for popup tracking');
+                return;
+            }
+            
+            // Prevent duplicate view tracking in same session
+            if (eventType === 'view') {
+                const viewKey = `popup_view_tracked_${popupId}`;
+                if (sessionStorage.getItem(viewKey)) {
+                    console.log(`⏭️ View already tracked for popup ${popupId} in this session`);
+                    return;
+                }
+                sessionStorage.setItem(viewKey, 'true');
+            }
+            
+            const { db, doc, updateDoc, increment } = window.firebaseInit;
+            
+            const field = eventType === 'view' ? 'viewsCount' 
+                        : eventType === 'click' ? 'clicksCount' 
+                        : 'closeCount';
+            
+            await updateDoc(doc(db, 'popups', popupId), {
+                [field]: increment(1)
+            });
+            
+            console.log(`📊 Tracked popup ${eventType}: ${popupId}`);
+        } catch (error) {
+            // Silent fail - don't break popup functionality for tracking errors
+            console.warn(`⚠️ Error tracking popup ${eventType} (popup still works):`, error.message);
+        }
+    }
 
     // Mark popup as shown in storage
     function markPopupAsShown(popup) {

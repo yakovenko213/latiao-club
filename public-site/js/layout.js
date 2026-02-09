@@ -1079,6 +1079,16 @@ window.addToCart = async function (product, source = null) {
   if (source && window.trackAddToCart) {
     window.trackAddToCart(product, source);
   }
+
+  // 🎯 Track for personalization (non-blocking)
+  try {
+    if (window.LatiaoRecommendations && window.LatiaoRecommendations.trackCartAdd) {
+      const productCategory = product.category || product.categories?.[0] || 'latiao';
+      window.LatiaoRecommendations.trackCartAdd(product.id, product.price, productCategory);
+    }
+  } catch (e) {
+    // Silent fail - personalization is non-critical
+  }
 };
 
 // Update quantity (LEGACY - kept for backward compatibility)
