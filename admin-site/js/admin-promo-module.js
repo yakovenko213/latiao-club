@@ -103,7 +103,7 @@ function renderPromoCodes(promos) {
   if (!promos || promos.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+        <td colspan="8" class="px-6 py-12 text-center text-gray-500">
           <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
           <p>Поки що немає промокодів</p>
         </td>
@@ -125,7 +125,7 @@ function renderPromoCodes(promos) {
   if (validPromos.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+        <td colspan="8" class="px-6 py-12 text-center text-gray-500">
           <i data-lucide="alert-triangle" class="w-12 h-12 mx-auto mb-3 text-orange-300"></i>
           <p class="text-orange-600 font-semibold">Знайдено невалідні дані промокодів</p>
           <p class="text-sm text-gray-500 mt-1">Будь ласка, перевірте документи в Firestore</p>
@@ -160,6 +160,12 @@ function renderPromoCodes(promos) {
     const createdDate = promo.createdAt?.toDate
       ? promo.createdAt.toDate().toLocaleDateString('uk-UA', { day: '2-digit', month: 'short', year: 'numeric' })
       : '—';
+    
+    // Internal note display
+    const internalNote = promo.internalNote || '';
+    const noteDisplay = internalNote 
+      ? `<span class="text-xs text-gray-600 break-words whitespace-normal leading-relaxed">${internalNote}</span>`
+      : '<span class="text-xs text-gray-400 italic">Немає примітки</span>';
 
     return `
       <tr class="hover:bg-gray-50 transition">
@@ -189,6 +195,9 @@ function renderPromoCodes(promos) {
         </td>
         <td class="px-6 py-4 text-center text-sm text-gray-600">
           ${createdDate}
+        </td>
+        <td class="px-6 py-4 align-top min-w-[200px] max-w-[300px]">
+          ${noteDisplay}
         </td>
         <td class="px-6 py-4">
           <div class="flex items-center justify-center gap-2">
@@ -295,6 +304,7 @@ window.editPromoCode = async (promoId) => {
   document.getElementById('limit-per-user').value = promoData.limits?.perUser || 1;
   document.getElementById('min-order-amount').value = promoData.minOrderAmount || 0;
   document.getElementById('promo-active').checked = promoData.isActive ?? true;
+  document.getElementById('promo-internal-note').value = promoData.internalNote || '';
 
   document.getElementById('promo-code').disabled = true;
   document.getElementById('promo-code').classList.add('bg-gray-100', 'cursor-not-allowed');
@@ -705,6 +715,7 @@ function initializeEventListeners() {
       const limitPerUser = parseInt(document.getElementById('limit-per-user').value) || 1;
       const minOrderAmount = parseInt(document.getElementById('min-order-amount').value) || 0;
       const isActive = document.getElementById('promo-active').checked;
+      const internalNote = document.getElementById('promo-internal-note').value.trim();
 
       // Validation
       if (!code) {
@@ -736,7 +747,8 @@ function initializeEventListeners() {
               total: limitTotal,
               perUser: limitPerUser
             },
-            isActive: isActive
+            isActive: isActive,
+            internalNote: internalNote
           });
 
           alert(`✅ Промокод "${code}" успішно оновлено!`);
@@ -766,6 +778,7 @@ function initializeEventListeners() {
             usedCount: 0
           },
           isActive: isActive,
+          internalNote: internalNote,
           createdAt: serverTimestamp()
         });
 
