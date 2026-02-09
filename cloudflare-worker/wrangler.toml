@@ -1,0 +1,14 @@
+# Cloudflare Worker Configuration
+# Deploy with: npx wrangler deploy
+
+name = "latiao-geo-api"
+main = "geo-worker.js"
+compatibility_date = "2024-01-01"
+
+# Production route (uncomment and configure after deployment)
+# routes = [
+#   { pattern = "geo.latiao.store/*", zone_name = "latiao.store" }
+# ]
+
+# Or use workers.dev subdomain (automatically enabled)
+# Your worker will be available at: latiao-geo-api.<your-subdomain>.workers.dev
