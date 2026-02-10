@@ -22,7 +22,8 @@ import {
   where, 
   addDoc, 
   serverTimestamp,
-  orderBy
+  orderBy,
+  setDoc
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 // ============================================
@@ -44,10 +45,93 @@ console.log('🛍️ Upsells Module: Initialized');
 // ============================================
 
 /**
+ * Load display settings from Firestore
+ */
+async function loadDisplaySettings() {
+  try {
+    const settingsDoc = await getDoc(doc(db, 'settings', 'upsellDisplayConfig'));
+    
+    if (settingsDoc.exists()) {
+      const settings = settingsDoc.data();
+      
+      // Update toggle switches
+      document.getElementById('display-product-page').checked = settings.showOnProductPage ?? true;
+      document.getElementById('display-cart').checked = settings.showOnCart ?? false;
+      document.getElementById('display-checkout').checked = settings.showOnCheckout ?? false;
+      document.getElementById('display-thank-you').checked = settings.showOnThankYou ?? false;
+      
+      console.log('✅ Display settings loaded:', settings);
+    } else {
+      // Initialize with default settings
+      const defaultSettings = {
+        showOnProductPage: true,
+        showOnCart: false,
+        showOnCheckout: false,
+        showOnThankYou: false
+      };
+      
+      await setDoc(doc(db, 'settings', 'upsellDisplayConfig'), defaultSettings);
+      console.log('✅ Default display settings created');
+    }
+  } catch (error) {
+    console.error('Error loading display settings:', error);
+  }
+}
+
+/**
+ * Save display settings to Firestore
+ */
+async function saveDisplaySettings() {
+  try {
+    const settings = {
+      showOnProductPage: document.getElementById('display-product-page').checked,
+      showOnCart: document.getElementById('display-cart').checked,
+      showOnCheckout: document.getElementById('display-checkout').checked,
+      showOnThankYou: document.getElementById('display-thank-you').checked
+    };
+    
+    const settingsRef = doc(db, 'settings', 'upsellDisplayConfig');
+    await updateDoc(settingsRef, settings, { merge: true });
+    
+    console.log('✅ Display settings saved:', settings);
+    
+    // Show success toast
+    showToast('✅ Налаштування збережено');
+  } catch (error) {
+    console.error('Error saving display settings:', error);
+    showToast('❌ Помилка збереження');
+  }
+}
+
+/**
+ * Show toast notification
+ */
+function showToast(message) {
+  // Create toast element if it doesn't exist
+  let toast = document.getElementById('upsell-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'upsell-toast';
+    toast.className = 'fixed bottom-4 right-4 bg-gray-900 text-white px-6 py-3 rounded-lg shadow-xl z-50 transform translate-y-20 opacity-0 transition-all duration-300';
+    document.body.appendChild(toast);
+  }
+  
+  toast.textContent = message;
+  toast.classList.remove('translate-y-20', 'opacity-0');
+  
+  setTimeout(() => {
+    toast.classList.add('translate-y-20', 'opacity-0');
+  }, 2000);
+}
+
+/**
  * Load all upsell rules
  */
 window.loadUpsellRules = async () => {
   try {
+    // Load display settings first
+    await loadDisplaySettings();
+    
     const upsellsRef = collection(db, 'upsells');
     const q = query(upsellsRef, orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(q);
@@ -678,6 +762,23 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('trigger-product-results').classList.add('hidden');
     }
     if (!e.target.closest('#suggested-products-search') && !e.target.closest('#suggested-products-results')) {
+  
+  // Display settings toggle listeners
+  const displayToggles = [
+    'display-product-page',
+    'display-cart',
+    'display-checkout',
+    'display-thank-you'
+  ];
+  
+  displayToggles.forEach(toggleId => {
+    const toggle = document.getElementById(toggleId);
+    if (toggle) {
+      toggle.addEventListener('change', () => {
+        saveDisplaySettings();
+      });
+    }
+  });
       document.getElementById('suggested-products-results').classList.add('hidden');
     }
   });

@@ -3933,6 +3933,201 @@
         </div>
       </div>
 
+      <!-- ============================================ -->
+      <!-- UPSELLS VIEW - Допродажі -->
+      <!-- ============================================ -->
+      <div id="view-upsells" class="view p-8">
+        <div class="max-w-7xl mx-auto">
+          
+          <!-- Header Card -->
+          <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div class="flex items-center gap-4">
+                <div class="w-14 h-14 bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-200">
+                  <i data-lucide="trending-up" class="w-7 h-7 text-white"></i>
+                </div>
+                <div>
+                  <h2 class="text-2xl font-bold text-gray-900">Допродажі (Upsells)</h2>
+                  <p class="text-gray-500 text-sm mt-0.5">Збільшуйте середній чек за допомогою рекомендацій</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Statistics Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-xl border border-gray-200 p-6">
+              <div class="flex items-center justify-between mb-2">
+                <i data-lucide="layers" class="w-5 h-5 text-blue-600"></i>
+                <span class="text-xs text-gray-500">Всього</span>
+              </div>
+              <p id="upsells-stat-total" class="text-3xl font-bold text-gray-900">0</p>
+              <p class="text-xs text-gray-600 mt-1">Правил допродажу</p>
+            </div>
+            
+            <div class="bg-white rounded-xl border border-gray-200 p-6">
+              <div class="flex items-center justify-between mb-2">
+                <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
+                <span class="text-xs text-gray-500">Активно</span>
+              </div>
+              <p id="upsells-stat-active" class="text-3xl font-bold text-green-600">0</p>
+              <p class="text-xs text-gray-600 mt-1">Активних правил</p>
+            </div>
+            
+            <div class="bg-white rounded-xl border border-gray-200 p-6">
+              <div class="flex items-center justify-between mb-2">
+                <i data-lucide="eye" class="w-5 h-5 text-purple-600"></i>
+                <span class="text-xs text-gray-500">Перегляди</span>
+              </div>
+              <p id="upsells-stat-views" class="text-3xl font-bold text-purple-600">0</p>
+              <p class="text-xs text-gray-600 mt-1">За весь час</p>
+            </div>
+            
+            <div class="bg-white rounded-xl border border-gray-200 p-6">
+              <div class="flex items-center justify-between mb-2">
+                <i data-lucide="trending-up" class="w-5 h-5 text-orange-600"></i>
+                <span class="text-xs text-gray-500">Конверсія</span>
+              </div>
+              <p id="upsells-stat-conversion" class="text-3xl font-bold text-orange-600">0%</p>
+              <p class="text-xs text-gray-600 mt-1">Ефективність</p>
+            </div>
+          </div>
+
+          <!-- Display Settings Card -->
+          <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                <i data-lucide="settings" class="w-5 h-5 text-emerald-600"></i>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-gray-900">Налаштування відображення</h3>
+                <p class="text-sm text-gray-500">Керуйте тим, де показувати блок допродажу</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <!-- Product Page Toggle -->
+              <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border-2 border-blue-200">
+                <label class="flex items-start justify-between cursor-pointer">
+                  <div class="flex items-start gap-3">
+                    <div class="p-2 bg-blue-500 rounded-lg mt-0.5">
+                      <i data-lucide="package" class="w-4 h-4 text-white"></i>
+                    </div>
+                    <div>
+                      <div class="font-bold text-gray-900 text-sm">Сторінка товару</div>
+                      <div class="text-xs text-gray-600 mt-1">Показувати під описом</div>
+                    </div>
+                  </div>
+                  <div class="relative ml-2">
+                    <input type="checkbox" id="display-product-page" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Cart Toggle -->
+              <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border-2 border-purple-200">
+                <label class="flex items-start justify-between cursor-pointer">
+                  <div class="flex items-start gap-3">
+                    <div class="p-2 bg-purple-500 rounded-lg mt-0.5">
+                      <i data-lucide="shopping-cart" class="w-4 h-4 text-white"></i>
+                    </div>
+                    <div>
+                      <div class="font-bold text-gray-900 text-sm">Кошик (Cart)</div>
+                      <div class="text-xs text-gray-600 mt-1">Під списком товарів</div>
+                    </div>
+                  </div>
+                  <div class="relative ml-2">
+                    <input type="checkbox" id="display-cart" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Checkout Toggle -->
+              <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4 border-2 border-orange-200">
+                <label class="flex items-start justify-between cursor-pointer">
+                  <div class="flex items-start gap-3">
+                    <div class="p-2 bg-orange-500 rounded-lg mt-0.5">
+                      <i data-lucide="credit-card" class="w-4 h-4 text-white"></i>
+                    </div>
+                    <div>
+                      <div class="font-bold text-gray-900 text-sm">Оформлення (Checkout)</div>
+                      <div class="text-xs text-gray-600 mt-1">Перед кнопкою оформлення</div>                    </div>
+                  </div>
+                  <div class="relative ml-2">
+                    <input type="checkbox" id="display-checkout" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Thank You Page Toggle -->
+              <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border-2 border-green-200">
+                <label class="flex items-start justify-between cursor-pointer">
+                  <div class="flex items-start gap-3">
+                    <div class="p-2 bg-green-500 rounded-lg mt-0.5">
+                      <i data-lucide="check-circle" class="w-4 h-4 text-white"></i>
+                    </div>
+                    <div>
+                      <div class="font-bold text-gray-900 text-sm">Подяка (Thank You)</div>
+                      <div class="text-xs text-gray-600 mt-1">Під підсумком замовлення</div>
+                    </div>
+                  </div>
+                  <div class="relative ml-2">
+                    <input type="checkbox" id="display-thank-you" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-gray-200">
+              <div class="flex items-start gap-2 text-sm text-gray-600">
+                <i data-lucide="info" class="w-4 h-4 mt-0.5 flex-shrink-0"></i>
+                <p>Зміни зберігаються автоматично. Якщо перемикач вимкнено, блок допродажу не буде завантажуватись на цій сторінці (економія продуктивності).</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Upsells Rules Card -->
+          <div class="bg-white rounded-2xl border border-gray-200 shadow-sm">
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 class="text-lg font-bold text-gray-900">Правила допродажу</h3>
+              <button onclick="window.openCreateUpsellModal()" class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition shadow-lg">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Створити правило</span>
+              </button>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Основний товар</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Рекомендації</th>
+                    <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Знижка</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Локації</th>
+                    <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
+                    <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Дії</th>
+                  </tr>
+                </thead>
+                <tbody id="upsells-list" class="divide-y divide-gray-200">
+                  <tr>
+                    <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                      <i data-lucide="shopping-bag" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
+                      <p>Поки що немає правил допродажу</p>
+                      <p class="text-sm mt-1">Створіть перше правило для збільшення середнього чека</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
     </main>
 
   </div>
@@ -4240,6 +4435,189 @@
           Зберегти зміни
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- CREATE/EDIT UPSELL MODAL -->
+  <!-- ============================================ -->
+  <div id="create-upsell-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <!-- Header -->
+      <div class="p-6 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white z-10">
+        <h3 id="upsell-modal-title" class="text-xl font-bold text-gray-900">Створити правило допродажу</h3>
+        <button onclick="window.closeCreateUpsellModal()" class="p-2 hover:bg-gray-100 rounded-full transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="create-upsell-form" class="p-6 space-y-6">
+        <!-- Step 1: Trigger Product -->
+        <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-5 border-2 border-blue-200">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">1</div>
+            <div>
+              <h4 class="font-bold text-gray-900">Виберіть основний товар</h4>
+              <p class="text-sm text-gray-600">При перегляді якого товару показувати допродаж</p>
+            </div>
+          </div>
+
+          <!-- Search Trigger Product -->
+          <div class="relative">
+            <input 
+              type="text" 
+              id="trigger-product-search" 
+              placeholder="🔍 Почніть вводити назву товару..."
+              class="w-full border-2 border-blue-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+            <div id="trigger-product-results" class="hidden absolute z-10 w-full mt-2 bg-white border-2 border-blue-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+              <!-- Search results will appear here -->
+            </div>
+          </div>
+
+          <!-- Selected Trigger Product -->
+          <div id="selected-trigger-product" class="hidden mt-4 p-4 bg-white border-2 border-blue-300 rounded-lg">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                  <i data-lucide="package" class="w-6 h-6"></i>
+                </div>
+                <div>
+                  <div id="selected-trigger-name" class="font-bold text-gray-900"></div>
+                  <div id="selected-trigger-id" class="text-sm text-gray-500"></div>
+                </div>
+              </div>
+              <button type="button" onclick="window.clearTriggerProduct()" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition">
+                <i data-lucide="x" class="w-5 h-5"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Suggested Products -->
+        <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-5 border-2 border-purple-200">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center text-white font-bold">2</div>
+            <div>
+              <h4 class="font-bold text-gray-900">Додайте рекомендовані товари</h4>
+              <p class="text-sm text-gray-600">До 5 товарів, які пропонувати клієнту</p>
+            </div>
+          </div>
+
+          <!-- Search Suggested Products -->
+          <div class="relative mb-4">
+            <input 
+              type="text" 
+              id="suggested-products-search" 
+              placeholder="🔍 Шукайте товари для рекомендацій..."
+              class="w-full border-2 border-purple-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            >
+            <div id="suggested-products-results" class="hidden absolute z-10 w-full mt-2 bg-white border-2 border-purple-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+              <!-- Search results will appear here -->
+            </div>
+          </div>
+
+          <!-- Selected Suggested Products -->
+          <div id="selected-suggested-products" class="space-y-2">
+            <div class="text-sm text-gray-500 italic">Жоден товар поки що не вибрано</div>
+          </div>
+        </div>
+
+        <!-- Step 3: Discount & Locations -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Discount -->
+          <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-5 border-2 border-orange-200">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center text-white font-bold">3</div>
+              <div>
+                <h4 class="font-bold text-gray-900">Знижка</h4>
+                <p class="text-sm text-gray-600">Додаткова знижка на допродаж</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <input 
+                type="number" 
+                id="upsell-discount" 
+                min="0" 
+                max="50" 
+                value="10"
+                class="w-24 border-2 border-orange-300 rounded-lg px-4 py-3 text-center font-bold text-2xl focus:ring-2 focus:ring-orange-500"
+              >
+              <span class="text-3xl font-bold text-orange-600">%</span>
+            </div>
+
+            <div id="discount-preview" class="mt-3 text-sm font-medium text-gray-700">
+              Знижка 10% на товари допродажу
+            </div>
+          </div>
+
+          <!-- Locations -->
+          <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-5 border-2 border-emerald-200">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold">4</div>
+              <div>
+                <h4 class="font-bold text-gray-900">Локації відображення</h4>
+                <p class="text-sm text-gray-600">Де показувати це правило</p>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <label class="flex items-center gap-3 cursor-pointer p-2 hover:bg-white/50 rounded-lg transition">
+                <input type="checkbox" id="location-product-page" class="w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500" checked>
+                <span class="text-sm font-medium text-gray-900">Сторінка товару</span>
+              </label>
+
+              <label class="flex items-center gap-3 cursor-pointer p-2 hover:bg-white/50 rounded-lg transition">
+                <input type="checkbox" id="location-cart" class="w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500">
+                <span class="text-sm font-medium text-gray-900">Кошик</span>
+              </label>
+
+              <label class="flex items-center gap-3 cursor-pointer p-2 hover:bg-white/50 rounded-lg transition">
+                <input type="checkbox" id="location-popup" class="w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500">
+                <span class="text-sm font-medium text-gray-900">Pop-up</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Status -->
+        <div class="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-4 border-2 border-green-200">
+          <label class="flex items-center justify-between cursor-pointer">
+            <div class="flex items-center gap-3">
+              <div class="p-2 bg-green-600 rounded-lg">
+                <i data-lucide="power" class="w-5 h-5 text-white"></i>
+              </div>
+              <div>
+                <div class="font-bold text-gray-900">Активувати правило</div>
+                <div class="text-sm text-gray-600">Правило почне працювати одразу після збереження</div>
+              </div>
+            </div>
+            <div class="relative">
+              <input type="checkbox" id="upsell-active" class="sr-only peer" checked>
+              <div class="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-600"></div>
+            </div>
+          </label>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-3 pt-4 border-t border-gray-200">
+          <button 
+            type="button" 
+            onclick="window.closeCreateUpsellModal()"
+            class="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition"
+          >
+            Скасувати
+          </button>
+          <button 
+            type="submit"
+            class="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-xl shadow-lg transition flex items-center justify-center gap-2"
+          >
+            <i data-lucide="save" class="w-5 h-5"></i>
+            Зберегти правило
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -5861,6 +6239,10 @@
         } else if (target === 'reviews') {
           if (typeof loadReviewsView === 'function') {
             loadReviewsView()
+          }
+        } else if (target === 'upsells') {
+          if (typeof window.loadUpsellRules === 'function') {
+            window.loadUpsellRules()
           }
         } else if (target === 'customers') {
           loadCustomers()

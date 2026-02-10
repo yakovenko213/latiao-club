@@ -8,6 +8,62 @@
  */
 
 /**
+ * Get display settings from Firestore
+ * @returns {Promise<Object>} Display settings object
+ */
+export async function getUpsellDisplaySettings() {
+  try {
+    const { getFirestore, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+    const { getApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+    
+    const app = getApp();
+    const db = getFirestore(app);
+    
+    const settingsDoc = await getDoc(doc(db, 'settings', 'upsellDisplayConfig'));
+    
+    if (settingsDoc.exists()) {
+      return settingsDoc.data();
+    }
+    
+    // Return default settings if not found
+    return {
+      showOnProductPage: true,
+      showOnCart: false,
+      showOnCheckout: false,
+      showOnThankYou: false
+    };
+  } catch (error) {
+    console.error('Error fetching display settings:', error);
+    // Return safe defaults on error
+    return {
+      showOnProductPage: false,
+      showOnCart: false,
+      showOnCheckout: false,
+      showOnThankYou: false
+    };
+  }
+}
+
+/**
+ * Check if upsells should be displayed on a specific page
+ * @param {string} pageName - Page identifier ('productPage', 'cart', 'checkout', 'thankYou')
+ * @returns {Promise<boolean>} True if upsells should be displayed
+ */
+export async function shouldShowUpsells(pageName) {
+  const settings = await getUpsellDisplaySettings();
+  
+  const pageMap = {
+    'productPage': 'showOnProductPage',
+    'cart': 'showOnCart',
+    'checkout': 'showOnCheckout',
+    'thankYou': 'showOnThankYou'
+  };
+  
+  const settingKey = pageMap[pageName];
+  return settings[settingKey] === true;
+}
+
+/**
  * Get upsells for a specific product (for frontend use)
  * @param {string} productId - Product ID to get upsells for
  * @param {string} location - Where the upsells will be displayed ('productPage', 'cart', 'popup')

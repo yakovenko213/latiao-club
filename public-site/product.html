@@ -907,6 +907,77 @@
     </button>
   </div>
 
+  <!-- Upsell Bundle — Mobile -->
+  <div id="upsell-bundle-mobile" class="fixed bottom-0 left-0 right-0 bg-white p-4 md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.1)] hidden" style="z-index: 49;">
+    <div class="relative overflow-hidden rounded-2xl border-2 border-dashed border-emerald-200 bg-gradient-to-br from-orange-50/60 via-amber-50/40 to-emerald-50/60 p-4 shadow-sm">
+
+      <!-- Бейдж -->
+      <div class="absolute -right-1 -top-1">
+        <div class="flex items-center gap-1 rounded-bl-xl rounded-tr-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-lg">
+          <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2l2.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14l-5-4.87 7.91-1.01L12 2z"/>
+          </svg>
+          Комбо
+        </div>
+      </div>
+
+      <div class="space-y-3.5">
+        <!-- Заголовок -->
+        <div class="pr-16 text-center">
+          <h3 class="mb-0.5 text-base font-bold text-gray-900">Разом дешевше!</h3>
+          <p class="text-xs text-gray-500">Ідеальна пара для поціновувачів</p>
+        </div>
+
+        <!-- Ряд товарів -->
+        <div class="flex items-center justify-between">
+          <!-- Поточний товар -->
+          <div class="flex-1 text-center">
+            <div class="mx-auto mb-1.5 h-14 w-14 overflow-hidden rounded-xl bg-white shadow-md ring-2 ring-orange-200">
+              <img id="upsell-current-image" src="" alt="" class="h-full w-full object-cover" />
+            </div>
+            <h4 id="upsell-current-name" class="text-[11px] font-semibold leading-tight text-gray-800"></h4>
+            <p id="upsell-current-price" class="text-[11px] text-gray-400"></p>
+          </div>
+
+          <!-- Іконка "+" -->
+          <div class="mx-2 flex-shrink-0">
+            <div class="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-[#ff6b00] to-[#ff4444] shadow-lg">
+              <svg class="h-3.5 w-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Рекомендований товар -->
+          <div class="flex-1 text-center">
+            <div class="mx-auto mb-1.5 h-14 w-14 overflow-hidden rounded-xl bg-white shadow-md ring-2 ring-emerald-200">
+              <img id="upsell-suggested-image" src="" alt="" class="h-full w-full object-cover" />
+            </div>
+            <h4 id="upsell-suggested-name" class="text-[11px] font-semibold leading-tight text-gray-800"></h4>
+            <p id="upsell-suggested-price" class="text-[11px] text-gray-400"></p>
+          </div>
+        </div>
+
+        <!-- Ціна -->
+        <div class="space-y-1 text-center">
+          <div class="flex items-center justify-center gap-2">
+            <span id="upsell-original-price" class="text-sm text-gray-400 line-through">0 ₴</span>
+            <span id="upsell-bundle-price" class="text-xl font-bold text-emerald-600">0 ₴</span>
+          </div>
+          <p id="upsell-savings" class="text-xs font-semibold text-emerald-700">Заощаджуйте 0 ₴</p>
+        </div>
+
+        <!-- Кнопка -->
+        <button id="add-bundle-to-cart" onclick="addBundleToCart()" class="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-lg transition-all duration-200 hover:from-emerald-600 hover:to-emerald-700 active:scale-[0.97]">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+          </svg>
+          Додати обидва
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ✅ ВАЖЛИВО: Підключаємо Firebase та layout.js -->
   <script type="module" src="./js/maintenance-check.js"></script>
   <script type="module" src="./js/firebase-init.js"></script>
@@ -928,6 +999,7 @@
     // GLOBAL STATE
     // ============================================
     let currentProduct = null
+    let suggestedProduct = null // For upsell bundle
     let quantity = 1
     let maxStock = 0
 
@@ -1062,6 +1134,9 @@
 
         // Load recommended products
         await loadRecommendedProducts(currentProduct.category)
+
+        // Load mobile upsell bundle
+        await loadMobileUpsellBundle(currentProduct)
 
         // Show content, hide loading
         document.getElementById('loading-state').style.display = 'none'
@@ -1806,6 +1881,180 @@
           mobileTotalEl.textContent = `${total} ₴`
         }
       }
+    }
+
+    // ============================================
+    // MOBILE UPSELL BUNDLE LOGIC
+    // ============================================
+    
+    /**
+     * Load and display mobile upsell bundle
+     * @param {Object} product - Current product data
+     */
+    async function loadMobileUpsellBundle(product) {
+      try {
+        console.log('🎁 Loading mobile upsell bundle for:', product.id)
+        
+        // Check if upsell is globally enabled
+        const settingsRef = doc(db, 'settings', 'upsellConfig')
+        const settingsSnap = await getDoc(settingsRef)
+        
+        if (settingsSnap.exists() && settingsSnap.data().isEnabled === false) {
+          console.log('ℹ️ Upsell is globally disabled')
+          return
+        }
+        
+        // Query upsell rules for this product
+        const upsellsRef = collection(db, 'upsells')
+        const q = query(
+          upsellsRef, 
+          where('triggerId', '==', product.id),
+          where('isActive', '==', true),
+          limit(1)
+        )
+        const upsellSnap = await getDocs(q)
+        
+        if (upsellSnap.empty) {
+          console.log('ℹ️ No active upsell rules found for this product')
+          return
+        }
+        
+        const upsellRule = upsellSnap.docs[0].data()
+        console.log('✅ Upsell rule found:', upsellRule)
+        
+        // Check if locations include 'productPage'
+        if (!upsellRule.locations?.productPage) {
+          console.log('ℹ️ Upsell not enabled for product page')
+          return
+        }
+        
+        // Pick random product from suggestedIds
+        const suggestedIds = upsellRule.suggestedIds || []
+        if (suggestedIds.length === 0) {
+          console.log('⚠️ No suggested products in rule')
+          return
+        }
+        
+        // Random selection
+        const randomIndex = Math.floor(Math.random() * suggestedIds.length)
+        const suggestedId = suggestedIds[randomIndex]
+        
+        console.log('🎯 Selected suggested product:', suggestedId)
+        
+        // Fetch suggested product
+        const suggestedRef = doc(db, 'products', suggestedId)
+        const suggestedSnap = await getDoc(suggestedRef)
+        
+        if (!suggestedSnap.exists()) {
+          console.log('⚠️ Suggested product not found')
+          return
+        }
+        
+        suggestedProduct = { id: suggestedSnap.id, ...suggestedSnap.data() }
+        
+        // Check stock
+        if (Number(suggestedProduct.stock) <= 0) {
+          console.log('⚠️ Suggested product out of stock')
+          return
+        }
+        
+        // Check visibility
+        if (suggestedProduct.isVisible === false) {
+          console.log('⚠️ Suggested product is hidden')
+          return
+        }
+        
+        console.log('✅ Suggested product loaded:', suggestedProduct.name)
+        
+        // Calculate prices
+        const currentPrice = Number(product.price) || 0
+        const suggestedPrice = Number(suggestedProduct.price) || 0
+        const originalTotal = currentPrice + suggestedPrice
+        const discount = upsellRule.discount || 10 // Default 10%
+        const bundlePrice = Math.round(originalTotal * (1 - discount / 100))
+        const savings = originalTotal - bundlePrice
+        
+        // Update UI
+        const currentImage = product.images?.[0] || product.image || product.imageUrl || '/assets/default-product.png'
+        const suggestedImage = suggestedProduct.images?.[0] || suggestedProduct.image || suggestedProduct.imageUrl || '/assets/default-product.png'
+        
+        document.getElementById('upsell-current-image').src = currentImage
+        document.getElementById('upsell-current-name').textContent = product.name
+        document.getElementById('upsell-current-price').textContent = `${currentPrice} ₴`
+        
+        document.getElementById('upsell-suggested-image').src = suggestedImage
+        document.getElementById('upsell-suggested-name').textContent = suggestedProduct.name
+        document.getElementById('upsell-suggested-price').textContent = `${suggestedPrice} ₴`
+        
+        document.getElementById('upsell-original-price').textContent = `${originalTotal} ₴`
+        document.getElementById('upsell-bundle-price').textContent = `${bundlePrice} ₴`
+        document.getElementById('upsell-savings').textContent = `Заощаджуйте ${savings} ₴`
+        
+        // Show the bundle (replace mobile-cart-bar)
+        document.getElementById('mobile-cart-bar').classList.add('hidden')
+        document.getElementById('upsell-bundle-mobile').classList.remove('hidden')
+        
+        console.log('✅ Mobile upsell bundle displayed')
+        
+      } catch (error) {
+        console.error('❌ Error loading mobile upsell bundle:', error)
+      }
+    }
+    
+    /**
+     * Add both products (current + suggested) to cart
+     */
+    window.addBundleToCart = function() {
+      if (!currentProduct || !suggestedProduct || !window.addToCart) {
+        console.error('❌ Products or addToCart function not available')
+        return
+      }
+      
+      console.log('🛒 Adding bundle to cart:', currentProduct.name, '+', suggestedProduct.name)
+      
+      // Generate SKUs
+      const generateSku = (product) => {
+        return product.sku || product.code || `LT-${new Date().getFullYear()}-${product.id.substring(0, 4).toUpperCase()}`
+      }
+      
+      // Add current product
+      window.addToCart({
+        id: currentProduct.id,
+        name: currentProduct.name,
+        price: currentProduct.price,
+        image: currentProduct.images?.[0] || currentProduct.image || currentProduct.imageUrl,
+        quantity: 1,
+        sku: generateSku(currentProduct)
+      }, 'upsell_bundle')
+      
+      // Add suggested product
+      window.addToCart({
+        id: suggestedProduct.id,
+        name: suggestedProduct.name,
+        price: suggestedProduct.price,
+        image: suggestedProduct.images?.[0] || suggestedProduct.image || suggestedProduct.imageUrl,
+        quantity: 1,
+        sku: generateSku(suggestedProduct)
+      }, 'upsell_bundle')
+      
+      // Visual feedback
+      const btn = document.getElementById('add-bundle-to-cart')
+      const originalText = btn.innerHTML
+      
+      btn.innerHTML = `
+        <svg class="h-4 w-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        Додано!
+      `
+      btn.disabled = true
+      
+      setTimeout(() => {
+        btn.innerHTML = originalText
+        btn.disabled = false
+      }, 2000)
+      
+      console.log('✅ Bundle added to cart')
     }
 
     window.addToCartHandler = function () {

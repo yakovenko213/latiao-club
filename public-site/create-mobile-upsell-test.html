@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎁 Створення мобільного Upsell правила</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+  <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-6">
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">🎁 Тестове мобільне Upsell правило</h1>
+    
+    <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-6">
+      <h2 class="font-semibold text-emerald-800 mb-2">📋 Що робить цей скрипт:</h2>
+      <ul class="text-emerald-700 text-sm space-y-1">
+        <li>• Знаходить 2 перших видимих товари</li>
+        <li>• Створює правило: товар 1 → рекомендує товар 2</li>
+        <li>• Встановлює 10% знижку на комбо</li>
+        <li>• Активує для мобільної сторінки продукту</li>
+      </ul>
+    </div>
+    
+    <button id="createRule" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+      🚀 Створити тестове правило
+    </button>
+    
+    <div id="status" class="mt-4 p-4 rounded-lg hidden"></div>
+    
+    <div class="mt-6 text-sm text-gray-600">
+      <p><strong>Після створення:</strong></p>
+      <ol class="list-decimal list-inside space-y-1 mt-2">
+        <li>Відкрийте сторінку товару #1 на мобільному</li>
+        <li>Прокрутіть вниз до кнопки "Додати в кошик"</li>
+        <li>Побачите мобільний bundle з комбо-пропозицією</li>
+        <li>Натисніть "Додати обидва" для тесту</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'
+    import { getFirestore, collection, addDoc, getDocs, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
+
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyQvItRyL4IKl9NmEItswwPOEiKAbWkMw",
+      authDomain: "my-magazin-81c96.firebaseapp.com",
+      projectId: "my-magazin-81c96",
+      storageBucket: "my-magazin-81c96.firebasestorage.app",
+      messagingSenderId: "129061757346",
+      appId: "1:129061757346:web:3e7bc5838cc5f7bda992fb"
+    }
+
+    const app = initializeApp(firebaseConfig)
+    const db = getFirestore(app)
+
+    // Create test upsell rule
+    document.getElementById('createRule').addEventListener('click', async () => {
+      const button = document.getElementById('createRule')
+      const status = document.getElementById('status')
+      
+      button.disabled = true
+      button.textContent = '⏳ Створюю...'
+      
+      try {
+        // Enable upsell globally
+        console.log('🔧 Enabling upsell globally...')
+        await setDoc(doc(db, 'settings', 'upsellConfig'), {
+          isEnabled: true,
+          updatedAt: serverTimestamp()
+        })
+        
+        // Get first 2 visible products
+        console.log('📦 Loading products...')
+        const allProducts = await getDocs(collection(db, 'products'))
+        const products = []
+        
+        allProducts.forEach(doc => {
+          const data = doc.data()
+          if (data.isVisible !== false) {
+            products.push({ 
+              id: doc.id, 
+              name: data.name, 
+              price: data.price,
+              image: data.images?.[0] || data.image || '/assets/default-product.png'
+            })
+          }
+        })
+        
+        console.log('✅ Found visible products:', products.length)
+        
+        if (products.length < 2) {
+          throw new Error('Недостатньо товарів для створення upsell правила. Потрібно мінімум 2.')
+        }
+        
+        const testRule = {
+          name: 'Мобільне комбо автотест',
+          description: `${products[0].name} + ${products[1].name} = ідеальна пара! 🌶️`,
+          triggerId: products[0].id,
+          suggestedIds: [products[1].id],
+          discount: 10,
+          isActive: true,
+          locations: {
+            productPage: true,
+            cart: false,
+            popup: false
+          },
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }
+        
+        console.log('🎯 Creating rule:', testRule)
+        const docRef = await addDoc(collection(db, 'upsells'), testRule)
+        
+        status.className = 'mt-4 p-4 rounded-lg bg-emerald-50 border border-emerald-200'
+        status.classList.remove('hidden')
+        status.innerHTML = `
+          <h3 class="font-semibold text-emerald-800">✅ Успішно створено!</h3>
+          <p class="text-emerald-700 text-sm mt-1">ID правила: <code class="bg-emerald-100 px-2 py-1 rounded">${docRef.id}</code></p>
+          <p class="text-emerald-700 text-sm mt-2">
+            <strong>Тригер:</strong> ${products[0].name} (${products[0].id})<br>
+            <strong>Пропозиція:</strong> ${products[1].name} (${products[1].id})<br>
+            <strong>Знижка:</strong> 10%
+          </p>
+          <div class="mt-4 p-3 bg-white rounded border border-emerald-300">
+            <p class="text-emerald-700 text-sm font-semibold mb-2">
+              📱 Тепер відкрийте на мобільному:
+            </p>
+            <a href="/product.html?id=${products[0].id}" 
+               class="text-emerald-600 hover:underline font-mono text-sm break-all" 
+               target="_blank">
+              /product.html?id=${products[0].id}
+            </a>
+          </div>
+          <p class="text-xs text-gray-600 mt-3">
+            💡 Порада: Відкрийте DevTools (F12) на мобільному режимі та перевірте консоль для детального логу.
+          </p>
+        `
+        
+        button.textContent = '✅ Готово!'
+        button.className = 'w-full bg-green-500 text-white font-bold py-3 px-6 rounded-lg'
+        
+      } catch (error) {
+        console.error('❌ Помилка:', error)
+        
+        status.className = 'mt-4 p-4 rounded-lg bg-red-50 border border-red-200'
+        status.classList.remove('hidden')
+        status.innerHTML = `
+          <h3 class="font-semibold text-red-800">❌ Помилка</h3>
+          <p class="text-red-700 text-sm mt-1">${error.message}</p>
+          <p class="text-red-600 text-xs mt-2">Спробуйте створити правило вручну в Firestore або перезавантажте сторінку.</p>
+        `
+        
+        button.disabled = false
+        button.textContent = '🔄 Спробувати знову'
+        button.className = 'w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition-colors'
+      }
+    })
+  </script>
+</body>
+</html>
