@@ -43,7 +43,7 @@ async function deductStockForOrder(orderId, orderData) {
   };
 
   const orderItems = orderData.items || [];
-  
+
   if (orderItems.length === 0) {
     console.log(`ℹ️ Order ${orderId} has no items to deduct`);
     return results;
@@ -266,8 +266,25 @@ async function syncToKeyCRM(orderId) {
       discount: 0
     }));
 
-    const isDeposit = orderData.payment?.type === 'deposit';
+    // Determine if this is a deposit (100 UAH) or full payment
+    // Check both payment.type and amountPaid to ensure correct detection
+    const paymentType = orderData.payment?.type;
+    const amountPaid = orderData.payment?.amountPaid || 0;
+    const totalAmount = orderData.summary?.total || orderData.total;
+
+    // It's a deposit if:
+    // 1. payment.type is explicitly 'deposit', OR
+    // 2. amountPaid is 100 UAH (deposit amount)
+    const isDeposit = paymentType === 'deposit' || (amountPaid > 0 && amountPaid === 100);
     const managerComment = isDeposit ? "ПРЕДОПЛАТА" : "Повна оплата";
+
+    console.log(`💳 Payment Type Detection for Order ${orderId}:`, {
+      paymentType,
+      amountPaid,
+      totalAmount,
+      isDeposit,
+      managerComment
+    });
 
     const keyCrmPayload = {
       source_id: keyCrmSourceId || 1,
@@ -544,7 +561,7 @@ async function performProductSync() {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('🔄 Starting KeyCRM Sync at:', startTime.toISOString());
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  
+
   try {
     console.log('🔗 Starting KeyCRM Products Sync...');
 
@@ -741,7 +758,7 @@ async function performProductSync() {
   } catch (error) {
     const errorMessage = getSafeErrorMessage(error);
     const errorStack = error.stack || 'No stack trace';
-    
+
     console.error('❌ KeyCRM Products Sync failed:', errorMessage);
     console.error('📚 Stack trace:', errorStack);
 
@@ -770,7 +787,7 @@ async function performProductSync() {
 exports.syncProductsFromKeyCRM = functions.https.onCall(async (data, context) => {
   try {
     const result = await performProductSync();
-    
+
     // Update sync stats for admin panel display (same as scheduled sync)
     await admin.firestore().collection('settings').doc('stockSyncStats').set({
       lastSyncTimestamp: admin.firestore.FieldValue.serverTimestamp(),
@@ -784,11 +801,11 @@ exports.syncProductsFromKeyCRM = functions.https.onCall(async (data, context) =>
       lastSyncType: 'manual',
       nextScheduledSync: new Date(Date.now() + 30 * 60 * 1000).toISOString()
     }, { merge: true });
-    
+
     return result;
   } catch (error) {
     console.error('❌ Manual sync failed:', getSafeErrorMessage(error));
-    
+
     // Update sync stats with error
     await admin.firestore().collection('settings').doc('stockSyncStats').set({
       lastSyncTimestamp: admin.firestore.FieldValue.serverTimestamp(),
@@ -798,7 +815,7 @@ exports.syncProductsFromKeyCRM = functions.https.onCall(async (data, context) =>
       },
       lastSyncType: 'manual'
     }, { merge: true });
-    
+
     throw new functions.https.HttpsError('internal', getSafeErrorMessage(error));
   }
 });
