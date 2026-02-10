@@ -573,6 +573,12 @@
         return
       }
 
+      // ⚡ FIX: Declare usedCache OUTSIDE try block to avoid "Can't find variable" error
+      let usedCache = false;
+      
+      // ⚡ FIX: Set loading state immediately
+      document.getElementById('loading-state').style.display = 'flex';
+
       // 🎯 Track category view for personalization (time spent tracking)
       try {
         trackProductView(null, categorySlug, null);
@@ -589,8 +595,27 @@
 
       try {
         // ⚡ STEP 1: Check IndexedDB cache for INSTANT rendering
-        const cached = await window.productCache.getCached(categorySlug)
-        let usedCache = false
+        // ⚡ FIX: Defensive check for productCache existence (race condition protection)
+        let cached = null;
+        if (window.productCache && typeof window.productCache.getCached === 'function') {
+          try {
+            cached = await window.productCache.getCached(categorySlug);
+          } catch (cacheError) {
+            console.warn('⚠️ Cache read failed:', cacheError.message);
+            // Try localStorage fallback
+            try {
+              const localData = localStorage.getItem(`category_cache_${categorySlug}`);
+              if (localData) {
+                cached = JSON.parse(localData);
+                console.log('✅ Using localStorage fallback');
+              }
+            } catch (lsError) {
+              console.warn('⚠️ LocalStorage fallback failed:', lsError.message);
+            }
+          }
+        } else {
+          console.warn('⚠️ productCache not initialized yet, skipping cache check');
+        }
 
         if (cached && cached.products) {
 
@@ -620,9 +645,9 @@
           getDocs(query(collection(db, 'products'), where('category', '==', categorySlug)))
         ])
 
-        // Race between fetch and 5-second timeout
+        // ⚡ FIX: Increase timeout to 10 seconds for slow 3G/EDGE connections
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Fetch timeout')), 5000)
+          setTimeout(() => reject(new Error('Timeout: З\'єднання занадто повільне')), 10000)
         )
 
         let catSnap, newFormatSnap, oldFormatSnap
@@ -682,10 +707,29 @@
 
         console.log(`📦 Знайдено товарів: ${allProducts.length}`)
 
-        // ⚡ STEP 3: Save to IndexedDB cache (async, non-blocking)
-        window.productCache.setCached(categorySlug, categoryData, allProducts).catch(err => {
-          console.warn('⚠️ Failed to cache:', err)
-        })
+        // ⚡ STEP 3: Save to IndexedDB cache (async, non-blocking) + localStorage backup
+        if (window.productCache && typeof window.productCache.setCached === 'function') {
+          window.productCache.setCached(categorySlug, categoryData, allProducts).catch(err => {
+            console.warn('⚠️ Failed to cache to IndexedDB:', err);
+            // Fallback to localStorage
+            try {
+              const cacheData = { categoryData, products: allProducts, timestamp: Date.now() };
+              localStorage.setItem(`category_cache_${categorySlug}`, JSON.stringify(cacheData));
+              console.log('✅ Saved to localStorage fallback');
+            } catch (lsError) {
+              console.warn('⚠️ LocalStorage fallback also failed:', lsError.message);
+            }
+          });
+        } else {
+          // If productCache not available, use localStorage directly
+          try {
+            const cacheData = { categoryData, products: allProducts, timestamp: Date.now() };
+            localStorage.setItem(`category_cache_${categorySlug}`, JSON.stringify(cacheData));
+            console.log('✅ Saved to localStorage (productCache unavailable)');
+          } catch (lsError) {
+            console.warn('⚠️ LocalStorage save failed:', lsError.message);
+          }
+        }
 
         // If we didn't use cache, show products now
         if (!usedCache) {
@@ -700,20 +744,42 @@
         }
 
       } catch (err) {
-        console.error('❌ Помилка завантаження:', err)
+        console.error('❌ Помилка завантаження:', err);
         
+        // ⚡ FIX: Improved error handling with usedCache properly scoped
         // If we have cached data, keep showing it instead of error
-        if (!usedCache) {
-          document.getElementById('products-grid').innerHTML = `
-            <div class="col-span-full text-center py-10">
-              <p class="text-red-500 font-bold mb-2">Помилка завантаження</p>
-              <p class="text-gray-500 text-sm">${err.message}</p>
-              <button onclick="location.reload()" class="mt-4 px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">Спробувати ще раз</button>
-            </div>
-          `
+        if (usedCache) {
+          console.log('✅ Showing cached data despite error');
+          // User already sees cached data, just log the error
+          return;
         }
+        
+        // No cached data available - show friendly error with retry button
+        document.getElementById('products-grid').innerHTML = `
+          <div class="col-span-full text-center py-16 px-4">
+            <div class="max-w-md mx-auto bg-white rounded-2xl shadow-lg p-8">
+              <div class="mb-4">
+                <svg class="w-16 h-16 mx-auto text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <h3 class="text-xl font-bold text-gray-800 mb-2">Проблеми зі з'єднанням</h3>
+              <p class="text-gray-600 mb-4">Не вдалося завантажити дані. Перевірте інтернет-з'єднання.</p>
+              <details class="mb-6 text-left">
+                <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Технічні деталі</summary>
+                <p class="mt-2 text-xs text-gray-500 bg-gray-50 p-3 rounded">${err.message}</p>
+              </details>
+              <button 
+                onclick="location.reload()" 
+                class="w-full px-6 py-3 bg-orange-500 text-white font-semibold rounded-xl hover:bg-orange-600 transition-colors duration-200 shadow-md hover:shadow-lg transform hover:scale-105">
+                🔄 Спробувати ще раз
+              </button>
+              <p class="mt-4 text-xs text-gray-400">Або спробуйте пізніше</p>
+            </div>
+          </div>
+        `;
       } finally {
-        document.getElementById('loading-state').style.display = 'none'
+        document.getElementById('loading-state').style.display = 'none';
       }
     }
 
