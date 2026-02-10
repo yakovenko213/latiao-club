@@ -33,36 +33,59 @@ let editingUpsellId = null;
 let allProducts = [];
 let selectedTriggerProduct = null;
 let selectedSuggestedProducts = [];
+let allUpsells = []; // Store all upsells for filtering
+
+// Task 1: Real-time listener for display settings
+let settingsUnsubscribe = null; // Store unsubscribe function
+let currentSettings = {}; // Current settings from Firestore (single source of truth)
 
 // Access global Firebase instances
 const db = window.db;
 const auth = window.auth;
 
+// Verify Firebase is initialized
+if (!db) {
+  console.error('❌ Upsells Module: Firebase db is not initialized!');
+}
+if (!auth) {
+  console.error('❌ Upsells Module: Firebase auth is not initialized!');
+}
+
 console.log('🛍️ Upsells Module: Initialized');
 
 // ============================================
-// UPSELL RULES MANAGEMENT
+// UPSELL DISPLAY SETTINGS - REAL-TIME SYNC
 // ============================================
 
 /**
- * Load display settings from Firestore
+ * Task 1: Real-time Data Listener with onSnapshot
+ * Firestore is the Single Source of Truth
  */
-async function loadDisplaySettings() {
-  try {
-    const settingsDoc = await getDoc(doc(db, 'settings', 'upsellDisplayConfig'));
-    
-    if (settingsDoc.exists()) {
-      const settings = settingsDoc.data();
+function initDisplaySettingsListener() {
+  console.log('🔄 [initDisplaySettingsListener] Setting up real-time listener...');
+  
+  // Unsubscribe from previous listener if exists
+  if (settingsUnsubscribe) {
+    settingsUnsubscribe();
+  }
+  
+  const settingsRef = doc(db, 'settings', 'upsellDisplayConfig');
+  
+  // Task 1: onSnapshot for real-time updates
+  settingsUnsubscribe = onSnapshot(settingsRef, (docSnapshot) => {
+    if (docSnapshot.exists()) {
+      const settings = docSnapshot.data();
+      currentSettings = settings;
       
-      // Update toggle switches
-      document.getElementById('display-product-page').checked = settings.showOnProductPage ?? true;
-      document.getElementById('display-cart').checked = settings.showOnCart ?? false;
-      document.getElementById('display-checkout').checked = settings.showOnCheckout ?? false;
-      document.getElementById('display-thank-you').checked = settings.showOnThankYou ?? false;
+      console.log('🔥 [onSnapshot] REALLY loaded from DB:', settings);
       
-      console.log('✅ Display settings loaded:', settings);
+      // Task 3: Strict UI Control - Update toggles from Firestore
+      updateTogglesFromFirestore(settings);
+      
     } else {
-      // Initialize with default settings
+      console.warn('⚠️ [onSnapshot] Document does not exist, creating defaults...');
+      
+      // Create default document
       const defaultSettings = {
         showOnProductPage: true,
         showOnCart: false,
@@ -70,50 +93,132 @@ async function loadDisplaySettings() {
         showOnThankYou: false
       };
       
-      await setDoc(doc(db, 'settings', 'upsellDisplayConfig'), defaultSettings);
-      console.log('✅ Default display settings created');
+      // This will trigger onSnapshot again with the new data
+      setDoc(settingsRef, defaultSettings).catch(error => {
+        console.error('❌ Error creating default settings:', error);
+      });
     }
+  }, (error) => {
+    console.error('❌ [onSnapshot] Listener error:', error);
+  });
+  
+  console.log('✅ [initDisplaySettingsListener] Real-time listener active');
+}
+
+/**
+ * Update UI toggles from Firestore data
+ * Task 3: Strict UI Control
+ */
+function updateTogglesFromFirestore(settings) {
+  const productToggle = document.getElementById('display-product-page');
+  const cartToggle = document.getElementById('display-cart');
+  const checkoutToggle = document.getElementById('display-checkout');
+  const thankYouToggle = document.getElementById('display-thank-you');
+  
+  if (productToggle) productToggle.checked = settings.showOnProductPage || false;
+  if (cartToggle) cartToggle.checked = settings.showOnCart || false;
+  if (checkoutToggle) checkoutToggle.checked = settings.showOnCheckout || false;
+  if (thankYouToggle) thankYouToggle.checked = settings.showOnThankYou || false;
+  
+  console.log('✅ [updateTogglesFromFirestore] UI updated:', {
+    productPage: productToggle?.checked,
+    cart: cartToggle?.checked,
+    checkout: checkoutToggle?.checked,
+    thankYou: thankYouToggle?.checked
+  });
+}
+
+/**
+ * Task 2: Direct Update Function
+ * Single function that handles all toggle changes
+ * Firestore is Single Source of Truth - onSnapshot will update UI automatically
+ */
+async function toggleSetting(fieldName, currentValue) {
+  try {
+    const newValue = !currentValue;
+    console.log(`💾 [toggleSetting] User clicked: ${fieldName} -> ${newValue}`);
+    
+    const settingsRef = doc(db, 'settings', 'upsellDisplayConfig');
+    
+    // Task 2: Use setDoc with merge:true to update single field
+    // This creates document if missing, or updates existing
+    await setDoc(settingsRef, {
+      [fieldName]: newValue
+    }, { merge: true });
+    
+    console.log(`✅ [toggleSetting] ${fieldName} updated to ${newValue} in Firestore`);
+    console.log('🔥 onSnapshot will automatically update UI...');
+    
+    // Show success toast
+    showToast('✅ Налаштування збережено', 'success');
+    
   } catch (error) {
-    console.error('Error loading display settings:', error);
+    console.error('❌ [toggleSetting] Error updating Firestore:', error);
+    
+    // Show error toast
+    const errorMsg = error.code === 'permission-denied' 
+      ? '❌ Немає доступу. Увійдіть як адміністратор!'
+      : '❌ Помилка: ' + error.message;
+    
+    showToast(errorMsg, 'error');
+    
+    // onSnapshot will revert the UI to the correct state automatically
   }
 }
 
 /**
- * Save display settings to Firestore
+ * Task 4: Diagnostics - Manual Save Test
+ * Global function accessible from HTML onclick
  */
-async function saveDisplaySettings() {
+window.testManualSave = async function() {
   try {
-    const settings = {
-      showOnProductPage: document.getElementById('display-product-page').checked,
-      showOnCart: document.getElementById('display-cart').checked,
-      showOnCheckout: document.getElementById('display-checkout').checked,
-      showOnThankYou: document.getElementById('display-thank-you').checked
-    };
+    console.log('🧪 [testManualSave] Testing direct DB write...');
     
-    const settingsRef = doc(db, 'settings', 'upsellDisplayConfig');
-    await updateDoc(settingsRef, settings, { merge: true });
+    // Check if db is available
+    if (!window.db) {
+      alert('❌ Database not initialized! Reload the page.');
+      console.error('❌ window.db is not available');
+      return;
+    }
     
-    console.log('✅ Display settings saved:', settings);
+    const settingsRef = doc(window.db, 'settings', 'upsellDisplayConfig');
+    await setDoc(settingsRef, {
+      test: true,
+      testTimestamp: new Date().toISOString(),
+      manualTestValue: Math.random()
+    }, { merge: true });
     
-    // Show success toast
-    showToast('✅ Налаштування збережено');
+    console.log('✅ [testManualSave] Write successful! Check Firestore Console.');
+    alert('✅ Test успішний! Перевірте Firestore Console: settings/upsellDisplayConfig');
+    
   } catch (error) {
-    console.error('Error saving display settings:', error);
-    showToast('❌ Помилка збереження');
+    console.error('❌ [testManualSave] Error:', error);
+    alert('❌ Test провалено: ' + error.message);
   }
 }
+
+// ============================================
+// UPSELL RULES MANAGEMENT
+// ============================================
 
 /**
  * Show toast notification
  */
-function showToast(message) {
+function showToast(message, type = 'success') {
   // Create toast element if it doesn't exist
   let toast = document.getElementById('upsell-toast');
   if (!toast) {
     toast = document.createElement('div');
     toast.id = 'upsell-toast';
-    toast.className = 'fixed bottom-4 right-4 bg-gray-900 text-white px-6 py-3 rounded-lg shadow-xl z-50 transform translate-y-20 opacity-0 transition-all duration-300';
+    toast.className = 'fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-xl z-50 transform translate-y-20 opacity-0 transition-all duration-300';
     document.body.appendChild(toast);
+  }
+  
+  // Update colors based on type
+  if (type === 'error') {
+    toast.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-xl z-50 transform transition-all duration-300';
+  } else {
+    toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-xl z-50 transform transition-all duration-300';
   }
   
   toast.textContent = message;
@@ -121,7 +226,7 @@ function showToast(message) {
   
   setTimeout(() => {
     toast.classList.add('translate-y-20', 'opacity-0');
-  }, 2000);
+  }, type === 'error' ? 4000 : 2000); // Longer duration for errors
 }
 
 /**
@@ -129,8 +234,8 @@ function showToast(message) {
  */
 window.loadUpsellRules = async () => {
   try {
-    // Load display settings first
-    await loadDisplaySettings();
+    // Task 1: Initialize real-time listener instead of one-time load
+    initDisplaySettingsListener();
     
     const upsellsRef = collection(db, 'upsells');
     const q = query(upsellsRef, orderBy('createdAt', 'desc'));
@@ -141,6 +246,7 @@ window.loadUpsellRules = async () => {
       upsells.push({ id: doc.id, ...doc.data() });
     });
 
+    allUpsells = upsells; // Store globally for filtering
     await renderUpsellRules(upsells);
     updateUpsellStats(upsells);
 
@@ -148,6 +254,22 @@ window.loadUpsellRules = async () => {
     console.error('Error loading upsell rules:', error);
     alert('Помилка завантаження правил допродажу: ' + error.message);
   }
+};
+
+/**
+ * Filter upsells by placement type
+ */
+window.filterUpsellsByPlacement = async () => {
+  const filterValue = document.getElementById('placement-filter').value;
+  
+  let filteredUpsells = allUpsells;
+  
+  if (filterValue !== 'all') {
+    filteredUpsells = allUpsells.filter(u => u.placementType === filterValue);
+  }
+  
+  await renderUpsellRules(filteredUpsells);
+  updateUpsellStats(filteredUpsells);
 };
 
 /**
@@ -193,12 +315,14 @@ async function renderUpsellRules(upsells) {
 
     const discountText = upsell.discount > 0 ? `${upsell.discount}%` : '—';
     
-    // Display locations
-    const locations = [];
-    if (upsell.locations?.productPage) locations.push('Сторінка товару');
-    if (upsell.locations?.cart) locations.push('Кошик');
-    if (upsell.locations?.popup) locations.push('Pop-up');
-    const locationsText = locations.length > 0 ? locations.join(', ') : 'Не налаштовано';
+    // Display placement type with human-readable label
+    const placementLabels = {
+      'product_page': 'Сторінка товару',
+      'cart': 'Кошик',
+      'checkout': 'Оформлення',
+      'thank_you': 'Сторінка подяки'
+    };
+    const placementText = placementLabels[upsell.placementType] || 'Не вказано';
     
     const isActive = upsell.isActive ?? true;
     const statusBadge = isActive
@@ -222,8 +346,8 @@ async function renderUpsellRules(upsells) {
           <span class="text-sm font-semibold text-gray-900">${discountText}</span>
         </td>
         <td class="px-6 py-4">
-          <div class="text-xs text-gray-600 break-words whitespace-normal leading-relaxed">
-            ${locationsText}
+          <div class="text-sm font-medium text-gray-700">
+            ${placementText}
           </div>
         </td>
         <td class="px-6 py-4 text-center">
@@ -354,9 +478,7 @@ window.editUpsellRule = async (upsellId) => {
     
     // Set form values
     document.getElementById('upsell-discount').value = upsellData.discount || 0;
-    document.getElementById('location-product-page').checked = upsellData.locations?.productPage || false;
-    document.getElementById('location-cart').checked = upsellData.locations?.cart || false;
-    document.getElementById('location-popup').checked = upsellData.locations?.popup || false;
+    document.getElementById('upsell-placement-type').value = upsellData.placementType || 'product_page';
     document.getElementById('upsell-active').checked = upsellData.isActive ?? true;
     
     updateDiscountPreview();
@@ -712,15 +834,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       const discount = parseInt(document.getElementById('upsell-discount').value) || 0;
-      const locations = {
-        productPage: document.getElementById('location-product-page').checked,
-        cart: document.getElementById('location-cart').checked,
-        popup: document.getElementById('location-popup').checked
-      };
+      const placementType = document.getElementById('upsell-placement-type').value;
       const isActive = document.getElementById('upsell-active').checked;
       
-      if (!locations.productPage && !locations.cart && !locations.popup) {
-        alert('⚠️ Будь ласка, виберіть принаймні одну локацію відображення');
+      if (!placementType) {
+        alert('⚠️ Будь ласка, виберіть місце розміщення');
         return;
       }
       
@@ -730,7 +848,7 @@ document.addEventListener('DOMContentLoaded', () => {
           triggerId: selectedTriggerProduct.id,
           suggestedIds: selectedSuggestedProducts.map(p => p.id),
           discount: discount,
-          locations: locations,
+          placementType: placementType,
           isActive: isActive,
           createdAt: serverTimestamp()
         };
@@ -762,26 +880,46 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('trigger-product-results').classList.add('hidden');
     }
     if (!e.target.closest('#suggested-products-search') && !e.target.closest('#suggested-products-results')) {
-  
-  // Display settings toggle listeners
-  const displayToggles = [
-    'display-product-page',
-    'display-cart',
-    'display-checkout',
-    'display-thank-you'
-  ];
-  
-  displayToggles.forEach(toggleId => {
-    const toggle = document.getElementById(toggleId);
-    if (toggle) {
-      toggle.addEventListener('change', () => {
-        saveDisplaySettings();
-      });
-    }
-  });
       document.getElementById('suggested-products-results').classList.add('hidden');
     }
   });
+  
+  // Task 3: Attach event listeners that call toggleSetting directly
+  const toggleMappings = {
+    'display-product-page': 'showOnProductPage',
+    'display-cart': 'showOnCart',
+    'display-checkout': 'showOnCheckout',
+    'display-thank-you': 'showOnThankYou'
+  };
+  
+  Object.keys(toggleMappings).forEach(toggleId => {
+    const toggle = document.getElementById(toggleId);
+    const fieldName = toggleMappings[toggleId];
+    
+    if (toggle) {
+      toggle.addEventListener('change', (e) => {
+        // Get current value from currentSettings (Firestore source of truth)
+        const currentValue = currentSettings[fieldName] || false;
+        toggleSetting(fieldName, currentValue);
+      });
+    }
+  });
+  
+  // Attach event listener to "Create Rule" button as backup to onclick
+  const createRuleButtons = document.querySelectorAll('[onclick*="openCreateUpsellModal"]');
+  createRuleButtons.forEach(button => {
+    button.addEventListener('click', (e) => {
+      if (typeof window.openCreateUpsellModal === 'function') {
+        // onclick will handle it
+        return;
+      }
+      // If onclick failed, handle it here
+      e.preventDefault();
+      window.openCreateUpsellModal();
+    });
+  });
+  
+  console.log('✅ Upsells Module: Initialization complete');
+  console.log('✅ window.openCreateUpsellModal:', typeof window.openCreateUpsellModal);
+  console.log('✅ window.loadUpsellRules:', typeof window.loadUpsellRules);
 });
-
-console.log('🛍️ Upsells Module: Event listeners attached');

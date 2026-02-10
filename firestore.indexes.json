@@ -173,6 +173,38 @@
       ]
     },
     {
+      "collectionGroup": "upsells",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "placementType",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "upsells",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "triggerId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "placementType",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "orders",
       "queryScope": "COLLECTION",
       "fields": [

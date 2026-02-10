@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Init Cart Upsell Settings</title>
+</head>
+<body>
+  <h1>Ініціалізація налаштувань Cart Upsell</h1>
+  <button id="initBtn" style="padding: 20px; font-size: 18px; background: #ff6b00; color: white; border: none; border-radius: 10px; cursor: pointer;">
+    🔥 Увімкнути Upsell для Кошика
+  </button>
+  <div id="status" style="margin-top: 20px; padding: 20px; background: #f0f0f0; border-radius: 10px;">
+    Статус: Очікування...
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyQvItRyL4IKl9NmEItswwPOEiKAbWkMw",
+      authDomain: "my-magazin-81c96.firebaseapp.com",
+      projectId: "my-magazin-81c96",
+      storageBucket: "my-magazin-81c96.firebasestorage.app",
+      messagingSenderId: "129061757346",
+      appId: "1:129061757346:web:3e7bc5838cc5f7bda992fb"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const statusDiv = document.getElementById('status');
+
+    // Check current settings
+    async function checkSettings() {
+      try {
+        const settingsDoc = await getDoc(doc(db, 'settings', 'upsellDisplayConfig'));
+        
+        if (settingsDoc.exists()) {
+          const data = settingsDoc.data();
+          statusDiv.innerHTML = `
+            <h3>✅ Налаштування існують:</h3>
+            <ul>
+              <li>showOnProductPage: <strong>${data.showOnProductPage}</strong></li>
+              <li>showOnCart: <strong style="color: ${data.showOnCart ? 'green' : 'red'}">${data.showOnCart}</strong></li>
+              <li>showOnCheckout: <strong>${data.showOnCheckout}</strong></li>
+              <li>showOnThankYou: <strong>${data.showOnThankYou}</strong></li>
+            </ul>
+          `;
+        } else {
+          statusDiv.innerHTML = '<h3>❌ Налаштування НЕ існують</h3><p>Натисніть кнопку для створення</p>';
+        }
+      } catch (error) {
+        statusDiv.innerHTML = `<h3>❌ Помилка: ${error.message}</h3>`;
+      }
+    }
+
+    // Initialize settings
+    document.getElementById('initBtn').addEventListener('click', async () => {
+      try {
+        statusDiv.innerHTML = '<h3>⏳ Створення налаштувань...</h3>';
+        
+        await setDoc(doc(db, 'settings', 'upsellDisplayConfig'), {
+          showOnProductPage: false,
+          showOnCart: true,  // УВІМКНЕНО ДЛЯ КОШИКА
+          showOnCheckout: false,
+          showOnThankYou: false
+        }, { merge: true });
+
+        statusDiv.innerHTML = '<h3>✅ Налаштування створено!</h3><p>showOnCart = <strong style="color: green">true</strong></p>';
+        
+        setTimeout(checkSettings, 1000);
+      } catch (error) {
+        statusDiv.innerHTML = `<h3>❌ Помилка: ${error.message}</h3>`;
+      }
+    });
+
+    // Check on load
+    checkSettings();
+  </script>
+</body>
+</html>
