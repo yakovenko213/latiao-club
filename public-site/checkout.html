@@ -3507,19 +3507,24 @@
       const btn = event.target
       const originalText = btn.textContent
 
+      // ⚡ IMMEDIATE BUTTON DISABLE - Prevent any double-clicks
+      isSubmitting = true;
+      btn.disabled = true;
+      btn.textContent = 'Збираю латяо... 🌶️';
+
       // ============================================
       // STEP 0: STRICT VALIDATION (THE GATEKEEPER)
       // ============================================
       if (!strictValidateForm()) {
         console.log('❌ Form validation failed - stopping submission')
+        // Reset button on validation failure
+        isSubmitting = false;
+        btn.disabled = false;
+        btn.textContent = originalText;
         return // STOP EXECUTION - DO NOT PROCEED
       }
 
       console.log('✅ Form validation passed - proceeding with order')
-
-      // Set submission flag and disable button
-      isSubmitting = true;
-      btn.disabled = true;
 
       // ============================================
       // CRITICAL: Mark order as submitted to prevent
@@ -3559,6 +3564,10 @@
             document.getElementById('np-warehouse-input')?.focus()
           }
 
+          // Reset button state
+          isSubmitting = false;
+          btn.disabled = false;
+          btn.textContent = originalText;
           return // Prevent submission
         }
       } else if (deliveryMethod === 'ukr') {
@@ -3576,6 +3585,10 @@
             ukrposhtaDetails.scrollIntoView({ behavior: 'smooth', block: 'center' })
           }
 
+          // Reset button state
+          isSubmitting = false;
+          btn.disabled = false;
+          btn.textContent = originalText;
           return // Prevent submission
         }
 
@@ -3583,12 +3596,13 @@
         if (!/^\d{5}$/.test(upPostcode)) {
           alert('⚠️ Поштовий індекс повинен складатися з 5 цифр')
           document.getElementById('up-postcode-input').focus()
+          // Reset button state
+          isSubmitting = false;
+          btn.disabled = false;
+          btn.textContent = originalText;
           return
         }
       }
-
-      btn.textContent = 'Обробка...'
-      btn.disabled = true
 
       try {
         // ============================================
@@ -3596,7 +3610,6 @@
         // Last-minute check with auto-cart adjustment
         // ============================================
         console.log('🔍 Performing comprehensive stock validation...');
-        btn.textContent = 'Перевірка наявності...';
 
         // Wait for Firebase to be ready
         let attempts = 0;
@@ -3706,7 +3719,6 @@
         }
 
         console.log('✅ All items in stock - proceeding with order');
-        btn.textContent = 'Створення замовлення...';
 
         // ============================================
         // STEP 1: Collect Customer Information
@@ -4073,13 +4085,12 @@
         console.log('✅ [Checkout] Order saved successfully to Firestore');
 
         // ============================================
-        // STEP 8.1: SYNC CUSTOMER PROFILE (Prevent Duplicates)
+        // STEP 8.1: SYNC CUSTOMER PROFILE (BACKGROUND)
         // ============================================
-        console.log('👤 [Checkout] Starting customer sync (non-blocking)...');
-        btn.textContent = 'Синхронізація клієнта...';
+        console.log('👤 [Checkout] Starting customer sync (background)...');
         
-        // Run customer sync with 5-second timeout and make it non-blocking
-        const customerSyncPromise = Promise.race([
+        // ⚡ FIRE AND FORGET - Non-blocking background operation
+        Promise.race([
           syncCustomerFromOrder(orderData, orderId),
           new Promise((_, reject) => 
             setTimeout(() => reject(new Error('Customer sync timeout after 5 seconds')), 5000)
@@ -4095,90 +4106,84 @@
             console.warn('⚠️ [Checkout] Customer sync returned error:', result.error);
           }
         }).catch(error => {
-          // Non-blocking error - customer sync failure shouldn't stop the order
           console.error('⚠️ [Checkout] Customer sync failed (non-blocking):', error.message);
         });
+
+        // ============================================
+        // STEP 8.2: DEDUCT STOCK (BACKGROUND)
+        // ============================================
+        console.log('📦 [Checkout] Starting stock deduction (background)...');
+
+        // ⚡ FIRE AND FORGET - Non-blocking background operation
+        (async () => {
+          try {
+            const { writeBatch, doc: fbDoc } = window.firebaseInit;
+            const batch = writeBatch(db);
+            let stockUpdates = 0;
+
+            for (const item of orderItems) {
+              // Skip gift items - they don't consume stock
+              if (item.isGift) {
+                console.log(`🎁 [Checkout] Skipping gift item: ${item.name}`);
+                continue;
+              }
+
+              const productId = item.id || item.productId;
+              if (!productId) {
+                console.warn('⚠️ [Checkout] Item missing ID:', item.name);
+                continue;
+              }
+
+              // Get current stock from Firestore
+              const productRef = fbDoc(db, 'products', productId);
+              const productSnap = await getDoc(productRef);
+
+              if (!productSnap.exists()) {
+                console.warn(`⚠️ [Checkout] Product ${productId} (${item.name}) not found for stock deduction`);
+                continue;
+              }
+
+              const currentStock = productSnap.data().stock || 0;
+              const quantityOrdered = item.quantity || item.qty || 1;
+              const newStock = Math.max(0, currentStock - quantityOrdered);
+
+              batch.update(productRef, {
+                stock: newStock,
+                updatedAt: new Date().toISOString(),
+                lastStockUpdate: serverTimestamp()
+              });
+
+              stockUpdates++;
+              console.log(`📦 [Checkout] Stock update queued: ${item.name} (${item.sku || productId}): ${currentStock} → ${newStock} (-${quantityOrdered})`);
+            }
+
+            if (stockUpdates > 0) {
+              console.log('💾 [Checkout] Committing stock batch updates...');
+              await batch.commit();
+              console.log(`✅ [Checkout] Stock deducted for ${stockUpdates} items in order ${orderId}`);
+            } else {
+              console.log('ℹ️ [Checkout] No stock updates needed (all gifts or no items)');
+            }
+          } catch (stockError) {
+            console.error('❌ [Checkout] Stock deduction failed (non-blocking):', stockError);
+          }
+        })();
+
+        // ============================================
+        // STEP 8.3: SYNC TO KeyCRM (BACKGROUND)
+        // ============================================
+        console.log('🔗 [Checkout] Syncing order to KeyCRM (background)...');
         
-        // DON'T AWAIT - Let it run in background
-        // This ensures payment redirect happens immediately
-
-        // ============================================
-        // STEP 8.2: DEDUCT STOCK IMMEDIATELY
-        // ============================================
-        console.log('📦 [Checkout] Starting stock deduction...');
-        btn.textContent = 'Оновлення наявності...';
-
-        try {
-          const { writeBatch, doc: fbDoc } = window.firebaseInit;
-          const batch = writeBatch(db);
-          let stockUpdates = 0;
-
-          for (const item of orderItems) {
-            // Skip gift items - they don't consume stock
-            if (item.isGift) {
-              console.log(`🎁 [Checkout] Skipping gift item: ${item.name}`);
-              continue;
-            }
-
-            const productId = item.id || item.productId;
-            if (!productId) {
-              console.warn('⚠️ [Checkout] Item missing ID:', item.name);
-              continue;
-            }
-
-            // Get current stock from Firestore
-            const productRef = fbDoc(db, 'products', productId);
-            const productSnap = await getDoc(productRef);
-
-            if (!productSnap.exists()) {
-              console.warn(`⚠️ [Checkout] Product ${productId} (${item.name}) not found for stock deduction`);
-              continue;
-            }
-
-            const currentStock = productSnap.data().stock || 0;
-            const quantityOrdered = item.quantity || item.qty || 1;
-            const newStock = Math.max(0, currentStock - quantityOrdered);
-
-            batch.update(productRef, {
-              stock: newStock,
-              updatedAt: new Date().toISOString(),
-              lastStockUpdate: serverTimestamp()
-            });
-
-            stockUpdates++;
-            console.log(`📦 [Checkout] Stock update queued: ${item.name} (${item.sku || productId}): ${currentStock} → ${newStock} (-${quantityOrdered})`);
-          }
-
-          if (stockUpdates > 0) {
-            console.log('💾 [Checkout] Committing stock batch updates...');
-            await batch.commit();
-            console.log(`✅ [Checkout] Stock deducted for ${stockUpdates} items in order ${orderId}`);
-          } else {
-            console.log('ℹ️ [Checkout] No stock updates needed (all gifts or no items)');
-          }
-        } catch (stockError) {
-          // Non-blocking error - log but continue with order
-          console.error('❌ [Checkout] Stock deduction failed (non-blocking):', stockError);
-        }
-
-        // ============================================
-        // STEP 8.3: SYNC TO KeyCRM (FOR ALL ORDERS)
-        // ============================================
-        // Executed immediately after saving to Firestore to ensure minimal delay
-        console.log('🔗 [Checkout] Syncing order to KeyCRM...');
-        try {
-          // We utilize the existing non-blocking sync function
-          // But we await it here to ensure it tries at least once before redirect
-          const keyCrmResult = await sendToKeyCRM(orderData, orderId);
-
+        // ⚡ FIRE AND FORGET - Non-blocking background operation
+        sendToKeyCRM(orderData, orderId).then(keyCrmResult => {
           if (keyCrmResult.success) {
             console.log('✅ [Checkout] Order synced to KeyCRM successfully:', keyCrmResult.keyCrmOrderId);
           } else {
             console.warn('⚠️ [Checkout] KeyCRM sync failed (non-blocking):', keyCrmResult.error);
           }
-        } catch (keyCrmError) {
+        }).catch(keyCrmError => {
           console.error('⚠️ [Checkout] KeyCRM sync error (non-blocking):', keyCrmError);
-        }
+        });
 
         // ============================================
         // STEP 8.25: Smart Cleanup (Abandoned Carts + Old Pending Orders)
@@ -4191,20 +4196,24 @@
         });
 
         // ============================================
-        // STEP 8.5: Update Promo Code Usage (if applied)
+        // STEP 8.5: Update Promo Code Usage (BACKGROUND)
         // ============================================
         if (appliedPromoCode && appliedPromoCode.id) {
-          console.log('🎟️ [Checkout] Updating promo code usage...');
-          try {
-            const { doc: firestoreDoc, updateDoc, increment } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-            const promoRef = firestoreDoc(db, 'promocodes', appliedPromoCode.id);
-            await updateDoc(promoRef, {
-              'stats.usedCount': increment(1)
-            });
-            console.log('✅ [Checkout] Promo code usage updated:', appliedPromoCode.code);
-          } catch (promoError) {
-            console.error('⚠️ [Checkout] Failed to update promo usage (non-critical):', promoError);
-          }
+          console.log('🎟️ [Checkout] Updating promo code usage (background)...');
+          
+          // ⚡ FIRE AND FORGET - Non-blocking background operation
+          (async () => {
+            try {
+              const { doc: firestoreDoc, updateDoc, increment } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+              const promoRef = firestoreDoc(db, 'promocodes', appliedPromoCode.id);
+              await updateDoc(promoRef, {
+                'stats.usedCount': increment(1)
+              });
+              console.log('✅ [Checkout] Promo code usage updated:', appliedPromoCode.code);
+            } catch (promoError) {
+              console.error('⚠️ [Checkout] Failed to update promo usage (non-critical):', promoError);
+            }
+          })();
         }
 
         // ============================================
@@ -4225,8 +4234,6 @@
           }
 
           console.log('✅ [Checkout] Order ID validated:', orderId);
-
-          btn.textContent = 'Створення рахунку...';
 
           try {
             console.log('🔧 [Checkout] Initializing Cloud Function...');
@@ -4330,8 +4337,6 @@
             // STANDARD FLOW: PREPAYMENT ENABLED - 100 UAH DEPOSIT
             // ============================================
             console.log('💰 [Checkout] Prepayment ENABLED - creating 100 UAH deposit invoice...');
-
-            btn.textContent = 'Створення рахунку на передоплату...';
 
             console.log('🔧 [Checkout] Initializing Cloud Function...');
             // Initialize Cloud Function
