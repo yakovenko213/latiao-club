@@ -6,25 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Оформлення замовлення | LATIAO SNACK</title>
 
-  <!-- ⚡ CONSOLE SILENCER - Must be first to catch all logs -->
-  <script src="./js/console-silencer.js"></script>
-
-  <!-- 🔀 DOMAIN REDIRECT - Redirect Firebase domains to primary domain -->
-  <script src="./js/domain-redirect.js"></script>
-
-  <!-- 🎯 SEO: Canonical Tag -->
-  <link rel="canonical" href="https://latiao-snack.com.ua/checkout">
-
-  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-       CACHE CONTROL - Force fresh assets
-       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-
   <!-- CRITICAL: Apply theme immediately to prevent flash -->
   <script>
-    (function () {
+    (function() {
       const theme = localStorage.getItem('latiao-theme');
       if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark');
@@ -52,11 +36,7 @@
     }
   </script>
   <!-- Dark Mode Module -->
-  <script src="./js/dark-mode.js?v=1770245460083"></script>
-  
-  <!-- Premium Smoothness & Animations -->
-  <link rel="stylesheet" href="./css/styles.css?v=1770245460083">
-  
+  <script src="./js/dark-mode.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -64,7 +44,6 @@
       font-family: 'Inter', sans-serif;
     }
 
-    /* Payment method selection cards - KEEP hover effect (not a form input) */
     .card-select {
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
@@ -88,21 +67,18 @@
       transform: scale(1);
     }
 
-    /* Checkout action buttons - DISABLE hover lift, only opacity change */
     .btn-primary {
       background: linear-gradient(135deg, #ff6b00 0%, #ff8533 100%);
-      transition: opacity 0.3s ease, box-shadow 0.3s ease;
+      transition: all 0.3s ease;
     }
 
     .btn-primary:not(:disabled):hover {
-      opacity: 0.92;
-      box-shadow: 0 8px 20px -5px rgba(255, 107, 0, 0.4);
-      /* REMOVED: transform: translateY(-2px); */
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px -5px rgba(255, 107, 0, 0.5);
     }
 
     .btn-primary:not(:disabled):active {
-      opacity: 0.85;
-      /* REMOVED: transform: scale(0.98); */
+      transform: scale(0.98);
     }
 
     .btn-primary:disabled {
@@ -178,7 +154,6 @@
       animation: float 4s ease-in-out 1s infinite;
     }
 
-    /* Testimonials can keep hover effect (not a form element) */
     .testimonial-card {
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
@@ -191,56 +166,7 @@
     .sticky-bar {
       box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
     }
-    
-    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-       CHECKOUT FORM STABILITY - NO MOVEMENT ON HOVER
-       Purpose: Prevent annoying hover effects on form elements
-       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-    
-    /* Disable ALL transforms for form inputs */
-    input, 
-    textarea, 
-    select,
-    input:hover,
-    textarea:hover,
-    select:hover,
-    input:focus,
-    textarea:focus,
-    select:focus {
-      transform: none !important;
-    }
-    
-    /* Disable transforms for labels and form text */
-    label,
-    label:hover,
-    .text-sm,
-    .text-xs,
-    .checkout-container p,
-    .checkout-container span {
-      transform: none !important;
-    }
-    
-    /* Disable transforms for order summary rows */
-    .order-summary,
-    .order-summary *,
-    .order-summary:hover,
-    .order-summary *:hover {
-      transform: none !important;
-    }
-    
-    /* Smooth color transitions ONLY for form elements */
-    input, textarea, select {
-      transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease !important;
-    }
-    
-    input:focus, textarea:focus, select:focus {
-      border-color: #ff6b00;
-      box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
-    }
   </style>
-  <!-- Force Cache Clear - CRITICAL: Must be FIRST! -->
-  <script src="./js/cache-clear.js?v=1770245460083"></script>
-  
 </head>
 
 <body class="bg-gray-50 min-h-screen pb-28 sm:pb-32 lg:pb-8">
@@ -249,7 +175,7 @@
     <div class="max-w-6xl mx-auto px-4 py-3 lg:py-4">
       <div class="flex justify-center items-center">
         <a href="index.html" class="flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 70" width="360" height="70" class="h-10 md:h-16 w-auto object-contain"
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 70" class="h-10 md:h-16 w-auto object-contain"
             preserveAspectRatio="xMinYMid meet">
             <defs>
               <linearGradient id="flameGradient" x1="0%" y1="100%" x2="0%" y2="0%">
@@ -449,18 +375,11 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1.5 lg:mb-2">Відділення / Поштомат <span
                   class="text-orange-500">*</span></label>
-              <div class="relative">
-                <input type="text" id="np-warehouse-input" placeholder="Почніть вводити номер або назву..."
-                  class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300 focus:border-orange-400 focus:ring-2 focus:ring-orange-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50"
-                  autocomplete="off"
-                  disabled>
-                <!-- Warehouse autocomplete dropdown (Dynamic suggestions) -->
-                <ul id="np-warehouse-list"
-                  class="hidden absolute z-50 w-full mt-1 bg-white border-2 border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                </ul>
-                <!-- Hidden field to store selected warehouse reference -->
-                <input type="hidden" id="np-warehouse-ref" value="">
-              </div>
+              <select id="np-warehouse-select"
+                class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 transition-all duration-300 focus:border-orange-400 focus:ring-2 focus:ring-orange-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled>
+                <option value="">Спочатку оберіть місто</option>
+              </select>
             </div>
           </div>
 
@@ -736,51 +655,6 @@
     </div>
   </div>
 
-  <!-- Stock Error Modal (Hidden by Default) -->
-  <div id="stock-error-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl transform transition-all fade-in">
-      <div class="p-6">
-        <!-- Error Icon -->
-        <div class="flex justify-center mb-4">
-          <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-            </svg>
-          </div>
-        </div>
-
-        <!-- Title -->
-        <h3 class="text-xl font-bold text-gray-900 text-center mb-2">Наявність товарів змінилася</h3>
-        
-        <!-- Message -->
-        <p class="text-gray-600 text-center mb-4 text-sm">Вибачте, поки ви оформлювали замовлення, деякі товари закінчилися або їх кількість обмежена.</p>
-        
-        <!-- Stock Issues List -->
-        <div id="stock-issues-list" class="bg-red-50 rounded-xl p-4 mb-6 space-y-2 max-h-60 overflow-y-auto">
-          <!-- Issues will be dynamically inserted here -->
-        </div>
-
-        <!-- Info Message -->
-        <div class="bg-blue-50 rounded-xl p-3 mb-6 flex items-start gap-2">
-          <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-          </svg>
-          <p class="text-sm text-blue-900">Ми автоматично оновили ваш кошик до доступної кількості.</p>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="flex flex-col gap-3">
-          <button onclick="closeStockErrorModal()" class="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold py-3 px-6 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg">
-            Переглянути кошик
-          </button>
-          <button onclick="reloadCheckout()" class="w-full bg-gray-100 text-gray-700 font-semibold py-3 px-6 rounded-xl hover:bg-gray-200 transition-colors">
-            Оновити сторінку
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Order Success Message (Hidden by Default) -->
   <div id="order-success-message" class="max-w-6xl mx-auto px-4 pb-8 lg:pb-12 hidden">
     <div
@@ -985,15 +859,6 @@
     </button>
   </div>
 
-  <!-- 🎯 BULLETPROOF UTM Tracking System v2.0 - LOAD FIRST! -->
-  <script src="js/utm-tracker-bulletproof.js"></script>
-
-  <!-- 📊 Visitor Device Tracking - Logs ONCE per session -->
-  <script src="./js/visitor-tracker.js"></script>
-
-  <!-- Maintenance Mode Check -->
-  <script type="module" src="./js/maintenance-check.js?v=1770245460083"></script>
-
   <script type="module">
     // ============================================
     // FIREBASE IMPORTS - UPDATED WITH CLOUD FUNCTIONS
@@ -1069,40 +934,18 @@
     const NP_URL = 'https://api.novaposhta.ua/v2.0/json/'
     const NP_API_URL = NP_URL // Alias for backward compatibility
 
-    // Global storage for warehouses (for searchable dropdown)
-    let allWarehouses = []
-
     // Ukrposhta API Configuration
     const UP_API_BASE_URL = 'https://www.ukrposhta.ua/address-classifier-ws/get_'
 
     // CRITICAL: Load Cart Data from LocalStorage and validate IMMEDIATELY
     let cartItems = JSON.parse(localStorage.getItem('latiao_cart') || '[]')
 
-    // ============================================
-    // SPECIAL CASE: Check if this is a cart recovery link
-    // If ?restore or ?recovery_id parameter exists, SKIP empty cart check
-    // The cart will be restored from Firestore later
-    // ============================================
-    const urlParams = new URLSearchParams(window.location.search)
-    const hasRestoreParam = urlParams.has('restore') || urlParams.has('recovery_id')
-
-    if (hasRestoreParam) {
-      console.log('🔗 RESTORE LINK DETECTED - Skipping empty cart validation')
-      console.log('   Cart will be restored from Firestore inside DOMContentLoaded')
-      // Allow empty cart - it will be filled from Firestore
-      if (!cartItems || cartItems.length === 0) {
-        cartItems = [] // Initialize empty array for now
-        console.log('   📦 Cart is empty, will be populated from restore link')
-      }
-    } else {
-      // BOUNCER: Redirect if cart is empty (NO fake data allowed)
-      if (!cartItems || cartItems.length === 0) {
-        console.log('❌ Cart is empty and no restore link - redirecting to store')
-        // Immediate redirect - no alerts, no delays
-        window.location.replace('index.html')
-        // Halt all script execution
-        throw new Error('Cart empty - redirected to store')
-      }
+    // BOUNCER: Redirect if cart is empty (NO fake data allowed)
+    if (!cartItems || cartItems.length === 0) {
+      // Immediate redirect - no alerts, no delays
+      window.location.replace('index.html')
+      // Halt all script execution
+      throw new Error('Cart empty - redirected to store')
     }
 
     let promoApplied = false
@@ -1161,256 +1004,75 @@
       }
 
       // ============================================
-      // PART 1: CART RECOVERY - Restore from SMS/Email Link
-      // Supports both ?restore=ID and ?recovery_id=ID parameters
+      // PART 1: MAGIC LINK - Recovery from SMS
       // ============================================
       const urlParams = new URLSearchParams(window.location.search)
-      const restoreId = urlParams.get('restore') || urlParams.get('recovery_id')
+      const recoveryId = urlParams.get('recovery_id')
 
-      if (restoreId) {
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-        console.log('🔗 CART RECOVERY INITIATED')
-        console.log('   Document ID:', restoreId)
-        console.log('   Current cart items:', cartItems.length)
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+      if (recoveryId) {
+        console.log('🔗 Recovery link detected:', recoveryId)
 
         try {
-          console.log('📡 Fetching abandoned cart from Firestore...')
-          
           // Fetch abandoned cart from Firestore
-          const cartDocRef = doc(db, 'abandoned_carts', restoreId)
+          const cartDocRef = doc(db, 'abandoned_carts', recoveryId)
           const cartSnapshot = await getDoc(cartDocRef)
-
-          console.log('📡 Firestore response:', cartSnapshot.exists() ? 'FOUND' : 'NOT FOUND')
 
           if (cartSnapshot.exists()) {
             const cartData = cartSnapshot.data()
+            console.log('✅ Abandoned cart found:', cartData)
 
-            // ============================================
-            // STEP 1: Restore Cart Items
-            // ============================================
-            console.log('━━━ STEP 1: Restoring cart items ━━━')
+            // Step 1: Restore cart items to localStorage
             if (cartData.items && cartData.items.length > 0) {
-              console.log('   Found items in document:', cartData.items.length)
-              
-              // Save to localStorage
               localStorage.setItem('latiao_cart', JSON.stringify(cartData.items))
-              
-              // Update global variable
               cartItems = cartData.items
-              
-              console.log('   ✅ Cart restored to localStorage')
-              console.log('   ✅ Global cartItems updated:', cartItems.length, 'items')
-              
-              // Log each item
-              cartItems.forEach((item, index) => {
-                console.log(`   📦 Item ${index + 1}:`, item.name, '-', item.quantity, 'шт.')
-              })
-            } else {
-              console.warn('   ⚠️ No items found in document')
+              console.log('✅ Cart restored with', cartData.items.length, 'items')
             }
 
-            // ============================================
-            // STEP 2: Pre-fill Customer Information
-            // ============================================
-            console.log('━━━ STEP 2: Restoring customer info ━━━')
+            // Step 2: Pre-fill customer data
             if (cartData.customer) {
               const customer = cartData.customer
-              console.log('   Customer data found:', customer)
-              
-              if (customer.fullName && customer.fullName !== 'Не вказано') {
-                const fullNameInput = document.getElementById('fullName')
-                if (fullNameInput) {
-                  fullNameInput.value = customer.fullName
-                  console.log('   ✅ Name restored:', customer.fullName)
-                }
+              if (customer.fullName) {
+                document.getElementById('fullName').value = customer.fullName
               }
-              
               if (customer.phone) {
-                const phoneInput = document.getElementById('phone')
-                if (phoneInput) {
-                  phoneInput.value = customer.phone
-                  console.log('   ✅ Phone restored:', customer.phone)
-                }
+                document.getElementById('phone').value = customer.phone
               }
-              
-              if (customer.telegram && customer.telegram !== 'Не вказано') {
-                const telegramInput = document.getElementById('telegram')
-                if (telegramInput) {
-                  telegramInput.value = customer.telegram
-                  console.log('   ✅ Telegram restored:', customer.telegram)
-                }
+              if (customer.telegram) {
+                document.getElementById('telegram').value = customer.telegram
               }
-            } else {
-              console.log('   ℹ️ No customer data in document')
+              console.log('✅ Customer data pre-filled')
             }
 
-            // ============================================
-            // STEP 3: Restore Delivery Method & Details
-            // ============================================
-            console.log('━━━ STEP 3: Restoring delivery ━━━')
+            // Step 3: Pre-fill delivery data if available
             if (cartData.delivery) {
               const delivery = cartData.delivery
-              console.log('   Delivery data found:', delivery)
-              
-              // Restore delivery method selection (Nova Poshta / Ukrposhta)
-              if (delivery.method) {
-                const isNovaPoshta = delivery.method.includes('Нова')
-                const deliveryCard = document.querySelector(`[data-delivery="${isNovaPoshta ? 'nova' : 'ukr'}"]`)
-                if (deliveryCard) {
-                  setTimeout(() => {
-                    deliveryCard.click()
-                    console.log('   ✅ Delivery method clicked:', delivery.method)
-                  }, 100)
-                }
-              }
-              
-              // Restore city
               if (delivery.city) {
-                const cityInput = document.getElementById('np-city-input') || document.getElementById('up-city-input')
-                if (cityInput) {
-                  setTimeout(() => {
-                    cityInput.value = delivery.city
-                    console.log('   ✅ City restored:', delivery.city)
-                  }, 200)
-                }
+                document.getElementById('np-city-input').value = delivery.city
               }
-              
-              // Restore postcode for Ukrposhta
-              if (delivery.postcode) {
-                const postcodeInput = document.getElementById('up-postcode-input')
-                if (postcodeInput) {
-                  setTimeout(() => {
-                    postcodeInput.value = delivery.postcode
-                    console.log('   ✅ Postcode restored:', delivery.postcode)
-                  }, 200)
-                }
-              }
-            } else {
-              console.log('   ℹ️ No delivery data in document')
+              // Note: Warehouse would need additional logic to set dropdown
             }
 
-            // ============================================
-            // STEP 4: Restore Payment Method
-            // ============================================
-            console.log('━━━ STEP 4: Restoring payment ━━━')
-            if (cartData.payment_method_raw || cartData.paymentMethod) {
-              const paymentRaw = cartData.payment_method_raw || 
-                                (cartData.paymentMethod && cartData.paymentMethod.includes('Накладений') ? 'cod' : 'online')
-              
-              console.log('   Payment method:', paymentRaw)
-              const paymentCard = document.querySelector(`[data-payment="${paymentRaw}"]`)
-              if (paymentCard) {
-                setTimeout(() => {
-                  paymentCard.click()
-                  console.log('   ✅ Payment method clicked:', paymentRaw)
-                }, 300)
-              } else {
-                console.warn('   ⚠️ Payment card not found for:', paymentRaw)
-              }
-            } else {
-              console.log('   ℹ️ No payment data in document')
-            }
-
-            // ============================================
-            // STEP 5: Restore Comment
-            // ============================================
-            console.log('━━━ STEP 5: Restoring comment ━━━')
+            // Step 4: Pre-fill comment if available
             if (cartData.comment) {
-              const commentInput = document.getElementById('comment')
-              if (commentInput) {
-                commentInput.value = cartData.comment
-                console.log('   ✅ Comment restored')
-              }
-            } else {
-              console.log('   ℹ️ No comment in document')
+              document.getElementById('comment').value = cartData.comment
             }
 
-            // ============================================
-            // STEP 6: Show Success Notification
-            // ============================================
-            console.log('━━━ STEP 6: Showing success toast ━━━')
-            setTimeout(() => {
-              showRecoveryToast()
-              console.log('   ✅ Success toast shown')
-            }, 500)
-
-            // ============================================
-            // STEP 7: Clean URL (remove restore parameter)
-            // ============================================
-            console.log('━━━ STEP 7: Cleaning URL ━━━')
-            const cleanUrl = window.location.origin + window.location.pathname
-            window.history.replaceState({}, document.title, cleanUrl)
-            console.log('   ✅ URL cleaned:', cleanUrl)
-            
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-            console.log('🎉 CART RECOVERY COMPLETED SUCCESSFULLY')
-            console.log('   Final cart items:', cartItems.length)
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+            // Step 5: Show success toast notification
+            showRecoveryToast()
 
           } else {
-            console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-            console.error('❌ CART RECOVERY FAILED')
-            console.error('   Reason: Document not found')
-            console.error('   Document ID:', restoreId)
-            console.error('   Collection: abandoned_carts')
-            console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-            
-            // Show error toast
-            const toast = document.createElement('div')
-            toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-2xl z-[9999] animate-fade-in'
-            toast.innerHTML = '❌ Кошик не знайдено або вже оформлено'
-            document.body.appendChild(toast)
-            setTimeout(() => toast.remove(), 3000)
-            
-            // Redirect to homepage after 3 seconds
-            setTimeout(() => {
-              console.log('   Redirecting to homepage...')
-              window.location.replace('index.html')
-            }, 3000)
+            console.warn('⚠️ No abandoned cart found with ID:', recoveryId)
           }
 
         } catch (error) {
-          console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-          console.error('❌ CART RECOVERY ERROR')
-          console.error('   Error type:', error.name)
-          console.error('   Error message:', error.message)
-          console.error('   Full error:', error)
-          console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-          
-          // Show error toast
-          const toast = document.createElement('div')
-          toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-2xl z-[9999] animate-fade-in'
-          toast.innerHTML = '❌ Помилка відновлення: ' + error.message
-          document.body.appendChild(toast)
-          setTimeout(() => toast.remove(), 4000)
-          
-          // Redirect to homepage after 4 seconds
-          setTimeout(() => {
-            console.log('   Redirecting to homepage...')
-            window.location.replace('index.html')
-          }, 4000)
+          console.error('❌ Error restoring cart:', error)
         }
       }
 
-      // ============================================
-      // VALIDATION: Check cart has items after restore attempt
-      // ============================================
-      console.log('━━━ Final validation ━━━')
-      console.log('   Cart items count:', cartItems ? cartItems.length : 0)
-      
+      // Double-check cart still has items (in case localStorage was cleared during page load)
       if (!cartItems || cartItems.length === 0) {
-        console.error('❌ Cart is still empty after restore attempt')
-        if (!restoreId) {
-          // Only redirect if this wasn't a restore attempt
-          console.log('   No restore parameter - redirecting to homepage')
-          window.location.replace('index.html')
-          return
-        } else {
-          console.warn('   ⚠️ Restore attempted but cart is empty - user will see empty page')
-        }
-      } else {
-        console.log('   ✅ Cart validation passed:', cartItems.length, 'items')
+        window.location.replace('index.html')
+        return
       }
 
       // Render cart products
@@ -1493,7 +1155,7 @@
         'phone',
         'telegram',
         'np-city-input',
-        'np-warehouse-input',
+        'np-warehouse-select',
         'comment'
       ]
 
@@ -1650,61 +1312,6 @@
     })
 
     // ============================================
-    // STOCK WARNING TOAST
-    // ============================================
-    function showStockWarning(productName, maxStock) {
-      // Create toast element
-      const toast = document.createElement('div')
-      toast.className = 'fixed top-20 right-4 z-50 bg-orange-500 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-in'
-      toast.innerHTML = `
-        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-        </svg>
-        <div>
-          <p class="font-bold text-sm">${productName}</p>
-          <p class="text-xs opacity-90">Доступно лише ${maxStock} шт</p>
-        </div>
-      `
-
-      document.body.appendChild(toast)
-
-      // Auto remove after 3 seconds
-      setTimeout(() => {
-        toast.style.animation = 'slide-out 0.3s ease-out forwards'
-        setTimeout(() => toast.remove(), 300)
-      }, 3000)
-    }
-
-    // Add animation styles
-    const style = document.createElement('style')
-    style.textContent = `
-      @keyframes slide-in {
-        from {
-          transform: translateX(400px);
-          opacity: 0;
-        }
-        to {
-          transform: translateX(0);
-          opacity: 1;
-        }
-      }
-      @keyframes slide-out {
-        from {
-          transform: translateX(0);
-          opacity: 1;
-        }
-        to {
-          transform: translateX(400px);
-          opacity: 0;
-        }
-      }
-      .animate-slide-in {
-        animation: slide-in 0.3s ease-out;
-      }
-    `
-    document.head.appendChild(style)
-
-    // ============================================
     // RENDER PRODUCTS FUNCTION
     // ============================================
 
@@ -1718,10 +1325,6 @@
       const container = document.getElementById('productsList')
       container.innerHTML = cartItems.map((item, index) => {
         const isGift = item.isGift === true
-        const currentQty = item.quantity || 1
-        const availableStock = item.stock || 999
-        const isAtLimit = currentQty >= availableStock
-        const isLowStock = availableStock <= 5 && !isGift
 
         return `
         <div class="flex items-start gap-3 pb-4 border-b border-gray-100 last:border-0 last:pb-0 ${isGift ? 'bg-green-50/30 -mx-2 px-2 py-2 rounded-lg' : ''}">
@@ -1730,7 +1333,7 @@
             <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover">
           </div>
           <div class="flex-1 min-w-0">
-            <h3 class="font-semibold text-gray-900 text-sm line-clamp-2 break-words">${item.name}</h3>
+            <h3 class="font-semibold text-gray-900 text-sm truncate">${item.name}</h3>
             ${isGift ? '<p class="text-xs text-green-600 font-semibold mt-0.5">🎁 Подарунок від Latiao Snack</p>' : `
             <div class="flex items-center gap-1 mt-1">
               ${'🌶️'.repeat(item.spiciness || 0)}
@@ -1747,16 +1350,10 @@
               >
                 −
               </button>
-              <span class="w-8 text-center font-semibold text-gray-900 text-sm">${currentQty}</span>
+              <span class="w-8 text-center font-semibold text-gray-900 text-sm">${item.quantity}</span>
               <button 
                 onclick="increaseQty(${index})"
-                ${isAtLimit ? 'disabled' : ''}
-                class="w-7 h-7 rounded-lg flex items-center justify-center font-bold transition-all duration-200 text-sm ${
-                  isAtLimit 
-                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
-                    : 'bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700'
-                }"
-                title="${isAtLimit ? 'Досягнуто максимальної кількості' : 'Збільшити кількість'}"
+                class="w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 active:bg-gray-300 flex items-center justify-center text-gray-700 font-bold transition-all duration-200 text-sm"
               >
                 +
               </button>
@@ -1768,13 +1365,12 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
               </button>
             </div>
-            ${isAtLimit ? `<p class="text-[10px] text-red-600 font-medium mt-1">Максимум: ${availableStock} шт</p>` : isLowStock ? `<p class="text-[10px] text-orange-600 font-medium mt-1">Залишилось: ${availableStock} шт</p>` : ''}
             ` : `
             <div class="text-xs text-green-600 font-semibold mt-2">Безкоштовно</div>
             `}
           </div>
           <div class="text-right flex-shrink-0">
-            <span class="font-bold ${isGift ? 'text-green-600' : 'text-gray-900'} text-sm">${isGift ? '0 грн' : (currentQty * item.price) + ' грн'}</span>
+            <span class="font-bold ${isGift ? 'text-green-600' : 'text-gray-900'} text-sm">${isGift ? '0 грн' : (item.quantity * item.price) + ' грн'}</span>
           </div>
         </div>
       `
@@ -1787,67 +1383,26 @@
     // GLOBAL CART FUNCTIONS - Accessible from onclick handlers
 
     // Increase quantity of item at given index
-    window.increaseQty = async function (index) {
+    window.increaseQty = function (index) {
       // Step 1: Get current cart from localStorage
       let cart = JSON.parse(localStorage.getItem('latiao_cart') || '[]')
 
       // Step 2: Validate index
       if (index < 0 || index >= cart.length) return
 
-      const item = cart[index]
-
       // Заборонити зміну кількості подарунків
-      if (item.isGift === true) {
+      if (cart[index].isGift === true) {
         alert('Кількість подарунків не можна змінити')
         return
       }
 
-      const currentQty = item.quantity || 1
-      const productId = item.id || item.productId
+      // Step 3: Modify data - increment quantity
+      cart[index].quantity = (cart[index].quantity || 1) + 1
 
-      // ============================================
-      // 🔥 STRICT STOCK CHECK - Real-time validation
-      // ============================================
-      if (productId && window.firebaseInit) {
-        try {
-          const { db, doc, getDoc } = window.firebaseInit
-          const productRef = doc(db, 'products', productId)
-          const productSnap = await getDoc(productRef)
-
-          if (productSnap.exists()) {
-            const productData = productSnap.data()
-            const availableStock = productData.available_stock ?? productData.stock ?? 0
-
-            // Update local cache
-            item.stock = availableStock
-
-            // Hard limit check
-            if (currentQty >= availableStock) {
-              // Show warning toast
-              showStockWarning(item.name, availableStock)
-              return // STOP - cannot increase
-            }
-          }
-        } catch (error) {
-          console.error('❌ Stock check failed:', error)
-          // Continue with local stock if Firestore fails
-        }
-      }
-
-      // Step 3: Check local stock limit (fallback)
-      const localStock = item.stock || 999
-      if (currentQty >= localStock) {
-        showStockWarning(item.name, localStock)
-        return
-      }
-
-      // Step 4: Modify data - increment quantity
-      cart[index].quantity = currentQty + 1
-
-      // Step 5: Save back to localStorage
+      // Step 4: Save back to localStorage
       localStorage.setItem('latiao_cart', JSON.stringify(cart))
 
-      // Step 6: Update global variable and re-render
+      // Step 5: Update global variable and re-render
       cartItems = cart
       renderProducts()
       calculateTotals()
@@ -2220,13 +1775,6 @@
       updatePaymentSummary(method)
 
       console.log('✅ Payment method selected:', method)
-      
-      // Auto-update abandoned cart with new payment method (if phone exists)
-      const phoneInput = document.getElementById('phone')
-      if (phoneInput && phoneInput.value.trim().length >= 10) {
-        console.log('💳 Payment method changed, updating abandoned cart...')
-        saveAbandonedCart()
-      }
     }
 
     // ============================================
@@ -2551,16 +2099,15 @@
 
     /**
      * Function 2: Load Warehouses for Selected City
-     * Fetches all Nova Poshta warehouses/branches and stores them for searching
+     * Fetches all Nova Poshta warehouses/branches in the selected city
      * @param {string} cityRef - City reference ID from selected city
      */
     async function loadNovaPoshtaWarehouses(cityRef) {
-      const warehouseInput = document.getElementById('np-warehouse-input')
-      const warehouseList = document.getElementById('np-warehouse-list')
+      const warehouseSelect = document.getElementById('np-warehouse-select')
 
       // Show loading state
-      warehouseInput.disabled = true
-      warehouseInput.placeholder = '⏳ Завантаження відділень...'
+      warehouseSelect.disabled = true
+      warehouseSelect.innerHTML = '<option>⏳ Завантаження відділень...</option>'
 
       try {
         // API Request: Get warehouses by city reference
@@ -2584,103 +2131,38 @@
 
         // Response Handling: Check if warehouses were found
         if (data.success && data.data && data.data.length > 0) {
-          allWarehouses = data.data // Store warehouses globally for search
-          warehouseInput.disabled = false
-          warehouseInput.placeholder = 'Почніть вводити номер відділення...'
-          warehouseInput.value = '' // Clear previous selection
-          
-          // Clear hidden reference field
-          const hiddenWarehouseRef = document.getElementById('np-warehouse-ref')
-          if (hiddenWarehouseRef) hiddenWarehouseRef.value = ''
-          
-          console.log(`✅ Loaded ${allWarehouses.length} warehouses`)
+          const warehouses = data.data
+          renderWarehouses(warehouses)
         } else {
-          warehouseInput.placeholder = '❌ Відділення не знайдено'
-          warehouseInput.disabled = false
-          allWarehouses = []
+          warehouseSelect.innerHTML = '<option>❌ Відділення не знайдено</option>'
+          warehouseSelect.disabled = false
         }
       } catch (error) {
         console.error('❌ Error fetching warehouses:', error)
-        warehouseInput.placeholder = '⚠️ Помилка завантаження'
-        warehouseInput.disabled = false
-        allWarehouses = []
+        warehouseSelect.innerHTML = '<option>⚠️ Помилка завантаження</option>'
+        warehouseSelect.disabled = false
       }
     }
 
     /**
-     * Search and filter warehouses based on user input
-     * @param {string} query - User's search query
+     * Render Warehouses in Select Dropdown
+     * Populates the warehouse select with options
+     * @param {Array} warehouses - Array of warehouse objects from API response
      */
-    function searchWarehouses(query) {
-      const warehouseList = document.getElementById('np-warehouse-list')
-      
-      // Clear previous results
-      warehouseList.innerHTML = ''
+    function renderWarehouses(warehouses) {
+      const warehouseSelect = document.getElementById('np-warehouse-select')
+      warehouseSelect.innerHTML = '<option value="">Оберіть відділення...</option>'
 
-      // If query is empty, hide the list
-      if (!query || query.trim() === '') {
-        warehouseList.classList.add('hidden')
-        return
-      }
-
-      // Filter warehouses: search in description (case-insensitive)
-      const filteredWarehouses = allWarehouses.filter(warehouse =>
-        warehouse.Description.toLowerCase().includes(query.toLowerCase())
-      )
-
-      // If no results, show message
-      if (filteredWarehouses.length === 0) {
-        const li = document.createElement('li')
-        li.textContent = '❌ Відділення не знайдено'
-        li.className = 'px-4 py-3 text-sm text-gray-500'
-        warehouseList.appendChild(li)
-        warehouseList.classList.remove('hidden')
-        return
-      }
-
-      // Render filtered results (limit to 50 for performance)
-      filteredWarehouses.slice(0, 50).forEach(warehouse => {
-        const li = document.createElement('li')
-        li.textContent = warehouse.Description
-        li.className = 'px-4 py-3 hover:bg-gray-50 cursor-pointer text-sm transition-colors duration-150'
-        
-        // Click handler: select this warehouse
-        li.addEventListener('click', () => {
-          selectWarehouse(warehouse)
-        })
-
-        warehouseList.appendChild(li)
+      // Loop through warehouses and create options
+      warehouses.forEach(warehouse => {
+        const option = document.createElement('option')
+        option.value = warehouse.Ref // Warehouse reference ID
+        option.textContent = warehouse.Description // Warehouse full name/address
+        warehouseSelect.appendChild(option)
       })
 
-      // Show the populated list
-      warehouseList.classList.remove('hidden')
-    }
-
-    /**
-     * Select a warehouse and update input fields
-     * @param {Object} warehouse - Selected warehouse object
-     */
-    function selectWarehouse(warehouse) {
-      const warehouseInput = document.getElementById('np-warehouse-input')
-      const warehouseList = document.getElementById('np-warehouse-list')
-
-      // Update input with warehouse description
-      warehouseInput.value = warehouse.Description
-
-      // Store warehouse Ref in hidden field for backend
-      let hiddenWarehouseRef = document.getElementById('np-warehouse-ref')
-      if (!hiddenWarehouseRef) {
-        hiddenWarehouseRef = document.createElement('input')
-        hiddenWarehouseRef.type = 'hidden'
-        hiddenWarehouseRef.id = 'np-warehouse-ref'
-        warehouseInput.parentElement.appendChild(hiddenWarehouseRef)
-      }
-      hiddenWarehouseRef.value = warehouse.Ref
-
-      // Hide the dropdown list
-      warehouseList.classList.add('hidden')
-
-      console.log('✅ Warehouse selected:', warehouse.Description)
+      // Enable the select field
+      warehouseSelect.disabled = false
     }
 
     // ============================================
@@ -2690,30 +2172,18 @@
     // Listen for input events on city input field
     document.getElementById('np-city-input').addEventListener('input', function (event) {
       searchNovaPoshtaCities(event.target.value)
-    });
-
-    // Listen for input events on warehouse input field
-    document.getElementById('np-warehouse-input').addEventListener('input', function (event) {
-      searchWarehouses(event.target.value)
-    });
+    })
 
     // Close autocomplete when clicking outside
     document.addEventListener('click', function (event) {
-      const cityInput = document.getElementById('np-city-input');
-      const cityList = document.getElementById('np-city-list');
-      const warehouseInput = document.getElementById('np-warehouse-input');
-      const warehouseList = document.getElementById('np-warehouse-list');
+      const cityInput = document.getElementById('np-city-input')
+      const cityList = document.getElementById('np-city-list')
 
-      // Check if click was outside both the city input and the city list
+      // Check if click was outside both the input and the list
       if (cityInput && cityList && !cityInput.contains(event.target) && !cityList.contains(event.target)) {
-        cityList.classList.add('hidden');
+        cityList.classList.add('hidden')
       }
-
-      // Check if click was outside both the warehouse input and the warehouse list
-      if (warehouseInput && warehouseList && !warehouseInput.contains(event.target) && !warehouseList.contains(event.target)) {
-        warehouseList.classList.add('hidden');
-      }
-    });
+    })
 
     // Ukrposhta - Manual Input (No API calls)
     // All Ukrposhta data is collected from text inputs
@@ -2873,12 +2343,13 @@
         }
 
         if (deliveryMethod === 'nova') {
-          const npCity = document.getElementById('np-city-input')?.value.trim() || '';
-          const npWarehouse = document.getElementById('np-warehouse-input')?.value.trim() || '';
+          const npCity = document.getElementById('np-city-input')?.value.trim() || ''
+          const npWarehouseSelect = document.getElementById('np-warehouse-select')
+          const npWarehouse = npWarehouseSelect?.options[npWarehouseSelect.selectedIndex]?.text || ''
 
-          deliveryInfo.city = npCity;
-          deliveryInfo.branch = npWarehouse;
-          deliveryInfo.address = npCity && npWarehouse ? `${npCity}, ${npWarehouse}` : npCity || 'Не вказано';
+          deliveryInfo.city = npCity
+          deliveryInfo.branch = npWarehouse
+          deliveryInfo.address = npCity && npWarehouse ? `${npCity}, ${npWarehouse}` : npCity || 'Не вказано'
         } else if (deliveryMethod === 'ukr') {
           const upCity = document.getElementById('up-city-input')?.value.trim() || ''
           const upPostcode = document.getElementById('up-postcode-input')?.value.trim() || ''
@@ -2887,21 +2358,6 @@
           deliveryInfo.branch = upPostcode ? `Індекс: ${upPostcode}` : ''
           deliveryInfo.address = upCity && upPostcode ? `${upCity}, Індекс: ${upPostcode}` : upCity || 'Не вказано'
         }
-
-        // Get payment method information
-        const selectedPaymentCard = document.querySelector('[data-payment].selected')
-        const paymentMethodRaw = selectedPaymentCard ? selectedPaymentCard.getAttribute('data-payment') : 'online'
-        
-        // Map to human-readable Ukrainian labels
-        const paymentMethodMap = {
-          'cod': 'Накладений платіж',
-          'online': 'Оплата карткою',
-          'card': 'Оплата карткою',
-          'mono': 'Монобанк',
-          'monobank': 'Монобанк'
-        }
-        const paymentMethodDisplay = paymentMethodMap[paymentMethodRaw] || paymentMethodRaw
-        console.log('💳 Payment method captured:', paymentMethodRaw, '→', paymentMethodDisplay)
 
         // Prepare abandoned cart data (capture only, NO Telegram yet)
         const abandonedCartData = {
@@ -2912,8 +2368,6 @@
           },
           delivery: deliveryInfo,
           comment: comment || '',
-          paymentMethod: paymentMethodDisplay,  // Human-readable payment method
-          payment_method_raw: paymentMethodRaw, // Technical value for analytics
           items: cart.map(item => ({
             name: item.name,
             price: item.price,
@@ -2926,9 +2380,6 @@
           })),
           total: total,
           updatedAt: serverTimestamp(),
-          created_at: serverTimestamp(),  // CRM: Creation timestamp
-          updated_at: serverTimestamp(),   // CRM: Update timestamp
-          crm_status: 'new_lead',          // CRM: Default status for new carts
           status: 'browsing',
           history: [{
             action: 'created',
@@ -3051,7 +2502,6 @@
         const {
           doc: firestoreDoc,
           deleteDoc,
-          updateDoc,
           collection,
           query,
           where,
@@ -3062,31 +2512,21 @@
         const cleanupPromises = []
 
         // ============================================
-        // 1. MARK ABANDONED CART AS CONVERTED (DO NOT DELETE)
-        // Keep document for recovery link history and analytics
+        // 1. CLEAN ABANDONED CARTS
         // ============================================
-        const abandonedCartUpdate = async () => {
+        const abandonedCartCleanup = async () => {
           try {
             const cartRef = firestoreDoc(db, 'abandoned_carts', customerPhone)
-            
-            // Update document instead of deleting
-            await updateDoc(cartRef, {
-              isConverted: true,
-              convertedAt: new Date().toISOString(),
-              convertedOrderId: currentOrderId
-            })
-            
-            console.log('✅ Abandoned cart marked as converted (preserved for history)', currentOrderId)
+            await deleteDoc(cartRef)
+            console.log('✅ Abandoned cart deleted')
           } catch (error) {
             if (error.code !== 'not-found') {
-              console.error('⚠️ Failed to update abandoned cart:', error)
-            } else {
-              console.log('ℹ️ No abandoned cart to update (direct checkout)')
+              console.error('⚠️ Failed to delete abandoned cart:', error)
             }
           }
         }
 
-        cleanupPromises.push(abandonedCartUpdate())
+        cleanupPromises.push(abandonedCartCleanup())
 
         // ============================================
         // 2. CLEAN OLD PENDING ORDERS (ABANDONED PAYMENTS)
@@ -3199,328 +2639,19 @@
     }
 
     // ============================================
-    // STOCK ERROR MODAL FUNCTIONS
-    // ============================================
-    
-    /**
-     * Show stock error modal with list of issues
-     * @param {Array} issues - Array of stock issue objects
-     */
-    function showStockErrorModal(issues) {
-      const modal = document.getElementById('stock-error-modal');
-      const issuesList = document.getElementById('stock-issues-list');
-      
-      if (!modal || !issuesList) return;
-      
-      // Build issues HTML
-      issuesList.innerHTML = issues.map(issue => `
-        <div class="flex items-start gap-3 bg-white rounded-lg p-3 border border-red-200">
-          <svg class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-          <div class="flex-1 min-w-0">
-            <p class="font-semibold text-gray-900 text-sm">${issue.name}</p>
-            <p class="text-xs text-red-600 mt-0.5">${issue.message}</p>
-            ${issue.available > 0 ? `
-              <div class="flex items-center gap-2 mt-1 text-xs text-gray-600">
-                <span class="line-through">Замовлено: ${issue.requested}</span>
-                <span>→</span>
-                <span class="text-green-600 font-semibold">Оновлено: ${issue.available}</span>
-              </div>
-            ` : `
-              <p class="text-xs text-gray-600 mt-1">❌ Товар видалено з кошика</p>
-            `}
-          </div>
-        </div>
-      `).join('');
-      
-      // Show modal
-      modal.classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
-    }
-    
-    /**
-     * Close stock error modal
-     */
-    window.closeStockErrorModal = function() {
-      const modal = document.getElementById('stock-error-modal');
-      if (modal) {
-        modal.classList.add('hidden');
-        document.body.style.overflow = '';
-      }
-    }
-    
-    /**
-     * Reload checkout page to reflect updated cart
-     */
-    window.reloadCheckout = function() {
-      window.location.reload();
-    }
-
-    // ============================================
     // ⭐ UPDATED SUBMIT ORDER FUNCTION WITH MONOBANK INTEGRATION
     // ============================================
-    
-    // ============================================
-    // CUSTOMER SYNC FUNCTION (Prevent Duplicates)
-    // ============================================
-    /**
-     * Automatically creates or updates a Customer profile when an Order is saved.
-     * Uses NORMALIZED PHONE NUMBER as the Document ID to prevent duplicates.
-     * BEFORE creating a new customer, searches for existing ones with the same phone.
-     * 
-     * @param {Object} orderData - The order data object
-     * @param {Object} orderData.customer - Customer info { phone, fullName, email }
-     * @param {Object} orderData.summary - Order summary { total }
-     * @param {string} [orderId] - Optional: The Firestore document ID of the order
-     * @returns {Promise<Object>} - Result object with action details
-     */
-    async function syncCustomerFromOrder(orderData, orderId = null) {
-        try {
-            console.log('🔄 [Customer Sync] Starting sync process...');
-            
-            // Wait for PhoneUtils to load with 10-second timeout
-            if (!window.PhoneUtils) {
-                console.log('⏳ [Customer Sync] Waiting for PhoneUtils to load...');
-                await Promise.race([
-                    new Promise(resolve => {
-                        const checkUtils = () => {
-                            if (window.PhoneUtils) {
-                                console.log('✅ [Customer Sync] PhoneUtils loaded');
-                                resolve();
-                            } else {
-                                setTimeout(checkUtils, 100);
-                            }
-                        };
-                        checkUtils();
-                    }),
-                    new Promise((_, reject) => 
-                        setTimeout(() => reject(new Error('PhoneUtils load timeout')), 10000)
-                    )
-                ]);
-            }
-            
-            // Wait for Firebase to be ready
-            if (!window.firebaseInit) {
-                throw new Error('Firebase not initialized');
-            }
-            
-            const { db, doc, getDoc, setDoc, deleteDoc, query, where, collection, getDocs, serverTimestamp, increment, arrayUnion } = window.firebaseInit;
-            
-            // Extract customer data
-            const customer = orderData.customer || {};
-            const rawPhone = customer.phone || '';
-            
-            // ============================================
-            // STEP 1: NORMALIZE AND VALIDATE PHONE
-            // ============================================
-            const normalizedPhone = window.PhoneUtils.normalizePhone(rawPhone);
-            console.log('📞 [Customer Sync] Normalized phone:', normalizedPhone);
-            
-            if (!normalizedPhone || !window.PhoneUtils.isValidUkrainianPhone(normalizedPhone)) {
-                console.warn('⚠️ [Customer Sync] Invalid phone number:', rawPhone);
-                return { action: 'error', error: 'Invalid phone number' };
-            }
-            
-            const fullName = (customer.fullName || customer.name || '').trim();
-            const email = (customer.email || customer.telegram || '').trim();
-            const orderTotal = parseFloat(orderData.summary?.total) || 0;
-            
-            console.log(`👤 [Customer Sync] Processing customer [${normalizedPhone}] - ${fullName}`);
-            console.log(`💰 [Customer Sync] Order total: ${orderTotal} UAH`);
-            
-            // ============================================
-            // STEP 2: SEARCH FOR EXISTING CUSTOMER BY PHONE VARIANTS
-            // ============================================
-            console.log('🔍 [Customer Sync] Searching for existing customer...');
-            const phoneVariants = window.PhoneUtils.getPhoneVariants(normalizedPhone);
-            let existingCustomer = null;
-            let existingCustomerRef = null;
-            
-            // First, try the normalized phone as document ID
-            const primaryRef = doc(db, 'customers', normalizedPhone);
-            const primarySnap = await getDoc(primaryRef);
-            console.log(`🔍 [Customer Sync] Primary lookup complete for ${normalizedPhone}`);
-            
-            if (primarySnap.exists()) {
-                existingCustomer = primarySnap.data();
-                existingCustomerRef = primaryRef;
-                console.log(`✅ [Customer Sync] Found existing customer by normalized phone: ${normalizedPhone}`);
-            } else {
-                console.log(`🔍 [Customer Sync] Primary not found, checking ${phoneVariants.length} phone variants...`);
-                // Search using phone variants (for legacy data)
-                const customersRef = collection(db, 'customers');
-                
-                for (const variant of phoneVariants) {
-                    const q = query(customersRef, where('phone', '==', variant));
-                    const snapshot = await getDocs(q);
-                    
-                    if (!snapshot.empty) {
-                        existingCustomer = snapshot.docs[0].data();
-                        existingCustomerRef = snapshot.docs[0].ref;
-                        console.log(`✅ [Customer Sync] Found existing customer by phone variant: ${variant} (Doc ID: ${snapshot.docs[0].id})`);
-                        break;
-                    }
-                }
-                
-                if (!existingCustomer) {
-                    console.log(`ℹ️ [Customer Sync] No existing customer found`);
-                }
-            }
-            
-            // ============================================
-            // STEP 3: CREATE OR UPDATE CUSTOMER
-            // ============================================
-            
-            if (!existingCustomer) {
-                // ============================================
-                // NEW CUSTOMER - Create with normalized phone as ID
-                // ============================================
-                console.log('🆕 [Customer Sync] Creating new customer with normalized phone...');
-                
-                const newCustomerData = {
-                    phone: normalizedPhone, // Always store normalized format
-                    phoneDisplay: window.PhoneUtils.formatPhoneDisplay(normalizedPhone),
-                    fullName: fullName,
-                    email: email,
-                    ordersCount: 1,
-                    totalSpent: orderTotal,
-                    orderHistory: orderId ? [orderId] : [], // Renamed from orderIds for clarity
-                    firstOrderDate: serverTimestamp(),
-                    lastOrderDate: serverTimestamp(),
-                    createdAt: serverTimestamp(),
-                    updatedAt: serverTimestamp()
-                };
-                
-                console.log('💾 [Customer Sync] Saving new customer to Firestore...');
-                const newCustomerRef = doc(db, 'customers', normalizedPhone);
-                await setDoc(newCustomerRef, newCustomerData);
-                
-                console.log(`✅ [Customer Sync] New customer created: ${normalizedPhone}`);
-                return { action: 'created', customerId: normalizedPhone };
-                
-            } else {
-                // ============================================
-                // EXISTING CUSTOMER - Update and possibly migrate
-                // ============================================
-                const currentDocId = existingCustomerRef.id;
-                console.log(`🔄 [Customer Sync] Existing customer found with ID: ${currentDocId}`);
-                
-                if (currentDocId !== normalizedPhone) {
-                    // ============================================ 
-                    // MIGRATE: Customer found with old phone format
-                    // ============================================
-                    console.log(`🔄 [Customer Sync] Migrating customer from ${currentDocId} to ${normalizedPhone}`);
-                    
-                    const migratedData = {
-                        ...existingCustomer,
-                        phone: normalizedPhone, // Update to normalized format
-                        phoneDisplay: window.PhoneUtils.formatPhoneDisplay(normalizedPhone),
-                        // Increment counters
-                        ordersCount: (existingCustomer.ordersCount || 0) + 1,
-                        totalSpent: (existingCustomer.totalSpent || 0) + orderTotal,
-                        // Update order history
-                        orderHistory: orderId ? 
-                            [...(existingCustomer.orderHistory || existingCustomer.orderIds || []), orderId] :
-                            (existingCustomer.orderHistory || existingCustomer.orderIds || []),
-                        // Update name/email if current ones are better
-                        fullName: fullName || existingCustomer.fullName,
-                        email: email || existingCustomer.email,
-                        // Timestamps
-                        lastOrderDate: serverTimestamp(),
-                        updatedAt: serverTimestamp()
-                    };
-                    
-                    console.log('💾 [Customer Sync] Creating migrated customer document...');
-                    // Create new document with correct ID
-                    const newCustomerRef = doc(db, 'customers', normalizedPhone);
-                    await setDoc(newCustomerRef, migratedData);
-                    
-                    console.log('🗑️ [Customer Sync] Deleting old customer document...');
-                    // Delete old document
-                    await deleteDoc(existingCustomerRef);
-                    
-                    console.log(`✅ [Customer Sync] Customer migrated from ${currentDocId} to ${normalizedPhone}`);
-                    return { action: 'migrated', oldId: currentDocId, newId: normalizedPhone };
-                    
-                } else {
-                    // ============================================
-                    // STANDARD UPDATE - Customer already has correct ID
-                    // ============================================
-                    console.log('🔄 [Customer Sync] Updating existing customer...');
-                    
-                    const updateData = {
-                        // Ensure phone is in normalized format
-                        phone: normalizedPhone,
-                        phoneDisplay: window.PhoneUtils.formatPhoneDisplay(normalizedPhone),
-                        // Increment counters
-                        ordersCount: increment(1),
-                        totalSpent: increment(orderTotal),
-                        // Update timestamps
-                        lastOrderDate: serverTimestamp(),
-                        updatedAt: serverTimestamp()
-                    };
-                    
-                    // Add order ID to history (arrayUnion prevents duplicates)
-                    if (orderId) {
-                        updateData.orderHistory = arrayUnion(orderId);
-                    }
-                    
-                    // Only update name/email if current values are empty
-                    if (!existingCustomer.fullName && fullName) {
-                        updateData.fullName = fullName;
-                    }
-                    if (!existingCustomer.email && email) {
-                        updateData.email = email;
-                    }
-                    
-                    console.log('💾 [Customer Sync] Saving customer updates...');
-                    await setDoc(existingCustomerRef, updateData, { merge: true });
-                    
-                    const newCount = (existingCustomer.ordersCount || 0) + 1;
-                    console.log(`✅ [Customer Sync] Customer updated: ${normalizedPhone} (Orders: ${newCount})`);
-                    
-                    return { action: 'updated', customerId: normalizedPhone, ordersCount: newCount };
-                }
-            }
-            
-        } catch (error) {
-            console.error('❌ [Customer Sync] Error:', error.message, error.stack);
-            return { action: 'error', error: error.message };
-        }
-    }
-    
-    // Global flag to prevent double submissions
-    let isSubmitting = false;
-    
     async function submitOrder() {
       console.log('🚀 Starting Order Submission with Monobank Integration')
 
-      // ============================================
-      // RACE CONDITION PROTECTION - Prevent double-click
-      // ============================================
-      if (isSubmitting) {
-        console.log('⚠️ Order submission already in progress - ignoring click');
-        return;
-      }
-
       const btn = event.target
       const originalText = btn.textContent
-
-      // ⚡ IMMEDIATE BUTTON DISABLE - Prevent any double-clicks
-      isSubmitting = true;
-      btn.disabled = true;
-      btn.textContent = 'Збираю латяо... 🌶️';
 
       // ============================================
       // STEP 0: STRICT VALIDATION (THE GATEKEEPER)
       // ============================================
       if (!strictValidateForm()) {
         console.log('❌ Form validation failed - stopping submission')
-        // Reset button on validation failure
-        isSubmitting = false;
-        btn.disabled = false;
-        btn.textContent = originalText;
         return // STOP EXECUTION - DO NOT PROCEED
       }
 
@@ -3539,38 +2670,11 @@
       const phone = document.getElementById('phone').value.trim()
       const telegram = document.getElementById('telegram').value.trim()
 
-      // Validate delivery address based on selected method
+      // Validate Ukrposhta address if Ukrposhta is selected
       const selectedDelivery = document.querySelector('[data-delivery].selected')
       const deliveryMethod = selectedDelivery ? selectedDelivery.getAttribute('data-delivery') : 'nova'
 
-      // Validate Nova Poshta address if Nova Poshta is selected
-      if (deliveryMethod === 'nova') {
-        const npCity = document.getElementById('np-city-input').value.trim()
-        const npWarehouse = document.getElementById('np-warehouse-input').value.trim()
-
-        if (!npCity || !npWarehouse) {
-          alert('⚠️ Будь ласка, виберіть місто та відділення Нової Пошти')
-
-          // Scroll to Nova Poshta section
-          const novaPoshtaDetails = document.getElementById('nova-poshta-details')
-          if (novaPoshtaDetails) {
-            novaPoshtaDetails.scrollIntoView({ behavior: 'smooth', block: 'center' })
-          }
-
-          // Focus first empty field
-          if (!npCity) {
-            document.getElementById('np-city-input')?.focus()
-          } else if (!npWarehouse) {
-            document.getElementById('np-warehouse-input')?.focus()
-          }
-
-          // Reset button state
-          isSubmitting = false;
-          btn.disabled = false;
-          btn.textContent = originalText;
-          return // Prevent submission
-        }
-      } else if (deliveryMethod === 'ukr') {
+      if (deliveryMethod === 'ukr') {
         const upRegion = document.getElementById('up-region-input').value.trim()
         const upDistrict = document.getElementById('up-district-input').value.trim()
         const upCity = document.getElementById('up-city-input').value.trim()
@@ -3585,10 +2689,6 @@
             ukrposhtaDetails.scrollIntoView({ behavior: 'smooth', block: 'center' })
           }
 
-          // Reset button state
-          isSubmitting = false;
-          btn.disabled = false;
-          btn.textContent = originalText;
           return // Prevent submission
         }
 
@@ -3596,130 +2696,14 @@
         if (!/^\d{5}$/.test(upPostcode)) {
           alert('⚠️ Поштовий індекс повинен складатися з 5 цифр')
           document.getElementById('up-postcode-input').focus()
-          // Reset button state
-          isSubmitting = false;
-          btn.disabled = false;
-          btn.textContent = originalText;
           return
         }
       }
 
+      btn.textContent = 'Обробка...'
+      btn.disabled = true
+
       try {
-        // ============================================
-        // STEP 0.5: COMPREHENSIVE STOCK VALIDATION
-        // Last-minute check with auto-cart adjustment
-        // ============================================
-        console.log('🔍 Performing comprehensive stock validation...');
-
-        // Wait for Firebase to be ready
-        let attempts = 0;
-        while (!window.firebaseInit && attempts < 30) {
-          await new Promise(r => setTimeout(r, 100));
-          attempts++;
-        }
-
-        if (!window.firebaseInit) {
-          throw new Error('Firebase не ініціалізовано');
-        }
-
-        const { db, doc, getDoc } = window.firebaseInit;
-        const stockIssues = [];
-        let cartWasAdjusted = false;
-
-        for (let i = 0; i < cartItems.length; i++) {
-          const item = cartItems[i];
-          
-          // Skip gift items - they don't consume stock
-          if (item.isGift) {
-            console.log(`🎁 Skipping gift item: ${item.name}`);
-            continue;
-          }
-
-          const productId = item.id || item.productId;
-          if (!productId) {
-            console.warn('⚠️ Item missing ID:', item.name);
-            continue;
-          }
-
-          try {
-            const productRef = doc(db, 'products', productId);
-            const productSnap = await getDoc(productRef);
-
-            if (!productSnap.exists()) {
-              stockIssues.push({
-                name: item.name,
-                requested: item.quantity || item.qty || 1,
-                available: 0,
-                message: 'Товар не знайдено в базі'
-              });
-              // Remove item from cart
-              cartItems.splice(i, 1);
-              i--; // Adjust index after removal
-              cartWasAdjusted = true;
-              continue;
-            }
-
-            const productData = productSnap.data();
-            // Priority: available_stock > stock > 0
-            const currentStock = productData.available_stock ?? productData.stock ?? 0;
-            const requestedQty = item.quantity || item.qty || 1;
-
-            console.log(`📊 ${item.name}: requested=${requestedQty}, available=${currentStock}`);
-
-            if (currentStock < requestedQty) {
-              stockIssues.push({
-                name: item.name,
-                requested: requestedQty,
-                available: currentStock,
-                message: currentStock === 0 
-                  ? 'Товар закінчився' 
-                  : `Доступно лише ${currentStock} шт`
-              });
-
-              // Auto-adjust quantity in cart
-              if (currentStock > 0) {
-                if ('quantity' in item) {
-                  item.quantity = currentStock;
-                } else {
-                  item.qty = currentStock;
-                }
-                cartWasAdjusted = true;
-                console.log(`📦 Auto-adjusted ${item.name}: ${requestedQty} → ${currentStock}`);
-              } else {
-                // Remove item completely if out of stock
-                cartItems.splice(i, 1);
-                i--; // Adjust index after removal
-                cartWasAdjusted = true;
-                console.log(`🗑️ Removed out-of-stock item: ${item.name}`);
-              }
-            }
-          } catch (itemError) {
-            console.error(`❌ Error checking stock for ${item.name}:`, itemError);
-            // Continue with other items - don't block the entire order
-          }
-        }
-
-        // If cart was adjusted, save and recalculate
-        if (cartWasAdjusted) {
-          localStorage.setItem('latiao_cart', JSON.stringify(cartItems));
-          calculateTotals();
-          renderProducts();
-        }
-
-        if (stockIssues.length > 0) {
-          btn.textContent = originalText;
-          btn.disabled = false;
-          isSubmitting = false; // Reset submission flag
-
-          // Show professional modal with stock issues
-          showStockErrorModal(stockIssues);
-          
-          console.log('❌ Stock validation failed:', stockIssues);
-          return; // STOP - don't submit order
-        }
-
-        console.log('✅ All items in stock - proceeding with order');
-
         // ============================================
         // STEP 1: Collect Customer Information
         // ============================================
@@ -3735,12 +2719,13 @@
 
         if (deliveryMethod === 'nova') {
           // Nova Poshta delivery details
-          const npCity = document.getElementById('np-city-input').value.trim();
-          const npWarehouse = document.getElementById('np-warehouse-input').value.trim();
+          const npCity = document.getElementById('np-city-input').value.trim()
+          const npWarehouseSelect = document.getElementById('np-warehouse-select')
+          const npWarehouse = npWarehouseSelect.options[npWarehouseSelect.selectedIndex]?.text || ''
 
-          deliveryInfo.city = npCity;
-          deliveryInfo.warehouse = npWarehouse;
-          deliveryInfo.address = `${npCity}, ${npWarehouse}`;
+          deliveryInfo.city = npCity
+          deliveryInfo.warehouse = npWarehouse
+          deliveryInfo.address = `${npCity}, ${npWarehouse}`
         } else if (deliveryMethod === 'ukr') {
           // Ukrposhta delivery details
           const upRegion = document.getElementById('up-region-input').value.trim()
@@ -3809,59 +2794,6 @@
         // ============================================
         // STEP 7: Construct Order Object
         // ============================================
-        
-        // 🎯 BULLETPROOF UTM CAPTURE WITH MAXIMUM VISIBILITY
-        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #FF6B00; font-weight: bold; font-size: 16px;');
-        console.log('%c🎯 STEP 7: CAPTURING UTM DATA FOR ORDER', 'color: #FF6B00; font-weight: bold; font-size: 18px;');
-        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #FF6B00; font-weight: bold; font-size: 16px;');
-        
-        let utm_data = null;
-        
-        // Check if UTMTracker exists
-        if (typeof window.UTMTracker !== 'undefined') {
-          console.log('%c✅ UTMTracker is available', 'color: #4CAF50; font-weight: bold; font-size: 14px;');
-          utm_data = window.UTMTracker.getUTMForOrder();
-          console.log('%c📦 UTM DATA CAPTURED:', 'background: #2196F3; color: white; padding: 10px; font-size: 16px;');
-          console.table(utm_data);
-        } else {
-          console.error('%c❌ UTMTracker NOT FOUND!', 'background: #F44336; color: white; padding: 10px; font-size: 16px;');
-          console.error('Falling back to direct localStorage check...');
-          
-          // Emergency fallback
-          try {
-            const stored = localStorage.getItem('latiao_utm_data');
-            if (stored) {
-              const parsed = JSON.parse(stored);
-              utm_data = {
-                source: parsed.utm_source || 'organic',
-                medium: parsed.utm_medium || 'direct',
-                campaign: parsed.utm_campaign || null,
-                content: parsed.utm_content || null,
-                term: parsed.utm_term || null,
-                landingPage: parsed.landingPage || null,
-                capturedAt: parsed.capturedAt || null
-              };
-              console.log('%c✅ FALLBACK SUCCESS - Data from localStorage:', 'background: #FF9800; color: white; padding: 5px;');
-              console.table(utm_data);
-            } else {
-              console.warn('%c⚠️ No UTM data in localStorage', 'color: #FF9800; font-size: 14px;');
-              utm_data = { source: 'organic', medium: 'direct', campaign: null, content: null, term: null, landingPage: null, capturedAt: null };
-            }
-          } catch (e) {
-            console.error('❌ Fallback failed:', e);
-            utm_data = { source: 'organic', medium: 'direct', campaign: null, content: null, term: null, landingPage: null, capturedAt: null };
-          }
-        }
-        
-        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #FF6B00; font-weight: bold;');
-        console.log('%c✅ FINAL UTM DATA FOR ORDER:', 'background: #4CAF50; color: white; padding: 10px; font-size: 16px; font-weight: bold;');
-        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #FF6B00; font-weight: bold;');
-        console.table(utm_data);
-        console.log('utm_data object:', utm_data);
-        console.log('utm_data.source:', utm_data.source);
-        console.log('utm_data.medium:', utm_data.medium);
-        console.log('utm_data.campaign:', utm_data.campaign);
-        
         const orderData = {
           // 🔒 SECURITY: userId for future Firebase Auth integration
           userId: null,  // Will be populated below if available
@@ -3898,39 +2830,13 @@
           // Additional Information
           comment: comment,
 
-          // 🎯 Marketing Attribution (UTM tracking)
-          utm_data: utm_data,
-
-          // 💻 Device Information (for analytics)
-          deviceInfo: {
-            userAgent: navigator.userAgent,
-            platform: navigator.platform || 'unknown',
-            screenWidth: window.screen.width,
-            screenHeight: window.screen.height
-          },
-
           // Order Metadata
           status: 'pending', // pending, confirmed, shipped, delivered, cancelled
           createdAt: serverTimestamp(),
 
           // Optional: Store promo code if applied
-          promo: promoCodeData,
-
-          // ============================================
-          // 📊 BEHAVIOR ANALYTICS: Store timing metrics directly in order
-          // ============================================
-          analytics: {
-            timeToThink: null,      // Will be calculated below (first view → add to cart)
-            purchaseCycle: null,    // Will be calculated below (add to cart → order complete)
-            checkoutDuration: null  // Will be calculated below (checkout load → submit)
-          }
+          promo: promoCodeData
         }
-
-        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #9C27B0; font-weight: bold; font-size: 16px;');
-        console.log('%c📋 ORDER DATA OBJECT CONSTRUCTED', 'color: #9C27B0; font-weight: bold; font-size: 18px;');
-        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #9C27B0; font-weight: bold; font-size: 16px;');
-        console.log('VERIFY utm_data field:', orderData.utm_data);
-        console.table(orderData.utm_data);
 
         // ============================================
         // STEP 8: Save to Firebase Firestore with SHORT ID
@@ -4011,39 +2917,6 @@
         orderData.orderId = orderId;
 
         // ============================================
-        // 📊 CALCULATE AND STORE TIMING METRICS IN ORDER
-        // ============================================
-        try {
-          // 1. TIME TO THINK (first product view → add to cart)
-          // Note: This is already tracked in analytics_timings when first item is added
-          // Here we just note that it was tracked (optional)
-          
-          // 2. PURCHASE CYCLE (add to cart → order complete)
-          const cartStartedAt = localStorage.getItem('cart_started_at');
-          if (cartStartedAt) {
-            const cycleDurationMs = Date.now() - parseInt(cartStartedAt);
-            const cycleDurationSeconds = Math.round(cycleDurationMs / 100) / 10;
-            if (cycleDurationSeconds >= 10 && cycleDurationSeconds <= 86400) {
-              orderData.analytics.purchaseCycle = cycleDurationSeconds;
-            }
-          }
-          
-          // 3. CHECKOUT DURATION (checkout page load → submit)
-          const checkoutLoadTime = localStorage.getItem('checkout_load_time');
-          if (checkoutLoadTime) {
-            const checkoutDurationMs = Date.now() - parseInt(checkoutLoadTime);
-            const checkoutDurationSeconds = Math.round(checkoutDurationMs / 100) / 10;
-            if (checkoutDurationSeconds >= 5 && checkoutDurationSeconds <= 1800) {
-              orderData.analytics.checkoutDuration = checkoutDurationSeconds;
-            }
-          }
-          
-          console.log('📊 Order analytics:', orderData.analytics);
-        } catch (analyticsError) {
-          console.error('⚠️ Failed to calculate order analytics:', analyticsError.message);
-        }
-
-        // ============================================
         // CHECK PREPAYMENT SETTING FOR COD ORDERS
         // (before saving to set correct status)
         // ============================================
@@ -4051,6 +2924,9 @@
         // CHECK PREPAYMENT SETTING FOR COD ORDERS
         // ============================================
         let isPrepaymentEnabled = true; // FORCE ENABLED as per requirement
+        console.log('💳 Prepayment setting: FORCE ENABLED');
+
+        console.log('💾 Saving order to Firestore...', { orderId, orderData })
 
         // ============================================
         // 🔒 SECURITY: Link order to authenticated user (if available)
@@ -4063,6 +2939,7 @@
 
             if (currentUser) {
               orderData.userId = currentUser.uid;
+              console.log('✅ Order linked to Firebase Auth userId:', currentUser.uid);
             }
           }
 
@@ -4071,222 +2948,131 @@
           if (!orderData.userId && phone) {
             // Create consistent userId from phone (remove all non-digits)
             orderData.userId = phone.replace(/\D/g, '');
+            console.log('📱 Order linked to phone-based userId:', orderData.userId);
           }
         } catch (userIdError) {
           console.warn('⚠️ Could not link userId to order:', userIdError);
           // Continue anyway - userId is optional for now
         }
 
-        // Save order to Firestore
-        console.log('💾 [Checkout] Saving order to Firestore...');
-        console.log('📋 [Checkout] Order ID:', orderId);
-        console.log('📋 [Checkout] Order data keys:', Object.keys(orderData));
+        // Use setDoc with custom ID instead of addDoc
+        // This forces Firestore to use our short ID as the Document ID
         await setDoc(doc(db, 'orders', orderId), orderData);
-        console.log('✅ [Checkout] Order saved successfully to Firestore');
+
+        console.log('✅ Order saved successfully! Order ID:', orderId)
 
         // ============================================
-        // STEP 8.1: SYNC CUSTOMER PROFILE (BACKGROUND)
+        // STEP 8.3: Mini-CRM - Sync Customer Profile
         // ============================================
-        console.log('👤 [Checkout] Starting customer sync (background)...');
-        
-        // ⚡ FIRE AND FORGET - Non-blocking background operation
-        Promise.race([
-          syncCustomerFromOrder(orderData, orderId),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Customer sync timeout after 5 seconds')), 5000)
-          )
-        ]).then(result => {
-          if (result.action === 'created') {
-            console.log('✅ [Checkout] New customer profile created:', result.customerId);
-          } else if (result.action === 'updated') {
-            console.log('✅ [Checkout] Existing customer profile updated:', result.customerId);
-          } else if (result.action === 'migrated') {
-            console.log('✅ [Checkout] Customer profile migrated:', result.oldId, '→', result.newId);
-          } else if (result.action === 'error') {
-            console.warn('⚠️ [Checkout] Customer sync returned error:', result.error);
-          }
-        }).catch(error => {
-          console.error('⚠️ [Checkout] Customer sync failed (non-blocking):', error.message);
-        });
-
         // ============================================
-        // STEP 8.2: DEDUCT STOCK (BACKGROUND)
+        // STEP 8.3: SYNC TO KeyCRM (FOR ALL ORDERS)
         // ============================================
-        console.log('📦 [Checkout] Starting stock deduction (background)...');
+        // Executed immediately after saving to Firestore to ensure minimal delay
+        console.log('🔗 Syncing order to KeyCRM...')
+        try {
+          // We utilize the existing non-blocking sync function
+          // But we await it here to ensure it tries at least once before redirect
+          const keyCrmResult = await sendToKeyCRM(orderData, orderId)
 
-        // ⚡ FIRE AND FORGET - Non-blocking background operation
-        (async () => {
-          try {
-            const { writeBatch, doc: fbDoc } = window.firebaseInit;
-            const batch = writeBatch(db);
-            let stockUpdates = 0;
-
-            for (const item of orderItems) {
-              // Skip gift items - they don't consume stock
-              if (item.isGift) {
-                console.log(`🎁 [Checkout] Skipping gift item: ${item.name}`);
-                continue;
-              }
-
-              const productId = item.id || item.productId;
-              if (!productId) {
-                console.warn('⚠️ [Checkout] Item missing ID:', item.name);
-                continue;
-              }
-
-              // Get current stock from Firestore
-              const productRef = fbDoc(db, 'products', productId);
-              const productSnap = await getDoc(productRef);
-
-              if (!productSnap.exists()) {
-                console.warn(`⚠️ [Checkout] Product ${productId} (${item.name}) not found for stock deduction`);
-                continue;
-              }
-
-              const currentStock = productSnap.data().stock || 0;
-              const quantityOrdered = item.quantity || item.qty || 1;
-              const newStock = Math.max(0, currentStock - quantityOrdered);
-
-              batch.update(productRef, {
-                stock: newStock,
-                updatedAt: new Date().toISOString(),
-                lastStockUpdate: serverTimestamp()
-              });
-
-              stockUpdates++;
-              console.log(`📦 [Checkout] Stock update queued: ${item.name} (${item.sku || productId}): ${currentStock} → ${newStock} (-${quantityOrdered})`);
-            }
-
-            if (stockUpdates > 0) {
-              console.log('💾 [Checkout] Committing stock batch updates...');
-              await batch.commit();
-              console.log(`✅ [Checkout] Stock deducted for ${stockUpdates} items in order ${orderId}`);
-            } else {
-              console.log('ℹ️ [Checkout] No stock updates needed (all gifts or no items)');
-            }
-          } catch (stockError) {
-            console.error('❌ [Checkout] Stock deduction failed (non-blocking):', stockError);
-          }
-        })();
-
-        // ============================================
-        // STEP 8.3: SYNC TO KeyCRM (BACKGROUND)
-        // ============================================
-        console.log('🔗 [Checkout] Syncing order to KeyCRM (background)...');
-        
-        // ⚡ FIRE AND FORGET - Non-blocking background operation
-        sendToKeyCRM(orderData, orderId).then(keyCrmResult => {
           if (keyCrmResult.success) {
-            console.log('✅ [Checkout] Order synced to KeyCRM successfully:', keyCrmResult.keyCrmOrderId);
+            console.log('✅ Order synced to KeyCRM successfully:', keyCrmResult.keyCrmOrderId)
           } else {
-            console.warn('⚠️ [Checkout] KeyCRM sync failed (non-blocking):', keyCrmResult.error);
+            console.warn('⚠️ KeyCRM sync failed (non-blocking):', keyCrmResult.error)
           }
-        }).catch(keyCrmError => {
-          console.error('⚠️ [Checkout] KeyCRM sync error (non-blocking):', keyCrmError);
-        });
+        } catch (keyCrmError) {
+          console.error('⚠️ KeyCRM sync error (non-blocking):', keyCrmError)
+        }
 
         // ============================================
         // STEP 8.25: Smart Cleanup (Abandoned Carts + Old Pending Orders)
         // ============================================
         // Clean up ALL old entries for this customer to prevent duplicates
         // This runs in the background and won't block the user flow
-        console.log('🧹 [Checkout] Starting background cleanup...');
         cleanUpOldEntries(phone, orderId).catch(err => {
-          console.error('⚠️ [Checkout] Cleanup error (non-blocking):', err);
-        });
+          console.error('⚠️ Cleanup error (non-blocking):', err)
+        })
 
         // ============================================
-        // STEP 8.5: Update Promo Code Usage (BACKGROUND)
+        // STEP 8.5: Update Promo Code Usage (if applied)
         // ============================================
         if (appliedPromoCode && appliedPromoCode.id) {
-          console.log('🎟️ [Checkout] Updating promo code usage (background)...');
-          
-          // ⚡ FIRE AND FORGET - Non-blocking background operation
-          (async () => {
-            try {
-              const { doc: firestoreDoc, updateDoc, increment } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-              const promoRef = firestoreDoc(db, 'promocodes', appliedPromoCode.id);
-              await updateDoc(promoRef, {
-                'stats.usedCount': increment(1)
-              });
-              console.log('✅ [Checkout] Promo code usage updated:', appliedPromoCode.code);
-            } catch (promoError) {
-              console.error('⚠️ [Checkout] Failed to update promo usage (non-critical):', promoError);
-            }
-          })();
+          try {
+            const { doc: firestoreDoc, updateDoc, increment } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')
+            const promoRef = firestoreDoc(db, 'promocodes', appliedPromoCode.id)
+            await updateDoc(promoRef, {
+              'stats.usedCount': increment(1)
+            })
+            console.log('✅ Promo code usage updated:', appliedPromoCode.code)
+          } catch (promoError) {
+            console.error('⚠️ Failed to update promo usage (non-critical):', promoError)
+          }
         }
 
         // ============================================
         // ⭐ STEP 9: PAYMENT METHOD ROUTING
         // ============================================
-        console.log('💳 [Checkout] Payment routing - Method:', paymentMethod);
 
         if (paymentMethod === 'online') {
           // ============================================
           // ONLINE PAYMENT FLOW - CREATE MONOBANK INVOICE
           // ============================================
-          console.log('💳 [Checkout] Online payment selected - creating Monobank invoice...');
+          console.log('💳 Online payment selected - creating Monobank invoice...')
 
           // CRITICAL: Validate orderId exists
           if (!orderId) {
-            console.error('❌ [Checkout] Order ID is missing!');
-            throw new Error('Order ID is missing - cannot create payment invoice');
+            throw new Error('Order ID is missing - cannot create payment invoice')
           }
 
-          console.log('✅ [Checkout] Order ID validated:', orderId);
+          console.log('🔍 Order ID:', orderId)
+
+          btn.textContent = 'Створення рахунку...'
 
           try {
-            console.log('🔧 [Checkout] Initializing Cloud Function...');
             // Initialize Cloud Function
-            const createMonoInvoice = httpsCallable(functions, 'createMonoInvoice');
+            const createMonoInvoice = httpsCallable(functions, 'createMonoInvoice')
 
             // CRITICAL: Wrap orderId in an object (backend expects data.orderId)
             const payload = {
               orderId: orderId
-            };
+            }
 
-            console.log('📤 [Checkout] Calling Cloud Function with payload:', payload);
+            console.log('📤 Calling Cloud Function with payload:', payload)
 
             // Call the function with the payload object
-            const result = await createMonoInvoice(payload);
+            const result = await createMonoInvoice(payload)
 
-            console.log('📥 [Checkout] Cloud Function response received');
-            console.log('📦 [Checkout] Response data:', result.data);
+            console.log('📥 Cloud Function response:', result)
+            console.log('✅ Invoice created:', result.data)
 
             // Validate response structure
             if (!result.data) {
-              console.error('❌ [Checkout] Cloud Function returned no data');
-              throw new Error('Cloud Function returned no data');
+              throw new Error('Cloud Function returned no data')
             }
 
             if (!result.data.success) {
-              console.error('❌ [Checkout] Invoice creation failed:', result.data.error);
-              throw new Error(result.data.error || 'Invoice creation failed');
+              throw new Error(result.data.error || 'Invoice creation failed')
             }
 
             if (!result.data.pageUrl) {
-              console.error('❌ [Checkout] Payment URL not received from Monobank');
-              throw new Error('Payment URL not received from Monobank');
+              throw new Error('Payment URL not received from Monobank')
             }
 
             // Success - clear cart and redirect
-            console.log('✅ [Checkout] Invoice created successfully');
-            console.log('🗑️ [Checkout] Clearing cart...');
-            localStorage.removeItem('latiao_cart');
+            localStorage.removeItem('latiao_cart')
 
-            console.log('🔄 [Checkout] Redirecting to Monobank payment page:', result.data.pageUrl);
-            window.location.href = result.data.pageUrl;
+            console.log('🔄 Redirecting to Monobank payment page...')
+            window.location.href = result.data.pageUrl
 
           } catch (paymentError) {
-            console.error('❌ [Checkout] Monobank payment error:', paymentError);
-            console.error('❌ [Checkout] Error code:', paymentError.code);
-            console.error('❌ [Checkout] Error message:', paymentError.message);
-            console.error('❌ [Checkout] Error details:', paymentError.details);
+            console.error('❌ Monobank payment error:', paymentError)
+            console.error('Error code:', paymentError.code)
+            console.error('Error message:', paymentError.message)
+            console.error('Error details:', paymentError.details)
 
             // User-friendly error message
-            let errorMsg = '⚠️ Помилка створення рахунку для оплати.\n\n';
-            errorMsg += 'Ваше замовлення збережено (№' + orderId + '),\n';
-            errorMsg += 'але сталася помилка при створенні платіжного рахунку.\n\n';
+            let errorMsg = '⚠️ Помилка створення рахунку для оплати.\n\n'
+            errorMsg += 'Ваше замовлення збережено (№' + orderId + '),\n'
+            errorMsg += 'але сталася помилка при створенні платіжного рахунку.\n\n'
 
             // Add specific error details if available
             if (paymentError.code === 'functions/invalid-argument') {
@@ -4301,28 +3087,26 @@
             errorMsg += '📞 Телефон: +380...\n'
             errorMsg += '💬 Telegram: @latiao_snack'
 
-            alert(errorMsg);
+            alert(errorMsg)
 
             // Don't clear cart - let user try again or contact support
-            console.log('🔄 [Checkout] Resetting button state');
-            btn.textContent = originalText;
-            btn.disabled = false;
-            return;
+            btn.textContent = originalText
+            btn.disabled = false
+            return
           }
 
         } else {
           // ============================================
           // CASH ON DELIVERY - USE PREPAYMENT SETTING (already fetched)
           // ============================================
-          console.log('💵 [Checkout] COD payment selected, isPrepaymentEnabled:', isPrepaymentEnabled);
+          console.log('💵 COD payment selected, isPrepaymentEnabled:', isPrepaymentEnabled)
 
           // CRITICAL: Validate orderId exists
           if (!orderId) {
-            console.error('❌ [Checkout] Order ID is missing!');
-            throw new Error('Order ID is missing - cannot process COD order');
+            throw new Error('Order ID is missing - cannot process COD order')
           }
 
-          console.log('✅ [Checkout] Order ID validated:', orderId);
+          console.log('🔍 Order ID:', orderId)
 
           try {
             // ============================================
@@ -4330,61 +3114,57 @@
             // ============================================
             if (!isPrepaymentEnabled) {
               // This block is now unreachable but kept for safety/future toggle
-              console.log('✅ [Checkout] Prepayment DISABLED (Start)');
+              console.log('✅ Prepayment DISABLED (Start)');
             }
 
             // ============================================
             // STANDARD FLOW: PREPAYMENT ENABLED - 100 UAH DEPOSIT
             // ============================================
-            console.log('💰 [Checkout] Prepayment ENABLED - creating 100 UAH deposit invoice...');
+            console.log('💰 Prepayment ENABLED - creating 100 UAH deposit invoice...')
 
-            console.log('🔧 [Checkout] Initializing Cloud Function...');
+            btn.textContent = 'Створення рахунку на передоплату...'
+
             // Initialize Cloud Function
-            const createMonoInvoice = httpsCallable(functions, 'createMonoInvoice');
+            const createMonoInvoice = httpsCallable(functions, 'createMonoInvoice')
 
             // CRITICAL: Pass paymentType = 'deposit' for COD orders
             const payload = {
               orderId: orderId,
               paymentType: 'deposit' // This triggers 100 UAH invoice
-            };
+            }
 
-            console.log('📤 [Checkout] Calling Cloud Function with payload:', payload);
+            console.log('📤 Calling Cloud Function with payload:', payload)
 
             // Call the function with the payload object
-            const result = await createMonoInvoice(payload);
+            const result = await createMonoInvoice(payload)
 
-            console.log('📥 [Checkout] Cloud Function response received');
-            console.log('📦 [Checkout] Response data:', result.data);
+            console.log('📥 Cloud Function response:', result)
+            console.log('✅ Deposit invoice created:', result.data)
 
             // Validate response structure
             if (!result.data) {
-              console.error('❌ [Checkout] Cloud Function returned no data');
-              throw new Error('Cloud Function returned no data');
+              throw new Error('Cloud Function returned no data')
             }
 
             if (!result.data.success) {
-              console.error('❌ [Checkout] Invoice creation failed:', result.data.error);
-              throw new Error(result.data.error || 'Invoice creation failed');
+              throw new Error(result.data.error || 'Invoice creation failed')
             }
 
             if (!result.data.pageUrl) {
-              console.error('❌ [Checkout] Payment URL not received from Monobank');
-              throw new Error('Payment URL not received from Monobank');
+              throw new Error('Payment URL not received from Monobank')
             }
 
             // Success - clear cart and redirect to payment
-            console.log('✅ [Checkout] Deposit invoice created successfully');
-            console.log('🗑️ [Checkout] Clearing cart...');
-            localStorage.removeItem('latiao_cart');
+            localStorage.removeItem('latiao_cart')
 
-            console.log('🔄 [Checkout] Redirecting to Monobank payment page for 100 UAH deposit:', result.data.pageUrl);
-            window.location.href = result.data.pageUrl;
+            console.log('🔄 Redirecting to Monobank payment page for 100 UAH deposit...')
+            window.location.href = result.data.pageUrl
 
           } catch (paymentError) {
-            console.error('❌ [Checkout] Deposit payment error:', paymentError);
-            console.error('❌ [Checkout] Error code:', paymentError.code);
-            console.error('❌ [Checkout] Error message:', paymentError.message);
-            console.error('❌ [Checkout] Error details:', paymentError.details);
+            console.error('❌ Deposit payment error:', paymentError)
+            console.error('Error code:', paymentError.code)
+            console.error('Error message:', paymentError.message)
+            console.error('Error details:', paymentError.details)
 
             // User-friendly error message
             let errorMsg = '⚠️ Помилка створення рахунку для передоплати.\n\n'
@@ -4404,14 +3184,12 @@
             errorMsg += '📞 Телефон: +380...\n'
             errorMsg += '💬 Telegram: @latiao_snack'
 
-            alert(errorMsg);
+            alert(errorMsg)
 
             // Don't clear cart - let user try again or contact support
-            console.log('🔄 [Checkout] Resetting button state');
-            btn.textContent = originalText;
-            btn.disabled = false;
-            isSubmitting = false;
-            return;
+            btn.textContent = originalText
+            btn.disabled = false
+            return
           }
         }
 
@@ -4419,21 +3197,19 @@
         // ============================================
         // STEP 10: Error Handling
         // ============================================
-        console.error('❌ [Checkout] CRITICAL ERROR during order submission:', error);
-        console.error('❌ [Checkout] Error stack:', error.stack);
+        console.error('❌ Error during order submission:', error)
 
         alert('⚠️ Виникла помилка при оформленні замовлення.\n\nБудь ласка, спробуйте ще раз або зв\'яжіться з нами:\n📞 Телефон\n💬 Telegram/Viber\n\nПомилка: ' + error.message)
 
-        // Restore button state and reset submission flag
+        // Restore button state
         btn.textContent = originalText
         btn.disabled = false
-        isSubmitting = false
       }
     }
   </script>
 
   <!-- Load Pop-up Manager -->
-  <script type="module" src="./js/popup-manager.js?v=1770245460083"></script>
+  <script type="module" src="./js/popup-manager.js"></script>
 
   <!-- 🔥 NUCLEAR AI ASSISTANT TOGGLE - WITH AGGRESSIVE DEBUGGING -->
   <script type="module">
@@ -4594,7 +3370,7 @@
   <script src="js/ai-checkout-helper.js"></script>
 
   <!-- Live Chat Widget -->
-  <script type="module" src="./js/chat-widget.js?v=1770245460083"></script>
+  <script type="module" src="./js/chat-widget.js"></script>
 </body>
 
 </html>
