@@ -313,7 +313,7 @@
       try {
         console.error('[DEBUG] Starting initCartQuickAddUpsell...');
         
-        // Task 1: Check admin setting
+        // Task 1: Check admin setting from settings/upsellDisplayConfig
         const shouldShow = await shouldShowUpsells('cart');
         console.error('[DEBUG] shouldShow result:', shouldShow);
         
@@ -322,39 +322,9 @@
           return;
         }
 
-        // Task 2: Fetch upsell rules for cart placement
-        console.error('[DEBUG] Fetching cart upsell rules from Firestore...');
-        const upsellsQuery = query(
-          collection(db, 'upsells'),
-          where('placementType', '==', 'cart'),
-          where('isActive', '==', true)
-        );
-        
-        const upsellSnapshot = await getDocs(upsellsQuery);
-        console.error('[DEBUG] Cart upsell rules found:', upsellSnapshot.size);
-        
-        if (upsellSnapshot.empty) {
-          console.error('[DEBUG] No active upsell rules for cart placement');
-          return;
-        }
-
-        // Collect all suggested product IDs from all cart upsell rules
-        const suggestedProductIds = [];
-        upsellSnapshot.forEach(doc => {
-          const upsell = doc.data();
-          if (upsell.suggestedIds && Array.isArray(upsell.suggestedIds)) {
-            suggestedProductIds.push(...upsell.suggestedIds);
-          }
-        });
-
-        console.error('[DEBUG] Total suggested product IDs:', suggestedProductIds.length);
-
-        if (suggestedProductIds.length === 0) {
-          console.error('[DEBUG] No suggested products in upsell rules');
-          return;
-        }
-
-        // Task 3: Fetch the actual products
+        // Task 2: Fetch random product from 'products' collection
+        // Filters: stock > 0, isActive = true
+        console.error('[DEBUG] Fetching active products from Firestore...');
         const productsQuery = query(
           collection(db, 'products'),
           where('stock', '>', 0),
@@ -374,11 +344,11 @@
         const cart = cartData ? JSON.parse(cartData) : [];
         const cartProductIds = cart.map(item => item.id);
 
-        // Filter: only suggested products, not in cart, with stock
+        // Filter: Exclude products already in cart
         const availableProducts = [];
         snapshot.forEach(doc => {
           const product = { id: doc.id, ...doc.data() };
-          if (suggestedProductIds.includes(product.id) && !cartProductIds.includes(product.id)) {
+          if (!cartProductIds.includes(product.id)) {
             availableProducts.push(product);
           }
         });
@@ -386,46 +356,38 @@
         console.error('[DEBUG] Available products after filter:', availableProducts.length);
         
         if (availableProducts.length === 0) {
-          console.error('[DEBUG] All suggested products already in cart or unavailable');
+          console.error('[DEBUG] All products already in cart or unavailable');
           return;
         }
 
-        // Select random product from suggested ones
+        // Select random product
         const randomProduct = availableProducts[Math.floor(Math.random() * availableProducts.length)];
         console.error('[DEBUG] Selected product:', randomProduct.name);
         
-        // Find the upsell rule for discount
-        let discount = 5; // Default 5%
-        upsellSnapshot.forEach(doc => {
-          const upsell = doc.data();
-          if (upsell.suggestedIds && upsell.suggestedIds.includes(randomProduct.id)) {
-            discount = upsell.discount || 5;
-          }
-        });
-        
-        // Calculate discount
+        // Task 3: Apply 5% discount for Cart Upsell
+        const discount = 5;
         const originalPrice = randomProduct.price;
         const discountedPrice = Math.round(originalPrice * (1 - discount / 100));
         console.error('[DEBUG] Prices - Original:', originalPrice, 'Discount:', discount + '%', 'Final:', discountedPrice);
 
-        // Task 3: Render UI
+        // Render UI
         console.error('[DEBUG] Calling renderQuickAddUpsell...');
         renderQuickAddUpsell(randomProduct, originalPrice, discountedPrice);
 
       } catch (error) {
         console.error('Error initializing cart upsell:', error);
-      }ole.error('[DEBUG] renderQuickAddUpsell called with product:', product.name);
-      const container = document.getElementById('quick-add-upsell');
-      console.error('[DEBUG] Container found:', !!container
+      }
     }
 
     // Task 3 & 4: Render compact horizontal card
     function renderQuickAddUpsell(product, originalPrice, discountedPrice) {
+      console.error('[DEBUG] renderQuickAddUpsell called with product:', product.name);
       const container = document.getElementById('quick-add-upsell');
+      console.error('[DEBUG] Container found:', !!container);
       if (!container) return;
 
-      // Random phrase
-      const phrase = UPSELL_PHRASES[Math.floor(Math.random() * UPSELL_PHRASES.length)];
+      // Catchy phrase as requested
+      const phrase = "Смачне доповнення до вашого вибору ✨";
 
       // Render spiciness
       const spiciness = '🌶️'.repeat(product.spiciness || 0);
@@ -460,10 +422,10 @@
             </button>
           </div>
         </div>
-      `;sole.error('[DEBUG] Setting HTML and showing container');
-      container.classList.remove('hidden');
-      console.error('[DEBUG] Container classes after show:', container.className
-
+      `;
+      
+      console.error('[DEBUG] Setting HTML and showing container');
+      console.error('[DEBUG] Container classes after show:', container.className);
       container.classList.remove('hidden');
     }
 
@@ -477,7 +439,7 @@
       const existingItem = cart.find(item => item.id === id);
       if (existingItem) {
         existingItem.quantity += 1;
-        showToast('Кількість оновлено');
+        showToast('✓ Кількість оновлено');
       } else {
         cart.push({
           id,
@@ -488,19 +450,24 @@
           stock,
           quantity: 1
         });
-        showToast('Товар додано до кошика');
+        showToast('✓ Додано до кошика');
       }
 
       // Save cart
       localStorage.setItem('latiao_cart', JSON.stringify(cart));
 
-      // Hide upsell
+      // Hide upsell with animation
       const container = document.getElementById('quick-add-upsell');
       if (container) {
         container.classList.add('cart-item-exit');
         setTimeout(() => {
           container.classList.add('hidden');
           container.classList.remove('cart-item-exit');
+          
+          // Try to load a new upsell suggestion after 1 second
+          setTimeout(() => {
+            initCartQuickAddUpsell();
+          }, 1000);
         }, 300);
       }
 

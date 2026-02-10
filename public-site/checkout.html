@@ -3190,15 +3190,27 @@
      */
     async function syncCustomerFromOrder(orderData, orderId = null) {
         try {
-            // Wait for PhoneUtils to load
+            console.log('🔄 [Customer Sync] Starting sync process...');
+            
+            // Wait for PhoneUtils to load with 10-second timeout
             if (!window.PhoneUtils) {
-                await new Promise(resolve => {
-                    const checkUtils = () => {
-                        if (window.PhoneUtils) resolve();
-                        else setTimeout(checkUtils, 100);
-                    };
-                    checkUtils();
-                });
+                console.log('⏳ [Customer Sync] Waiting for PhoneUtils to load...');
+                await Promise.race([
+                    new Promise(resolve => {
+                        const checkUtils = () => {
+                            if (window.PhoneUtils) {
+                                console.log('✅ [Customer Sync] PhoneUtils loaded');
+                                resolve();
+                            } else {
+                                setTimeout(checkUtils, 100);
+                            }
+                        };
+                        checkUtils();
+                    }),
+                    new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('PhoneUtils load timeout')), 10000)
+                    )
+                ]);
             }
             
             // Wait for Firebase to be ready
@@ -3216,9 +3228,10 @@
             // STEP 1: NORMALIZE AND VALIDATE PHONE
             // ============================================
             const normalizedPhone = window.PhoneUtils.normalizePhone(rawPhone);
+            console.log('📞 [Customer Sync] Normalized phone:', normalizedPhone);
             
             if (!normalizedPhone || !window.PhoneUtils.isValidUkrainianPhone(normalizedPhone)) {
-                console.warn('⚠️ syncCustomerFromOrder: Invalid phone number:', rawPhone);
+                console.warn('⚠️ [Customer Sync] Invalid phone number:', rawPhone);
                 return { action: 'error', error: 'Invalid phone number' };
             }
             
@@ -3226,11 +3239,13 @@
             const email = (customer.email || customer.telegram || '').trim();
             const orderTotal = parseFloat(orderData.summary?.total) || 0;
             
-            console.log(`👤 Customer Sync: Processing customer [${normalizedPhone}] - ${fullName}`);
+            console.log(`👤 [Customer Sync] Processing customer [${normalizedPhone}] - ${fullName}`);
+            console.log(`💰 [Customer Sync] Order total: ${orderTotal} UAH`);
             
             // ============================================
             // STEP 2: SEARCH FOR EXISTING CUSTOMER BY PHONE VARIANTS
             // ============================================
+            console.log('🔍 [Customer Sync] Searching for existing customer...');
             const phoneVariants = window.PhoneUtils.getPhoneVariants(normalizedPhone);
             let existingCustomer = null;
             let existingCustomerRef = null;
@@ -3238,12 +3253,14 @@
             // First, try the normalized phone as document ID
             const primaryRef = doc(db, 'customers', normalizedPhone);
             const primarySnap = await getDoc(primaryRef);
+            console.log(`🔍 [Customer Sync] Primary lookup complete for ${normalizedPhone}`);
             
             if (primarySnap.exists()) {
                 existingCustomer = primarySnap.data();
                 existingCustomerRef = primaryRef;
-                console.log(`📍 Found existing customer by normalized phone: ${normalizedPhone}`);
+                console.log(`✅ [Customer Sync] Found existing customer by normalized phone: ${normalizedPhone}`);
             } else {
+                console.log(`🔍 [Customer Sync] Primary not found, checking ${phoneVariants.length} phone variants...`);
                 // Search using phone variants (for legacy data)
                 const customersRef = collection(db, 'customers');
                 
@@ -3254,9 +3271,13 @@
                     if (!snapshot.empty) {
                         existingCustomer = snapshot.docs[0].data();
                         existingCustomerRef = snapshot.docs[0].ref;
-                        console.log(`📍 Found existing customer by phone variant: ${variant} (Doc ID: ${snapshot.docs[0].id})`);
+                        console.log(`✅ [Customer Sync] Found existing customer by phone variant: ${variant} (Doc ID: ${snapshot.docs[0].id})`);
                         break;
                     }
+                }
+                
+                if (!existingCustomer) {
+                    console.log(`ℹ️ [Customer Sync] No existing customer found`);
                 }
             }
             
@@ -3268,7 +3289,7 @@
                 // ============================================
                 // NEW CUSTOMER - Create with normalized phone as ID
                 // ============================================
-                console.log('🆕 Creating new customer with normalized phone...');
+                console.log('🆕 [Customer Sync] Creating new customer with normalized phone...');
                 
                 const newCustomerData = {
                     phone: normalizedPhone, // Always store normalized format
@@ -3284,10 +3305,11 @@
                     updatedAt: serverTimestamp()
                 };
                 
+                console.log('💾 [Customer Sync] Saving new customer to Firestore...');
                 const newCustomerRef = doc(db, 'customers', normalizedPhone);
                 await setDoc(newCustomerRef, newCustomerData);
                 
-                console.log(`✅ New customer created: ${normalizedPhone}`);
+                console.log(`✅ [Customer Sync] New customer created: ${normalizedPhone}`);
                 return { action: 'created', customerId: normalizedPhone };
                 
             } else {
@@ -3295,12 +3317,13 @@
                 // EXISTING CUSTOMER - Update and possibly migrate
                 // ============================================
                 const currentDocId = existingCustomerRef.id;
+                console.log(`🔄 [Customer Sync] Existing customer found with ID: ${currentDocId}`);
                 
                 if (currentDocId !== normalizedPhone) {
                     // ============================================ 
                     // MIGRATE: Customer found with old phone format
                     // ============================================
-                    console.log(`🔄 Migrating customer from ${currentDocId} to ${normalizedPhone}`);
+                    console.log(`🔄 [Customer Sync] Migrating customer from ${currentDocId} to ${normalizedPhone}`);
                     
                     const migratedData = {
                         ...existingCustomer,
@@ -3321,21 +3344,23 @@
                         updatedAt: serverTimestamp()
                     };
                     
+                    console.log('💾 [Customer Sync] Creating migrated customer document...');
                     // Create new document with correct ID
                     const newCustomerRef = doc(db, 'customers', normalizedPhone);
                     await setDoc(newCustomerRef, migratedData);
                     
+                    console.log('🗑️ [Customer Sync] Deleting old customer document...');
                     // Delete old document
                     await deleteDoc(existingCustomerRef);
                     
-                    console.log(`✅ Customer migrated from ${currentDocId} to ${normalizedPhone}`);
+                    console.log(`✅ [Customer Sync] Customer migrated from ${currentDocId} to ${normalizedPhone}`);
                     return { action: 'migrated', oldId: currentDocId, newId: normalizedPhone };
                     
                 } else {
                     // ============================================
                     // STANDARD UPDATE - Customer already has correct ID
                     // ============================================
-                    console.log('🔄 Updating existing customer...');
+                    console.log('🔄 [Customer Sync] Updating existing customer...');
                     
                     const updateData = {
                         // Ensure phone is in normalized format
@@ -3362,17 +3387,18 @@
                         updateData.email = email;
                     }
                     
+                    console.log('💾 [Customer Sync] Saving customer updates...');
                     await setDoc(existingCustomerRef, updateData, { merge: true });
                     
                     const newCount = (existingCustomer.ordersCount || 0) + 1;
-                    console.log(`✅ Customer updated: ${normalizedPhone} (Orders: ${newCount})`);
+                    console.log(`✅ [Customer Sync] Customer updated: ${normalizedPhone} (Orders: ${newCount})`);
                     
                     return { action: 'updated', customerId: normalizedPhone, ordersCount: newCount };
                 }
             }
             
         } catch (error) {
-            console.error('❌ Customer sync error:', error);
+            console.error('❌ [Customer Sync] Error:', error.message, error.stack);
             return { action: 'error', error: error.message };
         }
     }
@@ -3930,31 +3956,47 @@
           // Continue anyway - userId is optional for now
         }
 
-        // Save order to Firestore silently
+        // Save order to Firestore
+        console.log('💾 [Checkout] Saving order to Firestore...');
+        console.log('📋 [Checkout] Order ID:', orderId);
+        console.log('📋 [Checkout] Order data keys:', Object.keys(orderData));
         await setDoc(doc(db, 'orders', orderId), orderData);
+        console.log('✅ [Checkout] Order saved successfully to Firestore');
 
         // ============================================
         // STEP 8.1: SYNC CUSTOMER PROFILE (Prevent Duplicates)
         // ============================================
+        console.log('👤 [Checkout] Starting customer sync (non-blocking)...');
         btn.textContent = 'Синхронізація клієнта...';
         
-        try {
-          const customerSyncResult = await syncCustomerFromOrder(orderData, orderId);
-          if (customerSyncResult.action === 'created') {
-            console.log('✅ New customer profile created:', customerSyncResult.customerId);
-          } else if (customerSyncResult.action === 'updated') {
-            console.log('✅ Existing customer profile updated:', customerSyncResult.customerId);
-          } else if (customerSyncResult.action === 'migrated') {
-            console.log('✅ Customer profile migrated:', customerSyncResult.oldId, '→', customerSyncResult.newId);
+        // Run customer sync with 5-second timeout and make it non-blocking
+        const customerSyncPromise = Promise.race([
+          syncCustomerFromOrder(orderData, orderId),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Customer sync timeout after 5 seconds')), 5000)
+          )
+        ]).then(result => {
+          if (result.action === 'created') {
+            console.log('✅ [Checkout] New customer profile created:', result.customerId);
+          } else if (result.action === 'updated') {
+            console.log('✅ [Checkout] Existing customer profile updated:', result.customerId);
+          } else if (result.action === 'migrated') {
+            console.log('✅ [Checkout] Customer profile migrated:', result.oldId, '→', result.newId);
+          } else if (result.action === 'error') {
+            console.warn('⚠️ [Checkout] Customer sync returned error:', result.error);
           }
-        } catch (customerSyncError) {
+        }).catch(error => {
           // Non-blocking error - customer sync failure shouldn't stop the order
-          console.error('⚠️ Customer sync failed (non-blocking):', customerSyncError);
-        }
+          console.error('⚠️ [Checkout] Customer sync failed (non-blocking):', error.message);
+        });
+        
+        // DON'T AWAIT - Let it run in background
+        // This ensures payment redirect happens immediately
 
         // ============================================
         // STEP 8.2: DEDUCT STOCK IMMEDIATELY
         // ============================================
+        console.log('📦 [Checkout] Starting stock deduction...');
         btn.textContent = 'Оновлення наявності...';
 
         try {
@@ -3965,13 +4007,13 @@
           for (const item of orderItems) {
             // Skip gift items - they don't consume stock
             if (item.isGift) {
-              console.log(`🎁 Skipping gift item: ${item.name}`);
+              console.log(`🎁 [Checkout] Skipping gift item: ${item.name}`);
               continue;
             }
 
             const productId = item.id || item.productId;
             if (!productId) {
-              console.warn('⚠️ Item missing ID:', item.name);
+              console.warn('⚠️ [Checkout] Item missing ID:', item.name);
               continue;
             }
 
@@ -3980,7 +4022,7 @@
             const productSnap = await getDoc(productRef);
 
             if (!productSnap.exists()) {
-              console.warn(`⚠️ Product ${productId} (${item.name}) not found for stock deduction`);
+              console.warn(`⚠️ [Checkout] Product ${productId} (${item.name}) not found for stock deduction`);
               continue;
             }
 
@@ -3995,40 +4037,38 @@
             });
 
             stockUpdates++;
-            console.log(`📦 Stock update queued: ${item.name} (${item.sku || productId}): ${currentStock} → ${newStock} (-${quantityOrdered})`);
+            console.log(`📦 [Checkout] Stock update queued: ${item.name} (${item.sku || productId}): ${currentStock} → ${newStock} (-${quantityOrdered})`);
           }
 
           if (stockUpdates > 0) {
+            console.log('💾 [Checkout] Committing stock batch updates...');
             await batch.commit();
-            console.log(`✅ Stock deducted for ${stockUpdates} items in order ${orderId}`);
+            console.log(`✅ [Checkout] Stock deducted for ${stockUpdates} items in order ${orderId}`);
           } else {
-            console.log('ℹ️ No stock updates needed (all gifts or no items)');
+            console.log('ℹ️ [Checkout] No stock updates needed (all gifts or no items)');
           }
         } catch (stockError) {
           // Non-blocking error - log but continue with order
-          console.error('❌ Stock deduction failed (non-blocking):', stockError);
+          console.error('❌ [Checkout] Stock deduction failed (non-blocking):', stockError);
         }
 
-        // ============================================
-        // STEP 8.3: Mini-CRM - Sync Customer Profile
-        // ============================================
         // ============================================
         // STEP 8.3: SYNC TO KeyCRM (FOR ALL ORDERS)
         // ============================================
         // Executed immediately after saving to Firestore to ensure minimal delay
-        console.log('🔗 Syncing order to KeyCRM...')
+        console.log('🔗 [Checkout] Syncing order to KeyCRM...');
         try {
           // We utilize the existing non-blocking sync function
           // But we await it here to ensure it tries at least once before redirect
-          const keyCrmResult = await sendToKeyCRM(orderData, orderId)
+          const keyCrmResult = await sendToKeyCRM(orderData, orderId);
 
           if (keyCrmResult.success) {
-            console.log('✅ Order synced to KeyCRM successfully:', keyCrmResult.keyCrmOrderId)
+            console.log('✅ [Checkout] Order synced to KeyCRM successfully:', keyCrmResult.keyCrmOrderId);
           } else {
-            console.warn('⚠️ KeyCRM sync failed (non-blocking):', keyCrmResult.error)
+            console.warn('⚠️ [Checkout] KeyCRM sync failed (non-blocking):', keyCrmResult.error);
           }
         } catch (keyCrmError) {
-          console.error('⚠️ KeyCRM sync error (non-blocking):', keyCrmError)
+          console.error('⚠️ [Checkout] KeyCRM sync error (non-blocking):', keyCrmError);
         }
 
         // ============================================
@@ -4036,91 +4076,101 @@
         // ============================================
         // Clean up ALL old entries for this customer to prevent duplicates
         // This runs in the background and won't block the user flow
+        console.log('🧹 [Checkout] Starting background cleanup...');
         cleanUpOldEntries(phone, orderId).catch(err => {
-          console.error('⚠️ Cleanup error (non-blocking):', err)
-        })
+          console.error('⚠️ [Checkout] Cleanup error (non-blocking):', err);
+        });
 
         // ============================================
         // STEP 8.5: Update Promo Code Usage (if applied)
         // ============================================
         if (appliedPromoCode && appliedPromoCode.id) {
+          console.log('🎟️ [Checkout] Updating promo code usage...');
           try {
-            const { doc: firestoreDoc, updateDoc, increment } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')
-            const promoRef = firestoreDoc(db, 'promocodes', appliedPromoCode.id)
+            const { doc: firestoreDoc, updateDoc, increment } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            const promoRef = firestoreDoc(db, 'promocodes', appliedPromoCode.id);
             await updateDoc(promoRef, {
               'stats.usedCount': increment(1)
-            })
-            console.log('✅ Promo code usage updated:', appliedPromoCode.code)
+            });
+            console.log('✅ [Checkout] Promo code usage updated:', appliedPromoCode.code);
           } catch (promoError) {
-            console.error('⚠️ Failed to update promo usage (non-critical):', promoError)
+            console.error('⚠️ [Checkout] Failed to update promo usage (non-critical):', promoError);
           }
         }
 
         // ============================================
         // ⭐ STEP 9: PAYMENT METHOD ROUTING
         // ============================================
+        console.log('💳 [Checkout] Payment routing - Method:', paymentMethod);
 
         if (paymentMethod === 'online') {
           // ============================================
           // ONLINE PAYMENT FLOW - CREATE MONOBANK INVOICE
           // ============================================
-          console.log('💳 Online payment selected - creating Monobank invoice...')
+          console.log('💳 [Checkout] Online payment selected - creating Monobank invoice...');
 
           // CRITICAL: Validate orderId exists
           if (!orderId) {
-            throw new Error('Order ID is missing - cannot create payment invoice')
+            console.error('❌ [Checkout] Order ID is missing!');
+            throw new Error('Order ID is missing - cannot create payment invoice');
           }
 
-          console.log('🔍 Order ID:', orderId)
+          console.log('✅ [Checkout] Order ID validated:', orderId);
 
-          btn.textContent = 'Створення рахунку...'
+          btn.textContent = 'Створення рахунку...';
 
           try {
+            console.log('🔧 [Checkout] Initializing Cloud Function...');
             // Initialize Cloud Function
-            const createMonoInvoice = httpsCallable(functions, 'createMonoInvoice')
+            const createMonoInvoice = httpsCallable(functions, 'createMonoInvoice');
 
             // CRITICAL: Wrap orderId in an object (backend expects data.orderId)
             const payload = {
               orderId: orderId
-            }
+            };
 
-            console.log('📤 Calling Cloud Function with payload:', payload)
+            console.log('📤 [Checkout] Calling Cloud Function with payload:', payload);
 
             // Call the function with the payload object
-            const result = await createMonoInvoice(payload)
+            const result = await createMonoInvoice(payload);
 
-            console.log('📥 Cloud Function response:', result)
-            console.log('✅ Invoice created:', result.data)
+            console.log('📥 [Checkout] Cloud Function response received');
+            console.log('📦 [Checkout] Response data:', result.data);
 
             // Validate response structure
             if (!result.data) {
-              throw new Error('Cloud Function returned no data')
+              console.error('❌ [Checkout] Cloud Function returned no data');
+              throw new Error('Cloud Function returned no data');
             }
 
             if (!result.data.success) {
-              throw new Error(result.data.error || 'Invoice creation failed')
+              console.error('❌ [Checkout] Invoice creation failed:', result.data.error);
+              throw new Error(result.data.error || 'Invoice creation failed');
             }
 
             if (!result.data.pageUrl) {
-              throw new Error('Payment URL not received from Monobank')
+              console.error('❌ [Checkout] Payment URL not received from Monobank');
+              throw new Error('Payment URL not received from Monobank');
             }
 
             // Success - clear cart and redirect
-            localStorage.removeItem('latiao_cart')
+            console.log('✅ [Checkout] Invoice created successfully');
+            console.log('🗑️ [Checkout] Clearing cart...');
+            localStorage.removeItem('latiao_cart');
 
-            console.log('🔄 Redirecting to Monobank payment page...')
-            window.location.href = result.data.pageUrl
+            console.log('🔄 [Checkout] Redirecting to Monobank payment page:', result.data.pageUrl);
+            window.location.href = result.data.pageUrl;
 
           } catch (paymentError) {
-            console.error('❌ Monobank payment error:', paymentError)
-            console.error('Error code:', paymentError.code)
-            console.error('Error message:', paymentError.message)
-            console.error('Error details:', paymentError.details)
+            console.error('❌ [Checkout] Monobank payment error:', paymentError);
+            console.error('❌ [Checkout] Error code:', paymentError.code);
+            console.error('❌ [Checkout] Error message:', paymentError.message);
+            console.error('❌ [Checkout] Error details:', paymentError.details);
 
             // User-friendly error message
-            let errorMsg = '⚠️ Помилка створення рахунку для оплати.\n\n'
-            errorMsg += 'Ваше замовлення збережено (№' + orderId + '),\n'
-            errorMsg += 'але сталася помилка при створенні платіжного рахунку.\n\n'
+            let errorMsg = '⚠️ Помилка створення рахунку для оплати.\n\n';
+            errorMsg += 'Ваше замовлення збережено (№' + orderId + '),\n';
+            errorMsg += 'але сталася помилка при створенні платіжного рахунку.\n\n';
 
             // Add specific error details if available
             if (paymentError.code === 'functions/invalid-argument') {
@@ -4135,26 +4185,28 @@
             errorMsg += '📞 Телефон: +380...\n'
             errorMsg += '💬 Telegram: @latiao_snack'
 
-            alert(errorMsg)
+            alert(errorMsg);
 
             // Don't clear cart - let user try again or contact support
-            btn.textContent = originalText
-            btn.disabled = false
-            return
+            console.log('🔄 [Checkout] Resetting button state');
+            btn.textContent = originalText;
+            btn.disabled = false;
+            return;
           }
 
         } else {
           // ============================================
           // CASH ON DELIVERY - USE PREPAYMENT SETTING (already fetched)
           // ============================================
-          console.log('💵 COD payment selected, isPrepaymentEnabled:', isPrepaymentEnabled)
+          console.log('💵 [Checkout] COD payment selected, isPrepaymentEnabled:', isPrepaymentEnabled);
 
           // CRITICAL: Validate orderId exists
           if (!orderId) {
-            throw new Error('Order ID is missing - cannot process COD order')
+            console.error('❌ [Checkout] Order ID is missing!');
+            throw new Error('Order ID is missing - cannot process COD order');
           }
 
-          console.log('🔍 Order ID:', orderId)
+          console.log('✅ [Checkout] Order ID validated:', orderId);
 
           try {
             // ============================================
@@ -4162,57 +4214,63 @@
             // ============================================
             if (!isPrepaymentEnabled) {
               // This block is now unreachable but kept for safety/future toggle
-              console.log('✅ Prepayment DISABLED (Start)');
+              console.log('✅ [Checkout] Prepayment DISABLED (Start)');
             }
 
             // ============================================
             // STANDARD FLOW: PREPAYMENT ENABLED - 100 UAH DEPOSIT
             // ============================================
-            console.log('💰 Prepayment ENABLED - creating 100 UAH deposit invoice...')
+            console.log('💰 [Checkout] Prepayment ENABLED - creating 100 UAH deposit invoice...');
 
-            btn.textContent = 'Створення рахунку на передоплату...'
+            btn.textContent = 'Створення рахунку на передоплату...';
 
+            console.log('🔧 [Checkout] Initializing Cloud Function...');
             // Initialize Cloud Function
-            const createMonoInvoice = httpsCallable(functions, 'createMonoInvoice')
+            const createMonoInvoice = httpsCallable(functions, 'createMonoInvoice');
 
             // CRITICAL: Pass paymentType = 'deposit' for COD orders
             const payload = {
               orderId: orderId,
               paymentType: 'deposit' // This triggers 100 UAH invoice
-            }
+            };
 
-            console.log('📤 Calling Cloud Function with payload:', payload)
+            console.log('📤 [Checkout] Calling Cloud Function with payload:', payload);
 
             // Call the function with the payload object
-            const result = await createMonoInvoice(payload)
+            const result = await createMonoInvoice(payload);
 
-            console.log('📥 Cloud Function response:', result)
-            console.log('✅ Deposit invoice created:', result.data)
+            console.log('📥 [Checkout] Cloud Function response received');
+            console.log('📦 [Checkout] Response data:', result.data);
 
             // Validate response structure
             if (!result.data) {
-              throw new Error('Cloud Function returned no data')
+              console.error('❌ [Checkout] Cloud Function returned no data');
+              throw new Error('Cloud Function returned no data');
             }
 
             if (!result.data.success) {
-              throw new Error(result.data.error || 'Invoice creation failed')
+              console.error('❌ [Checkout] Invoice creation failed:', result.data.error);
+              throw new Error(result.data.error || 'Invoice creation failed');
             }
 
             if (!result.data.pageUrl) {
-              throw new Error('Payment URL not received from Monobank')
+              console.error('❌ [Checkout] Payment URL not received from Monobank');
+              throw new Error('Payment URL not received from Monobank');
             }
 
             // Success - clear cart and redirect to payment
-            localStorage.removeItem('latiao_cart')
+            console.log('✅ [Checkout] Deposit invoice created successfully');
+            console.log('🗑️ [Checkout] Clearing cart...');
+            localStorage.removeItem('latiao_cart');
 
-            console.log('🔄 Redirecting to Monobank payment page for 100 UAH deposit...')
-            window.location.href = result.data.pageUrl
+            console.log('🔄 [Checkout] Redirecting to Monobank payment page for 100 UAH deposit:', result.data.pageUrl);
+            window.location.href = result.data.pageUrl;
 
           } catch (paymentError) {
-            console.error('❌ Deposit payment error:', paymentError)
-            console.error('Error code:', paymentError.code)
-            console.error('Error message:', paymentError.message)
-            console.error('Error details:', paymentError.details)
+            console.error('❌ [Checkout] Deposit payment error:', paymentError);
+            console.error('❌ [Checkout] Error code:', paymentError.code);
+            console.error('❌ [Checkout] Error message:', paymentError.message);
+            console.error('❌ [Checkout] Error details:', paymentError.details);
 
             // User-friendly error message
             let errorMsg = '⚠️ Помилка створення рахунку для передоплати.\n\n'
@@ -4232,13 +4290,14 @@
             errorMsg += '📞 Телефон: +380...\n'
             errorMsg += '💬 Telegram: @latiao_snack'
 
-            alert(errorMsg)
+            alert(errorMsg);
 
             // Don't clear cart - let user try again or contact support
-            btn.textContent = originalText
-            btn.disabled = false
-            isSubmitting = false
-            return
+            console.log('🔄 [Checkout] Resetting button state');
+            btn.textContent = originalText;
+            btn.disabled = false;
+            isSubmitting = false;
+            return;
           }
         }
 
@@ -4246,7 +4305,8 @@
         // ============================================
         // STEP 10: Error Handling
         // ============================================
-        console.error('❌ Error during order submission:', error)
+        console.error('❌ [Checkout] CRITICAL ERROR during order submission:', error);
+        console.error('❌ [Checkout] Error stack:', error.stack);
 
         alert('⚠️ Виникла помилка при оформленні замовлення.\n\nБудь ласка, спробуйте ще раз або зв\'яжіться з нами:\n📞 Телефон\n💬 Telegram/Viber\n\nПомилка: ' + error.message)
 
