@@ -6,6 +6,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Оформлення замовлення | LATIAO SNACK</title>
 
+  <!-- Google Tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17389864689"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'AW-17389864689');
+  </script>
+
   <!-- CRITICAL: Apply theme immediately to prevent flash -->
   <script>
     (function() {
@@ -375,11 +384,15 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1.5 lg:mb-2">Відділення / Поштомат <span
                   class="text-orange-500">*</span></label>
-              <select id="np-warehouse-select"
-                class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 transition-all duration-300 focus:border-orange-400 focus:ring-2 focus:ring-orange-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled>
-                <option value="">Спочатку оберіть місто</option>
-              </select>
+              <div class="relative">
+                <input type="text" id="np-warehouse-input" placeholder="Спочатку оберіть місто"
+                  class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300 focus:border-orange-400 focus:ring-2 focus:ring-orange-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  autocomplete="off" disabled>
+                <!-- Warehouse autocomplete dropdown (Dynamic suggestions) -->
+                <ul id="np-warehouse-list"
+                  class="hidden absolute z-50 w-full mt-1 bg-white border-2 border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                </ul>
+              </div>
             </div>
           </div>
 
@@ -933,6 +946,8 @@
     const NP_API_KEY = 'ca63f7a56b807b0e882e567c7041abf3' // Replace with your actual API key
     const NP_URL = 'https://api.novaposhta.ua/v2.0/json/'
     const NP_API_URL = NP_URL // Alias for backward compatibility
+    let allWarehouses = [] // Store all warehouses for the selected city for filtering
+    let selectedWarehouse = null // Store selected warehouse object
 
     // Ukrposhta API Configuration
     const UP_API_BASE_URL = 'https://www.ukrposhta.ua/address-classifier-ws/get_'
@@ -1155,7 +1170,7 @@
         'phone',
         'telegram',
         'np-city-input',
-        'np-warehouse-select',
+        'np-warehouse-input',
         'comment'
       ]
 
@@ -2103,11 +2118,15 @@
      * @param {string} cityRef - City reference ID from selected city
      */
     async function loadNovaPoshtaWarehouses(cityRef) {
-      const warehouseSelect = document.getElementById('np-warehouse-select')
+      const warehouseInput = document.getElementById('np-warehouse-input')
+      const warehouseList = document.getElementById('np-warehouse-list')
 
       // Show loading state
-      warehouseSelect.disabled = true
-      warehouseSelect.innerHTML = '<option>⏳ Завантаження відділень...</option>'
+      warehouseInput.disabled = true
+      warehouseInput.placeholder = '⏳ Завантаження відділень...'
+      warehouseInput.value = ''
+      selectedWarehouse = null
+      warehouseList.classList.add('hidden')
 
       try {
         // API Request: Get warehouses by city reference
@@ -2131,38 +2150,96 @@
 
         // Response Handling: Check if warehouses were found
         if (data.success && data.data && data.data.length > 0) {
-          const warehouses = data.data
-          renderWarehouses(warehouses)
+          allWarehouses = data.data // Store warehouses globally for filtering
+          warehouseInput.placeholder = 'Почніть вводити номер або назву відділення...'
+          warehouseInput.disabled = false
+          warehouseInput.focus() // Auto-focus for better UX
         } else {
-          warehouseSelect.innerHTML = '<option>❌ Відділення не знайдено</option>'
-          warehouseSelect.disabled = false
+          allWarehouses = []
+          warehouseInput.placeholder = '❌ Відділення не знайдено'
+          warehouseInput.disabled = false
         }
       } catch (error) {
         console.error('❌ Error fetching warehouses:', error)
-        warehouseSelect.innerHTML = '<option>⚠️ Помилка завантаження</option>'
-        warehouseSelect.disabled = false
+        allWarehouses = []
+        warehouseInput.placeholder = '⚠️ Помилка завантаження'
+        warehouseInput.disabled = false
       }
     }
 
     /**
-     * Render Warehouses in Select Dropdown
-     * Populates the warehouse select with options
-     * @param {Array} warehouses - Array of warehouse objects from API response
+     * Search and Filter Warehouses
+     * Filters warehouses based on user input (branch number or description text)
+     * @param {string} query - User input search query
      */
-    function renderWarehouses(warehouses) {
-      const warehouseSelect = document.getElementById('np-warehouse-select')
-      warehouseSelect.innerHTML = '<option value="">Оберіть відділення...</option>'
+    function searchWarehouses(query) {
+      const warehouseList = document.getElementById('np-warehouse-list')
+      
+      // Clear previous results
+      warehouseList.innerHTML = ''
 
-      // Loop through warehouses and create options
-      warehouses.forEach(warehouse => {
-        const option = document.createElement('option')
-        option.value = warehouse.Ref // Warehouse reference ID
-        option.textContent = warehouse.Description // Warehouse full name/address
-        warehouseSelect.appendChild(option)
+      // If query is empty, hide the list
+      if (!query || query.trim() === '') {
+        warehouseList.classList.add('hidden')
+        return
+      }
+
+      const searchTerm = query.toLowerCase().trim()
+
+      // Filter warehouses: match against branch number (e.g., "12") and full description
+      const filteredWarehouses = allWarehouses.filter(warehouse => {
+        const description = warehouse.Description.toLowerCase()
+        
+        // Extract branch number from description (e.g., "Відділення №12" -> "12")
+        const numberMatch = warehouse.Description.match(/№(\d+)/)
+        const branchNumber = numberMatch ? numberMatch[1] : ''
+        
+        // Match if query is in the branch number or description
+        return branchNumber.includes(searchTerm) || description.includes(searchTerm)
       })
 
-      // Enable the select field
-      warehouseSelect.disabled = false
+      // Render filtered results
+      if (filteredWarehouses.length > 0) {
+        renderWarehouseAutocomplete(filteredWarehouses)
+      } else {
+        warehouseList.innerHTML = '<li class="px-4 py-2 text-sm text-gray-500">❌ Відділення не знайдено</li>'
+        warehouseList.classList.remove('hidden')
+      }
+    }
+
+    /**
+     * Render Warehouse Autocomplete Suggestions
+     * Creates clickable list items for each filtered warehouse
+     * @param {Array} warehouses - Array of filtered warehouse objects
+     */
+    function renderWarehouseAutocomplete(warehouses) {
+      const warehouseList = document.getElementById('np-warehouse-list')
+      warehouseList.innerHTML = '' // Clear previous results
+
+      // Loop through each warehouse and create a list item
+      warehouses.forEach(warehouse => {
+        const li = document.createElement('li')
+        li.className = 'px-4 py-2.5 hover:bg-orange-50 cursor-pointer text-sm text-gray-900 border-b border-gray-100 last:border-b-0 transition-colors'
+        li.textContent = warehouse.Description // Display warehouse full description
+
+        // Click Action: Select this warehouse
+        li.onclick = () => {
+          // Set input value to selected warehouse description
+          document.getElementById('np-warehouse-input').value = warehouse.Description
+
+          // Save warehouse object for later use
+          selectedWarehouse = warehouse
+
+          // Hide suggestion list
+          warehouseList.classList.add('hidden')
+          warehouseList.innerHTML = ''
+        }
+
+        warehouseList.appendChild(li)
+      })
+
+      // Show the populated list
+      warehouseList.classList.remove('hidden')
     }
 
     // ============================================
@@ -2174,14 +2251,26 @@
       searchNovaPoshtaCities(event.target.value)
     })
 
+    // Listen for input events on warehouse input field
+    document.getElementById('np-warehouse-input').addEventListener('input', function (event) {
+      searchWarehouses(event.target.value)
+    })
+
     // Close autocomplete when clicking outside
     document.addEventListener('click', function (event) {
       const cityInput = document.getElementById('np-city-input')
       const cityList = document.getElementById('np-city-list')
+      const warehouseInput = document.getElementById('np-warehouse-input')
+      const warehouseList = document.getElementById('np-warehouse-list')
 
-      // Check if click was outside both the input and the list
+      // Check if click was outside both the city input and the list
       if (cityInput && cityList && !cityInput.contains(event.target) && !cityList.contains(event.target)) {
         cityList.classList.add('hidden')
+      }
+
+      // Check if click was outside both the warehouse input and the list
+      if (warehouseInput && warehouseList && !warehouseInput.contains(event.target) && !warehouseList.contains(event.target)) {
+        warehouseList.classList.add('hidden')
       }
     })
 
@@ -2344,8 +2433,7 @@
 
         if (deliveryMethod === 'nova') {
           const npCity = document.getElementById('np-city-input')?.value.trim() || ''
-          const npWarehouseSelect = document.getElementById('np-warehouse-select')
-          const npWarehouse = npWarehouseSelect?.options[npWarehouseSelect.selectedIndex]?.text || ''
+          const npWarehouse = selectedWarehouse?.Description || document.getElementById('np-warehouse-input')?.value.trim() || ''
 
           deliveryInfo.city = npCity
           deliveryInfo.branch = npWarehouse
@@ -2720,8 +2808,7 @@
         if (deliveryMethod === 'nova') {
           // Nova Poshta delivery details
           const npCity = document.getElementById('np-city-input').value.trim()
-          const npWarehouseSelect = document.getElementById('np-warehouse-select')
-          const npWarehouse = npWarehouseSelect.options[npWarehouseSelect.selectedIndex]?.text || ''
+          const npWarehouse = selectedWarehouse?.Description || document.getElementById('np-warehouse-input')?.value.trim() || ''
 
           deliveryInfo.city = npCity
           deliveryInfo.warehouse = npWarehouse

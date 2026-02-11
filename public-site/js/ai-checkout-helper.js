@@ -885,7 +885,7 @@ Example output 2:
     /**
      * 🏢 AGGRESSIVE Branch Selection (Complete Rewrite)
      * Requirements:
-     * 1. Wait for 5+ options
+     * 1. Wait for 5+ options (or warehouses for input)
      * 2. Exact regex matching with word boundaries
      * 3. Multi-step priority scoring
      * 4. Force event simulation
@@ -894,16 +894,89 @@ Example output 2:
     async function selectBranchSmart(branchNumber, branchType = null) {
         console.log(`🔥 AGGRESSIVE branch selection: "${branchNumber}" (type: ${branchType || 'auto'})`);
 
-        // Step 1: Find the select element
-        const branchSelect = await findBranchSelect();
+        // Step 1: Find the branch element (could be select or input)
+        const branchElement = await findBranchSelect();
         
-        if (!branchSelect) {
-            console.error('❌ Branch select element not found');
+        if (!branchElement) {
+            console.error('❌ Branch element not found');
             return false;
         }
 
-        console.log('✅ Found branch select:', branchSelect.id || branchSelect.name || 'unnamed');
+        console.log('✅ Found branch element:', branchElement.id || branchElement.name || 'unnamed', `(${branchElement.tagName})`);
 
+        // Check if it's a searchable input (new combobox) or classic select
+        if (branchElement.tagName === 'INPUT' && branchElement.id === 'np-warehouse-input') {
+            // New searchable combobox pattern
+            return await selectBranchInCombobox(branchElement, branchNumber, branchType);
+        } else if (branchElement.tagName === 'SELECT') {
+            // Classic select dropdown pattern (legacy)
+            return await selectBranchInSelect(branchElement, branchNumber, branchType);
+        }
+
+        console.error('❌ Unsupported branch element type:', branchElement.tagName);
+        return false;
+    }
+
+    /**
+     * 🆕 Select Branch in Searchable Combobox (NEW PATTERN)
+     * Handles the input-based autocomplete system
+     */
+    async function selectBranchInCombobox(inputElement, branchNumber, branchType = null) {
+        console.log(`🔍 Using combobox selection for branch: ${branchNumber}`);
+
+        // Wait for warehouses to load (check global allWarehouses variable)
+        const warehousesLoaded = await waitForWarehouses(10000); // 10 sec timeout
+        
+        if (!warehousesLoaded) {
+            console.warn('⚠️ Timeout: Warehouses did not load');
+            showMessage('Не вдалося завантажити список відділень. Спробуйте вибрати вручну.', 'warning');
+            return false;
+        }
+
+        // Access the global allWarehouses array
+        const warehouses = window.allWarehouses || [];
+        
+        if (!warehouses || warehouses.length === 0) {
+            console.error('❌ No warehouses available');
+            return false;
+        }
+
+        console.log(`✅ Found ${warehouses.length} warehouses`);
+
+        // Find matching warehouse
+        const matchedWarehouse = findMatchingWarehouse(warehouses, branchNumber, branchType);
+        
+        if (!matchedWarehouse) {
+            console.warn(`⚠️ No exact match for branch [${branchNumber}]`);
+            console.log('Available warehouses sample:', warehouses.slice(0, 5).map(w => w.Description));
+            showMessage(`Не вдалося знайти відділення №${branchNumber}. Будь ласка, оберіть зі списку.`, 'warning');
+            return false;
+        }
+
+        // Fill the input with the warehouse description
+        inputElement.value = matchedWarehouse.Description;
+        
+        // Trigger input event to update the UI
+        inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+        inputElement.dispatchEvent(new Event('change', { bubbles: true }));
+        
+        // Save the selected warehouse to global variable
+        if (typeof window.selectedWarehouse !== 'undefined') {
+            window.selectedWarehouse = matchedWarehouse;
+        }
+
+        // Visual feedback
+        applyGreenGlow(inputElement);
+        scrollToElement(inputElement);
+
+        console.log(`✅ SUCCESS: Selected "${matchedWarehouse.Description}"`);
+        return true;
+    }
+
+    /**
+     * 🕰️ Legacy: Select Branch in Classic Select Dropdown
+     */
+    async function selectBranchInSelect(branchSelect, branchNumber, branchType = null) {
         // Step 2: Wait for OPTIONS to load (5+ options minimum)
         const optionsLoaded = await waitForMinimumOptions(branchSelect, 5);
         
@@ -933,6 +1006,100 @@ Example output 2:
 
         console.log(`✅ SUCCESS: Selected "${matchedOption.textContent.trim()}"`);
         return true;
+    }
+
+    /**
+     * ⏳ Wait for Warehouses to Load (for combobox)
+     * Checks if global allWarehouses array is populated
+     */
+    function waitForWarehouses(maxWaitMs = 10000) {
+        return new Promise((resolve) => {
+            const CHECK_INTERVAL = 200;
+            let elapsedTime = 0;
+
+            console.log('⏳ Waiting for warehouses to load...');
+
+            const checkWarehouses = () => {
+                const warehouses = window.allWarehouses || [];
+                
+                if (warehouses.length >= 5) {
+                    console.log(`✅ Warehouses loaded: ${warehouses.length} items`);
+                    resolve(true);
+                    return;
+                }
+
+                if (elapsedTime >= maxWaitMs) {
+                    console.warn(`⏰ Timeout: Warehouses not loaded after ${maxWaitMs}ms`);
+                    resolve(false);
+                    return;
+                }
+
+                elapsedTime += CHECK_INTERVAL;
+                setTimeout(checkWarehouses, CHECK_INTERVAL);
+            };
+
+            // Initial check
+            const warehouses = window.allWarehouses || [];
+            if (warehouses.length >= 5) {
+                console.log(`✅ Warehouses already loaded: ${warehouses.length} items`);
+                resolve(true);
+                return;
+            }
+
+            checkWarehouses();
+        });
+    }
+
+    /**
+     * 🔍 Find Matching Warehouse from Array
+     * Matches branch number and type against warehouse descriptions
+     */
+    function findMatchingWarehouse(warehouses, branchNumber, branchType = null) {
+        // Extract numeric part only
+        const numericBranch = branchNumber.replace(/\D/g, '');
+        
+        // Priority 1: Exact number match with type filter
+        if (branchType) {
+            const typeKeywords = {
+                'warehouse': ['відділення', 'warehouse'],
+                'poshtomat': ['поштомат', 'poshtomat']
+            };
+            
+            const keywords = typeKeywords[branchType] || [];
+            
+            for (const warehouse of warehouses) {
+                const desc = warehouse.Description.toLowerCase();
+                const numberMatch = warehouse.Description.match(/№(\d+)/);
+                const warehouseNumber = numberMatch ? numberMatch[1] : '';
+                
+                if (warehouseNumber === numericBranch) {
+                    // Check if type matches
+                    const matchesType = keywords.some(keyword => desc.includes(keyword.toLowerCase()));
+                    if (matchesType) {
+                        return warehouse;
+                    }
+                }
+            }
+        }
+        
+        // Priority 2: Exact number match (any type)
+        for (const warehouse of warehouses) {
+            const numberMatch = warehouse.Description.match(/№(\d+)/);
+            const warehouseNumber = numberMatch ? numberMatch[1] : '';
+            
+            if (warehouseNumber === numericBranch) {
+                return warehouse;
+            }
+        }
+        
+        // Priority 3: Partial match in description
+        for (const warehouse of warehouses) {
+            if (warehouse.Description.includes(branchNumber)) {
+                return warehouse;
+            }
+        }
+        
+        return null;
     }
 
     /**
@@ -1162,20 +1329,27 @@ Example output 2:
         // Initial wait for delivery method to render branch section
         await new Promise(resolve => setTimeout(resolve, 800));
 
+        // Try to find the new warehouse input (searchable combobox)
+        const warehouseInput = document.querySelector('input#np-warehouse-input');
+        if (warehouseInput) {
+            if (CONFIG.DEBUG) console.log('✅ Found branch input: #np-warehouse-input (searchable combobox)');
+            return warehouseInput;
+        }
+
+        // Fallback: Try classic selectors (for backward compatibility)
         const selectors = [
             '[id*="warehouse" i]',
             '[id*="branch" i]',
             '[id*="відділення" i]',
             '[name*="warehouse" i]',
             '[name*="branch" i]',
-            'select[name*="warehouse"]',
-            'select#np-warehouse-select'
+            'select[name*="warehouse"]'
         ];
 
         for (const selector of selectors) {
             const el = document.querySelector(selector);
-            if (el && el.tagName === 'SELECT') {
-                if (CONFIG.DEBUG) console.log(`✅ Found branch select: ${selector}`);
+            if (el && (el.tagName === 'SELECT' || el.tagName === 'INPUT')) {
+                if (CONFIG.DEBUG) console.log(`✅ Found branch element: ${selector}`);
                 return el;
             }
         }
