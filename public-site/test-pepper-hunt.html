@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌶️ Pepper Hunt Game - Test & Debug</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 12px;
+      padding: 20px;
+      color: white;
+      text-align: center;
+    }
+    .test-btn {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      padding: 12px 24px;
+      border-radius: 8px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .test-btn:hover {
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+
+  <div class="container mx-auto px-4 py-8 max-w-6xl">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-8 mb-8 text-white">
+      <h1 class="text-4xl font-bold mb-2">🌶️ Chili Pepper Hunt</h1>
+      <p class="text-lg opacity-90">Game Testing & Debug Console</p>
+    </div>
+
+    <!-- Game Status -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div class="stat-card">
+        <div class="text-3xl font-bold mb-1" id="found-count">0</div>
+        <div class="text-sm opacity-90">Peppers Found</div>
+      </div>
+      <div class="stat-card">
+        <div class="text-3xl font-bold mb-1" id="progress-pct">0%</div>
+        <div class="text-sm opacity-90">Progress</div>
+      </div>
+      <div class="stat-card">
+        <div class="text-3xl font-bold mb-1" id="golden-count">0</div>
+        <div class="text-sm opacity-90">Golden Peppers</div>
+      </div>
+      <div class="stat-card">
+        <div class="text-3xl font-bold mb-1" id="game-status">❌</div>
+        <div class="text-sm opacity-90">Game Enabled</div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-white rounded-xl p-6 shadow-lg mb-8">
+      <h2 class="text-2xl font-bold mb-4">⚡ Quick Actions</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <button onclick="refreshStatus()" class="test-btn">
+          🔄 Refresh Status
+        </button>
+        <button onclick="resetGame()" class="test-btn bg-gradient-to-r from-red-500 to-pink-500">
+          🗑️ Reset Progress
+        </button>
+        <button onclick="simulateVictory()" class="test-btn bg-gradient-to-r from-green-500 to-teal-500">
+          🏆 Simulate Victory
+        </button>
+        <button onclick="window.location.reload()" class="test-btn bg-gradient-to-r from-blue-500 to-indigo-500">
+          🔃 Reload Page
+        </button>
+      </div>
+    </div>
+
+    <!-- Pepper Locations Map -->
+    <div class="bg-white rounded-xl p-6 shadow-lg mb-8">
+      <h2 class="text-2xl font-bold mb-4">📍 Pepper Locations</h2>
+      <div class="space-y-3" id="locations-list">
+        <!-- Will be populated by JS -->
+      </div>
+    </div>
+
+    <!-- Random Products Info -->
+    <div class="bg-white rounded-xl p-6 shadow-lg mb-8">
+      <h2 class="text-2xl font-bold mb-4">🎲 Random Products (Peppers 4-6)</h2>
+      <div id="random-products" class="space-y-2">
+        <!-- Will be populated by JS -->
+      </div>
+    </div>
+
+    <!-- LocalStorage Data -->
+    <div class="bg-white rounded-xl p-6 shadow-lg mb-8">
+      <h2 class="text-2xl font-bold mb-4">💾 LocalStorage Data</h2>
+      <pre id="localstorage-data" class="bg-gray-100 p-4 rounded-lg overflow-x-auto text-sm"></pre>
+    </div>
+
+    <!-- Console Log -->
+    <div class="bg-white rounded-xl p-6 shadow-lg">
+      <h2 class="text-2xl font-bold mb-4">📋 Activity Log</h2>
+      <div id="activity-log" class="bg-gray-900 text-green-400 p-4 rounded-lg h-64 overflow-y-auto font-mono text-sm">
+        <div>🌶️ Initializing test console...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Scripts -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    // Wait for Firebase config to load
+    setTimeout(async () => {
+      // Initialize Firebase if not already done
+      if (!window.firebaseApp && window.firebaseConfig) {
+        window.firebaseApp = initializeApp(window.firebaseConfig);
+      }
+
+      // Load game status
+      refreshStatus();
+    }, 1000);
+  </script>
+
+  <script type="module" src="./js/firebase-config.js"></script>
+  <script type="module" src="./js/pepper-hunt-game.js"></script>
+
+  <script>
+    const pepperLocations = [
+      { id: 1, page: 'Homepage', location: 'FAQ - "Чи можна латяо дітям?" answer', golden: false, fixed: true },
+      { id: 2, page: 'Delivery Page', location: 'Middle of delivery information', golden: false, fixed: true },
+      { id: 3, page: 'About Us', location: 'Brand story section', golden: false, fixed: true },
+      { id: 4, page: 'Product (Random A)', location: 'Description (Опис) tab', golden: false, fixed: false },
+      { id: 5, page: 'Product (Random B)', location: 'Ingredients (Склад) tab', golden: true, fixed: false },
+      { id: 6, page: 'Product (Random C)', location: 'Reviews section', golden: false, fixed: false },
+      { id: 7, page: 'Checkout', location: 'Order summary section', golden: false, fixed: true },
+      { id: 8, page: 'Dashboard', location: 'User stats area', golden: true, fixed: true }
+    ];
+
+    function log(message) {
+      const logEl = document.getElementById('activity-log');
+      const time = new Date().toLocaleTimeString();
+      logEl.innerHTML += `<div>[${time}] ${message}</div>`;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function refreshStatus() {
+      log('🔄 Refreshing game status...');
+
+      if (!window.pepperHuntGame) {
+        log('❌ Game not initialized yet');
+        return;
+      }
+
+      const progress = window.pepperHuntGame.getProgress();
+      
+      document.getElementById('found-count').textContent = progress.found;
+      document.getElementById('progress-pct').textContent = progress.percentage + '%';
+      document.getElementById('golden-count').textContent = progress.goldenPeppers;
+      document.getElementById('game-status').textContent = window.pepperHuntGame.isEnabled ? '✅' : '❌';
+
+      // Update locations list
+      const locationsList = document.getElementById('locations-list');
+      locationsList.innerHTML = pepperLocations.map(loc => {
+        const found = progress.peppers.includes(loc.id);
+        return `
+          <div class="flex items-center justify-between p-4 rounded-lg ${found ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">${found ? '✅' : '⬜'}</span>
+              <div>
+                <div class="font-semibold">${loc.golden ? '✨' : '🌶️'} Pepper #${loc.id} ${loc.golden ? '(GOLDEN)' : ''}</div>
+                <div class="text-sm text-gray-600">${loc.page} → ${loc.location}</div>
+                <div class="text-xs text-gray-500">${loc.fixed ? '📌 Fixed' : '🎲 Dynamic'}</div>
+              </div>
+            </div>
+            ${found ? '<span class="text-green-600 font-bold">FOUND</span>' : '<span class="text-gray-400">Not found</span>'}
+          </div>
+        `;
+      }).join('');
+
+      // Update random products
+      const randomProducts = window.pepperHuntGame.randomProductIds || [];
+      document.getElementById('random-products').innerHTML = randomProducts.length > 0 
+        ? randomProducts.map((id, idx) => `
+            <div class="p-3 bg-purple-50 rounded-lg">
+              <span class="font-semibold">Pepper #${4 + idx}:</span> 
+              <a href="product.html?id=${id}" class="text-blue-600 hover:underline" target="_blank">${id}</a>
+            </div>
+          `).join('')
+        : '<div class="text-gray-500">No random products assigned yet</div>';
+
+      // Update localStorage data
+      const lsData = {
+        progress: localStorage.getItem('pepperhunt_progress'),
+        randomProducts: localStorage.getItem('pepperhunt_random_products'),
+        playerPhone: localStorage.getItem('latiao_checkout_phone')
+      };
+      document.getElementById('localstorage-data').textContent = JSON.stringify(lsData, null, 2);
+
+      log(`✅ Status updated: ${progress.found}/8 peppers found`);
+    }
+
+    function resetGame() {
+      if (!confirm('Are you sure you want to reset all game progress?')) return;
+      
+      log('🗑️ Resetting game progress...');
+      
+      if (window.pepperHuntGame) {
+        window.pepperHuntGame.resetGame();
+        log('✅ Game reset complete');
+        refreshStatus();
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        log('❌ Game not initialized');
+      }
+    }
+
+    function simulateVictory() {
+      log('🏆 Simulating victory...');
+      
+      if (window.pepperHuntGame) {
+        // Mark all peppers as found
+        window.pepperHuntGame.progress.found = [1, 2, 3, 4, 5, 6, 7, 8];
+        window.pepperHuntGame.progress.goldenPeppers = 2;
+        window.pepperHuntGame.saveProgress();
+        window.pepperHuntGame.handleVictory();
+        log('✅ Victory triggered!');
+        refreshStatus();
+      } else {
+        log('❌ Game not initialized');
+      }
+    }
+
+    // Expose functions globally
+    window.refreshStatus = refreshStatus;
+    window.resetGame = resetGame;
+    window.simulateVictory = simulateVictory;
+    window.log = log;
+
+    // Auto-refresh every 5 seconds
+    setInterval(() => {
+      if (window.pepperHuntGame) {
+        refreshStatus();
+      }
+    }, 5000);
+
+    log('✅ Test console loaded');
+  </script>
+</body>
+</html>

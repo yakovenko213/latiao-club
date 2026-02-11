@@ -170,6 +170,48 @@
       to { opacity: 0; transform: translateY(-20px); }
     }
     
+    /* 🌶️ Pepper Hunt - FAQ Pepper Animation */
+    @keyframes pepperPulse {
+      0%, 100% { 
+        transform: scale(1) rotate(0deg); 
+        filter: drop-shadow(0 0 6px rgba(255, 107, 0, 0.5));
+      }
+      25% { 
+        transform: scale(1.15) rotate(-5deg); 
+        filter: drop-shadow(0 0 10px rgba(255, 107, 0, 0.7));
+      }
+      50% { 
+        transform: scale(1.2) rotate(5deg); 
+        filter: drop-shadow(0 0 12px rgba(255, 107, 0, 0.8));
+      }
+      75% { 
+        transform: scale(1.15) rotate(-3deg); 
+        filter: drop-shadow(0 0 10px rgba(255, 107, 0, 0.7));
+      }
+    }
+    
+    .faq-pepper {
+      display: inline-block;
+      transition: all 0.3s ease;
+    }
+    
+    .faq-pepper:hover {
+      transform: scale(1.4) rotate(15deg) !important;
+      filter: drop-shadow(0 0 15px rgba(255, 107, 0, 0.9)) !important;
+      animation: none !important;
+    }
+    
+    @keyframes pepperCollectFaq {
+      0% { transform: scale(1) rotate(0deg); opacity: 1; }
+      50% { transform: scale(2) rotate(360deg); opacity: 1; }
+      100% { transform: scale(0) rotate(720deg); opacity: 0; }
+    }
+    
+    .faq-pepper-collecting {
+      animation: pepperCollectFaq 0.8s ease forwards !important;
+      pointer-events: none;
+    }
+    
     .toast-enter { animation: toast-in 0.3s ease-out; }
     .toast-exit { animation: toast-out 0.3s ease-out forwards; }
     
@@ -815,7 +857,7 @@
             <span class="font-semibold text-base sm:text-lg text-gray-900">👶 Можна дітям?</span>
             <i data-lucide="chevron-down" class="w-5 h-5 text-gray-500 transition-transform"></i>
           </button>
-          <div class="accordion-content px-6"><p class="text-gray-600 pb-6">Так! Підходить з 6 років (є й негострі варіанти 😉)</p></div>
+          <div class="accordion-content px-6"><p class="text-gray-600 pb-6">Так! Підходить з 6 років (є й негострі варіанти 😉) <span id="faq-pepper-kids" class="faq-pepper" style="display: none; cursor: pointer; font-size: 18px; animation: pepperPulse 2s ease-in-out infinite; filter: drop-shadow(0 0 6px rgba(255, 107, 0, 0.5)); transition: all 0.3s ease;" title="Знайди мене! 🔍">🌶️</span></p></div>
         </div>
         <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
           <button class="accordion-btn w-full flex items-center justify-between p-4 sm:p-6 text-left">
@@ -836,7 +878,7 @@
             <span class="font-semibold text-base sm:text-lg text-gray-900">😋 Є негостре Латяо?</span>
             <i data-lucide="chevron-down" class="w-5 h-5 text-gray-500 transition-transform"></i>
           </button>
-          <div class="accordion-content px-6"><p class="text-gray-600 pb-6">Так, звісно!<br>Зайди в каталог — там є категорія "Негостре Латяо" для тих, хто хоче просто кайф без вогню 🔥</p></div>
+          <div class="accordion-content px-6"><p class="text-gray-600 pb-6">Так, звісно!<br>Зайди в каталог — там є категорія "Негостре Латяо" для тих, хто хоче просто кайф без вогню 🔥 <span id="faq-pepper-nonspicy" class="faq-pepper" style="display: none; cursor: pointer; font-size: 18px; animation: pepperPulse 2s ease-in-out infinite; filter: drop-shadow(0 0 6px rgba(255, 107, 0, 0.5)); transition: all 0.3s ease;" title="Знайди мене! 🔍">🌶️</span></p></div>
         </div>
       </div>
 
@@ -1663,5 +1705,336 @@
   <!-- Live Chat Widget -->
   <!-- Chat Widget - Load asynchronously after page is interactive -->
   <script type="module" async src="./js/chat-widget.js?v=1770245460083"></script>
+
+  <!-- 🌶️ Chili Pepper Hunt Game -->
+  <script type="module" src="./js/pepper-hunt-game.js"></script>
+  <script type="module" src="./js/pepper-hunt-init.js"></script>
+  <script type="module" src="./js/pepper-placer.js"></script>
+  
+  <!-- 🌶️ FAQ Pepper #1 Implementation -->
+  <script type="module">
+    import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    
+    // Pepper Configuration
+    const PEPPER_ID = 1;
+    const PEPPER_NAME = 'FAQ Pepper';
+    const STORAGE_KEY = 'pepperHunt_foundPeppers';
+    const QUESTION_CHOICE_KEY = 'pepperHunt_faqQuestionChoice';
+    
+    const QUESTIONS = {
+      kids: {
+        id: 'faq-pepper-kids',
+        name: 'Можна дітям?',
+        element: null
+      },
+      nonspicy: {
+        id: 'faq-pepper-nonspicy', 
+        name: 'Є негостре Латяо?',
+        element: null
+      }
+    };
+    
+    /**
+     * Initialize FAQ Pepper #1
+     */
+    async function initFaqPepper() {
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('🌶️ [PEPPER #1] FAQ Pepper Initialization');
+      console.log('═══════════════════════════════════════════════════════════');
+      
+      try {
+        // Wait for Firebase
+        if (!window.firebaseApp) {
+          console.log('⏳ [PEPPER #1] Waiting for Firebase...');
+          await waitForFirebase();
+        }
+        
+        if (!window.firebaseApp && !window.db) {
+          console.error('❌ [PEPPER #1] Firebase not available');
+          return;
+        }
+        
+        const db = window.db || getFirestore(window.firebaseApp);
+        console.log('✅ [PEPPER #1] Firebase ready');
+        
+        // Check if game is enabled
+        let isEnabled = false;
+        
+        if (window.pepperGameConfig && window.pepperGameConfig.loaded) {
+          isEnabled = window.pepperGameConfig.isEnabled;
+          console.log('✅ [PEPPER #1] Using global game config:', isEnabled);
+        } else {
+          console.log('🔍 [PEPPER #1] Fetching game config from Firestore...');
+          const configRef = doc(db, 'settings', 'peppersGameConfig');
+          const configSnap = await getDoc(configRef);
+          
+          if (configSnap.exists()) {
+            isEnabled = configSnap.data().isEnabled || false;
+            console.log('✅ [PEPPER #1] Game status from Firestore:', isEnabled);
+          } else {
+            console.warn('⚠️ [PEPPER #1] Config document does not exist');
+          }
+        }
+        
+        if (!isEnabled) {
+          console.log('═══════════════════════════════════════════════════════════');
+          console.log('⚠️ [PEPPER #1] Game is DISABLED');
+          console.log('💡 [PEPPER #1] Enable in Admin Panel → Peppers Game');
+          console.log('═══════════════════════════════════════════════════════════');
+          return;
+        }
+        
+        console.log('✅ [PEPPER #1] Game is ENABLED');
+        
+        // Check if pepper already found
+        const foundPeppers = getFoundPeppers();
+        console.log('💾 [PEPPER #1] Found peppers:', foundPeppers);
+        
+        if (foundPeppers.includes(PEPPER_ID)) {
+          console.log('⚠️ [PEPPER #1] Pepper #' + PEPPER_ID + ' already collected');
+          return;
+        }
+        
+        console.log('✅ [PEPPER #1] Pepper not found yet');
+        
+        // Determine which question to show pepper in
+        const chosenQuestion = getOrSetQuestionChoice();
+        console.log('🎲 [PEPPER #1] Chosen question:', chosenQuestion);
+        
+        // Get pepper elements
+        QUESTIONS.kids.element = document.getElementById(QUESTIONS.kids.id);
+        QUESTIONS.nonspicy.element = document.getElementById(QUESTIONS.nonspicy.id);
+        
+        if (!QUESTIONS.kids.element || !QUESTIONS.nonspicy.element) {
+          console.error('❌ [PEPPER #1] Pepper elements not found in DOM');
+          return;
+        }
+        
+        console.log('✅ [PEPPER #1] Both pepper elements found');
+        
+        // Show only the chosen pepper
+        const chosenElement = QUESTIONS[chosenQuestion].element;
+        chosenElement.style.display = 'inline-block';
+        chosenElement.style.opacity = '1';
+        chosenElement.style.visibility = 'visible';
+        
+        // Clone to remove any existing listeners
+        const newElement = chosenElement.cloneNode(true);
+        chosenElement.parentNode.replaceChild(newElement, chosenElement);
+        
+        // Add click handler
+        newElement.addEventListener('click', handlePepperClick);
+        
+        console.log('═══════════════════════════════════════════════════════════');
+        console.log('🎉 [PEPPER #1] PEPPER IS NOW VISIBLE AND CLICKABLE!');
+        console.log('═══════════════════════════════════════════════════════════');
+        console.log('Question:', QUESTIONS[chosenQuestion].name);
+        console.log('Element:', newElement);
+        console.log('Position:', newElement.getBoundingClientRect());
+        
+      } catch (error) {
+        console.error('═══════════════════════════════════════════════════════════');
+        console.error('❌ [PEPPER #1] CRITICAL ERROR');
+        console.error('═══════════════════════════════════════════════════════════');
+        console.error('Error:', error);
+        console.error('Stack:', error.stack);
+      }
+    }
+    
+    /**
+     * Get or set random question choice for this user
+     */
+    function getOrSetQuestionChoice() {
+      let choice = localStorage.getItem(QUESTION_CHOICE_KEY);
+      
+      if (!choice) {
+        // Randomly choose between 'kids' and 'nonspicy'
+        const questions = Object.keys(QUESTIONS);
+        choice = questions[Math.floor(Math.random() * questions.length)];
+        localStorage.setItem(QUESTION_CHOICE_KEY, choice);
+        console.log('🎲 [PEPPER #1] New random choice saved:', choice);
+      } else {
+        console.log('📂 [PEPPER #1] Using saved choice:', choice);
+      }
+      
+      return choice;
+    }
+    
+    /**
+     * Handle pepper click
+     */
+    function handlePepperClick(event) {
+      console.log('🎯 [PEPPER #1] Pepper clicked!');
+      
+      const pepperElement = event.target;
+      
+      // Add collecting animation
+      pepperElement.classList.add('faq-pepper-collecting');
+      
+      // Play sound
+      playCollectSound();
+      
+      // Save to localStorage
+      const foundPeppers = getFoundPeppers();
+      if (!foundPeppers.includes(PEPPER_ID)) {
+        foundPeppers.push(PEPPER_ID);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(foundPeppers));
+        console.log('💾 [PEPPER #1] Saved to localStorage:', foundPeppers);
+      }
+      
+      // Show toast notification
+      showToast(foundPeppers.length);
+      
+      // Remove pepper after animation
+      setTimeout(() => {
+        pepperElement.style.display = 'none';
+        console.log('✅ [PEPPER #1] Pepper hidden');
+      }, 800);
+      
+      // Call global collect function if available
+      if (typeof window.collectPepper === 'function') {
+        window.collectPepper(PEPPER_ID);
+      }
+    }
+    
+    /**
+     * Get found peppers from localStorage
+     */
+    function getFoundPeppers() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        return stored ? JSON.parse(stored) : [];
+      } catch (error) {
+        console.error('Error reading localStorage:', error);
+        return [];
+      }
+    }
+    
+    /**
+     * Show toast notification
+     */
+    function showToast(count) {
+      const toast = document.createElement('div');
+      toast.className = 'fixed top-5 right-5 z-[99999] bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-[toast-in_0.4s_ease]';
+      toast.innerHTML = `
+        <span class=\"text-2xl\">🎉</span>
+        <div class=\"flex flex-col\">
+          <span class=\"font-bold text-lg\">Ви знайшли перчик у питаннях!</span>
+          <span class=\"text-sm text-white/90\">${count}/8 перчиків зібрано</span>
+        </div>
+      `;
+      
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.animation = 'toast-out 0.4s ease forwards';
+        setTimeout(() => toast.remove(), 400);
+      }, 3000);
+    }
+    
+    /**
+     * Play collection sound
+     */
+    function playCollectSound() {
+      try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.2);
+      } catch (error) {
+        console.log('🔇 Sound not available');
+      }
+    }
+    
+    /**
+     * Wait for Firebase
+     */
+    function waitForFirebase(timeout = 15000) {
+      return new Promise((resolve, reject) => {
+        if (window.firebaseApp || window.db) {
+          resolve();
+          return;
+        }
+        
+        const startTime = Date.now();
+        let resolved = false;
+        
+        const firebaseListener = () => {
+          if (!resolved) {
+            resolved = true;
+            clearInterval(pollInterval);
+            resolve();
+          }
+        };
+        window.addEventListener('firebaseReady', firebaseListener, { once: true });
+        
+        const pollInterval = setInterval(() => {
+          if (window.firebaseApp || window.db) {
+            if (!resolved) {
+              resolved = true;
+              window.removeEventListener('firebaseReady', firebaseListener);
+              clearInterval(pollInterval);
+              resolve();
+            }
+          } else if (Date.now() - startTime > timeout) {
+            if (!resolved) {
+              resolved = true;
+              window.removeEventListener('firebaseReady', firebaseListener);
+              clearInterval(pollInterval);
+              reject(new Error('Firebase timeout'));
+            }
+          }
+        }, 100);
+      });
+    }
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(initFaqPepper, 1000);
+      });
+    } else {
+      setTimeout(initFaqPepper, 1000);
+    }
+    
+    // Listen for game config changes
+    window.addEventListener('pepperGameConfigChanged', (event) => {
+      console.log('🔄 [PEPPER #1] Game config changed:', event.detail);
+      if (event.detail.isEnabled) {
+        setTimeout(initFaqPepper, 300);
+      }
+    });
+    
+    // Expose for debugging
+    window.initFaqPepper = initFaqPepper;
+    window.faqPepperDebug = {
+      init: initFaqPepper,
+      getChoice: () => localStorage.getItem(QUESTION_CHOICE_KEY),
+      resetChoice: () => {
+        localStorage.removeItem(QUESTION_CHOICE_KEY);
+        console.log('🔄 Question choice reset');
+      },
+      getFound: getFoundPeppers,
+      reset: () => {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(QUESTION_CHOICE_KEY);
+        console.log('🔄 [PEPPER #1] Full reset');
+        window.location.reload();
+      }
+    };
+    
+    console.log('✅ [PEPPER #1] Module loaded, window.initFaqPepper() available');
+  </script>
 </body>
 </html>

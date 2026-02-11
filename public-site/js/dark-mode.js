@@ -1850,13 +1850,18 @@
       }
     });
     
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
-    
-    // Stop observing after 5 seconds
-    setTimeout(() => observer.disconnect(), 5000);
+    // Only observe if document.body exists
+    if (document.body) {
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+      
+      // Stop observing after 5 seconds
+      setTimeout(() => observer.disconnect(), 5000);
+    } else {
+      console.warn('⚠️ [DARK MODE] document.body not ready for MutationObserver');
+    }
     
     console.log('🌙 Dark mode module initialized');
   }

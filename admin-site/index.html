@@ -938,7 +938,7 @@
           <i data-lucide="trending-up" class="w-5 h-5"></i>
           <span>🔥 Допродажі</span>
         </a>
-        <a href="#peppers-game" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+        <a href="#peppers-game" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700" onclick="setTimeout(() => { console.log('🌶️ [CLICK] Peppers link clicked'); if (typeof initPeppersGameView === 'function') { initPeppersGameView(); } else { console.error('❌ initPeppersGameView not found!'); } }, 200);">
           <i data-lucide="gamepad-2" class="w-5 h-5"></i>
           <span>🌶️ Гра Перчики</span>
         </a>
@@ -18246,34 +18246,147 @@
     
     let peppersGameData = {
       players: [],
-      config: null
+      config: null,
+      loading: false,
+      loadingTimeout: null
+    };
+
+    /**
+     * Debug function exposed to window for console access
+     * Usage: window.peppersDebug() in browser console
+     */
+    window.peppersDebug = function() {
+      console.log('═══════════════════════════════════════════════════════════════');
+      console.log('🐛 [PEPPERS DEBUG] Internal State:');
+      console.log('═══════════════════════════════════════════════════════════════');
+      console.log('Config:', peppersGameData.config);
+      console.log('Players count:', peppersGameData.players.length);
+      console.log('Loading:', peppersGameData.loading);
+      console.log('Firebase db available:', !!window.db);
+      console.log('Firebase db instance:', window.db);
+      console.log('Toggle element:', document.getElementById('peppers-game-toggle'));
+      console.log('Status text:', document.getElementById('game-status-text')?.textContent);
+      console.log('═══════════════════════════════════════════════════════════════');
+      return {
+        config: peppersGameData.config,
+        playersCount: peppersGameData.players.length,
+        loading: peppersGameData.loading,
+        dbAvailable: !!window.db
+      };
     };
 
     /**
      * Load Peppers Game Configuration
      */
     async function loadPeppersGameConfig() {
+      console.log('═══════════════════════════════════════════════════════════════');
+      console.log('🔄 [ADMIN] Loading Peppers Game config... (FAIL-SAFE MODE)');
+      console.log('═══════════════════════════════════════════════════════════════');
+      
+      // CRITICAL: Check if Firebase is available
+      if (!window.db) {
+        console.error('❌ [ADMIN] CRITICAL: Firebase db is NOT available!');
+        console.error('❌ [ADMIN] window.db is:', window.db);
+        updateGameToggle(false);
+        showNotification('Firebase не ініціалізовано', 'error');
+        return;
+      }
+      
+      console.log('✅ [ADMIN] Firebase db is available:', window.db);
+      console.log('📍 [ADMIN] Firestore path: settings/peppersGameConfig');
+      console.log('📍 [ADMIN] Using: doc(db, "settings", "peppersGameConfig")');
+      
+      let loadingSuccessful = false;
+      peppersGameData.loading = true;
+      
+      // EMERGENCY TIMEOUT: Force stop loading after 5 seconds
+      console.log('⏰ [ADMIN] Setting 5-second emergency timeout...');
+      peppersGameData.loadingTimeout = setTimeout(() => {
+        console.error('⏰ [ADMIN] TIMEOUT! Data fetch took >5 seconds');
+        console.error('⏰ [ADMIN] Force stopping loading spinner');
+        peppersGameData.loading = false;
+        
+        if (!loadingSuccessful) {
+          console.error('⏰ [ADMIN] Setting fail-safe state: isEnabled = false');
+          peppersGameData.config = { isEnabled: false };
+          updateGameToggle(false);
+          showNotification('⏰ Час очікування вичерпано. Спробуйте оновити сторінку.', 'warning');
+        }
+      }, 5000);
+      
       try {
         const configRef = doc(db, 'settings', 'peppersGameConfig');
+        console.log('📄 [ADMIN] Created document reference:', configRef);
+        console.log('📄 [ADMIN] Reference path:', configRef.path);
+        console.log('📄 [ADMIN] Reference ID:', configRef.id);
+        console.log('📡 [ADMIN] Fetching document from Firestore...');
+        
         const configSnap = await getDoc(configRef);
         
+        console.log('📦 [ADMIN] Firestore response received');
+        console.log('📦 [ADMIN] Document exists:', configSnap.exists());
+        
         if (configSnap.exists()) {
+          console.log('✅ [ADMIN] Config document found:', configSnap.data());
           peppersGameData.config = configSnap.data();
-          updateGameToggle(peppersGameData.config.isEnabled || false);
+          const isEnabled = peppersGameData.config.isEnabled || false;
+          console.log('🎮 [ADMIN] Game status from DB: isEnabled =', isEnabled);
+          updateGameToggle(isEnabled);
+          loadingSuccessful = true;
         } else {
-          // Create default config
-          const defaultConfig = {
+          console.warn('⚠️ [ADMIN] Config document does NOT exist at path: settings/peppersGameConfig');
+          console.warn('⚠️ [ADMIN] FAIL-SAFE: Setting game to DISABLED by default');
+          console.warn('⚠️ [ADMIN] Document will be created when admin clicks toggle');
+          
+          // CRITICAL: Don't try to create document here - just set local state
+          // This prevents hanging if Firestore write fails
+          peppersGameData.config = {
             isEnabled: false,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp()
+            description: 'Not yet initialized'
           };
-          await setDoc(configRef, defaultConfig);
-          peppersGameData.config = defaultConfig;
+          
           updateGameToggle(false);
+          loadingSuccessful = true;
+          
+          console.log('✅ [ADMIN] Fail-safe initialization complete - UI ready');
         }
       } catch (error) {
-        console.error('Error loading game config:', error);
-        showNotification('Помилка завантаження конфігурації гри', 'error');
+        console.error('═══════════════════════════════════════════════════════════════');
+        console.error('❌ [ADMIN] CRITICAL ERROR loading game config');
+        console.error('❌ [ADMIN] Error:', error);
+        console.error('❌ [ADMIN] Error message:', error.message);
+        console.error('❌ [ADMIN] Error code:', error.code);
+        console.error('❌ [ADMIN] Error name:', error.name);
+        console.error('❌ [ADMIN] Error stack:', error.stack);
+        console.error('═══════════════════════════════════════════════════════════════');
+        
+        // FAIL-SAFE: Even on error, set default state
+        peppersGameData.config = { isEnabled: false };
+        updateGameToggle(false);
+        showNotification('Помилка завантаження. Гра вимкнена за замовчуванням.', 'warning');
+      } finally {
+        // CRITICAL: Clear timeout
+        if (peppersGameData.loadingTimeout) {
+          clearTimeout(peppersGameData.loadingTimeout);
+          console.log('✅ [ADMIN] Emergency timeout cleared');
+        }
+        
+        peppersGameData.loading = false;
+        console.log('🏁 [ADMIN] loadPeppersGameConfig completed. Success:', loadingSuccessful);
+        
+        // GUARANTEE: Status text is NEVER stuck on "Loading..."
+        const statusText = document.getElementById('game-status-text');
+        if (statusText) {
+          if (statusText.textContent === 'Завантаження...') {
+            console.warn('⚠️ [ADMIN] Forcing status text update from "Loading..."');
+            statusText.textContent = '❌ Вимкнена';
+          }
+          console.log('✅ [ADMIN] Final status text:', statusText.textContent);
+        }
+        
+        console.log('═══════════════════════════════════════════════════════════════');
+        console.log('💡 [ADMIN] TIP: Run window.peppersDebug() to check internal state');
+        console.log('═══════════════════════════════════════════════════════════════');
       }
     }
 
@@ -18281,36 +18394,95 @@
      * Update Game Toggle UI
      */
     function updateGameToggle(isEnabled) {
+      console.log('🎨 [ADMIN] Updating toggle UI, isEnabled:', isEnabled);
+      
       const toggle = document.getElementById('peppers-game-toggle');
       const statusText = document.getElementById('game-status-text');
       
       if (toggle) {
         toggle.checked = isEnabled;
+        console.log('✅ [ADMIN] Toggle checkbox updated:', isEnabled);
+      } else {
+        console.error('❌ [ADMIN] Toggle element not found!');
       }
       
       if (statusText) {
-        statusText.textContent = isEnabled ? '✅ Активна' : '❌ Вимкнена';
+        const newText = isEnabled ? '✅ Активна' : '❌ Вимкнена';
+        statusText.textContent = newText;
+        console.log('✅ [ADMIN] Status text updated:', newText);
+      } else {
+        console.error('❌ [ADMIN] Status text element not found!');
       }
     }
 
     /**
-     * Toggle Game Status
+     * Toggle Game Status (with Force Initialization)
      */
     async function togglePeppersGame(enabled) {
+      console.log('═══════════════════════════════════════════════════════════════');
+      console.log('🌶️ [ADMIN] Toggle clicked! New value:', enabled);
+      console.log('💾 [ADMIN] Using setDoc with MERGE to force-create if needed');
+      console.log('═══════════════════════════════════════════════════════════════');
+      
       try {
         const configRef = doc(db, 'settings', 'peppersGameConfig');
-        await updateDoc(configRef, {
-          isEnabled: enabled,
-          updatedAt: serverTimestamp()
-        });
         
+        console.log('📝 [ADMIN] Document path: settings/peppersGameConfig');
+        console.log('📝 [ADMIN] New isEnabled value:', enabled);
+        
+        // CRITICAL: Use setDoc with merge: true
+        // This will CREATE the document if it doesn't exist
+        // This is the ONLY place where we create/update the document
+        const dataToWrite = {
+          isEnabled: enabled,
+          updatedAt: serverTimestamp(),
+          lastModifiedBy: 'admin',
+          version: 1,
+          createdAt: serverTimestamp() // Will only set on first write
+        };
+        
+        console.log('📦 [ADMIN] Writing data:', { ...dataToWrite, updatedAt: 'serverTimestamp()', createdAt: 'serverTimestamp()' });
+        
+        await setDoc(configRef, dataToWrite, { merge: true });
+        
+        console.log('✅✅✅ [ADMIN] SUCCESS! Data saved to Firestore');
+        console.log('✅ [ADMIN] Game is now:', enabled ? '🟢 ENABLED' : '🔴 DISABLED');
+        console.log('✅ [ADMIN] Document has been created/updated in Firebase');
+        
+        // Update local state
+        if (!peppersGameData.config) {
+          peppersGameData.config = {};
+        }
         peppersGameData.config.isEnabled = enabled;
+        
+        // Update UI
         updateGameToggle(enabled);
-        showNotification(enabled ? 'Гру активовано! 🌶️' : 'Гру вимкнено', 'success');
+        
+        // Show success notification
+        showNotification(
+          enabled ? '✅ Гру активовано! 🌶️ Перчики тепер видимі на сайті' : '✅ Гру вимкнено', 
+          'success'
+        );
+        
+        console.log('Status successfully saved to DB:', enabled);
+        console.log('═══════════════════════════════════════════════════════════════');
+        
       } catch (error) {
-        console.error('Error toggling game:', error);
-        showNotification('Помилка зміни статусу гри', 'error');
-        // Revert toggle
+        console.error('═══════════════════════════════════════════════════════════════');
+        console.error('❌❌❌ [ADMIN] WRITE FAILED!');
+        console.error('❌ [ADMIN] Error:', error);
+        console.error('❌ [ADMIN] Error message:', error.message);
+        console.error('❌ [ADMIN] Error code:', error.code);
+        console.error('❌ [ADMIN] Error stack:', error.stack);
+        console.error('═══════════════════════════════════════════════════════════════');
+        
+        showNotification(
+          '❌ Помилка збереження: ' + error.message, 
+          'error'
+        );
+        
+        // Revert toggle to previous state
+        console.log('🔄 [ADMIN] Reverting toggle to:', !enabled);
         updateGameToggle(!enabled);
       }
     }
@@ -18319,10 +18491,16 @@
      * Load Players Data from Firestore
      */
     async function loadPeppersGamePlayers() {
+      console.log('👥 [ADMIN] Loading players from game_players collection...');
+      
       try {
         const playersRef = collection(db, 'game_players');
         const playersQuery = query(playersRef, orderBy('joinedAt', 'desc'));
+        
+        console.log('📡 [ADMIN] Querying Firestore...');
         const playersSnap = await getDocs(playersQuery);
+        
+        console.log('📊 [ADMIN] Query returned', playersSnap.size, 'documents');
         
         peppersGameData.players = [];
         playersSnap.forEach(doc => {
@@ -18332,13 +18510,29 @@
           });
         });
         
+        console.log('✅ [ADMIN] Loaded', peppersGameData.players.length, 'players');
+        
+        // Always update UI even if empty
         updatePeppersGameStats();
         renderPlayersTable(peppersGameData.players);
         updateLastRefreshTime();
+        
+        if (peppersGameData.players.length === 0) {
+          console.log('ℹ️ [ADMIN] No players yet - showing empty state');
+        } else {
+          console.log('✅ [ADMIN] Players table rendered successfully');
+        }
       } catch (error) {
-        console.error('Error loading players:', error);
-        showNotification('Помилка завантаження даних гравців', 'error');
+        console.error('❌ [ADMIN] Error loading players:', error);
+        console.error('❌ [ADMIN] Error details:', {
+          message: error.message,
+          code: error.code
+        });
+        
+        // FAIL-SAFE: Show empty table on error
+        peppersGameData.players = [];
         renderPlayersTable([]);
+        showNotification('Помилка завантаження даних гравців', 'error');
       }
     }
 
@@ -18565,45 +18759,158 @@
      * Initialize Peppers Game View
      */
     async function initPeppersGameView() {
-      // Load configuration and players
-      await loadPeppersGameConfig();
-      await loadPeppersGamePlayers();
+      console.log('═══════════════════════════════════════');
+      console.log('🚀 [ADMIN] Initializing Peppers Game View');
+      console.log('═══════════════════════════════════════');
       
-      // Setup toggle listener
-      const toggle = document.getElementById('peppers-game-toggle');
-      if (toggle) {
-        toggle.addEventListener('change', (e) => {
-          togglePeppersGame(e.target.checked);
-        });
+      // CRITICAL: Verify Firebase is ready
+      if (!window.db) {
+        console.error('❌ [ADMIN] CRITICAL: Firebase db not available during init!');
+        console.error('❌ [ADMIN] Stopping initialization');
+        const statusText = document.getElementById('game-status-text');
+        if (statusText) {
+          statusText.textContent = '❌ Firebase не готовий';
+        }
+        showNotification('Firebase не ініціалізовано. Оновіть сторінку.', 'error');
+        return;
       }
       
-      // Setup search listener
-      const searchInput = document.getElementById('players-search');
-      if (searchInput) {
-        let searchTimeout;
-        searchInput.addEventListener('input', (e) => {
-          clearTimeout(searchTimeout);
-          searchTimeout = setTimeout(() => {
-            searchPlayers(e.target.value);
-          }, 300);
-        });
+      console.log('✅ [ADMIN] Firebase ready, proceeding with initialization');
+      
+      try {
+        // Load configuration and players with proper error handling
+        console.log('1️⃣ [ADMIN] Step 1: Loading configuration...');
+        await loadPeppersGameConfig();
+        
+        console.log('2️⃣ [ADMIN] Step 2: Loading players data...');
+        await loadPeppersGamePlayers();
+        
+        console.log('3️⃣ [ADMIN] Step 3: Setting up event listeners...');
+        
+        // Setup toggle listener
+        const toggle = document.getElementById('peppers-game-toggle');
+        if (toggle) {
+          toggle.addEventListener('change', (e) => {
+            console.log('🎯 [ADMIN] Toggle changed by user');
+            togglePeppersGame(e.target.checked);
+          });
+          console.log('✅ [ADMIN] Toggle listener attached');
+        } else {
+          console.error('❌ [ADMIN] Toggle element not found!');
+        }
+        
+        // Setup search listener
+        const searchInput = document.getElementById('players-search');
+        if (searchInput) {
+          let searchTimeout;
+          searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+              searchPlayers(e.target.value);
+            }, 300);
+          });
+          console.log('✅ [ADMIN] Search listener attached');
+        }
+        
+        console.log('═══════════════════════════════════════');
+        console.log('🎉 [ADMIN] Peppers Game View initialized successfully');
+        console.log('💡 [ADMIN] Use window.peppersDebug() to check state');
+        console.log('═══════════════════════════════════════');
+        
+      } catch (error) {
+        console.error('═══════════════════════════════════════');
+        console.error('❌ [ADMIN] CRITICAL: Failed to initialize Peppers Game View');
+        console.error('❌ [ADMIN] Error:', error);
+        console.error('❌ [ADMIN] Error stack:', error.stack);
+        console.error('═══════════════════════════════════════');
+        
+        // Ensure UI is not stuck in loading state
+        const statusText = document.getElementById('game-status-text');
+        if (statusText && statusText.textContent === 'Завантаження...') {
+          statusText.textContent = '❌ Помилка завантаження';
+        }
+        
+        showNotification('Помилка ініціалізації гри', 'error');
       }
     }
 
     // Add to navigation handler
     const originalNavigateTo = window.navigateTo;
     window.navigateTo = function(view) {
+      console.log('📍 [NAV] navigateTo called with view:', view);
+      
       if (originalNavigateTo) {
         originalNavigateTo(view);
       }
       
       // Initialize Peppers Game view when navigated to
       if (view === 'peppers-game') {
+        console.log('🌶️ [NAV] Detected peppers-game view, initializing...');
         setTimeout(() => {
           initPeppersGameView();
         }, 100);
       }
     };
+    
+    // CRITICAL FIX: Also initialize on hash change
+    window.addEventListener('hashchange', function() {
+      const hash = window.location.hash.replace('#', '');
+      console.log('📡 [HASH] hashchange detected:', hash);
+      
+      if (hash === 'peppers-game') {
+        console.log('🌶️ [HASH] peppers-game detected, initializing...');
+        setTimeout(() => {
+          initPeppersGameView();
+        }, 150);
+      }
+    });
+    
+    // EMERGENCY FIX: Initialize immediately if we're already on peppers-game page
+    setTimeout(() => {
+      const currentHash = window.location.hash.replace('#', '');
+      console.log('🚀 [INIT] Current hash on load:', currentHash);
+      
+      if (currentHash === 'peppers-game') {
+        console.log('🌶️ [INIT] Already on peppers-game, initializing now...');
+        initPeppersGameView();
+      }
+      
+      // Also check if view is visible (alternative detection)
+      const peppersView = document.getElementById('view-peppers-game');
+      if (peppersView && !peppersView.classList.contains('hidden')) {
+        console.log('🌶️ [INIT] Peppers view is visible, ensuring initialization...');
+        initPeppersGameView();
+      }
+    }, 500);
+    
+    // ULTIMATE FALLBACK: Watch for when peppers view becomes visible
+    const peppersView = document.getElementById('view-peppers-game');
+    if (peppersView) {
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+            const target = mutation.target;
+            if (!target.classList.contains('hidden') && target.id === 'view-peppers-game') {
+              console.log('👁️ [OBSERVER] Peppers view became visible, initializing...');
+              // Only initialize once
+              observer.disconnect();
+              setTimeout(() => {
+                initPeppersGameView();
+              }, 100);
+            }
+          }
+        });
+      });
+      
+      observer.observe(peppersView, {
+        attributes: true,
+        attributeFilter: ['class']
+      });
+      
+      console.log('👁️ [OBSERVER] Watching view-peppers-game for visibility changes');
+    } else {
+      console.error('❌ [OBSERVER] view-peppers-game element not found!');
+    }
 
   </script>
 

@@ -522,26 +522,42 @@
   <script>
     lucide.createIcons();
 
-    // Mobile menu toggle
-    const menuBtn = document.getElementById('menuBtn');
-    const closeMenu = document.getElementById('closeMenu');
-    const mobileMenu = document.getElementById('mobileMenu');
+    // Mobile menu toggle - wait for layout.js to load elements
+    function initMobileMenu() {
+      const menuBtn = document.getElementById('menuBtn');
+      const closeMenu = document.getElementById('closeMenu');
+      const mobileMenu = document.getElementById('mobileMenu');
+      
+      if (!menuBtn || !closeMenu || !mobileMenu) {
+        // Elements not loaded yet, try again later
+        return;
+      }
 
-    menuBtn.addEventListener('click', () => {
-      mobileMenu.classList.add('open');
-    });
+      menuBtn.addEventListener('click', () => {
+        mobileMenu.classList.add('open');
+      });
 
-    closeMenu.addEventListener('click', () => {
-      mobileMenu.classList.remove('open');
-    });
-
-    // Close mobile menu when clicking a link
-    const menuLinks = mobileMenu.querySelectorAll('a');
-    menuLinks.forEach(link => {
-      link.addEventListener('click', () => {
+      closeMenu.addEventListener('click', () => {
         mobileMenu.classList.remove('open');
       });
-    });
+
+      // Close mobile menu when clicking a link
+      const menuLinks = mobileMenu.querySelectorAll('a');
+      menuLinks.forEach(link => {
+        link.addEventListener('click', () => {
+          mobileMenu.classList.remove('open');
+        });
+      });
+    }
+    
+    // Try to initialize immediately
+    initMobileMenu();
+    
+    // Also try after layout loads
+    window.addEventListener('layoutReady', initMobileMenu);
+    
+    // Fallback: try after 500ms
+    setTimeout(initMobileMenu, 500);
   </script>
 
   <!-- Page Content Loading Script -->
@@ -566,7 +582,17 @@
         if (el) el.classList.add('hidden');
       });
       const targetEl = document.getElementById(sectionId);
-      if (targetEl) targetEl.classList.remove('hidden');
+      if (targetEl) {
+        targetEl.classList.remove('hidden');
+        
+        // Dispatch event when page content is shown
+        if (sectionId === 'page-container' || sectionId === 'static-statistika') {
+          console.log('📣 [PAGE] Dispatching pageContentLoaded event');
+          setTimeout(() => {
+            window.dispatchEvent(new Event('pageContentLoaded'));
+          }, 100);
+        }
+      }
     }
 
     // Load page content
@@ -660,7 +686,7 @@
           </div>
           <div>
             <h3 class="text-xl font-bold text-gray-900">Нова Пошта</h3>
-            <p class="text-sm text-gray-500">Швидка доставка по Україні</p>
+            <p class="text-sm text-gray-500">Швидка доставка по Україні <span id="delivery-pepper" style="display: none; cursor: pointer; font-size: 20px; animation: pepperBounce 2s ease-in-out infinite; filter: drop-shadow(0 0 8px rgba(255, 107, 0, 0.6)); transition: all 0.3s ease;" title="Знайди мене! 🔍">🌶️</span></p>
           </div>
         </div>
         
@@ -1274,6 +1300,621 @@
     if (typeof lucide !== 'undefined') {
       lucide.createIcons();
     }
+  </script>
+
+  <!-- 🌶️ Chili Pepper Hunt Game -->
+  <script type="module" src="./js/pepper-hunt-game.js"></script>
+  <script type="module" src="./js/pepper-hunt-init.js"></script>
+  <script type="module" src="./js/pepper-placer.js"></script>
+
+  <!-- 🌶️ GLOBAL GAME STATE TRACKER -->
+  <script type="module">
+    import { getFirestore, doc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    
+    // Global game configuration state
+    window.pepperGameConfig = {
+      isEnabled: false,
+      loaded: false
+    };
+    
+    // Wait for Firebase and set up real-time listener
+    async function initGlobalGameTracker() {
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('🎮 [GLOBAL] Initializing Pepper Game Global Tracker');
+      console.log('═══════════════════════════════════════════════════════════');
+      
+      try {
+        // Wait for Firebase with improved detection
+        if (!window.firebaseApp) {
+          console.log('⏳ [GLOBAL] Waiting for Firebase App...');
+          
+          await new Promise((resolve) => {
+            // Method 1: Event listener
+            const firebaseListener = () => {
+              console.log('✅ [GLOBAL] Firebase ready event received');
+              clearInterval(pollInterval);
+              clearTimeout(timeoutHandle);
+              resolve();
+            };
+            window.addEventListener('firebaseReady', firebaseListener, { once: true });
+            
+            // Method 2: Polling
+            const pollInterval = setInterval(() => {
+              if (window.firebaseApp) {
+                console.log('✅ [GLOBAL] Firebase detected via polling');
+                window.removeEventListener('firebaseReady', firebaseListener);
+                clearInterval(pollInterval);
+                clearTimeout(timeoutHandle);
+                resolve();
+              }
+            }, 100);
+            
+            // Timeout after 15 seconds
+            const timeoutHandle = setTimeout(() => {
+              console.warn('⏰ [GLOBAL] Timeout after 15s, continuing anyway...');
+              window.removeEventListener('firebaseReady', firebaseListener);
+              clearInterval(pollInterval);
+              resolve();
+            }, 15000);
+          });
+        }
+        
+        if (!window.firebaseApp) {
+          console.error('❌ [GLOBAL] Firebase not available after timeout');
+          console.error('❌ [GLOBAL] window.firebaseApp:', window.firebaseApp);
+          console.error('❌ [GLOBAL] window.db:', window.db);
+          
+          // FALLBACK: Try using window.db directly
+          if (window.db) {
+            console.log('💡 [GLOBAL] Using window.db as fallback');
+            const db = window.db;
+            const configRef = doc(db, 'settings', 'peppersGameConfig');
+            
+            console.log('📡 [GLOBAL] Setting up real-time listener (fallback mode)...');
+            
+            // Continue with listener setup
+            onSnapshot(configRef, (snapshot) => {
+              if (snapshot.exists()) {
+                const data = snapshot.data();
+                window.pepperGameConfig.isEnabled = data.isEnabled || false;
+                window.pepperGameConfig.loaded = true;
+                
+                console.log('═══════════════════════════════════════════════════════════');
+                console.log('🎮 [GLOBAL] Game Config Updated (Fallback Mode)');
+                console.log('═══════════════════════════════════════════════════════════');
+                console.log('Website: Game is enabled?', window.pepperGameConfig.isEnabled);
+                console.log('Document data:', data);
+                console.log('═══════════════════════════════════════════════════════════');
+                
+                window.dispatchEvent(new CustomEvent('pepperGameConfigChanged', {
+                  detail: { isEnabled: window.pepperGameConfig.isEnabled }
+                }));
+                
+                if (window.pepperGameConfig.isEnabled) {
+                  console.log('🚀 [GLOBAL] Game is ENABLED');
+                  if (typeof window.initDeliveryPepper === 'function') {
+                    console.log('🔄 [GLOBAL] Re-initializing delivery pepper...');
+                    window.initDeliveryPepper();
+                  }
+                } else {
+                  console.log('⚠️ [GLOBAL] Game is DISABLED');
+                }
+              } else {
+                console.warn('⚠️ [GLOBAL] Config document does not exist');
+                window.pepperGameConfig.isEnabled = false;
+                window.pepperGameConfig.loaded = true;
+              }
+            }, (error) => {
+              console.error('❌ [GLOBAL] Error listening to game config:', error);
+            });
+            
+            return; // Exit successfully with fallback
+          }
+          
+          console.error('❌ [GLOBAL] No Firebase access available at all');
+          return;
+        }
+        
+        console.log('✅ [GLOBAL] Firebase ready');
+        const db = getFirestore(window.firebaseApp);
+        const configRef = doc(db, 'settings', 'peppersGameConfig');
+        
+        console.log('📡 [GLOBAL] Setting up real-time listener for game config...');
+        
+        // Set up real-time listener
+        onSnapshot(configRef, (snapshot) => {
+          if (snapshot.exists()) {
+            const data = snapshot.data();
+            window.pepperGameConfig.isEnabled = data.isEnabled || false;
+            window.pepperGameConfig.loaded = true;
+            
+            console.log('═══════════════════════════════════════════════════════════');
+            console.log('🎮 [GLOBAL] Game Config Updated from Firestore');
+            console.log('═══════════════════════════════════════════════════════════');
+            console.log('Website: Game is enabled?', window.pepperGameConfig.isEnabled);
+            console.log('Document data:', data);
+            console.log('═══════════════════════════════════════════════════════════');
+            
+            // Dispatch custom event for other scripts to react
+            window.dispatchEvent(new CustomEvent('pepperGameConfigChanged', {
+              detail: { isEnabled: window.pepperGameConfig.isEnabled }
+            }));
+            
+            // If game just got enabled, trigger initialization
+            if (window.pepperGameConfig.isEnabled) {
+              console.log('🚀 [GLOBAL] Game is ENABLED - peppers should be visible');
+              // Trigger re-initialization of current page peppers
+              if (typeof window.initDeliveryPepper === 'function') {
+                console.log('🔄 [GLOBAL] Re-initializing delivery pepper...');
+                window.initDeliveryPepper();
+              }
+            } else {
+              console.log('⚠️ [GLOBAL] Game is DISABLED - peppers hidden');
+            }
+          } else {
+            console.warn('⚠️ [GLOBAL] Config document does not exist');
+            window.pepperGameConfig.isEnabled = false;
+            window.pepperGameConfig.loaded = true;
+          }
+        }, (error) => {
+          console.error('❌ [GLOBAL] Error listening to game config:', error);
+        });
+        
+      } catch (error) {
+        console.error('❌ [GLOBAL] Error initializing game tracker:', error);
+      }
+    }
+    
+    // Initialize on DOM ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initGlobalGameTracker);
+    } else {
+      initGlobalGameTracker();
+    }
+  </script>
+
+  <!-- 🌶️ Delivery Page Pepper #2 Implementation -->
+  <style>
+    @keyframes pepperBounce {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      25% { transform: translateY(-5px) rotate(-5deg); }
+      75% { transform: translateY(-3px) rotate(5deg); }
+    }
+    
+    #delivery-pepper:hover {
+      transform: scale(1.3) rotate(15deg);
+      filter: drop-shadow(0 0 15px rgba(255, 107, 0, 0.9));
+    }
+    
+    @keyframes pepperCollect {
+      0% { transform: scale(1) rotate(0deg); opacity: 1; }
+      50% { transform: scale(1.8) rotate(360deg); opacity: 1; }
+      100% { transform: scale(0) rotate(720deg); opacity: 0; }
+    }
+    
+    .pepper-collecting {
+      animation: pepperCollect 0.8s ease forwards !important;
+      pointer-events: none;
+    }
+    
+    .pepper-toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #ff6b00 0%, #ff8533 100%);
+      color: white;
+      padding: 16px 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      z-index: 99999;
+      animation: toastSlideIn 0.4s ease, toastSlideOut 0.4s ease 2.6s;
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    @keyframes toastSlideIn {
+      from { transform: translateX(400px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes toastSlideOut {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(400px); opacity: 0; }
+    }
+  </style>
+
+  <script type="module">
+    import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    
+    // Pepper Hunt Configuration
+    const PEPPER_ID = 2;
+    const PEPPER_NAME = 'Delivery Page';
+    const STORAGE_KEY = 'pepperHunt_foundPeppers';
+    
+    /**
+     * Initialize Pepper #2 on Delivery Page
+     */
+    async function initDeliveryPepper() {
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('🌶️ [PEPPER #2] Delivery Page Pepper Initialization');
+      console.log('═══════════════════════════════════════════════════════════');
+      
+      try {
+        // Step 1: Check if we're on the delivery page
+        const urlParams = new URLSearchParams(window.location.search);
+        const slug = urlParams.get('slug');
+        
+        console.log('📍 [PEPPER #2] Current slug:', slug);
+        console.log('📍 [PEPPER #2] Full URL:', window.location.href);
+        
+        if (slug !== 'delivery-and-payment' && slug !== 'dostavka-ta-oplata') {
+          console.log('⚠️ [PEPPER #2] Not on delivery page, skipping');
+          return;
+        }
+        
+        console.log('✅ [PEPPER #2] Confirmed: On delivery page');
+        
+        // Step 2: Wait for Firebase to be ready
+        if (!window.firebaseApp) {
+          console.log('⏳ [PEPPER #2] Waiting for Firebase...');
+          await waitForFirebase();
+        }
+        
+        if (!window.firebaseApp) {
+          console.error('❌ [PEPPER #2] Firebase not available');
+          
+          // FALLBACK: Try using window.db directly
+          if (window.db) {
+            console.log('💡 [PEPPER #2] Using window.db as fallback');
+            const db = window.db;
+            
+            // Continue with the rest of the logic using db directly
+            let isEnabled = false;
+            
+            if (window.pepperGameConfig && window.pepperGameConfig.loaded) {
+              isEnabled = window.pepperGameConfig.isEnabled;
+              console.log('✅ [PEPPER #2] Using global game config:', isEnabled);
+            } else {
+              console.log('🔍 [PEPPER #2] Fetching game config from Firestore...');
+              const configRef = doc(db, 'settings', 'peppersGameConfig');
+              const configSnap = await getDoc(configRef);
+              
+              if (configSnap.exists()) {
+                isEnabled = configSnap.data().isEnabled || false;
+                console.log('✅ [PEPPER #2] Game status from Firestore:', isEnabled);
+              } else {
+                console.warn('⚠️ [PEPPER #2] Config document does not exist');
+              }
+            }
+            
+            if (!isEnabled) {
+              console.log('═══════════════════════════════════════════════════════════');
+              console.log('⚠️ [PEPPER #2] Game is DISABLED in Firestore');
+              console.log('💡 [PEPPER #2] Enable in Admin Panel → Peppers Game → Toggle');
+              console.log('═══════════════════════════════════════════════════════════');
+              return;
+            }
+            
+            console.log('✅ [PEPPER #2] Game is ENABLED');
+            
+            // Check localStorage
+            const foundPeppers = getFoundPeppers();
+            console.log('💾 [PEPPER #2] Found peppers in localStorage:', foundPeppers);
+            
+            if (foundPeppers.includes(PEPPER_ID)) {
+              console.log('⚠️ [PEPPER #2] Pepper #' + PEPPER_ID + ' already collected');
+              return;
+            }
+            
+            console.log('✅ [PEPPER #2] Pepper not found yet');
+            
+            // Show the pepper
+            const pepperElement = document.getElementById('delivery-pepper');
+            console.log('🔍 [PEPPER #2] Looking for element #delivery-pepper...');
+            
+            if (pepperElement) {
+              console.log('✅ [PEPPER #2] Element found!');
+              console.log('📜 [PEPPER #2] Current display:', pepperElement.style.display);
+              
+              pepperElement.style.display = 'inline-block';
+              pepperElement.style.opacity = '1';
+              pepperElement.style.visibility = 'visible';
+              
+              const newElement = pepperElement.cloneNode(true);
+              pepperElement.parentNode.replaceChild(newElement, pepperElement);
+              newElement.addEventListener('click', handlePepperClick);
+              
+              console.log('═══════════════════════════════════════════════════════════');
+              console.log('🎉 [PEPPER #2] PEPPER IS NOW VISIBLE AND CLICKABLE!');
+              console.log('═══════════════════════════════════════════════════════════');
+            } else {
+              console.error('❌ [PEPPER #2] Element #delivery-pepper NOT FOUND in DOM');
+            }
+            
+            return; // Exit successfully
+          }
+          
+          console.error('❌ [PEPPER #2] No Firebase access available (neither app nor db)');
+          return;
+        }
+        
+        const db = getFirestore(window.firebaseApp);
+        console.log('✅ [PEPPER #2] Firebase ready');
+        
+        // Step 3: Check if game is enabled (use global state if available)
+        let isEnabled = false;
+        
+        if (window.pepperGameConfig && window.pepperGameConfig.loaded) {
+          isEnabled = window.pepperGameConfig.isEnabled;
+          console.log('✅ [PEPPER #2] Using global game config:', isEnabled);
+        } else {
+          console.log('🔍 [PEPPER #2] Fetching game config from Firestore...');
+          const configRef = doc(db, 'settings', 'peppersGameConfig');
+          const configSnap = await getDoc(configRef);
+          
+          if (configSnap.exists()) {
+            isEnabled = configSnap.data().isEnabled || false;
+            console.log('✅ [PEPPER #2] Game status from Firestore:', isEnabled);
+          } else {
+            console.warn('⚠️ [PEPPER #2] Config document does not exist');
+          }
+        }
+        
+        if (!isEnabled) {
+          console.log('═══════════════════════════════════════════════════════════');
+          console.log('⚠️ [PEPPER #2] Game is DISABLED in Firestore');
+          console.log('💡 [PEPPER #2] Enable in Admin Panel → Peppers Game → Toggle');
+          console.log('═══════════════════════════════════════════════════════════');
+          return;
+        }
+        
+        console.log('✅ [PEPPER #2] Game is ENABLED');
+        
+        // Step 4: Check if pepper was already found (localStorage)
+        const foundPeppers = getFoundPeppers();
+        console.log('💾 [PEPPER #2] Found peppers in localStorage:', foundPeppers);
+        
+        if (foundPeppers.includes(PEPPER_ID)) {
+          console.log('⚠️ [PEPPER #2] Pepper #' + PEPPER_ID + ' already collected');
+          return;
+        }
+        
+        console.log('✅ [PEPPER #2] Pepper not found yet');
+        
+        // Step 5: Show the pepper
+        const pepperElement = document.getElementById('delivery-pepper');
+        console.log('🔍 [PEPPER #2] Looking for element #delivery-pepper...');
+        
+        if (pepperElement) {
+          console.log('✅ [PEPPER #2] Element found!');
+          console.log('📏 [PEPPER #2] Current display:', pepperElement.style.display);
+          
+          pepperElement.style.display = 'inline-block';
+          pepperElement.style.opacity = '1';
+          pepperElement.style.visibility = 'visible';
+          
+          // Remove any existing click listeners to avoid duplicates
+          const newElement = pepperElement.cloneNode(true);
+          pepperElement.parentNode.replaceChild(newElement, pepperElement);
+          
+          newElement.addEventListener('click', handlePepperClick);
+          
+          console.log('═══════════════════════════════════════════════════════════');
+          console.log('🎉 [PEPPER #2] PEPPER IS NOW VISIBLE AND CLICKABLE!');
+          console.log('═══════════════════════════════════════════════════════════');
+          console.log('Element:', newElement);
+          console.log('Display:', newElement.style.display);
+          console.log('Position:', newElement.getBoundingClientRect());
+        } else {
+          console.error('❌ [PEPPER #2] Element #delivery-pepper NOT FOUND in DOM');
+          console.error('💡 [PEPPER #2] Make sure the element exists on the page');
+        }
+        
+      } catch (error) {
+        console.error('═══════════════════════════════════════════════════════════');
+        console.error('❌ [PEPPER #2] CRITICAL ERROR');
+        console.error('═══════════════════════════════════════════════════════════');
+        console.error('Error:', error);
+        console.error('Stack:', error.stack);
+      }
+    }
+    
+    /**
+     * Handle pepper click event
+     */
+    function handlePepperClick(event) {
+      console.log('🎯 [PEPPER #2] Pepper clicked!');
+      
+      const pepperElement = event.target;
+      
+      // Add collecting animation
+      pepperElement.classList.add('pepper-collecting');
+      
+      // Play sound (optional)
+      playCollectSound();
+      
+      // Save to localStorage
+      const foundPeppers = getFoundPeppers();
+      if (!foundPeppers.includes(PEPPER_ID)) {
+        foundPeppers.push(PEPPER_ID);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(foundPeppers));
+        console.log('💾 [PEPPER #2] Saved to localStorage:', foundPeppers);
+      }
+      
+      // Show toast notification
+      showToast();
+      
+      // Remove pepper after animation
+      setTimeout(() => {
+        pepperElement.style.display = 'none';
+        console.log('✅ [PEPPER #2] Pepper hidden');
+      }, 800);
+    }
+    
+    /**
+     * Get found peppers from localStorage
+     */
+    function getFoundPeppers() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        return stored ? JSON.parse(stored) : [];
+      } catch (error) {
+        console.error('Error reading localStorage:', error);
+        return [];
+      }
+    }
+    
+    /**
+     * Show success toast notification
+     */
+    function showToast() {
+      const foundPeppers = getFoundPeppers();
+      const totalFound = foundPeppers.length;
+      
+      const toast = document.createElement('div');
+      toast.className = 'pepper-toast';
+      toast.innerHTML = `
+        <span style="font-size: 28px;">🌶️</span>
+        <div>
+          <div style="font-weight: bold; font-size: 18px;">Вітаємо! Перчик знайдено!</div>
+          <div style="font-size: 14px; opacity: 0.9; margin-top: 4px;">Прогрес: ${totalFound}/8 перчиків</div>
+        </div>
+      `;
+      
+      document.body.appendChild(toast);
+      
+      // Auto remove after 3 seconds
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+      
+      console.log('📢 [PEPPER #2] Toast shown:', totalFound + '/8');
+    }
+    
+    /**
+     * Play collection sound effect
+     */
+    function playCollectSound() {
+      try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.2);
+      } catch (error) {
+        console.log('🔇 Sound not available');
+      }
+    }
+    
+    /**
+     * Wait for Firebase to be initialized
+     */
+    function waitForFirebase(timeout = 10000) {
+      return new Promise((resolve, reject) => {
+        // Check if already available
+        if (window.firebaseApp) {
+          console.log('✅ [WAIT] Firebase already available');
+          resolve();
+          return;
+        }
+        
+        console.log('⏳ [WAIT] Setting up Firebase readiness detection...');
+        const startTime = Date.now();
+        let resolved = false;
+        
+        // Method 1: Listen for firebaseReady event
+        const firebaseListener = () => {
+          if (!resolved) {
+            console.log('✅ [WAIT] Firebase ready event received');
+            resolved = true;
+            clearInterval(pollInterval);
+            resolve();
+          }
+        };
+        window.addEventListener('firebaseReady', firebaseListener, { once: true });
+        
+        // Method 2: Poll for window.firebaseApp
+        const pollInterval = setInterval(() => {
+          if (window.firebaseApp) {
+            if (!resolved) {
+              console.log('✅ [WAIT] Firebase detected via polling');
+              resolved = true;
+              window.removeEventListener('firebaseReady', firebaseListener);
+              clearInterval(pollInterval);
+              resolve();
+            }
+          } else if (Date.now() - startTime > timeout) {
+            if (!resolved) {
+              console.error('❌ [WAIT] Firebase timeout after', timeout, 'ms');
+              console.error('❌ [WAIT] window.firebaseApp:', window.firebaseApp);
+              console.error('❌ [WAIT] window.db:', window.db);
+              resolved = true;
+              window.removeEventListener('firebaseReady', firebaseListener);
+              clearInterval(pollInterval);
+              reject(new Error('Firebase initialization timeout'));
+            }
+          }
+        }, 100);
+        
+        // Log status every second for debugging
+        const statusInterval = setInterval(() => {
+          if (resolved) {
+            clearInterval(statusInterval);
+          } else {
+            console.log('⏳ [WAIT] Still waiting... elapsed:', Date.now() - startTime, 'ms');
+          }
+        }, 1000);
+      });
+    }
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initDeliveryPepper);
+    } else {
+      // DOM already loaded, wait a bit for page content to render
+      setTimeout(initDeliveryPepper, 1000);
+    }
+    
+    // Also listen for page content changes (when dynamic content loads)
+    window.addEventListener('pageContentLoaded', () => {
+      console.log('📄 [PEPPER #2] Page content loaded event detected');
+      setTimeout(initDeliveryPepper, 500);
+    });
+    
+    // Listen for game config changes
+    window.addEventListener('pepperGameConfigChanged', (event) => {
+      console.log('🔄 [PEPPER #2] Game config changed:', event.detail);
+      if (event.detail.isEnabled) {
+        setTimeout(initDeliveryPepper, 300);
+      }
+    });
+    
+    // Expose for debugging and manual triggering
+    window.initDeliveryPepper = initDeliveryPepper;
+    window.deliveryPepper = {
+      init: initDeliveryPepper,
+      getFound: getFoundPeppers,
+      reset: () => {
+        localStorage.removeItem(STORAGE_KEY);
+        console.log('🔄 [PEPPER #2] Progress reset');
+        window.location.reload();
+      }
+    };
+    
+    console.log('✅ [PEPPER #2] Module loaded, window.initDeliveryPepper() available');
   </script>
 </body>
 </html>

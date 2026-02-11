@@ -51,7 +51,12 @@ const storage = getStorage(app);
 // ============================================
 // CRITICAL: EXPORT TO WINDOW SO LAYOUT.JS CAN RUN
 // ============================================
+// Export Firebase app instance for pepper hunt and other modules
+window.firebaseApp = app;  // ← CRITICAL FOR PEPPER HUNT!
+window.firebaseDb = db;    // Alternative access
+
 window.firebaseInit = {
+    app,
     db,
     auth,
     storage,
@@ -91,6 +96,17 @@ window.orderBy = orderBy;
 window.Timestamp = Timestamp;
 window.serverTimestamp = serverTimestamp;
 window.increment = increment;
+
+// ============================================
+// LOG SUCCESSFUL INITIALIZATION
+// ============================================
+console.log('🔥 Firebase initialized successfully (Clean Mode)');
+console.log('✅ window.firebaseApp available:', !!window.firebaseApp);
+console.log('✅ window.firebaseDb available:', !!window.firebaseDb);
+console.log('✅ Firebase App instance:', window.firebaseApp);
+
+// Dispatch event for modules waiting for Firebase
+window.dispatchEvent(new Event('firebaseReady'));
 
 // ============================================
 // MODULE EXPORTS FOR ES6 IMPORTS
@@ -155,8 +171,6 @@ async function initializeChatConfig() {
 
 // Initialize chat config on load
 initializeChatConfig();
-
-console.log("🔥 Firebase initialized successfully (Clean Mode)");
 
 // ============================================
 // 📱 DEVICE TRACKING SYSTEM

@@ -85,18 +85,32 @@ const footerTemplate = `
 
 // HTML Template for Header, Mobile Menu, Cart Sidebar, Toast Container
 const headerTemplate = `
-  <!-- Announcement Bar - Valentine's Day -->
+  <!-- Announcement Bar - Pepper Hunt Game -->
   <div id="announcement-bar" 
-       class="fixed top-0 left-0 right-0 z-[55] bg-gradient-to-r from-rose-600 to-red-500 text-white 
+       class="fixed top-0 left-0 right-0 z-[55] bg-gradient-to-r from-red-600 via-orange-500 to-red-600 text-white 
               text-[11px] xs:text-xs sm:text-sm py-1.5 sm:py-2 pl-3 pr-8 sm:px-4 text-center
-              transition-all duration-300 hover:from-rose-500 hover:to-red-400
-              flex items-center justify-center gap-0.5 xs:gap-1 sm:gap-2">
-    <span class="whitespace-nowrap">❤️</span>
-    <span class="font-medium truncate sm:whitespace-normal">Знижки до Дня закоханих!</span>
-    <a href="https://latiao-snack.com.ua/category.html?slug=us-tovari" 
-       class="font-semibold underline-offset-2 hover:underline transition-all ml-0.5 sm:ml-2 whitespace-nowrap flex-shrink-0">
-      Деталі →
-    </a>
+              transition-all duration-300 hover:from-red-500 hover:via-orange-400 hover:to-red-500
+              flex items-center justify-center gap-0.5 xs:gap-1 sm:gap-2
+              animate-[gradient-shift_3s_ease_infinite]"
+       style="background-size: 200% 100%; display: none;">
+    <style>
+      @keyframes gradient-shift {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+      }
+      @keyframes pepper-pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+      }
+      .pepper-pulse { animation: pepper-pulse 1s ease-in-out infinite; }
+    </style>
+    <span class="whitespace-nowrap pepper-pulse">🔥</span>
+    <span class="font-bold truncate sm:whitespace-normal" id="announcement-text">Квест: Знайди 8 перчиків — отримай Латяо безкоштовно та 2000 грн!</span>
+    <span class="whitespace-nowrap pepper-pulse" style="animation-delay: 0.5s;">🌶️</span>
+    <button onclick="window.openPepperGameModal()" 
+       class="font-black px-3 py-1 bg-white/20 hover:bg-white/30 rounded-full transition-all ml-0.5 sm:ml-2 whitespace-nowrap flex-shrink-0 uppercase text-xs border border-white/40 hover:scale-105 active:scale-95">
+      ОТРИМАТИ
+    </button>
     <button onclick="window.closeAnnouncementBar()" 
             class="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 p-1.5 sm:p-1 rounded-full 
                    hover:bg-white/20 active:bg-white/30 transition-colors duration-200"
@@ -105,6 +119,190 @@ const headerTemplate = `
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path>
       </svg>
     </button>
+  </div>
+
+  <!-- Pepper Hunt Game Modal -->
+  <div id="pepper-game-modal" 
+       class="fixed inset-0 z-[9999] hidden"
+       onclick="event.target === this && window.closePepperGameModal()">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+    <div class="relative min-h-screen flex items-center justify-center p-4">
+      <div class="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+           onclick="event.stopPropagation()">
+        
+        <!-- Shimmer Animation Styles -->
+        <style>
+          @keyframes shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+          }
+          .golden-shimmer {
+            background: linear-gradient(
+              90deg,
+              rgba(255, 215, 0, 0.05) 0%,
+              rgba(255, 215, 0, 0.15) 25%,
+              rgba(255, 223, 0, 0.25) 50%,
+              rgba(255, 215, 0, 0.15) 75%,
+              rgba(255, 215, 0, 0.05) 100%
+            );
+            background-size: 200% 100%;
+            animation: shimmer 3s ease-in-out infinite;
+          }
+          .golden-border {
+            border: 2px solid rgba(255, 215, 0, 0.6);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3), inset 0 0 20px rgba(255, 215, 0, 0.1);
+          }
+        </style>
+        
+        <!-- Close Button -->
+        <button onclick="window.closePepperGameModal()" 
+                class="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/90 hover:bg-white shadow-lg hover:shadow-xl transition-all hover:rotate-90"
+                aria-label="Закрити">
+          <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+        
+        <!-- Modal Content -->
+        <div id="pepper-game-modal-content" class="overflow-hidden">
+          <!-- Hero Image - Full Width, No Padding -->
+          <div class="w-full h-64 sm:h-80 overflow-hidden">
+            <img src="./images/peppers-promo-banner.jpg" 
+                 alt="Pepper Hunt Game" 
+                 class="w-full h-full object-cover"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <!-- Fallback if image not found -->
+            <div class="w-full h-full bg-gradient-to-br from-red-500 via-orange-500 to-yellow-500 hidden items-center justify-center">
+              <div class="text-center text-white">
+                <div class="text-6xl mb-4">🌶️🔥🌶️</div>
+                <h2 class="text-4xl font-black">PEPPER HUNT</h2>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Content Section with Padding -->
+          <div class="p-6 sm:p-8">
+            <!-- Title -->
+            <h1 class="text-2xl sm:text-3xl font-black text-center text-gray-900 mb-4">
+              Збирай перчики по сайту – отримуй смачні подарунки! 🔥
+            </h1>
+            
+            <!-- Instructions -->
+            <div class="bg-gray-50 rounded-xl p-4 sm:p-6 mb-6">
+              <p class="text-sm sm:text-base text-gray-700 leading-relaxed text-center">
+                На нашому сайті розкидано <span class="font-bold text-orange-600">9 перчиків</span>. 
+                Вони ховаються скрізь: на сторінках товарів 🖼️, при оформленні замовлення 📦, 
+                в описах та найнеочікуваніших місцях! 👀
+              </p>
+            </div>
+            
+            <!-- Goal Section -->
+            <div class="space-y-4 mb-6">
+              <!-- Regular Goal -->
+              <div class="bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-300 rounded-xl p-4">
+                <div class="flex items-start gap-3">
+                  <span class="text-3xl flex-shrink-0">🎯</span>
+                  <div>
+                    <p class="text-base sm:text-lg font-bold text-gray-900">
+                      Знайди 8 перчиків – отримай пачку Латяо БЕЗКОШТОВНО
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Golden Reward - Special -->
+              <div class="golden-shimmer golden-border rounded-xl p-5 relative overflow-hidden">
+                <div class="absolute top-0 right-0 text-6xl opacity-10">✨</div>
+                <div class="absolute bottom-0 left-0 text-6xl opacity-10">💎</div>
+                <div class="relative z-10">
+                  <div class="flex items-start gap-3">
+                    <span class="text-4xl flex-shrink-0 animate-pulse">🏆</span>
+                    <div>
+                      <p class="text-lg sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-600 via-yellow-500 to-yellow-600 mb-1">
+                        ЗОЛОТИЙ ДЖЕКПОТ!
+                      </p>
+                      <p class="text-base sm:text-lg font-bold text-gray-900">
+                        Знайди ЗОЛОТИЙ 9-й перчик – отримай ЩЕ 3 ПАЧКИ ЛАТЯО і 2000 грн бонусів на покупки! 💸
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Registration Form -->
+            <div class="bg-white border-2 border-gray-200 rounded-xl p-5 sm:p-6 mb-6">
+              <h3 class="text-lg font-bold text-gray-900 mb-3 text-center">
+                Залиште ваші контакти, щоб ми знали, куди відправити ваші призи після завершення квесту:
+              </h3>
+              
+              <form id="pepper-game-registration-form" class="space-y-4">
+                <!-- Phone Input -->
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Номер телефону <span class="text-red-500">*</span>
+                  </label>
+                  <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                      </svg>
+                    </div>
+                    <input type="tel" 
+                           id="player-phone" 
+                           name="phone"
+                           placeholder="+380 XX XXX XX XX" 
+                           required
+                           class="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all text-gray-900 placeholder-gray-400"
+                           pattern="^\\+?[0-9]{10,15}$">
+                  </div>
+                </div>
+                
+                <!-- Telegram Input -->
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Telegram (нікнейм) <span class="text-red-500">*</span>
+                  </label>
+                  <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <i data-lucide="message-circle" class="w-5 h-5 text-gray-400"></i>
+                    </div>
+                    <input type="text" 
+                           id="player-telegram" 
+                           name="telegram"
+                           placeholder="@username" 
+                           required
+                           class="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all text-gray-900 placeholder-gray-400"
+                           pattern="^@?[a-zA-Z0-9_]{5,32}$">
+                  </div>
+                </div>
+                
+                <!-- Error Message -->
+                <div id="form-error-message" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                </div>
+                
+                <!-- Success Message -->
+                <div id="form-success-message" class="hidden bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+                  ✅ Реєстрацію завершено! Розпочинайте полювання!
+                </div>
+              </form>
+            </div>
+            
+            <!-- CTA Button -->
+            <button onclick="window.startPepperHuntGame()" 
+                    type="button"
+                    class="w-full bg-gradient-to-r from-red-600 via-orange-500 to-red-600 text-white font-black text-lg sm:text-xl py-4 rounded-xl shadow-lg hover:shadow-2xl hover:scale-105 active:scale-95 transition-all uppercase tracking-wide">
+              🎮 ПОЧАТИ ГРУ 🌶️
+            </button>
+            
+            <!-- Footer Note -->
+            <p class="text-xs text-gray-500 text-center mt-4">
+              * Призи надаються після успішного завершення квесту та підтвердження контактів
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Toast Container -->
@@ -1295,7 +1493,7 @@ window.closeCart = function () {
 // ============================================
 // ANNOUNCEMENT BAR - Close & LocalStorage
 // ============================================
-const ANNOUNCEMENT_STORAGE_KEY = 'valentines-bar-closed-2026';
+const ANNOUNCEMENT_STORAGE_KEY = 'pepper-hunt-bar-closed-2026';
 
 window.closeAnnouncementBar = function() {
   const bar = document.getElementById('announcement-bar');
@@ -1321,22 +1519,297 @@ window.closeAnnouncementBar = function() {
   }
 };
 
-// Initialize announcement bar visibility
-function initAnnouncementBar() {
+// ============================================
+// PEPPER GAME MODAL - Open & Close
+// ============================================
+window.openPepperGameModal = function() {
+  const modal = document.getElementById('pepper-game-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    console.log('🌶️ Pepper Game Modal opened');
+    
+    // Initialize Lucide icons in modal
+    if (typeof lucide !== 'undefined') {
+      setTimeout(() => {
+        lucide.createIcons();
+      }, 50);
+    }
+    
+    // Add ESC key listener
+    document.addEventListener('keydown', handleModalEscape);
+  }
+};
+
+window.closePepperGameModal = function() {
+  const modal = document.getElementById('pepper-game-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+    console.log('🌶️ Pepper Game Modal closed');
+    
+    // Remove ESC key listener
+    document.removeEventListener('keydown', handleModalEscape);
+  }
+};
+
+function handleModalEscape(event) {
+  if (event.key === 'Escape') {
+    window.closePepperGameModal();
+  }
+}
+
+// ============================================
+// PEPPER HUNT GAME - Start & Registration
+// ============================================
+window.startPepperHuntGame = async function() {
+  console.log('🎮 Starting Pepper Hunt Game registration...');
+  
+  const form = document.getElementById('pepper-game-registration-form');
+  const phoneInput = document.getElementById('player-phone');
+  const telegramInput = document.getElementById('player-telegram');
+  const errorMessage = document.getElementById('form-error-message');
+  const successMessage = document.getElementById('form-success-message');
+  
+  // Hide previous messages
+  if (errorMessage) errorMessage.classList.add('hidden');
+  if (successMessage) successMessage.classList.add('hidden');
+  
+  // Validate form
+  if (!form.checkValidity()) {
+    form.reportValidity();
+    return;
+  }
+  
+  const phone = phoneInput.value.trim();
+  const telegram = telegramInput.value.trim();
+  
+  // Additional validation
+  if (!phone || phone.length < 10) {
+    showFormError('Будь ласка, введіть коректний номер телефону');
+    return;
+  }
+  
+  if (!telegram || telegram.length < 3) {
+    showFormError('Будь ласка, введіть ваш Telegram нікнейм');
+    return;
+  }
+  
+  // Normalize telegram (add @ if missing)
+  const normalizedTelegram = telegram.startsWith('@') ? telegram : '@' + telegram;
+  
+  const playerData = {
+    phone: phone,
+    telegram: normalizedTelegram,
+    registeredAt: new Date().toISOString(),
+    foundPeppers: [],
+    completedAt: null,
+    status: 'active'
+  };
+  
+  try {
+    // Save to localStorage first (immediate backup)
+    localStorage.setItem('pepperHunt_playerData', JSON.stringify(playerData));
+    console.log('✅ Player data saved to localStorage');
+    
+    // Try to save to Firestore
+    try {
+      await waitForFirebaseInLayout();
+      
+      const { getFirestore, collection, addDoc, serverTimestamp } = 
+        await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+      
+      const db = window.db || getFirestore(window.firebaseApp);
+      
+      const firestoreData = {
+        ...playerData,
+        registeredAt: serverTimestamp(),
+        userAgent: navigator.userAgent,
+        referrer: document.referrer || 'direct'
+      };
+      
+      const docRef = await addDoc(collection(db, 'game_players'), firestoreData);
+      console.log('✅ Player registered in Firestore:', docRef.id);
+      
+      // Save document ID for later updates
+      localStorage.setItem('pepperHunt_playerId', docRef.id);
+      
+    } catch (firestoreError) {
+      console.warn('⚠️ Could not save to Firestore, using localStorage only:', firestoreError);
+    }
+    
+    // Show success message
+    if (successMessage) {
+      successMessage.classList.remove('hidden');
+    }
+    
+    // Show toast notification
+    if (typeof window.showToast === 'function') {
+      window.showToast('✅ Реєстрацію завершено! Розпочинайте пошук перчиків! 🌶️', 'success');
+    }
+    
+    // Close modal after short delay
+    setTimeout(() => {
+      window.closePepperGameModal();
+      
+      // Scroll to FAQ section if on homepage (where first pepper is)
+      const path = window.location.pathname;
+      const isHomePage = path === '/' || path === '/index.html' || path.endsWith('/index.html') || path === '';
+      
+      if (isHomePage) {
+        const faqSection = document.querySelector('#faq, [id*="faq"], .faq-section');
+        if (faqSection) {
+          setTimeout(() => {
+            faqSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 500);
+        }
+      }
+    }, 2000);
+    
+  } catch (error) {
+    console.error('❌ Error registering player:', error);
+    showFormError('Помилка реєстрації. Спробуйте ще раз або зверніться до підтримки.');
+  }
+};
+
+// Helper function to show form errors
+function showFormError(message) {
+  const errorMessage = document.getElementById('form-error-message');
+  if (errorMessage) {
+    errorMessage.textContent = message;
+    errorMessage.classList.remove('hidden');
+    
+    // Scroll to error
+    errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+// Initialize announcement bar visibility based on game config
+async function initAnnouncementBar() {
   const bar = document.getElementById('announcement-bar');
   const header = document.getElementById('main-header');
   const toastContainer = document.getElementById('toast-container');
+  const announcementText = document.getElementById('announcement-text');
   
   // Check if we're on the homepage
   const path = window.location.pathname;
   const isHomePage = path === '/' || path === '/index.html' || path.endsWith('/index.html') || path === '';
   
-  // Hide bar if not on homepage OR if user closed it before
-  if (!isHomePage || localStorage.getItem(ANNOUNCEMENT_STORAGE_KEY) === 'true') {
+  // Always hide if not homepage
+  if (!isHomePage) {
+    if (bar) bar.style.display = 'none';
+    if (header) header.style.top = '0';
+    if (toastContainer) toastContainer.style.top = '1rem';
+    return;
+  }
+  
+  // Check if user closed it before
+  if (localStorage.getItem(ANNOUNCEMENT_STORAGE_KEY) === 'true') {
+    if (bar) bar.style.display = 'none';
+    if (header) header.style.top = '0';
+    if (toastContainer) toastContainer.style.top = '1rem';
+    return;
+  }
+  
+  // Check game configuration
+  try {
+    // Wait for Firebase to be ready
+    await waitForFirebaseInLayout();
+    
+    let isGameEnabled = false;
+    let foundPeppersCount = 0;
+    
+    // Get found peppers from localStorage
+    try {
+      const stored = localStorage.getItem('pepperHunt_foundPeppers');
+      foundPeppersCount = stored ? JSON.parse(stored).length : 0;
+    } catch (e) {
+      console.log('Error reading found peppers:', e);
+    }
+    
+    // Check global config first
+    if (window.pepperGameConfig && window.pepperGameConfig.loaded) {
+      isGameEnabled = window.pepperGameConfig.isEnabled;
+      console.log('✅ Using global game config:', isGameEnabled);
+    } else {
+      // Fallback: fetch from Firestore
+      const { getFirestore, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+      const db = window.db || getFirestore(window.firebaseApp);
+      const configRef = doc(db, 'settings', 'peppersGameConfig');
+      const configSnap = await getDoc(configRef);
+      
+      if (configSnap.exists()) {
+        isGameEnabled = configSnap.data().isEnabled || false;
+        console.log('✅ Game config from Firestore:', isGameEnabled);
+      }
+    }
+    
+    // Update bar content based on progress
+    if (foundPeppersCount >= 8) {
+      // All peppers found!
+      if (announcementText) {
+        announcementText.textContent = '🎉 Вітаємо! Ти знайшов усі перчики! Твій приз чекає.';
+      }
+      if (bar) bar.style.display = 'flex';
+      console.log('🎉 All peppers found! Showing completion message.');
+    } else if (isGameEnabled) {
+      // Game is active, show normal message
+      if (bar) bar.style.display = 'flex';
+      console.log('✅ Pepper Hunt bar visible - game is enabled');
+    } else {
+      // Game is disabled
+      if (bar) bar.style.display = 'none';
+      if (header) header.style.top = '0';
+      if (toastContainer) toastContainer.style.top = '1rem';
+      console.log('⚠️ Pepper Hunt bar hidden - game is disabled');
+    }
+  } catch (error) {
+    console.error('Error initializing announcement bar:', error);
+    // On error, hide the bar
     if (bar) bar.style.display = 'none';
     if (header) header.style.top = '0';
     if (toastContainer) toastContainer.style.top = '1rem';
   }
+}
+
+// Helper function to wait for Firebase
+function waitForFirebaseInLayout(timeout = 10000) {
+  return new Promise((resolve, reject) => {
+    if (window.firebaseApp || window.db) {
+      resolve();
+      return;
+    }
+    
+    const startTime = Date.now();
+    let resolved = false;
+    
+    const firebaseListener = () => {
+      if (!resolved) {
+        resolved = true;
+        clearInterval(pollInterval);
+        resolve();
+      }
+    };
+    window.addEventListener('firebaseReady', firebaseListener, { once: true });
+    
+    const pollInterval = setInterval(() => {
+      if (window.firebaseApp || window.db) {
+        if (!resolved) {
+          resolved = true;
+          window.removeEventListener('firebaseReady', firebaseListener);
+          clearInterval(pollInterval);
+          resolve();
+        }
+      } else if (Date.now() - startTime > timeout) {
+        if (!resolved) {
+          resolved = true;
+          window.removeEventListener('firebaseReady', firebaseListener);
+          clearInterval(pollInterval);
+          reject(new Error('Firebase timeout'));
+        }
+      }
+    }, 100);
+  });
 }
 
 // Toggle mobile menu (with mutual exclusion)
@@ -1675,6 +2148,12 @@ export function loadLayout() {
 
   // Initialize announcement bar (check if was closed before)
   initAnnouncementBar();
+  
+  // Listen for game config changes
+  window.addEventListener('pepperGameConfigChanged', (event) => {
+    console.log('🔄 Game config changed, updating announcement bar');
+    initAnnouncementBar();
+  });
 
   // Mark layout as loaded
   document.body.setAttribute('data-layout-loaded', 'true');

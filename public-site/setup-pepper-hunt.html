@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌶️ Pepper Hunt - First Time Setup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+  <div class="container mx-auto px-4 py-12 max-w-2xl">
+    <div class="bg-white rounded-xl shadow-lg p-8">
+      <h1 class="text-3xl font-bold mb-4">🌶️ Chili Pepper Hunt</h1>
+      <h2 class="text-xl text-gray-600 mb-8">First Time Setup</h2>
+
+      <div id="status" class="mb-6 p-4 rounded-lg bg-blue-50 text-blue-800">
+        ⏳ Initializing...
+      </div>
+
+      <div class="space-y-4">
+        <div class="flex items-center gap-3">
+          <div id="step1" class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-white font-bold">1</div>
+          <div>
+            <div class="font-semibold">Check Firebase Connection</div>
+            <div class="text-sm text-gray-600" id="step1-status">Waiting...</div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <div id="step2" class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-white font-bold">2</div>
+          <div>
+            <div class="font-semibold">Initialize Game Configuration</div>
+            <div class="text-sm text-gray-600" id="step2-status">Waiting...</div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <div id="step3" class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-white font-bold">3</div>
+          <div>
+            <div class="font-semibold">Verify Game State</div>
+            <div class="text-sm text-gray-600" id="step3-status">Waiting...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-8 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800">
+        <p class="font-semibold mb-2">📝 What this does:</p>
+        <ul class="list-disc list-inside text-sm space-y-1">
+          <li>Creates <code>settings/peppersGameConfig</code> document in Firestore</li>
+          <li>Sets default game state (disabled by default)</li>
+          <li>Ensures admin panel can control the game</li>
+        </ul>
+      </div>
+
+      <div id="actions" class="mt-8 hidden">
+        <button onclick="enableGame()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg mb-3">
+          ✅ Enable Game Now
+        </button>
+        <button onclick="window.location.href='./admin-site/index.html'" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg mb-3">
+          📊 Go to Admin Panel
+        </button>
+        <button onclick="window.location.href='./test-pepper-hunt.html'" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg">
+          🧪 Test Game
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    let db;
+
+    function updateStatus(message, type = 'info') {
+      const statusEl = document.getElementById('status');
+      const colors = {
+        info: 'bg-blue-50 text-blue-800',
+        success: 'bg-green-50 text-green-800',
+        error: 'bg-red-50 text-red-800'
+      };
+      statusEl.className = `mb-6 p-4 rounded-lg ${colors[type]}`;
+      statusEl.textContent = message;
+    }
+
+    function updateStep(stepNum, status, message) {
+      const stepEl = document.getElementById(`step${stepNum}`);
+      const statusEl = document.getElementById(`step${stepNum}-status`);
+      
+      const colors = {
+        success: 'bg-green-500',
+        error: 'bg-red-500',
+        loading: 'bg-blue-500'
+      };
+      
+      stepEl.className = `w-8 h-8 rounded-full ${colors[status]} flex items-center justify-center text-white font-bold`;
+      statusEl.textContent = message;
+    }
+
+    async function setup() {
+      try {
+        // Step 1: Check Firebase
+        updateStatus('🔄 Checking Firebase connection...', 'info');
+        updateStep(1, 'loading', 'Connecting...');
+        
+        await new Promise(resolve => setTimeout(resolve, 500)); // Wait for config to load
+
+        if (!window.firebaseConfig) {
+          throw new Error('Firebase config not found. Please check firebase-config.js');
+        }
+
+        const app = initializeApp(window.firebaseConfig);
+        db = getFirestore(app);
+        
+        updateStep(1, 'success', '✅ Connected');
+        
+        // Step 2: Initialize Config
+        updateStatus('🔄 Setting up game configuration...', 'info');
+        updateStep(2, 'loading', 'Creating document...');
+        
+        const configRef = doc(db, 'settings', 'peppersGameConfig');
+        const configSnap = await getDoc(configRef);
+        
+        if (configSnap.exists()) {
+          updateStep(2, 'success', '✅ Already exists');
+          updateStatus('✅ Game config already exists!', 'success');
+        } else {
+          const defaultConfig = {
+            isEnabled: false,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            description: 'Chili Pepper Hunt game configuration'
+          };
+          
+          await setDoc(configRef, defaultConfig);
+          updateStep(2, 'success', '✅ Created');
+          updateStatus('✅ Game config created!', 'success');
+        }
+        
+        // Step 3: Verify
+        updateStatus('🔄 Verifying setup...', 'info');
+        updateStep(3, 'loading', 'Checking...');
+        
+        const verifySnap = await getDoc(configRef);
+        if (verifySnap.exists()) {
+          const data = verifySnap.data();
+          updateStep(3, 'success', `✅ Verified (enabled: ${data.isEnabled ? 'Yes' : 'No'})`);
+          updateStatus('🎉 Setup complete! Game is ready.', 'success');
+          
+          // Show action buttons
+          document.getElementById('actions').classList.remove('hidden');
+        } else {
+          throw new Error('Failed to verify configuration');
+        }
+        
+      } catch (error) {
+        console.error('Setup error:', error);
+        updateStatus(`❌ Error: ${error.message}`, 'error');
+        updateStep(2, 'error', error.message);
+      }
+    }
+
+    // Auto-start setup
+    setTimeout(() => {
+      setup();
+    }, 1000);
+
+    // Expose enable function
+    window.enableGame = async function() {
+      try {
+        updateStatus('🔄 Enabling game...', 'info');
+        const configRef = doc(db, 'settings', 'peppersGameConfig');
+        await setDoc(configRef, {
+          isEnabled: true,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+        
+        updateStatus('✅ Game enabled! Players can now find peppers.', 'success');
+        updateStep(3, 'success', '✅ Enabled');
+      } catch (error) {
+        updateStatus(`❌ Error: ${error.message}`, 'error');
+      }
+    };
+  </script>
+
+  <script type="module" src="./js/firebase-config.js"></script>
+</body>
+</html>
