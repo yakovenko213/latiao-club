@@ -97,6 +97,15 @@
       }
     }
     
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    
     .animate-slide-in {
       animation: slideIn 0.3s ease-out;
     }
@@ -928,6 +937,10 @@
         <a href="#upsells" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
           <i data-lucide="trending-up" class="w-5 h-5"></i>
           <span>🔥 Допродажі</span>
+        </a>
+        <a href="#peppers-game" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+          <i data-lucide="gamepad-2" class="w-5 h-5"></i>
+          <span>🌶️ Гра Перчики</span>
         </a>
 
       </nav>
@@ -4164,6 +4177,190 @@
                   </tr>
                 </tbody>
               </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============================================ -->
+      <!-- PEPPERS GAME VIEW - Гра Перчики -->
+      <!-- ============================================ -->
+      <div id="view-peppers-game" class="view p-8">
+        <div class="max-w-7xl mx-auto">
+          
+          <!-- Header Card -->
+          <div class="bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 rounded-2xl shadow-lg p-6 mb-6 text-white">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div class="flex items-center gap-4">
+                <div class="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
+                  <span class="text-4xl">🌶️</span>
+                </div>
+                <div>
+                  <h2 class="text-3xl font-bold">Гра Перчики</h2>
+                  <p class="text-white/90 text-sm mt-1">Геміфікація для залучення клієнтів</p>
+                </div>
+              </div>
+              
+              <!-- Master Toggle -->
+              <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                <label class="flex items-center justify-between gap-4 cursor-pointer">
+                  <div>
+                    <div class="font-bold text-lg">Статус гри</div>
+                    <div class="text-sm text-white/80" id="game-status-text">Завантаження...</div>
+                  </div>
+                  <div class="relative">
+                    <input type="checkbox" id="peppers-game-toggle" class="sr-only peer">
+                    <div class="w-14 h-8 bg-white/30 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-white/50 rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500 shadow-inner"></div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Statistics Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <!-- Total Players -->
+            <div class="bg-white rounded-xl border-2 border-gray-200 shadow-sm p-6 hover:shadow-lg transition-shadow">
+              <div class="flex items-center justify-between mb-4">
+                <div class="p-3 bg-blue-100 rounded-xl">
+                  <i data-lucide="users" class="w-6 h-6 text-blue-600"></i>
+                </div>
+                <span class="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-semibold">Учасники</span>
+              </div>
+              <p class="text-4xl font-bold text-gray-900 mb-1" id="stat-total-players">0</p>
+              <p class="text-sm text-gray-600">Всього гравців</p>
+            </div>
+
+            <!-- Finishers -->
+            <div class="bg-white rounded-xl border-2 border-gray-200 shadow-sm p-6 hover:shadow-lg transition-shadow">
+              <div class="flex items-center justify-between mb-4">
+                <div class="p-3 bg-green-100 rounded-xl">
+                  <i data-lucide="trophy" class="w-6 h-6 text-green-600"></i>
+                </div>
+                <span class="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full font-semibold">Переможці</span>
+              </div>
+              <p class="text-4xl font-bold text-green-600 mb-1" id="stat-finishers">0</p>
+              <p class="text-sm text-gray-600">Знайшли всі 8 перчиків</p>
+            </div>
+
+            <!-- Total Time -->
+            <div class="bg-white rounded-xl border-2 border-gray-200 shadow-sm p-6 hover:shadow-lg transition-shadow">
+              <div class="flex items-center justify-between mb-4">
+                <div class="p-3 bg-purple-100 rounded-xl">
+                  <i data-lucide="clock" class="w-6 h-6 text-purple-600"></i>
+                </div>
+                <span class="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-full font-semibold">Час</span>
+              </div>
+              <p class="text-4xl font-bold text-purple-600 mb-1" id="stat-total-time">0 хв</p>
+              <p class="text-sm text-gray-600">Загальний час у грі</p>
+            </div>
+
+            <!-- Golden Peppers -->
+            <div class="bg-white rounded-xl border-2 border-gray-200 shadow-sm p-6 hover:shadow-lg transition-shadow">
+              <div class="flex items-center justify-between mb-4">
+                <div class="p-3 bg-yellow-100 rounded-xl">
+                  <span class="text-2xl">🏆</span>
+                </div>
+                <span class="text-xs bg-yellow-50 text-yellow-700 px-2 py-1 rounded-full font-semibold">Бонуси</span>
+              </div>
+              <p class="text-4xl font-bold text-yellow-600 mb-1" id="stat-golden-peppers">0</p>
+              <p class="text-sm text-gray-600">Золоті перчики знайдено</p>
+            </div>
+          </div>
+
+          <!-- Players Table -->
+          <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+            <!-- Table Header -->
+            <div class="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h3 class="text-xl font-bold text-gray-900">Список гравців</h3>
+                <p class="text-sm text-gray-600 mt-1">Всі учасники гри "Перчики"</p>
+              </div>
+              
+              <div class="flex items-center gap-3">
+                <!-- Search -->
+                <div class="relative">
+                  <input 
+                    type="text" 
+                    id="players-search" 
+                    placeholder="Пошук по телефону..."
+                    class="w-64 px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+                  >
+                  <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                </div>
+                
+                <!-- Refresh Button -->
+                <button 
+                  onclick="refreshPeppersGameData()"
+                  class="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition text-sm"
+                >
+                  <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                  Оновити
+                </button>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Номер телефону
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Telegram
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Дата приєднання
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Прогрес
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Час у грі
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="players-table-body" class="divide-y divide-gray-200">
+                  <!-- Loading State -->
+                  <tr>
+                    <td colspan="5" class="px-6 py-12 text-center">
+                      <div class="flex flex-col items-center gap-3">
+                        <div class="animate-spin w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full"></div>
+                        <p class="text-gray-600">Завантаження даних гравців...</p>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination/Footer -->
+            <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+              <div class="text-sm text-gray-600">
+                Показано <span id="players-shown-count" class="font-semibold">0</span> учасників
+              </div>
+              <div class="text-sm text-gray-500">
+                Останнє оновлення: <span id="last-update-time" class="font-medium">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Info Card -->
+          <div class="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-5">
+            <div class="flex items-start gap-3">
+              <i data-lucide="info" class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"></i>
+              <div class="text-sm text-blue-900">
+                <p class="font-semibold mb-2">Як працює гра "Перчики"?</p>
+                <ul class="space-y-1 text-blue-800">
+                  <li>• Користувачі шукають приховані перчики на сайті (8 штук)</li>
+                  <li>• Кожен знайдений перчик додає бали та нагороди</li>
+                  <li>• Гравці, які знайшли всі 8 перчиків, отримують спеціальні призи</li>
+                  <li>• Золоті перчики дають додаткові бонуси</li>
+                </ul>
+              </div>
             </div>
           </div>
 
@@ -18032,6 +18229,381 @@
         })
       }
     });
+
+    // ============================================
+    // PEPPERS GAME MANAGEMENT MODULE
+    // ============================================
+    // Isolated namespace to prevent conflicts with other admin modules
+    // Key functions:
+    //   - formatPeppersGameDuration() [renamed to avoid conflict with global formatDuration]
+    //   - loadPeppersGameConfig()
+    //   - loadPeppersGamePlayers()
+    //   - updatePeppersGameStats()
+    //   - renderPlayersTable()
+    //   - searchPlayers()
+    //   - window.refreshPeppersGameData()
+    // ============================================
+    
+    let peppersGameData = {
+      players: [],
+      config: null
+    };
+
+    /**
+     * Load Peppers Game Configuration
+     */
+    async function loadPeppersGameConfig() {
+      try {
+        const configRef = doc(db, 'settings', 'peppersGameConfig');
+        const configSnap = await getDoc(configRef);
+        
+        if (configSnap.exists()) {
+          peppersGameData.config = configSnap.data();
+          updateGameToggle(peppersGameData.config.isEnabled || false);
+        } else {
+          // Create default config
+          const defaultConfig = {
+            isEnabled: false,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          };
+          await setDoc(configRef, defaultConfig);
+          peppersGameData.config = defaultConfig;
+          updateGameToggle(false);
+        }
+      } catch (error) {
+        console.error('Error loading game config:', error);
+        showNotification('Помилка завантаження конфігурації гри', 'error');
+      }
+    }
+
+    /**
+     * Update Game Toggle UI
+     */
+    function updateGameToggle(isEnabled) {
+      const toggle = document.getElementById('peppers-game-toggle');
+      const statusText = document.getElementById('game-status-text');
+      
+      if (toggle) {
+        toggle.checked = isEnabled;
+      }
+      
+      if (statusText) {
+        statusText.textContent = isEnabled ? '✅ Активна' : '❌ Вимкнена';
+      }
+    }
+
+    /**
+     * Toggle Game Status
+     */
+    async function togglePeppersGame(enabled) {
+      try {
+        const configRef = doc(db, 'settings', 'peppersGameConfig');
+        await updateDoc(configRef, {
+          isEnabled: enabled,
+          updatedAt: serverTimestamp()
+        });
+        
+        peppersGameData.config.isEnabled = enabled;
+        updateGameToggle(enabled);
+        showNotification(enabled ? 'Гру активовано! 🌶️' : 'Гру вимкнено', 'success');
+      } catch (error) {
+        console.error('Error toggling game:', error);
+        showNotification('Помилка зміни статусу гри', 'error');
+        // Revert toggle
+        updateGameToggle(!enabled);
+      }
+    }
+
+    /**
+     * Load Players Data from Firestore
+     */
+    async function loadPeppersGamePlayers() {
+      try {
+        const playersRef = collection(db, 'game_players');
+        const playersQuery = query(playersRef, orderBy('joinedAt', 'desc'));
+        const playersSnap = await getDocs(playersQuery);
+        
+        peppersGameData.players = [];
+        playersSnap.forEach(doc => {
+          peppersGameData.players.push({
+            id: doc.id,
+            ...doc.data()
+          });
+        });
+        
+        updatePeppersGameStats();
+        renderPlayersTable(peppersGameData.players);
+        updateLastRefreshTime();
+      } catch (error) {
+        console.error('Error loading players:', error);
+        showNotification('Помилка завантаження даних гравців', 'error');
+        renderPlayersTable([]);
+      }
+    }
+
+    /**
+     * Update Statistics Cards
+     */
+    function updatePeppersGameStats() {
+      const players = peppersGameData.players;
+      
+      // Total Players
+      const totalPlayers = players.length;
+      document.getElementById('stat-total-players').textContent = totalPlayers;
+      
+      // Finishers (found all 8 peppers)
+      const finishers = players.filter(p => (p.peppersFound || 0) >= 8).length;
+      document.getElementById('stat-finishers').textContent = finishers;
+      
+      // Total Time (in minutes)
+      const totalTime = players.reduce((sum, p) => sum + (p.timeSpent || 0), 0);
+      const totalMinutes = Math.round(totalTime / 60);
+      document.getElementById('stat-total-time').textContent = `${totalMinutes} хв`;
+      
+      // Golden Peppers
+      const goldenPeppers = players.reduce((sum, p) => sum + (p.goldenPeppersFound || 0), 0);
+      document.getElementById('stat-golden-peppers').textContent = goldenPeppers;
+    }
+
+    /**
+     * Render Players Table
+     */
+    function renderPlayersTable(players) {
+      const tbody = document.getElementById('players-table-body');
+      const shownCount = document.getElementById('players-shown-count');
+      
+      if (!tbody) return;
+      
+      if (players.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="px-6 py-12 text-center">
+              <div class="flex flex-col items-center gap-3">
+                <span class="text-6xl">🌶️</span>
+                <p class="text-gray-600 font-medium">Поки що немає гравців</p>
+                <p class="text-sm text-gray-500">Гравці з'являться тут після приєднання до гри</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        shownCount.textContent = '0';
+        return;
+      }
+      
+      tbody.innerHTML = players.map(player => {
+        const phone = player.phone || player.id;
+        const telegram = player.telegram || '—';
+        const telegramLink = player.telegram ? `https://t.me/${player.telegram.replace('@', '')}` : '#';
+        const joinedDate = formatDate(player.joinedAt);
+        const progress = player.peppersFound || 0;
+        const progressPercent = Math.round((progress / 8) * 100);
+        const timeSpent = formatPeppersGameDuration(player.timeSpent || 0);
+        
+        // Progress bar color
+        let progressColor = 'bg-gray-300';
+        if (progress >= 8) progressColor = 'bg-green-500';
+        else if (progress >= 5) progressColor = 'bg-yellow-500';
+        else if (progress >= 3) progressColor = 'bg-orange-500';
+        else if (progress >= 1) progressColor = 'bg-blue-500';
+        
+        return `
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-2">
+                <span class="font-mono font-semibold text-gray-900">${phone}</span>
+                ${progress >= 8 ? '<span class="text-xl" title="Переможець!">🏆</span>' : ''}
+              </div>
+            </td>
+            <td class="px-6 py-4">
+              ${player.telegram 
+                ? `<a href="${telegramLink}" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline font-medium">${telegram}</a>`
+                : `<span class="text-gray-400">${telegram}</span>`
+              }
+            </td>
+            <td class="px-6 py-4">
+              <div class="text-sm text-gray-900">${joinedDate.date}</div>
+              <div class="text-xs text-gray-500">${joinedDate.time}</div>
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                <span class="font-bold text-gray-900">${progress} / 8</span>
+                <div class="flex-1 max-w-[100px]">
+                  <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div class="${progressColor} h-full transition-all duration-300" style="width: ${progressPercent}%"></div>
+                  </div>
+                </div>
+                <span class="text-xs text-gray-500">${progressPercent}%</span>
+              </div>
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-2 text-sm text-gray-700">
+                <i data-lucide="clock" class="w-4 h-4 text-gray-400"></i>
+                <span class="font-medium">${timeSpent}</span>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      
+      // Re-initialize Lucide icons
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+      
+      shownCount.textContent = players.length;
+    }
+
+    /**
+     * Format Date/Time
+     */
+    function formatDate(timestamp) {
+      if (!timestamp) return { date: '—', time: '—' };
+      
+      let date;
+      if (timestamp.toDate) {
+        date = timestamp.toDate();
+      } else if (timestamp instanceof Date) {
+        date = timestamp;
+      } else {
+        date = new Date(timestamp);
+      }
+      
+      const dateStr = date.toLocaleDateString('uk-UA', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric' 
+      });
+      const timeStr = date.toLocaleTimeString('uk-UA', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+      
+      return { date: dateStr, time: timeStr };
+    }
+
+    /**
+     * Format Duration for Peppers Game (seconds to readable format)
+     * Renamed to avoid conflict with global formatDuration
+     */
+    function formatPeppersGameDuration(seconds) {
+      if (!seconds || seconds < 60) return `${seconds || 0} с`;
+      
+      const minutes = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      
+      if (minutes < 60) {
+        return `${minutes} хв ${secs} с`;
+      }
+      
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      return `${hours} год ${mins} хв`;
+    }
+
+    /**
+     * Update Last Refresh Time
+     */
+    function updateLastRefreshTime() {
+      const timeElement = document.getElementById('last-update-time');
+      if (timeElement) {
+        const now = new Date();
+        timeElement.textContent = now.toLocaleTimeString('uk-UA', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          second: '2-digit'
+        });
+      }
+    }
+
+    /**
+     * Search Players by Phone
+     */
+    function searchPlayers(searchTerm) {
+      if (!searchTerm || searchTerm.trim() === '') {
+        renderPlayersTable(peppersGameData.players);
+        return;
+      }
+      
+      const term = searchTerm.toLowerCase().trim();
+      const filtered = peppersGameData.players.filter(player => {
+        const phone = (player.phone || player.id).toLowerCase();
+        const telegram = (player.telegram || '').toLowerCase();
+        return phone.includes(term) || telegram.includes(term);
+      });
+      
+      renderPlayersTable(filtered);
+    }
+
+    /**
+     * Refresh Peppers Game Data
+     */
+    window.refreshPeppersGameData = async function() {
+      const btn = event?.target.closest('button');
+      if (btn) {
+        const icon = btn.querySelector('[data-lucide="refresh-cw"]');
+        if (icon) {
+          icon.style.animation = 'spin 1s linear infinite';
+        }
+        btn.disabled = true;
+      }
+      
+      await loadPeppersGamePlayers();
+      
+      if (btn) {
+        const icon = btn.querySelector('[data-lucide="refresh-cw"]');
+        if (icon) {
+          icon.style.animation = '';
+        }
+        btn.disabled = false;
+      }
+      
+      showNotification('Дані оновлено! 🌶️', 'success');
+    };
+
+    /**
+     * Initialize Peppers Game View
+     */
+    async function initPeppersGameView() {
+      // Load configuration and players
+      await loadPeppersGameConfig();
+      await loadPeppersGamePlayers();
+      
+      // Setup toggle listener
+      const toggle = document.getElementById('peppers-game-toggle');
+      if (toggle) {
+        toggle.addEventListener('change', (e) => {
+          togglePeppersGame(e.target.checked);
+        });
+      }
+      
+      // Setup search listener
+      const searchInput = document.getElementById('players-search');
+      if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', (e) => {
+          clearTimeout(searchTimeout);
+          searchTimeout = setTimeout(() => {
+            searchPlayers(e.target.value);
+          }, 300);
+        });
+      }
+    }
+
+    // Add to navigation handler
+    const originalNavigateTo = window.navigateTo;
+    window.navigateTo = function(view) {
+      if (originalNavigateTo) {
+        originalNavigateTo(view);
+      }
+      
+      // Initialize Peppers Game view when navigated to
+      if (view === 'peppers-game') {
+        setTimeout(() => {
+          initPeppersGameView();
+        }, 100);
+      }
+    };
 
   </script>
 
