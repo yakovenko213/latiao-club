@@ -18276,7 +18276,15 @@
     };
 
     /**
-     * Load Peppers Game Configuration
+     * Simple notification function (console-based)
+     */
+    function showNotification(message, type = 'info') {
+      const emoji = type === 'error' ? '❌' : type === 'warning' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️';
+      console.log(`${emoji} [NOTIFICATION] ${message}`);
+    }
+
+    /**
+     * Load Peppers Game Configuration with real-time listener
      */
     async function loadPeppersGameConfig() {
       console.log('═══════════════════════════════════════════════════════════════');
@@ -18296,60 +18304,50 @@
       console.log('📍 [ADMIN] Firestore path: settings/peppersGameConfig');
       console.log('📍 [ADMIN] Using: doc(db, "settings", "peppersGameConfig")');
       
-      let loadingSuccessful = false;
       peppersGameData.loading = true;
-      
-      // EMERGENCY TIMEOUT: Force stop loading after 5 seconds
-      console.log('⏰ [ADMIN] Setting 5-second emergency timeout...');
-      peppersGameData.loadingTimeout = setTimeout(() => {
-        console.error('⏰ [ADMIN] TIMEOUT! Data fetch took >5 seconds');
-        console.error('⏰ [ADMIN] Force stopping loading spinner');
-        peppersGameData.loading = false;
-        
-        if (!loadingSuccessful) {
-          console.error('⏰ [ADMIN] Setting fail-safe state: isEnabled = false');
-          peppersGameData.config = { isEnabled: false };
-          updateGameToggle(false);
-          showNotification('⏰ Час очікування вичерпано. Спробуйте оновити сторінку.', 'warning');
-        }
-      }, 5000);
       
       try {
         const configRef = doc(db, 'settings', 'peppersGameConfig');
         console.log('📄 [ADMIN] Created document reference:', configRef);
         console.log('📄 [ADMIN] Reference path:', configRef.path);
         console.log('📄 [ADMIN] Reference ID:', configRef.id);
-        console.log('📡 [ADMIN] Fetching document from Firestore...');
+        console.log('📡 [ADMIN] Setting up real-time listener...');
         
-        const configSnap = await getDoc(configRef);
-        
-        console.log('📦 [ADMIN] Firestore response received');
-        console.log('📦 [ADMIN] Document exists:', configSnap.exists());
-        
-        if (configSnap.exists()) {
-          console.log('✅ [ADMIN] Config document found:', configSnap.data());
-          peppersGameData.config = configSnap.data();
-          const isEnabled = peppersGameData.config.isEnabled || false;
-          console.log('🎮 [ADMIN] Game status from DB: isEnabled =', isEnabled);
-          updateGameToggle(isEnabled);
-          loadingSuccessful = true;
-        } else {
-          console.warn('⚠️ [ADMIN] Config document does NOT exist at path: settings/peppersGameConfig');
-          console.warn('⚠️ [ADMIN] FAIL-SAFE: Setting game to DISABLED by default');
-          console.warn('⚠️ [ADMIN] Document will be created when admin clicks toggle');
+        // Set up real-time listener for instant updates
+        onSnapshot(configRef, (configSnap) => {
+          console.log('📦 [ADMIN] Real-time update received');
+          console.log('📦 [ADMIN] Document exists:', configSnap.exists());
           
-          // CRITICAL: Don't try to create document here - just set local state
-          // This prevents hanging if Firestore write fails
-          peppersGameData.config = {
-            isEnabled: false,
-            description: 'Not yet initialized'
-          };
+          if (configSnap.exists()) {
+            console.log('✅ [ADMIN] Config document found:', configSnap.data());
+            peppersGameData.config = configSnap.data();
+            const isEnabled = peppersGameData.config.isEnabled || false;
+            console.log('🎮 [ADMIN] Game status from DB: isEnabled =', isEnabled);
+            updateGameToggle(isEnabled);
+          } else {
+            console.warn('⚠️ [ADMIN] Config document does NOT exist at path: settings/peppersGameConfig');
+            console.warn('⚠️ [ADMIN] FAIL-SAFE: Setting game to DISABLED by default');
+            console.warn('⚠️ [ADMIN] Document will be created when admin clicks toggle');
+            
+            peppersGameData.config = {
+              isEnabled: false,
+              description: 'Not yet initialized'
+            };
+            
+            updateGameToggle(false);
+            console.log('✅ [ADMIN] Fail-safe initialization complete - UI ready');
+          }
           
+          peppersGameData.loading = false;
+        }, (error) => {
+          console.error('❌ [ADMIN] Real-time listener error:', error);
+          peppersGameData.config = { isEnabled: false };
           updateGameToggle(false);
-          loadingSuccessful = true;
-          
-          console.log('✅ [ADMIN] Fail-safe initialization complete - UI ready');
-        }
+          showNotification('Помилка підключення до бази даних', 'error');
+          peppersGameData.loading = false;
+        });
+        
+        console.log('✅ [ADMIN] Real-time listener established');
       } catch (error) {
         console.error('═══════════════════════════════════════════════════════════════');
         console.error('❌ [ADMIN] CRITICAL ERROR loading game config');
@@ -18364,15 +18362,9 @@
         peppersGameData.config = { isEnabled: false };
         updateGameToggle(false);
         showNotification('Помилка завантаження. Гра вимкнена за замовчуванням.', 'warning');
-      } finally {
-        // CRITICAL: Clear timeout
-        if (peppersGameData.loadingTimeout) {
-          clearTimeout(peppersGameData.loadingTimeout);
-          console.log('✅ [ADMIN] Emergency timeout cleared');
-        }
-        
         peppersGameData.loading = false;
-        console.log('🏁 [ADMIN] loadPeppersGameConfig completed. Success:', loadingSuccessful);
+      } finally {
+        console.log('🏁 [ADMIN] loadPeppersGameConfig setup completed');
         
         // GUARANTEE: Status text is NEVER stuck on "Loading..."
         const statusText = document.getElementById('game-status-text');

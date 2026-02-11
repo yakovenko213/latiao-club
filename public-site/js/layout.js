@@ -1711,60 +1711,93 @@ async function initAnnouncementBar() {
     return;
   }
   
-  // Check game configuration
+  // Setup real-time listener for game configuration
   try {
     // Wait for Firebase to be ready
     await waitForFirebaseInLayout();
     
-    let isGameEnabled = false;
-    let foundPeppersCount = 0;
+    const { getFirestore, doc, onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+    const db = window.db || getFirestore(window.firebaseApp);
+    const configRef = doc(db, 'settings', 'peppersGameConfig');
     
-    // Get found peppers from localStorage
-    try {
-      const stored = localStorage.getItem('pepperHunt_foundPeppers');
-      foundPeppersCount = stored ? JSON.parse(stored).length : 0;
-    } catch (e) {
-      console.log('Error reading found peppers:', e);
-    }
+    console.log('👂 [TOP BAR] Setting up real-time listener for game config...');
     
-    // Check global config first
-    if (window.pepperGameConfig && window.pepperGameConfig.loaded) {
-      isGameEnabled = window.pepperGameConfig.isEnabled;
-      console.log('✅ Using global game config:', isGameEnabled);
-    } else {
-      // Fallback: fetch from Firestore
-      const { getFirestore, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-      const db = window.db || getFirestore(window.firebaseApp);
-      const configRef = doc(db, 'settings', 'peppersGameConfig');
-      const configSnap = await getDoc(configRef);
+    // Setup real-time listener
+    onSnapshot(configRef, (snapshot) => {
+      let isGameEnabled = false;
+      let foundPeppersCount = 0;
       
-      if (configSnap.exists()) {
-        isGameEnabled = configSnap.data().isEnabled || false;
-        console.log('✅ Game config from Firestore:', isGameEnabled);
+      // Get found peppers from localStorage
+      try {
+        const stored = localStorage.getItem('pepperHunt_foundPeppers');
+        foundPeppersCount = stored ? JSON.parse(stored).length : 0;
+      } catch (e) {
+        console.log('Error reading found peppers:', e);
       }
-    }
-    
-    // Update bar content based on progress
-    if (foundPeppersCount >= 8) {
-      // All peppers found!
-      if (announcementText) {
-        announcementText.textContent = '🎉 Вітаємо! Ти знайшов усі перчики! Твій приз чекає.';
+      
+      if (snapshot.exists()) {
+        isGameEnabled = snapshot.data().isEnabled || false;
+        console.log('🔔 [TOP BAR] Real-time update received - Game is:', isGameEnabled ? '🟢 ENABLED' : '🔴 DISABLED');
+      } else {
+        console.warn('⚠️ [TOP BAR] Config document does not exist');
+        isGameEnabled = false;
       }
-      if (bar) bar.style.display = 'flex';
-      console.log('🎉 All peppers found! Showing completion message.');
-    } else if (isGameEnabled) {
-      // Game is active, show normal message
-      if (bar) bar.style.display = 'flex';
-      console.log('✅ Pepper Hunt bar visible - game is enabled');
-    } else {
-      // Game is disabled
+      
+      // Update window.pepperGameConfig for other components
+      if (!window.pepperGameConfig) {
+        window.pepperGameConfig = {};
+      }
+      window.pepperGameConfig.isEnabled = isGameEnabled;
+      window.pepperGameConfig.loaded = true;
+      
+      // Dispatch event for other listeners
+      window.dispatchEvent(new CustomEvent('pepperGameConfigChanged', { 
+        detail: { isEnabled: isGameEnabled } 
+      }));
+      
+      // Update bar content based on progress
+      if (foundPeppersCount >= 8) {
+        // All peppers found!
+        if (announcementText) {
+          announcementText.textContent = '🎉 Вітаємо! Ти знайшов усі перчики! Твій приз чекає.';
+        }
+        if (bar) {
+          bar.style.display = 'flex';
+          if (header) header.style.top = '24px';
+          if (toastContainer) toastContainer.style.top = '3rem';
+        }
+        console.log('🎉 [TOP BAR] All peppers found! Showing completion message.');
+      } else if (isGameEnabled) {
+        // Game is active, show normal message
+        if (bar) {
+          bar.style.display = 'flex';
+          if (header) header.style.top = '24px';
+          if (toastContainer) toastContainer.style.top = '3rem';
+        }
+        console.log('✅ [TOP BAR] Bar visible - game is enabled');
+      } else {
+        // Game is disabled - HIDE COMPLETELY
+        if (bar) {
+          bar.style.display = 'none';
+        }
+        if (header) {
+          header.style.top = '0';
+        }
+        if (toastContainer) {
+          toastContainer.style.top = '1rem';
+        }
+        console.log('⚠️ [TOP BAR] Bar hidden - game is disabled');
+      }
+    }, (error) => {
+      console.error('❌ [TOP BAR] Error in real-time listener:', error);
+      // On error, hide the bar
       if (bar) bar.style.display = 'none';
       if (header) header.style.top = '0';
       if (toastContainer) toastContainer.style.top = '1rem';
-      console.log('⚠️ Pepper Hunt bar hidden - game is disabled');
-    }
+    });
+    
   } catch (error) {
-    console.error('Error initializing announcement bar:', error);
+    console.error('❌ [TOP BAR] Error setting up listener:', error);
     // On error, hide the bar
     if (bar) bar.style.display = 'none';
     if (header) header.style.top = '0';
@@ -2146,14 +2179,9 @@ export function loadLayout() {
   // Inject header template at the start of body
   document.body.insertAdjacentHTML('afterbegin', headerTemplate);
 
-  // Initialize announcement bar (check if was closed before)
+  // Initialize announcement bar with real-time listener
+  // The onSnapshot inside will automatically update when admin changes the toggle
   initAnnouncementBar();
-  
-  // Listen for game config changes
-  window.addEventListener('pepperGameConfigChanged', (event) => {
-    console.log('🔄 Game config changed, updating announcement bar');
-    initAnnouncementBar();
-  });
 
   // Mark layout as loaded
   document.body.setAttribute('data-layout-loaded', 'true');
