@@ -439,9 +439,10 @@ const headerTemplate = `
         
         <!-- Account Section -->
         <div>
-          <a href="/dashboard.html" onclick="window.closeSideMenu()" class="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-spicy to-fire text-white rounded-xl hover:shadow-lg transition-shadow">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+          <a href="login.html" onclick="window.closeSideMenu()" class="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-spicy to-fire text-white rounded-xl hover:shadow-lg transition-shadow">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 mr-3">
+              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
             </svg>
             <span class="font-semibold">Особистий кабінет</span>
           </a>
@@ -533,10 +534,15 @@ const headerTemplate = `
       transform: translateX(4px);
     }
     
-    .mobile-menu-link svg {
-      width: 1.25rem;
-      height: 1.25rem;
+    .mobile-menu-link svg,
+    .mobile-menu-link img {
+      width: 1.5rem;
+      height: 1.5rem;
       flex-shrink: 0;
+    }
+    
+    .mobile-menu-link img {
+      object-fit: contain;
     }
   </style>
 
@@ -2054,19 +2060,23 @@ function renderNavigation({ categories, pages }) {
   // === MOBILE CATALOG ===
   const mobileCatalog = document.getElementById('mobile-catalog-container');
   if (mobileCatalog && categories.length > 0) {
-    // Map category icons by name
+    // Map category icons by name - PNG images for visual appeal
     const categoryIcons = {
-      'Гостре латяо': '<svg class="w-5 h-5 text-spicy" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z"/></svg>',
-      'Локшина Buldak': '<svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>',
-      'Снеки': '<svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>',
-      'Напої': '<svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>',
-      'Солодощі': '<svg class="w-5 h-5 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
-      'Соуси': '<svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>'
+      'Усі товари': '<img src="/images/icons/icon-all.png" alt="Усі товари" class="w-6 h-6 object-contain group-hover:scale-110 transition-transform" loading="lazy">',
+      'Сушені крабики': '<img src="/images/icons/icon-crab.png" alt="Сушені крабики" class="w-6 h-6 object-contain group-hover:scale-110 transition-transform" loading="lazy">',
+      'Гостре латяо': '<img src="/images/icons/icon-spicy.png" alt="Гостре латяо" class="w-6 h-6 object-contain group-hover:scale-110 transition-transform" loading="lazy">',
+      'Негостре латяо': '<img src="/images/icons/icon-spicy.png" alt="Негостре латяо" class="w-6 h-6 object-contain group-hover:scale-110 transition-transform" loading="lazy">',
+      'Помірно гостре латяо': '<img src="/images/icons/icon-spicy.png" alt="Помірно гостре латяо" class="w-6 h-6 object-contain group-hover:scale-110 transition-transform" loading="lazy">',
+      'Локшина Buldak': '<img src="/images/icons/icon-spicy.png" alt="Локшина Buldak" class="w-6 h-6 object-contain group-hover:scale-110 transition-transform" loading="lazy">',
+      'Снеки': '<img src="/images/icons/icon-snacks.png" alt="Снеки" class="w-6 h-6 object-contain group-hover:scale-110 transition-transform" loading="lazy">',
+      'Напої': '<img src="/images/icons/icon-drinks.png" alt="Напої" class="w-6 h-6 object-contain group-hover:scale-110 transition-transform" loading="lazy">',
+      'Солодощі': '<img src="/images/icons/icon-sweets.png" alt="Солодощі" class="w-6 h-6 object-contain group-hover:scale-110 transition-transform" loading="lazy">',
+      'Соуси': '<img src="/images/icons/icon-sauce.png" alt="Соуси" class="w-6 h-6 object-contain group-hover:scale-110 transition-transform" loading="lazy">'
     };
     
     mobileCatalog.innerHTML = categories.map(cat => {
-      const icon = categoryIcons[cat.name] || '<svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>';
-      return `<li><a href="/category.html?slug=${cat.slug}" onclick="window.closeSideMenu()" class="mobile-menu-link">${icon}<span>${cat.name}</span></a></li>`;
+      const icon = categoryIcons[cat.name] || '<img src="/images/icons/icon-default.png" alt="' + cat.name + '" class="w-6 h-6 object-contain group-hover:scale-110 transition-transform" loading="lazy">';
+      return `<li><a href="/category.html?slug=${cat.slug}" onclick="window.closeSideMenu()" class="mobile-menu-link group">${icon}<span>${cat.name}</span></a></li>`;
     }).join('');
   } else if (mobileCatalog) {
     mobileCatalog.innerHTML = '<li class="text-gray-400 text-sm px-4">Категорій немає</li>';
@@ -2077,24 +2087,25 @@ function renderNavigation({ categories, pages }) {
   if (mobilePages && pages.length > 0) {
     const headerPages = pages.filter(p => p.location === 'header' || p.location === 'both');
     
-    // Map page icons by common titles
+    // Map page icons by common titles - Direct SVG for reliability
     const pageIcons = {
-      'Доставка': '<svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg>',
-      'Оплата': '<svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>',
-      'Про нас': '<svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
-      'Контакти': '<svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>'
+      'Доставка': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3 lucide lucide-truck-electric"><path d="M14 19V7a2 2 0 0 0-2-2H9"/><path d="M15 19H9"/><path d="M19 19h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62L18.3 9.38a1 1 0 0 0-.78-.38H14"/><path d="M2 13v5a1 1 0 0 0 1 1h2"/><path d="M4 3 2.15 5.15a.495.495 0 0 0 .35.86h2.15a.47.47 0 0 1 .35.86L3 9.02"/><circle cx="17" cy="19" r="2"/><circle cx="7" cy="19" r="2"/></svg>',
+      'Про нас': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3 lucide lucide-component"><path d="M15.536 11.293a1 1 0 0 0 0 1.414l2.376 2.377a1 1 0 0 0 1.414 0l2.377-2.377a1 1 0 0 0 0-1.414l-2.377-2.377a1 1 0 0 0-1.414 0z"/><path d="M2.297 11.293a1 1 0 0 0 0 1.414l2.377 2.377a1 1 0 0 0 1.414 0l2.377-2.377a1 1 0 0 0 0-1.414L6.088 8.916a1 1 0 0 0-1.414 0z"/><path d="M8.916 17.912a1 1 0 0 0 0 1.415l2.377 2.376a1 1 0 0 0 1.414 0l2.377-2.376a1 1 0 0 0 0-1.415l-2.377-2.376a1 1 0 0 0-1.414 0z"/><path d="M8.916 4.674a1 1 0 0 0 0 1.414l2.377 2.376a1 1 0 0 0 1.414 0l2.377-2.376a1 1 0 0 0 0-1.414l-2.377-2.377a1 1 0 0 0-1.414 0z"/></svg>',
+      'Обмін': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3 lucide lucide-info"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>',
+      'Оплата': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>',
+      'Контакти': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>'
     };
     
     mobilePages.innerHTML = headerPages.map(page => {
       // Try to match icon by partial title match
-      let icon = '<svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>';
+      let icon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>';
       for (const [key, svg] of Object.entries(pageIcons)) {
         if (page.title.includes(key)) {
           icon = svg;
           break;
         }
       }
-      return `<li><a href="/page.html?slug=${page.slug}" onclick="window.closeSideMenu()" class="mobile-menu-link">${icon}<span>${page.title}</span></a></li>`;
+      return `<li><a href="/page.html?slug=${page.slug}" onclick="window.closeSideMenu()" class="mobile-menu-link group">${icon}<span>${page.title}</span></a></li>`;
     }).join('');
   }
 
