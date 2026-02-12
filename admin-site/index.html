@@ -934,6 +934,11 @@
           <span>⭐ Відгуки</span>
           <span id="reviews-pending-badge" class="hidden absolute -top-1 -right-1 bg-yellow-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">0</span>
         </a>
+        <a href="#restock-requests" class="sidebar-link relative flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          <span>🔔 Сповіщення про наявність</span>
+          <span id="restock-pending-badge" class="hidden absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">0</span>
+        </a>
         <a href="#upsells" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
           <i data-lucide="trending-up" class="w-5 h-5"></i>
           <span>🔥 Допродажі</span>
@@ -3973,6 +3978,39 @@
       </div>
 
       <!-- ============================================ -->
+      <!-- RESTOCK REQUESTS VIEW - Сповіщення про наявність -->
+      <!-- ============================================ -->
+      <div id="view-restock-requests" class="view p-8">
+        <div class="max-w-7xl mx-auto">
+          
+          <!-- Header Card -->
+          <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200">
+                <i data-lucide="bell" class="w-7 h-7 text-white"></i>
+              </div>
+              <div>
+                <h2 class="text-2xl font-bold text-gray-900">Сповіщення про наявність товару</h2>
+                <p class="text-gray-500 text-sm mt-0.5">Клієнти, які очікують на повернення товару в наявність</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Restock Requests Container -->
+          <div id="restock-container">
+            <!-- Content will be dynamically loaded by restock-requests.js -->
+            <div class="flex items-center justify-center py-12">
+              <div class="text-center">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-orange-500 mb-4"></div>
+                <p class="text-gray-600">Завантаження...</p>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+
+      <!-- ============================================ -->
       <!-- UPSELLS VIEW - Допродажі -->
       <!-- ============================================ -->
       <div id="view-upsells" class="view p-8">
@@ -6322,6 +6360,10 @@
     window.deleteDoc = deleteDoc
     window.serverTimestamp = serverTimestamp
     window.Timestamp = serverTimestamp
+    window.onSnapshot = onSnapshot
+    window.orderBy = orderBy
+    window.addDoc = addDoc
+    window.setDoc = setDoc
 
     console.log('🔥 Firebase initialized')
 
@@ -6404,6 +6446,7 @@
       'merchandising': '🎯 Мерчандайзинг',
       'live-chat': '💬 Онлайн чат | ШІ',
       'reviews': '⭐ Відгуки',
+      'restock-requests': '🔔 Сповіщення про наявність',
       'upsells': '🔥 Допродажі'
     }
 
@@ -6468,6 +6511,12 @@
         } else if (target === 'reviews') {
           if (typeof loadReviewsView === 'function') {
             loadReviewsView()
+          }
+        } else if (target === 'restock-requests') {
+          if (typeof window.initRestockView === 'function') {
+            window.initRestockView()
+          } else {
+            console.error('❌ initRestockView not found!')
           }
         } else if (target === 'upsells') {
           if (typeof window.loadUpsellRules === 'function') {
@@ -14238,6 +14287,9 @@
         setTimeout(() => toast.remove(), 300);
       }, 3000);
     }
+    
+    // Expose showToast globally for ES6 modules
+    window.showToast = showToast;
 
 
     window.openProductModal = () => {
@@ -19738,6 +19790,10 @@
       document.getElementById(`chat-tab-${tab}`).classList.remove('hidden');
     }
   </script>
+
+  <!-- Restock Requests Module (ES6 Module) -->
+  <script type="module" src="js/admin-restock-module.js"></script>
+
 </body>
 
 </html>

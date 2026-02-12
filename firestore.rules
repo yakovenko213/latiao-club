@@ -256,5 +256,26 @@ service cloud.firestore {
       allow update, delete: if request.auth != null;
     }
     
+    // =============================================
+    // 🔔 RESTOCK NOTIFICATIONS
+    // =============================================
+    
+    match /restock_requests/{requestId} {
+      // ✅ PUBLIC can CREATE restock requests (customers notify about out-of-stock)
+      allow create: if true;
+      
+      // ❌ Only ADMINS can READ, UPDATE, or DELETE restock requests
+      allow read, update, delete: if request.auth != null;
+    }
+    
+    // =============================================
+    // 📣 BROADCAST / MAILING
+    // =============================================
+    
+    match /broadcasts/{broadcastId} {
+      // ❌ Only ADMINS can manage broadcasts
+      allow read, write: if request.auth != null;
+    }
+    
   }
 }
