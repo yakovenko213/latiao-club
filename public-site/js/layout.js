@@ -311,8 +311,19 @@ const headerTemplate = `
   <!-- Header -->
   <header id="main-header" class="fixed top-[24px] sm:top-[36px] left-0 right-0 bg-white/95 backdrop-blur-md z-50 border-b border-gray-100 dark:bg-gray-900/95 dark:border-gray-800">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16 lg:h-20">
-        <a href="/index.html" class="flex items-center">
+      <div class="flex items-center h-16 lg:h-20">
+        
+        <!-- Mobile: Hamburger Button (Left) - Always first element -->
+        <div class="flex items-center lg:hidden mr-2">
+          <button id="mobile-menu-btn" onclick="window.openSideMenu()" class="p-2 hover:bg-orange-50 rounded-full text-gray-700 hover:text-orange-500 transition-colors" aria-label="Open menu">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+        </div>
+        
+        <!-- Logo (Takes remaining space and centers itself, static on desktop) -->
+        <a href="/index.html" class="flex items-center flex-1 justify-center lg:justify-start lg:flex-none">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 70" width="360" height="70" class="h-10 md:h-12 w-auto" preserveAspectRatio="xMinYMid meet">
             <defs>
               <linearGradient id="flameGradient" x1="0%" y1="100%" x2="0%" y2="0%">
@@ -354,6 +365,8 @@ const headerTemplate = `
             </g>
           </svg>
         </a>
+        
+        <!-- Desktop Navigation (Hidden on mobile) -->
         <nav class="hidden lg:flex items-center gap-8">
           <div class="relative group">
             <button class="text-gray-600 hover:text-spicy transition-colors font-medium flex items-center gap-1">
@@ -370,22 +383,24 @@ const headerTemplate = `
             <!-- Pages будуть завантажені динамічно -->
           </div>
         </nav>
-        <div class="flex items-center gap-1 sm:gap-2">
-          <a href="./login.html" id="user-profile-btn" class="relative p-2 hover:bg-orange-50 rounded-full text-gray-700 hover:text-orange-500 transition-colors cursor-pointer" aria-label="User profile">
+        
+        <!-- Spacer for desktop to push action buttons right -->
+        <div class="hidden lg:flex flex-1"></div>
+        
+        <!-- Action Buttons (Right side) -->
+        <div class="flex items-center gap-1 sm:gap-2 ml-2">
+          <!-- Account Icon: Hidden on mobile, visible on desktop (lg+) -->
+          <a href="./login.html" id="user-profile-btn" class="hidden lg:flex relative p-2 hover:bg-orange-50 rounded-full text-gray-700 hover:text-orange-500 transition-colors cursor-pointer" aria-label="User profile">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
           </a>
+          <!-- Cart Button: Always visible -->
           <button onclick="window.openCart()" class="relative p-2 hover:bg-orange-50 rounded-full text-gray-700 hover:text-orange-500 transition-colors" aria-label="Open cart">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
             </svg>
             <span id="cart-badge" class="absolute -top-1 -right-1 w-5 h-5 bg-spicy text-white text-xs font-bold rounded-full flex items-center justify-center hidden">0</span>
-          </button>
-          <button id="mobile-menu-btn" onclick="window.toggleMobileMenu()" class="lg:hidden p-2 hover:bg-orange-50 rounded-full text-gray-700 hover:text-orange-500 transition-colors z-50" aria-label="Toggle menu">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-            </svg>
           </button>
         </div>
       </div>
@@ -393,132 +408,135 @@ const headerTemplate = `
   </header>
 
   <!-- Mobile Menu Overlay -->
-  <div id="menu-overlay" onclick="window.toggleMobileMenu()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9998] lg:hidden hidden transition-opacity duration-300"></div>
+  <div id="menu-overlay" onclick="window.closeSideMenu()" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998] lg:hidden hidden transition-opacity duration-300"></div>
 
-  <!-- Mobile Menu -->
-  <div id="mobile-menu" class="fixed top-0 right-0 bottom-0 h-full w-80 max-w-[85vw] shadow-2xl z-[9999] overflow-hidden lg:hidden translate-x-full transition-transform duration-300 ease-in-out">
-    <!-- Animated Background with Floating Emojis -->
-    <div class="absolute inset-0 bg-gradient-to-br from-red-600 via-orange-600 to-red-700 overflow-hidden">
-      <!-- Floating Chili Peppers and Flags -->
-      <div class="floating-emojis">
-        <span class="emoji-float" style="left: 10%; animation-delay: 0s; font-size: 2rem;">🌶️</span>
-        <span class="emoji-float" style="left: 30%; animation-delay: 1s; font-size: 1.5rem;">🇨🇳</span>
-        <span class="emoji-float" style="left: 50%; animation-delay: 2s; font-size: 2.5rem;">🌶️</span>
-        <span class="emoji-float" style="left: 70%; animation-delay: 0.5s; font-size: 1.8rem;">🇨🇳</span>
-        <span class="emoji-float" style="left: 85%; animation-delay: 1.5s; font-size: 2rem;">🌶️</span>
-        <span class="emoji-float" style="left: 15%; animation-delay: 2.5s; font-size: 1.6rem;">🔥</span>
-        <span class="emoji-float" style="left: 60%; animation-delay: 3s; font-size: 2.2rem;">🇨🇳</span>
-        <span class="emoji-float" style="left: 40%; animation-delay: 1.8s; font-size: 1.7rem;">🌶️</span>
-        <span class="emoji-float" style="left: 75%; animation-delay: 2.2s; font-size: 1.9rem;">🔥</span>
-        <span class="emoji-float" style="left: 25%; animation-delay: 3.5s; font-size: 2.1rem;">🇨🇳</span>
-      </div>
-    </div>
+  <!-- Mobile Side Navigation Drawer (Left) -->
+  <div id="mobile-menu" class="fixed top-0 left-0 bottom-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl z-[9999] lg:hidden -translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
     
-    <!-- Content Overlay with Glassmorphism -->
-    <div class="relative z-10 h-full overflow-y-auto backdrop-blur-sm bg-black/30">
-      <div class="p-6">
-        <div class="flex justify-end mb-8">
-          <button onclick="window.toggleMobileMenu()" class="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-full transition-colors" aria-label="Close menu">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+    <!-- Header Section -->
+    <div class="flex items-center justify-between p-5 border-b border-gray-100">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-spicy to-fire flex items-center justify-center">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-gray-900">Меню</h2>
+          <p class="text-xs text-gray-500">Latiao Snack</p>
+        </div>
+      </div>
+      <button onclick="window.closeSideMenu()" class="p-2 hover:bg-gray-100 rounded-full transition-colors" aria-label="Close menu">
+        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Scrollable Content -->
+    <div class="flex-1 overflow-y-auto">
+      <nav class="p-4 space-y-6">
+        
+        <!-- Account Section -->
+        <div>
+          <a href="/dashboard.html" onclick="window.closeSideMenu()" class="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-spicy to-fire text-white rounded-xl hover:shadow-lg transition-shadow">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
             </svg>
-          </button>
+            <span class="font-semibold">Особистий кабінет</span>
+          </a>
         </div>
-        <h2 class="text-3xl font-black text-white mb-8 drop-shadow-lg">🌶️ Меню</h2>
-        <nav class="space-y-1">
-          <div class="px-6 pb-4">
-            <p class="text-xs font-bold text-orange-200 uppercase tracking-wider mb-3 drop-shadow">Каталог</p>
-            <ul id="mobile-catalog-container" class="space-y-2">
-              <li class="text-white/60 text-sm">Завантаження...</li>
-            </ul>
-          </div>
-          <div class="px-6 pt-2 border-t border-white/20">
-            <p class="text-xs font-bold text-orange-200 uppercase tracking-wider mb-3 mt-4 drop-shadow">Інфо</p>
-            <ul id="mobile-pages-container" class="space-y-2">
-              <li class="text-white/60 text-sm">Завантаження...</li>
-            </ul>
-          </div>
-        </nav>
-        <div class="mt-8 pt-8 border-t border-white/20">
-          <p class="text-sm text-orange-200 mb-3 font-semibold drop-shadow">Зв'яжіться з нами</p>
-          <div class="flex flex-col gap-3">
-            <!-- Instagram Button -->
-            <a href="https://instagram.com/latiao_snack" target="_blank" class="flex items-center gap-3 px-4 py-3 rounded-xl text-white shadow-md hover:opacity-90 transition-opacity" style="background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);">
-              <svg class="h-6 w-6 fill-white flex-shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-              </svg>
-              <span class="font-semibold">Підписатися на Instagram</span>
+
+        <!-- Categories Section -->
+        <div>
+          <h3 class="px-4 text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Каталог</h3>
+          <ul id="mobile-catalog-container" class="space-y-1">
+            <li class="text-gray-400 text-sm px-4">Завантаження...</li>
+          </ul>
+        </div>
+
+        <!-- Info Pages Section -->
+        <div class="pt-4 border-t border-gray-100">
+          <h3 class="px-4 text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Інформація</h3>
+          <ul id="mobile-pages-container" class="space-y-1">
+            <li class="text-gray-400 text-sm px-4">Завантаження...</li>
+          </ul>
+        </div>
+
+        <!-- Social Links Section -->
+        <div class="pt-4 border-t border-gray-100">
+          <h3 class="px-4 text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Ми в соцмережах</h3>
+          <div class="space-y-2 px-4">
+            <!-- Instagram -->
+            <a href="https://instagram.com/latiao_snack" target="_blank" onclick="window.closeSideMenu()" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors group">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);">
+                <svg class="w-5 h-5 fill-white" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                </svg>
+              </div>
+              <div class="flex-1">
+                <p class="font-semibold text-gray-900 group-hover:text-spicy transition-colors">Instagram</p>
+                <p class="text-xs text-gray-500">@latiao_snack</p>
+              </div>
             </a>
-            
-            <!-- Telegram Button -->
-            <a href="https://t.me/sales_latiao" target="_blank" class="flex items-center gap-3 px-4 py-3 rounded-xl text-white shadow-md hover:opacity-90 transition-opacity" style="background: #229ED9;">
-              <svg class="h-6 w-6 fill-white flex-shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 11.944 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
-              </svg>
-              <span class="font-semibold">Написати в Telegram</span>
+
+            <!-- Telegram -->
+            <a href="https://t.me/sales_latiao" target="_blank" onclick="window.closeSideMenu()" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors group">
+              <div class="w-10 h-10 rounded-full bg-[#229ED9] flex items-center justify-center">
+                <svg class="w-5 h-5 fill-white" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 11.944 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                </svg>
+              </div>
+              <div class="flex-1">
+                <p class="font-semibold text-gray-900 group-hover:text-spicy transition-colors">Telegram</p>
+                <p class="text-xs text-gray-500">Написати нам</p>
+              </div>
             </a>
           </div>
         </div>
+
+      </nav>
+    </div>
+
+    <!-- Footer Section -->
+    <div class="p-4 border-t border-gray-100 bg-gray-50">
+      <div class="flex items-center justify-between text-xs text-gray-500">
+        <span>© 2026 Latiao Snack</span>
+        <a href="tel:+380965661827" class="flex items-center gap-1 hover:text-spicy transition-colors">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+          </svg>
+          <span>+380 96 566 18 27</span>
+        </a>
       </div>
     </div>
   </div>
 
   <style>
-    /* Floating Emoji Animation */
-    .floating-emojis {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-    }
-    
-    .emoji-float {
-      position: absolute;
-      bottom: -100px;
-      animation: floatUp 15s infinite ease-in-out;
-      opacity: 0.4;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-    }
-    
-    @keyframes floatUp {
-      0% {
-        transform: translateY(0) rotate(0deg);
-        opacity: 0;
-      }
-      10% {
-        opacity: 0.4;
-      }
-      90% {
-        opacity: 0.4;
-      }
-      100% {
-        transform: translateY(-120vh) rotate(360deg);
-        opacity: 0;
-      }
-    }
-    
-    /* Enhanced Mobile Menu Links */
+    /* Mobile Menu Link Styles */
     .mobile-menu-link {
-      display: block;
-      padding: 0.875rem 1rem;
-      font-size: 1rem;
-      font-weight: 700;
-      color: white;
-      background: rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: #374151;
+      background: white;
       border-radius: 0.75rem;
-      transition: all 0.3s ease;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      transition: all 0.2s ease;
     }
     
     .mobile-menu-link:hover {
-      background: rgba(255, 107, 0, 0.8);
-      transform: translateX(5px);
-      box-shadow: 0 4px 12px rgba(255, 107, 0, 0.4);
-      border-color: rgba(255, 255, 255, 0.4);
+      background: #FFF7ED;
+      color: #ff6b00;
+      transform: translateX(4px);
+    }
+    
+    .mobile-menu-link svg {
+      width: 1.25rem;
+      height: 1.25rem;
+      flex-shrink: 0;
     }
   </style>
 
@@ -1436,8 +1454,8 @@ window.openCart = async function () {
   // Close mobile menu if open (mutual exclusion)
   const mobileMenu = document.getElementById('mobile-menu');
   const menuOverlay = document.getElementById('menu-overlay');
-  if (mobileMenu && !mobileMenu.classList.contains('translate-x-full')) {
-    window.toggleMobileMenu();
+  if (mobileMenu && !mobileMenu.classList.contains('-translate-x-full')) {
+    window.closeSideMenu();
   }
   
   const sidebar = document.getElementById('cart-sidebar');
@@ -1845,9 +1863,9 @@ function waitForFirebaseInLayout(timeout = 10000) {
   });
 }
 
-// Toggle mobile menu (with mutual exclusion)
-window.toggleMobileMenu = function () {
-  console.log('🍔 toggleMobileMenu called');
+// Open mobile side menu (from left)
+window.openSideMenu = function () {
+  console.log('🍔 openSideMenu called');
 
   const menu = document.getElementById('mobile-menu');
   const overlay = document.getElementById('menu-overlay');
@@ -1857,31 +1875,53 @@ window.toggleMobileMenu = function () {
     return;
   }
 
-  // Check if menu is currently CLOSED (translate-x-full means hidden/closed)
-  const isClosed = menu.classList.contains('translate-x-full');
+  // Close cart if open (mutual exclusion)
+  const cartSidebar = document.getElementById('cart-sidebar');
+  if (cartSidebar && !cartSidebar.classList.contains('translate-x-full')) {
+    window.closeCart();
+  }
+  
+  // Open the menu (slide from left)
+  console.log('✅ Opening side menu...');
+  menu.classList.remove('-translate-x-full');
+  overlay.classList.remove('hidden');
+  document.body.style.overflow = 'hidden'; // Prevent body scroll
+  document.body.classList.add('overflow-hidden');
+};
 
-  console.log('📍 Menu state:', isClosed ? 'CLOSED' : 'OPEN');
+// Close mobile side menu
+window.closeSideMenu = function () {
+  console.log('🍔 closeSideMenu called');
 
+  const menu = document.getElementById('mobile-menu');
+  const overlay = document.getElementById('menu-overlay');
+
+  if (!menu || !overlay) {
+    console.error('❌ Mobile menu elements not found!', { menu, overlay });
+    return;
+  }
+
+  // Close the menu (slide to left)
+  console.log('✅ Closing side menu...');
+  menu.classList.add('-translate-x-full');
+  overlay.classList.add('hidden');
+  document.body.style.overflow = ''; // Restore body scroll
+  document.body.classList.remove('overflow-hidden');
+};
+
+// Toggle mobile menu (kept for backward compatibility)
+window.toggleMobileMenu = function () {
+  console.log('🍔 toggleMobileMenu called (legacy)');
+  
+  const menu = document.getElementById('mobile-menu');
+  if (!menu) return;
+  
+  const isClosed = menu.classList.contains('-translate-x-full');
+  
   if (isClosed) {
-    // Close cart if open (mutual exclusion)
-    const cartSidebar = document.getElementById('cart-sidebar');
-    if (cartSidebar && !cartSidebar.classList.contains('translate-x-full')) {
-      window.closeCart();
-    }
-    
-    // Open the menu
-    console.log('✅ Opening menu...');
-    menu.classList.remove('translate-x-full');
-    overlay.classList.remove('hidden');
-    document.body.style.overflow = 'hidden'; // ✅ Prevent body scroll
-    document.body.classList.add('overflow-hidden'); // ✅ Additional class for safety
+    window.openSideMenu();
   } else {
-    // Close the menu
-    console.log('✅ Closing menu...');
-    menu.classList.add('translate-x-full');
-    overlay.classList.add('hidden');
-    document.body.style.overflow = ''; // ✅ Restore body scroll
-    document.body.classList.remove('overflow-hidden'); // ✅ Remove overflow class
+    window.closeSideMenu();
   }
 };
 
@@ -2014,20 +2054,48 @@ function renderNavigation({ categories, pages }) {
   // === MOBILE CATALOG ===
   const mobileCatalog = document.getElementById('mobile-catalog-container');
   if (mobileCatalog && categories.length > 0) {
-    mobileCatalog.innerHTML = categories.map(cat =>
-      `<li><a href="/category.html?slug=${cat.slug}" class="mobile-menu-link">${cat.name}</a></li>`
-    ).join('');
+    // Map category icons by name
+    const categoryIcons = {
+      'Гостре латяо': '<svg class="w-5 h-5 text-spicy" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z"/></svg>',
+      'Локшина Buldak': '<svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>',
+      'Снеки': '<svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>',
+      'Напої': '<svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>',
+      'Солодощі': '<svg class="w-5 h-5 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+      'Соуси': '<svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>'
+    };
+    
+    mobileCatalog.innerHTML = categories.map(cat => {
+      const icon = categoryIcons[cat.name] || '<svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>';
+      return `<li><a href="/category.html?slug=${cat.slug}" onclick="window.closeSideMenu()" class="mobile-menu-link">${icon}<span>${cat.name}</span></a></li>`;
+    }).join('');
   } else if (mobileCatalog) {
-    mobileCatalog.innerHTML = '<li class="text-white/60 text-sm">Категорій немає</li>';
+    mobileCatalog.innerHTML = '<li class="text-gray-400 text-sm px-4">Категорій немає</li>';
   }
 
   // === MOBILE PAGES ===
   const mobilePages = document.getElementById('mobile-pages-container');
   if (mobilePages && pages.length > 0) {
     const headerPages = pages.filter(p => p.location === 'header' || p.location === 'both');
-    mobilePages.innerHTML = headerPages.map(page =>
-      `<li><a href="/page.html?slug=${page.slug}" class="mobile-menu-link">${page.title}</a></li>`
-    ).join('');
+    
+    // Map page icons by common titles
+    const pageIcons = {
+      'Доставка': '<svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg>',
+      'Оплата': '<svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>',
+      'Про нас': '<svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+      'Контакти': '<svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>'
+    };
+    
+    mobilePages.innerHTML = headerPages.map(page => {
+      // Try to match icon by partial title match
+      let icon = '<svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>';
+      for (const [key, svg] of Object.entries(pageIcons)) {
+        if (page.title.includes(key)) {
+          icon = svg;
+          break;
+        }
+      }
+      return `<li><a href="/page.html?slug=${page.slug}" onclick="window.closeSideMenu()" class="mobile-menu-link">${icon}<span>${page.title}</span></a></li>`;
+    }).join('');
   }
 
   // Reinit Lucide icons
@@ -2214,7 +2282,7 @@ export function loadLayout() {
   setTimeout(() => {
     document.querySelectorAll('.mobile-menu-link').forEach(link => {
       link.addEventListener('click', () => {
-        window.toggleMobileMenu();
+        window.closeSideMenu();
       });
     });
 
@@ -2373,6 +2441,16 @@ async function initPage() {
   if (typeof window.trackSessionStart === 'function') {
     window.trackSessionStart();
   }
+  
+  // Add global escape key listener for mobile menu
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+      const menu = document.getElementById('mobile-menu');
+      if (menu && !menu.classList.contains('-translate-x-full')) {
+        window.closeSideMenu();
+      }
+    }
+  });
 }
 
 if (document.readyState === 'loading') {

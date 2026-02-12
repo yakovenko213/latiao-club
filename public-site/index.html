@@ -133,11 +133,7 @@
     .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
     .accordion-content.open { max-height: 200px; }
     
-    .mobile-menu { transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-    .mobile-menu.open { transform: translateX(0); }
-    .menu-overlay { opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; }
-    .menu-overlay.open { opacity: 1; visibility: visible; }
-    body.menu-open { overflow: hidden; }
+    /* Mobile menu is handled via Tailwind utility classes in layout.js */
     
     /* Cart Sidebar Styles */
     .cart-item-enter { animation: slideIn 0.3s ease-out; }
