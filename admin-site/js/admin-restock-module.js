@@ -649,12 +649,27 @@ window.sendRestockSMS = async function(phone, productName, requestId, productId)
       sender: senderName,
       requestId: requestId,
       status: 'sent',
+      sendType: 'MANUAL',
       apiResponse: responseData,
       timestamp: serverTimestamp(),
       sentAt: new Date().toISOString()
     })
     
     console.log('✅ [RESTOCK] SMS logged successfully')
+    
+    // Step 5.5: Update restock request status to 'sent_manual'
+    console.log('📝 [RESTOCK] Updating request status...')
+    try {
+      await updateDoc(doc(restockDb, 'restock_requests', requestId), {
+        status: 'sent_manual',
+        sentAt: new Date().toISOString(),
+        sentVia: 'manual'
+      })
+      console.log('✅ [RESTOCK] Request status updated')
+    } catch (updateError) {
+      console.error('⚠️ [RESTOCK] Failed to update request status:', updateError)
+      // Don't fail the whole operation if status update fails
+    }
     
     // Step 6: Update UI - Change button to show "Sent" status
     btn.disabled = true
@@ -767,7 +782,7 @@ async function loadMessageTemplate() {
 /**
  * Open settings modal
  */
-window.openRestockSettings = function() {
+window.openRestockSettings = async function() {
   console.log('⚙️ [RESTOCK] Opening settings modal')
   
   // Create modal if it doesn't exist
@@ -775,10 +790,37 @@ window.openRestockSettings = function() {
     createSettingsModal()
   }
   
-  // Populate current template
-  const textarea = document.getElementById('restock-template-textarea')
-  if (textarea) {
-    textarea.value = messageTemplate
+  // Load current settings from Firestore
+  try {
+    const configRef = doc(restockDb, 'admin_settings', 'restock_config')
+    const configSnap = await getDoc(configRef)
+    
+    if (configSnap.exists()) {
+      const data = configSnap.data()
+      
+      // Populate template
+      const textarea = document.getElementById('restock-template-textarea')
+      if (textarea && data.messageTemplate) {
+        textarea.value = data.messageTemplate
+      } else if (textarea) {
+        textarea.value = messageTemplate
+      }
+      
+      // Populate auto-send toggle
+      const toggle = document.getElementById('auto-send-toggle')
+      if (toggle) {
+        // Ensure boolean value (handle undefined/null)
+        toggle.checked = (data.autoSendEnabled === true)
+      }
+    } else {
+      // Use default values
+      const textarea = document.getElementById('restock-template-textarea')
+      if (textarea) {
+        textarea.value = messageTemplate
+      }
+    }
+  } catch (error) {
+    console.error('❌ [RESTOCK] Error loading settings:', error)
   }
   
   // Show modal
@@ -805,11 +847,14 @@ window.closeRestockSettings = function() {
  */
 window.saveRestockTemplate = async function() {
   const textarea = document.getElementById('restock-template-textarea')
+  const toggle = document.getElementById('auto-send-toggle')
   const saveBtn = document.getElementById('save-template-btn')
   
   if (!textarea) return
   
   const newTemplate = textarea.value.trim()
+  // Ensure autoSendEnabled is always boolean (never undefined)
+  const autoSendEnabled = toggle ? (toggle.checked === true) : false
   
   if (!newTemplate) {
     if (typeof window.showToast === 'function') {
@@ -828,17 +873,22 @@ window.saveRestockTemplate = async function() {
     const configRef = doc(restockDb, 'admin_settings', 'restock_config')
     await setDoc(configRef, {
       messageTemplate: newTemplate,
+      autoSendEnabled: autoSendEnabled,
       updatedAt: new Date().toISOString()
     }, { merge: true })
     
     // Update local variable
     messageTemplate = newTemplate
     
+    const statusMsg = autoSendEnabled 
+      ? 'Шаблон збережено! Автоматична розсилка увімкнена ⚡' 
+      : 'Шаблон збережено!'
+    
     if (typeof window.showToast === 'function') {
-      window.showToast('Шаблон збережено!', 'success')
+      window.showToast(statusMsg, 'success')
     }
     
-    console.log('✅ [RESTOCK] Template saved successfully')
+    console.log('✅ [RESTOCK] Settings saved:', { autoSendEnabled })
     
     // Close modal after a short delay
     setTimeout(() => {
@@ -889,6 +939,30 @@ function createSettingsModal() {
         
         <!-- Content -->
         <div class="p-6">
+          
+          <!-- Auto-Send Toggle -->
+          <div class="mb-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                  <i data-lucide="zap" class="w-5 h-5 text-purple-600"></i>
+                </div>
+                <div>
+                  <h4 class="text-sm font-bold text-gray-900">Автоматична розсилка</h4>
+                  <p class="text-xs text-gray-600">Відправляти СМС автоматично при поповненні залишку</p>
+                </div>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="auto-send-toggle" class="sr-only peer">
+                <div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
+              </label>
+            </div>
+            <div class="mt-3 text-xs text-gray-600 flex items-start gap-2">
+              <i data-lucide="info" class="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5"></i>
+              <span>Коли ви оновлюєте залишок товару на складі (≥ 1), система автоматично надішле СМС всім клієнтам, які очікують на повідомлення.</span>
+            </div>
+          </div>
+          
           <div class="mb-4">
             <label class="block text-sm font-semibold text-gray-700 mb-2">
               Шаблон повідомлення
@@ -946,6 +1020,368 @@ function createSettingsModal() {
   // Reinitialize icons
   if (typeof lucide !== 'undefined') {
     lucide.createIcons()
+  }
+}
+
+// ============================================
+// AUTO-NOTIFICATION SYSTEM
+// ============================================
+
+/**
+ * NEW: Check and send automatic SMS notifications based on product Article/SKU
+ * Called from warehouse updateStock function
+ * @param {string} article - Product SKU/Article that was restocked
+ */
+window.checkAndSendAutoNotifications = async function(article) {
+  console.log('🤖 [AUTO-RESTOCK] Checking notifications for article:', article)
+  
+  if (!article) {
+    console.error('   ❌ Article/SKU is required')
+    return
+  }
+  
+  try {
+    // Step 1: Check if auto-send is enabled
+    const configRef = doc(restockDb, 'admin_settings', 'restock_config')
+    const configSnap = await getDoc(configRef)
+    
+    const autoSendEnabled = configSnap.exists() && (configSnap.data().autoSendEnabled === true)
+    
+    if (!autoSendEnabled) {
+      console.log('   ⚠️ Auto-send is disabled, skipping notifications')
+      return
+    }
+    
+    console.log('   ✅ Auto-send is enabled, searching for pending requests...')
+    
+    // Step 2: Query restock_requests by productArticle (SKU)
+    const requestsQuery = query(
+      collection(restockDb, 'restock_requests'),
+      where('productArticle', '==', article),
+      where('status', '==', 'pending')
+    )
+    
+    const requestsSnapshot = await getDocs(requestsQuery)
+    
+    if (requestsSnapshot.empty) {
+      console.log('   ℹ️ No pending requests for this SKU')
+      return
+    }
+    
+    console.log(`   📋 Found ${requestsSnapshot.size} pending request(s) for SKU: ${article}`)
+    
+    // Step 3: Get product details (use first request's productId)
+    let productName = 'Товар'
+    let productId = null
+    
+    if (requestsSnapshot.docs.length > 0) {
+      const firstRequest = requestsSnapshot.docs[0].data()
+      productId = firstRequest.productId
+      productName = firstRequest.productName || 'Товар'
+      
+      // Try to get fresh product name from products collection
+      if (productId) {
+        try {
+          const productDoc = await getDoc(doc(restockDb, 'products', productId))
+          if (productDoc.exists()) {
+            productName = productDoc.data().name || productName
+          }
+        } catch (err) {
+          console.warn('   ⚠️ Could not fetch product details, using cached name')
+        }
+      }
+    }
+    
+    console.log('   📦 Product name:', productName)
+    
+    let successCount = 0
+    let failCount = 0
+    
+    // Step 4: Process each request
+    for (const requestDoc of requestsSnapshot.docs) {
+      const request = requestDoc.data()
+      const phone = request.phone || request.phoneNumber
+      
+      if (!phone) {
+        console.warn(`   ⚠️ Request ${requestDoc.id} has no phone number`)
+        failCount++
+        continue
+      }
+      
+      console.log(`   📱 Auto-sending SMS to ${phone}...`)
+      
+      try {
+        await sendAutoRestockSMS(phone, productName, requestDoc.id, productId)
+        successCount++
+      } catch (error) {
+        console.error(`   ❌ Failed to send to ${phone}:`, error.message)
+        failCount++
+      }
+    }
+    
+    // Step 5: Show summary toast
+    if (typeof window.showToast === 'function') {
+      const message = `⚡ Автоматична розсилка: ${successCount} успішно, ${failCount} помилок`
+      window.showToast(message, successCount > 0 ? 'success' : 'error')
+    }
+    
+    console.log(`✅ [AUTO-RESTOCK] Completed: ${successCount} sent, ${failCount} failed`)
+    
+    // Step 6: Refresh UI if restock view is displayed
+    if (document.getElementById('restock-container')) {
+      console.log('   🔄 Restock view will auto-refresh via onSnapshot')
+    }
+    
+  } catch (error) {
+    console.error('❌ [AUTO-RESTOCK] Error:', error)
+    if (typeof window.showToast === 'function') {
+      window.showToast('Помилка автоматичної розсилки: ' + error.message, 'error')
+    }
+  }
+}
+
+/**
+ * OLD: Trigger automatic SMS notifications when stock is updated (DEPRECATED - uses productId)
+ * Kept for backward compatibility
+ * @param {string} productId - Product ID that was restocked
+ * @param {number} newStock - New stock value
+ */
+window.triggerAutoRestockNotifications = async function(productId, newStock) {
+  console.log('🤖 [AUTO-RESTOCK] Checking for auto-notification trigger')
+  console.log('   • Product ID:', productId)
+  console.log('   • New Stock:', newStock)
+  
+  // Only trigger if stock is >= 1
+  if (newStock < 1) {
+    console.log('   ⚠️ Stock < 1, skipping auto-notifications')
+    return
+  }
+  
+  try {
+    // Check if auto-send is enabled
+    const configRef = doc(restockDb, 'admin_settings', 'restock_config')
+    const configSnap = await getDoc(configRef)
+    
+    // Ensure boolean check (handle undefined/null/missing field)
+    const autoSendEnabled = configSnap.exists() && (configSnap.data().autoSendEnabled === true)
+    
+    if (!autoSendEnabled) {
+      console.log('   ⚠️ Auto-send is disabled, skipping notifications')
+      return
+    }
+    
+    console.log('   ✅ Auto-send is enabled, searching for pending requests...')
+    
+    // Query restock_requests for this product
+    const requestsQuery = query(
+      collection(restockDb, 'restock_requests'),
+      where('productId', '==', productId),
+      where('status', '==', 'pending')
+    )
+    
+    const requestsSnapshot = await getDocs(requestsQuery)
+    
+    if (requestsSnapshot.empty) {
+      console.log('   ℹ️ No pending restock requests found for this product')
+      return
+    }
+    
+    console.log(`   📋 Found ${requestsSnapshot.size} pending request(s)`)
+    
+    // Get product name for SMS
+    const productDoc = await getDoc(doc(restockDb, 'products', productId))
+    const productName = productDoc.exists() ? productDoc.data().name : 'Товар'
+    
+    let successCount = 0
+    let failCount = 0
+    
+    // Process each request
+    for (const requestDoc of requestsSnapshot.docs) {
+      const request = requestDoc.data()
+      const phone = request.phone
+      
+      console.log(`   📱 Auto-sending SMS to ${phone}...`)
+      
+      try {
+        await sendAutoRestockSMS(phone, productName, requestDoc.id, productId)
+        successCount++
+      } catch (error) {
+        console.error(`   ❌ Failed to send to ${phone}:`, error.message)
+        failCount++
+      }
+    }
+    
+    // Show summary toast
+    if (typeof window.showToast === 'function') {
+      const message = `⚡ Автоматична розсилка: ${successCount} успішно, ${failCount} помилок`
+      window.showToast(message, successCount > 0 ? 'success' : 'error')
+    }
+    
+    console.log(`✅ [AUTO-RESTOCK] Completed: ${successCount} sent, ${failCount} failed`)
+    
+    // Refresh the restock view if it's currently displayed
+    if (document.getElementById('restock-container')) {
+      console.log('   🔄 Refreshing restock view...')
+      // The onSnapshot listener will automatically update the UI
+    }
+    
+  } catch (error) {
+    console.error('❌ [AUTO-RESTOCK] Error:', error)
+    if (typeof window.showToast === 'function') {
+      window.showToast('Помилка автоматичної розсилки: ' + error.message, 'error')
+    }
+  }
+}
+
+/**
+ * Send automated restock SMS (similar to sendRestockSMS but for automation)
+ * @param {string} phone - Customer phone
+ * @param {string} productName - Product name
+ * @param {string} requestId - Request ID
+ * @param {string} productId - Product ID
+ */
+async function sendAutoRestockSMS(phone, productName, requestId, productId) {
+  console.log('   🤖 [AUTO-SMS] Sending automated SMS')
+  
+  try {
+    // Step 1: Get credentials (reuse multi-location search)
+    let turboSmsToken = null
+    let senderName = null
+    
+    const collectionsToSearch = ['config', 'admin_settings', 'settings']
+    
+    for (const collectionName of collectionsToSearch) {
+      try {
+        const querySnapshot = await getDocs(collection(restockDb, collectionName))
+        if (querySnapshot.empty) continue
+        
+        querySnapshot.forEach((doc) => {
+          const data = doc.data()
+          const hasToken = data.turboSmsToken || data.sms_settings || data.apiKey || data.api_key
+          const hasSender = data.senderName || data.sender || data.alphaName || data.alpha_name
+          
+          if (hasToken && hasSender && !turboSmsToken) {
+            turboSmsToken = hasToken
+            senderName = hasSender
+          }
+        })
+        
+        if (turboSmsToken && senderName) break
+      } catch (error) {
+        continue
+      }
+    }
+    
+    if (!turboSmsToken || !senderName) {
+      throw new Error('TurboSMS credentials not found')
+    }
+    
+    // Step 2: Format phone
+    let formattedPhone = phone.trim()
+    if (!formattedPhone.startsWith('+')) {
+      if (formattedPhone.startsWith('380')) {
+        formattedPhone = '+' + formattedPhone
+      } else if (formattedPhone.startsWith('0')) {
+        formattedPhone = '+38' + formattedPhone
+      } else {
+        formattedPhone = '+380' + formattedPhone
+      }
+    }
+    
+    // Step 3: Get template
+    const restockConfigRef = doc(restockDb, 'admin_settings', 'restock_config')
+    const restockConfigSnap = await getDoc(restockConfigRef)
+    let template = messageTemplate
+    if (restockConfigSnap.exists() && restockConfigSnap.data().messageTemplate) {
+      template = restockConfigSnap.data().messageTemplate
+    }
+    
+    // Step 4: Generate product URL
+    const baseUrl = 'https://latiao-snack.com.ua'
+    const productUrl = productId ? `${baseUrl}/product.html?id=${productId}` : baseUrl
+    
+    // Step 5: Compose message
+    const messageText = template
+      .replace(/{productName}/g, productName)
+      .replace(/{link}/g, productUrl)
+    
+    // Step 6: Send SMS
+    const apiResponse = await fetch('https://api.turbosms.ua/message/send.json', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + turboSmsToken,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        recipients: [formattedPhone],
+        sms: {
+          sender: senderName,
+          text: messageText
+        }
+      })
+    })
+    
+    const responseData = await apiResponse.json()
+    
+    if (!apiResponse.ok) {
+      throw new Error(`TurboSMS API Error (HTTP ${apiResponse.status})`)
+    }
+    
+    // Check for success codes (0, 800, 801)
+    const successCodes = [0, 800, 801]
+    const responseCode = responseData.response_code
+    
+    if (responseCode && !successCodes.includes(responseCode)) {
+      throw new Error(`TurboSMS Error ${responseCode}`)
+    }
+    
+    console.log(`      ✅ SMS API Response: ${responseCode} (SUCCESS)`)
+    
+    // Step 7: Update request status to 'completed' after successful SMS
+    await updateDoc(doc(restockDb, 'restock_requests', requestId), {
+      status: 'completed',
+      sentAt: new Date().toISOString(),
+      sentVia: 'auto-notification',
+      completedAt: new Date().toISOString()
+    })
+    
+    // Step 8: Log to sms_logs
+    await addDoc(collection(restockDb, 'sms_logs'), {
+      phone: formattedPhone,
+      originalPhone: phone,
+      productName: productName,
+      productId: productId || null,
+      message: messageText,
+      sender: senderName,
+      requestId: requestId,
+      status: 'sent',
+      sendType: 'AUTOMATED',
+      apiResponse: responseData,
+      timestamp: serverTimestamp(),
+      sentAt: new Date().toISOString()
+    })
+    
+    console.log(`      ✅ SMS sent successfully to ${formattedPhone}`)
+    
+  } catch (error) {
+    // Log failed attempt
+    try {
+      await addDoc(collection(restockDb, 'sms_logs'), {
+        phone: phone,
+        productName: productName,
+        productId: productId || null,
+        requestId: requestId,
+        status: 'failed',
+        sendType: 'AUTOMATED',
+        error: error.message,
+        timestamp: serverTimestamp(),
+        attemptedAt: new Date().toISOString()
+      })
+    } catch (logError) {
+      console.error('      ❌ Failed to log error')
+    }
+    
+    throw error
   }
 }
 

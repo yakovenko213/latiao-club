@@ -1227,6 +1227,23 @@ window.updateStock = async function(productId) {
         
         console.log('✅ Stock updated successfully');
         
+        // Trigger auto-notification system if stock >= 1
+        if (newStock >= 1 && typeof window.checkAndSendAutoNotifications === 'function') {
+            console.log('🔔 [WAREHOUSE] Checking for auto-restock notifications...');
+            
+            // Get product SKU for matching with restock_requests
+            const productDoc = await getDoc(doc(db, 'products', productId));
+            if (productDoc.exists()) {
+                const productSKU = productDoc.data().sku || productDoc.data().SKU || null;
+                if (productSKU) {
+                    console.log('   📦 Product SKU:', productSKU);
+                    window.checkAndSendAutoNotifications(productSKU);
+                } else {
+                    console.warn('   ⚠️ Product has no SKU, cannot trigger auto-notifications');
+                }
+            }
+        }
+        
     } catch (error) {
         console.error('❌ Error updating stock:', error);
         alert(`Помилка: ${error.message}`);

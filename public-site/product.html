@@ -2269,6 +2269,7 @@
         const restockRequest = {
           productId: currentProduct.id,
           productName: currentProduct.name,
+          productArticle: currentProduct.sku || currentProduct.SKU || currentProduct.code || null, // SKU for matching with warehouse
           phone: formattedPhone,
           phoneNumber: formattedPhone, // Alternative field name
           createdAt: serverTimestamp(),
