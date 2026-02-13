@@ -315,8 +315,8 @@
             </h2>
           </div>
           
-          <!-- Desktop Table View (always visible) -->
-          <div class="block overflow-x-auto">
+          <!-- Desktop Table View (hidden on mobile, visible on md+) -->
+          <div class="hidden md:block overflow-x-auto">
             <table class="w-full">
               <thead class="bg-muted/50 dark:bg-gray-700/50">
                 <tr>
@@ -333,6 +333,11 @@
                 <!-- Orders will be dynamically inserted here for desktop -->
               </tbody>
             </table>
+          </div>
+          
+          <!-- Mobile Cards View (visible on mobile, hidden on md+) -->
+          <div id="orders-cards" class="block md:hidden divide-y divide-border dark:divide-gray-700">
+            <!-- Mobile order cards will be dynamically inserted here -->
           </div>
           
           <!-- Empty State -->
@@ -949,26 +954,93 @@
             </tr>
           `;
           
-          // Mobile card
-          const ttnMobile = ttn ? `<div class="text-xs text-muted-foreground dark:text-gray-400 mt-1">ТТН: ${ttn}</div>` : '';
+          // Mobile card with enhanced design
+          const itemsCount = (order.items || order.products || []).length;
+          const itemsText = itemsCount === 1 ? 'товар' : itemsCount < 5 ? 'товари' : 'товарів';
+          const cashbackAwarded = order.cashbackAwarded || 0;
+          
           cardsHTML += `
-            <div class="p-4 hover:bg-muted/30 dark:hover:bg-gray-700/30 transition-colors">
-              <div class="flex items-start justify-between mb-2">
-                <div>
-                  <div class="font-bold text-foreground dark:text-white text-sm">#${orderId}</div>
-                  <div class="text-xs text-muted-foreground dark:text-gray-400 mt-0.5">${formattedDate}</div>
+            <div class="bg-white dark:bg-gray-800 border-b border-border dark:border-gray-700 last:border-b-0 hover:bg-muted/30 dark:hover:bg-gray-700/30 transition-all">
+              <!-- Card Header -->
+              <div class="p-4 pb-3">
+                <div class="flex items-start justify-between mb-3">
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="font-bold text-foreground dark:text-white text-base">#${orderId}</span>
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${statusColors[status] || statusColors['new']}">
+                        ${statusLabels[status] || status}
+                      </span>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-xs text-muted-foreground dark:text-gray-400">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                      </svg>
+                      <span>${formattedDate}</span>
+                    </div>
+                  </div>
                 </div>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[status] || statusColors['new']}">
-                  ${statusLabels[status] || status}
-                </span>
+                
+                <!-- Card Content -->
+                <div class="space-y-2.5">
+                  <!-- Items Count -->
+                  <div class="flex items-center justify-between py-2 border-t border-border/50 dark:border-gray-700/50">
+                    <div class="flex items-center gap-2 text-sm text-muted-foreground dark:text-gray-400">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                      </svg>
+                      <span>Товарів у замовленні</span>
+                    </div>
+                    <span class="font-semibold text-foreground dark:text-white text-sm">${itemsCount} ${itemsText}</span>
+                  </div>
+                  
+                  <!-- Total Price -->
+                  <div class="flex items-center justify-between py-2 border-t border-border/50 dark:border-gray-700/50">
+                    <div class="flex items-center gap-2 text-sm text-muted-foreground dark:text-gray-400">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                      </svg>
+                      <span>Сума замовлення</span>
+                    </div>
+                    <span class="font-bold text-primary dark:text-amber-500 text-lg">${total} грн</span>
+                  </div>
+                  
+                  ${cashbackAwarded > 0 ? `
+                  <!-- Cashback Earned -->
+                  <div class="flex items-center justify-between py-2 border-t border-border/50 dark:border-gray-700/50">
+                    <div class="flex items-center gap-2 text-sm text-muted-foreground dark:text-gray-400">
+                      <span class="text-base">🪙</span>
+                      <span>Кешбек нараховано</span>
+                    </div>
+                    <span class="font-semibold text-amber-600 dark:text-amber-400 text-sm">+${cashbackAwarded} грн</span>
+                  </div>
+                  ` : ''}
+                  
+                  ${ttn ? `
+                  <!-- Tracking Number -->
+                  <div class="flex items-start justify-between py-2 border-t border-border/50 dark:border-gray-700/50">
+                    <div class="flex items-center gap-2 text-sm text-muted-foreground dark:text-gray-400">
+                      <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                      </svg>
+                      <span>ТТН</span>
+                    </div>
+                    <a href="${trackingUrls[deliveryService] || trackingUrls.nova_poshta}" target="_blank" rel="noopener" class="font-mono text-primary hover:text-primary/80 dark:text-amber-500 dark:hover:text-amber-400 text-xs font-semibold underline decoration-dotted underline-offset-2 text-right break-all">${ttn}</a>
+                  </div>
+                  ` : ''}
+                </div>
               </div>
-              <div class="flex items-center justify-between">
-                <div>
-                  <div class="text-base font-bold text-foreground dark:text-white">${total} грн</div>
-                  ${ttnMobile}
-                </div>
-                <button onclick="openOrderModal('${order.id}')" class="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors">
-                  Деталі
+              
+              <!-- Card Footer / Actions -->
+              <div class="px-4 py-3 bg-muted/20 dark:bg-gray-700/20 border-t border-border/50 dark:border-gray-700/50">
+                <button 
+                  onclick="openOrderModal('${order.id}')" 
+                  class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow active:scale-98"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                  </svg>
+                  <span>Переглянути деталі</span>
                 </button>
               </div>
             </div>
