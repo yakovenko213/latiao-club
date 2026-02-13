@@ -248,6 +248,37 @@
       </button>
     </header>
 
+    <!-- Cashback Balance Card -->
+    <div id="cashback-balance-section" class="hidden mb-6 animate-fade-in">
+      <div class="bg-card dark:bg-gray-800 rounded-xl border border-amber-100 dark:border-amber-900/30 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+        <div class="p-5">
+          <div class="flex items-center justify-between">
+            <div class="flex-1">
+              <h3 class="text-sm font-semibold text-muted-foreground dark:text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-2">
+                <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Ваш баланс кешбеку
+              </h3>
+              <div class="flex items-baseline gap-3">
+                <span id="cashback-balance-amount" class="text-4xl font-bold text-primary dark:text-amber-500">0</span>
+                <span class="text-xl font-semibold text-muted-foreground dark:text-gray-400">грн</span>
+              </div>
+            </div>
+            <button 
+              onclick="openCashbackHistoryModal()" 
+              class="group flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/30 border border-amber-200 dark:border-amber-800 transition-all duration-200 hover:scale-105 active:scale-95"
+              title="Переглянути історію транзакцій"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+              <span>Історія</span>
+            </button>
+          </div>
+          <p class="text-xs text-muted-foreground dark:text-gray-500 mt-3">
+            💡 Кешбек нараховується автоматично після оплати замовлення
+          </p>
+        </div>
+      </div>
+    </div>
+
     <!-- Tabs Navigation -->
     <nav class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
       <button 
@@ -1162,7 +1193,303 @@
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         closeOrderModal();
+        closeCashbackHistoryModal();
       }
+    });
+
+    // ============================================
+    // CASHBACK BALANCE & TRANSACTION HISTORY
+    // ============================================
+    
+    /**
+     * Load cashback balance for the current user
+     * Fetches from users collection (field: cashbackBalance or calculates from totals)
+     */
+    async function loadCashbackBalance() {
+      try {
+        // Wait for Firebase
+        let attempts = 0;
+        while (!window.firebaseInit && attempts < 50) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          attempts++;
+        }
+
+        if (!window.firebaseInit) {
+          console.warn('⚠️ Firebase not available for cashback balance');
+          return;
+        }
+
+        const { db, doc, getDoc } = window.firebaseInit;
+        
+        // Get current user from session
+        const sessionData = localStorage.getItem('user_session');
+        if (!sessionData) {
+          console.log('ℹ️ No user session - skipping cashback load');
+          return;
+        }
+
+        const user = JSON.parse(sessionData);
+        const userPhone = user.phone;
+
+        if (!userPhone) {
+          console.warn('⚠️ No user phone found');
+          return;
+        }
+
+        // Fetch user document
+        const userDocRef = doc(db, 'users', userPhone);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          
+          // Get balance from document
+          const balance = userData.cashbackBalance || 0;
+          
+          // Update UI
+          const balanceEl = document.getElementById('cashback-balance-amount');
+          if (balanceEl) {
+            balanceEl.textContent = balance;
+          }
+
+          console.log('🪙 Cashback balance loaded:', balance, 'грн');
+        } else {
+          console.log('ℹ️ User document not found, balance is 0');
+        }
+
+      } catch (error) {
+        console.error('❌ Error loading cashback balance:', error);
+      }
+    }
+
+    /**
+     * Load transaction history for cashback
+     * Queries cashback_transactions collection
+     */
+    async function loadCashbackTransactions() {
+      try {
+        // Wait for Firebase
+        let attempts = 0;
+        while (!window.firebaseInit && attempts < 50) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          attempts++;
+        }
+
+        if (!window.firebaseInit) {
+          console.warn('⚠️ Firebase not available for transactions');
+          return [];
+        }
+
+        const { db, collection, query, where, orderBy, getDocs } = window.firebaseInit;
+        
+        // Get current user from session
+        const sessionData = localStorage.getItem('user_session');
+        if (!sessionData) {
+          console.log('ℹ️ No user session');
+          return [];
+        }
+
+        const user = JSON.parse(sessionData);
+        const userPhone = user.phone;
+        
+        if (!userPhone) {
+          console.warn('⚠️ No user phone found');
+          return [];
+        }
+
+        // Query cashback_transactions collection
+        const transactionsRef = collection(db, 'cashback_transactions');
+        const q = query(
+          transactionsRef, 
+          where('userId', '==', userPhone),
+          orderBy('createdAt', 'desc')
+        );
+
+        const snapshot = await getDocs(q);
+        
+        const transactions = [];
+        snapshot.forEach((doc) => {
+          transactions.push({
+            id: doc.id,
+            ...doc.data()
+          });
+        });
+
+        console.log('📋 Loaded', transactions.length, 'cashback transactions');
+        return transactions;
+
+      } catch (error) {
+        console.error('❌ Error loading cashback transactions:', error);
+        return [];
+      }
+    }
+
+    /**
+     * Open cashback history modal and populate with data
+     */
+    async function openCashbackHistoryModal() {
+      const modal = document.getElementById('cashback-history-modal');
+      const loadingEl = document.getElementById('cashback-history-loading');
+      const emptyEl = document.getElementById('cashback-history-empty');
+      const contentEl = document.getElementById('cashback-history-content');
+      const transactionsList = document.getElementById('cashback-transactions-list');
+      const totalEl = document.getElementById('cashback-history-total');
+
+      if (!modal) return;
+
+      // Show modal with loading state
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      loadingEl.classList.remove('hidden');
+      emptyEl.classList.add('hidden');
+      contentEl.classList.add('hidden');
+
+      // Load transactions
+      const transactions = await loadCashbackTransactions();
+
+      // Hide loading
+      loadingEl.classList.add('hidden');
+
+      if (transactions.length === 0) {
+        // Show empty state
+        emptyEl.classList.remove('hidden');
+      } else {
+        // Populate table
+        transactionsList.innerHTML = '';
+        
+        transactions.forEach(transaction => {
+          const row = document.createElement('tr');
+          row.className = 'hover:bg-muted/30 dark:hover:bg-gray-700/30 transition-colors';
+
+          // Format date
+          const date = transaction.createdAt?.toDate ? 
+            transaction.createdAt.toDate() : 
+            new Date(transaction.createdAt);
+          const formattedDate = date.toLocaleDateString('uk-UA', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+
+          // Determine type and color
+          const amount = Number(transaction.amount) || 0;
+          const isCredit = amount > 0;
+          const typeText = transaction.type === 'order' ? 'Нарахування' :
+                          transaction.type === 'admin_bonus' ? 'Бонус' :
+                          transaction.type === 'spent' ? 'Списання' :
+                          transaction.type === 'refund' ? 'Повернення' :
+                          'Інше';
+          const amountColor = isCredit ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500';
+          const amountSign = isCredit ? '+' : '';
+
+          // Description
+          const description = transaction.description || 
+                            transaction.orderId ? `Замовлення #${transaction.orderId}` :
+                            'Без опису';
+
+          row.innerHTML = `
+            <td class="px-4 py-3 text-sm text-foreground dark:text-gray-300">${formattedDate}</td>
+            <td class="px-4 py-3 text-sm">
+              <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                isCredit 
+                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-500' 
+                  : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-500'
+              }">
+                ${typeText}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-sm font-bold ${amountColor} text-right">${amountSign}${Math.abs(amount)} грн</td>
+            <td class="px-4 py-3 text-sm text-muted-foreground dark:text-gray-400">${description}</td>
+          `;
+
+          transactionsList.appendChild(row);
+        });
+
+        contentEl.classList.remove('hidden');
+      }
+
+      // Update total balance in modal footer
+      const balanceEl = document.getElementById('cashback-balance-amount');
+      if (balanceEl && totalEl) {
+        totalEl.textContent = balanceEl.textContent + ' грн';
+      }
+    }
+
+    /**
+     * Close cashback history modal
+     */
+    function closeCashbackHistoryModal() {
+      const modal = document.getElementById('cashback-history-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+    }
+
+    // Close cashback modal on backdrop click
+    document.addEventListener('click', (e) => {
+      const modal = document.getElementById('cashback-history-modal');
+      if (modal && e.target === modal) {
+        closeCashbackHistoryModal();
+      }
+    });
+
+    /**
+     * Check if cashback system is enabled and show/hide section
+     */
+    async function checkCashbackEnabled() {
+      try {
+        // Wait for Firebase
+        let attempts = 0;
+        while (!window.firebaseInit && attempts < 50) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          attempts++;
+        }
+
+        if (!window.firebaseInit) {
+          console.warn('⚠️ Firebase not available for cashback check');
+          return;
+        }
+
+        const { db, doc, getDoc } = window.firebaseInit;
+        
+        // Fetch general_config
+        const configRef = doc(db, 'config', 'general_config');
+        const configDoc = await getDoc(configRef);
+        
+        let isCashbackEnabled = true; // Default: enabled
+        
+        if (configDoc.exists()) {
+          const configData = configDoc.data();
+          isCashbackEnabled = configData.isCashbackEnabled !== false; // default true if field doesn't exist
+        }
+
+        console.log('🪙 Cashback system enabled:', isCashbackEnabled);
+
+        // Show/hide cashback section
+        const cashbackSection = document.getElementById('cashback-balance-section');
+        if (cashbackSection) {
+          if (isCashbackEnabled) {
+            cashbackSection.classList.remove('hidden');
+            // Load balance if enabled
+            loadCashbackBalance();
+          } else {
+            cashbackSection.classList.add('hidden');
+          }
+        }
+
+      } catch (error) {
+        console.error('❌ Error checking cashback status:', error);
+      }
+    }
+
+    // Initialize cashback on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        checkCashbackEnabled();
+      }, 500);
     });
   </script>
 
@@ -1272,6 +1599,70 @@
         <div id="np-tracking-container" class="hidden"></div>
         
       </div>
+    </div>
+  </div>
+
+  <!-- Cashback Transaction History Modal -->
+  <div id="cashback-history-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-card dark:bg-gray-800 rounded-2xl shadow-2xl dark:shadow-black/50 w-full max-w-2xl max-h-[90vh] overflow-hidden animate-fade-in flex flex-col">
+      
+      <!-- Modal Header -->
+      <div class="flex flex-row items-center justify-between p-5 border-b border-border dark:border-gray-700 bg-amber-50/50 dark:bg-amber-900/20 flex-shrink-0">
+        <div>
+          <h2 class="text-lg font-bold text-foreground dark:text-white flex items-center gap-2">
+            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+            <span>Історія транзакцій кешбеку</span>
+          </h2>
+          <p class="text-sm text-muted-foreground dark:text-gray-400 mt-1">Всі нарахування та списання балансу</p>
+        </div>
+        <button onclick="closeCashbackHistoryModal()" class="p-2 rounded-full hover:bg-muted dark:hover:bg-gray-700 transition-colors text-muted-foreground dark:text-gray-400 hover:text-foreground dark:hover:text-white">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="overflow-y-auto flex-1 p-5">
+        
+        <!-- Loading State -->
+        <div id="cashback-history-loading" class="text-center py-12">
+          <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-amber-500 border-t-transparent"></div>
+          <p class="mt-4 text-muted-foreground dark:text-gray-400">Завантаження історії...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div id="cashback-history-empty" class="hidden text-center py-12">
+          <svg class="w-16 h-16 mx-auto text-muted-foreground/30 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          <h3 class="text-lg font-semibold text-foreground dark:text-white mb-2">Поки що немає транзакцій</h3>
+          <p class="text-sm text-muted-foreground dark:text-gray-400">Кешбек буде нараховуватись після оплати замовлень</p>
+        </div>
+
+        <!-- Transactions Table -->
+        <div id="cashback-history-content" class="hidden">
+          <table class="w-full">
+            <thead class="bg-muted/50 dark:bg-gray-700/50 sticky top-0">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground dark:text-gray-400 uppercase tracking-wider">Дата</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground dark:text-gray-400 uppercase tracking-wider">Тип</th>
+                <th class="px-4 py-3 text-right text-xs font-semibold text-muted-foreground dark:text-gray-400 uppercase tracking-wider">Сума</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground dark:text-gray-400 uppercase tracking-wider">Опис</th>
+              </tr>
+            </thead>
+            <tbody id="cashback-transactions-list" class="divide-y divide-border dark:divide-gray-700">
+              <!-- Transactions will be dynamically inserted here -->
+            </tbody>
+          </table>
+        </div>
+        
+      </div>
+
+      <!-- Modal Footer with Total -->
+      <div class="p-5 border-t border-border dark:border-gray-700 bg-muted/30 dark:bg-gray-700/30 flex-shrink-0">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-muted-foreground dark:text-gray-400">Поточний баланс:</span>
+          <span id="cashback-history-total" class="text-2xl font-bold text-primary dark:text-amber-500">0 грн</span>
+        </div>
+      </div>
+      
     </div>
   </div>
   
