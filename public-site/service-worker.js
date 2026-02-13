@@ -74,10 +74,17 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Skip Firebase and external API calls
-  if (url.origin.includes('firebase') || 
+  // ⚡ CRITICAL: Skip localhost (emulators) and Firebase API calls
+  // These must NEVER be cached or proxied by Service Worker
+  if (url.hostname === 'localhost' ||
+      url.hostname === '127.0.0.1' ||
+      url.origin.includes('firebase') || 
+      url.origin.includes('firestore') ||
       url.origin.includes('googleapis') ||
-      url.origin.includes('gstatic')) {
+      url.origin.includes('gstatic') ||
+      url.origin.includes('google.com') ||
+      url.hostname.includes('firebaseio.com')) {
+    // Return immediately - let browser handle these directly
     return;
   }
 
@@ -115,22 +122,23 @@ self.addEventListener('fetch', (event) => {
  * Cache-first strategy with age check
  */
 async function cacheFirstStrategy(request, cacheName, maxAge) {
-  const cache = await caches.open(cacheName);
-  const cached = await cache.match(request);
-
-  if (cached) {
-    // Check cache age
-    const cachedTime = new Date(cached.headers.get('sw-cache-time'));
-    const age = Date.now() - cachedTime.getTime();
-
-    if (!isNaN(age) && age < maxAge) {
-      // Cache is still fresh
-      return cached;
-    }
-  }
-
-  // Fetch from network and update cache
+  // ⚡ Wrap in try-catch to handle all errors gracefully
   try {
+    const cache = await caches.open(cacheName);
+    const cached = await cache.match(request);
+
+    if (cached) {
+      // Check cache age
+      const cachedTime = new Date(cached.headers.get('sw-cache-time'));
+      const age = Date.now() - cachedTime.getTime();
+
+      if (!isNaN(age) && age < maxAge) {
+        // Cache is still fresh
+        return cached;
+      }
+    }
+
+    // Fetch from network and update cache
     const response = await fetch(request);
     
     if (response.ok) {
@@ -157,11 +165,22 @@ async function cacheFirstStrategy(request, cacheName, maxAge) {
     
     return response;
   } catch (error) {
-    // Network failed, return cached version if available
-    if (cached) {
-      return cached;
+    // ⚡ Enhanced error handling: Return cache or fail gracefully
+    console.warn(`⚠️ Service Worker fetch failed for ${request.url}:`, error.message);
+    
+    // Try to get cached version from outer scope
+    try {
+      const cache = await caches.open(cacheName);
+      const fallbackCached = await cache.match(request);
+      if (fallbackCached) {
+        console.log('✅ Serving stale cache for:', request.url);
+        return fallbackCached;
+      }
+    } catch (cacheError) {
+      console.error('❌ Cache fallback failed:', cacheError.message);
     }
     
+    // If no cache available, re-throw to let browser handle it
     throw error;
   }
 }
@@ -180,12 +199,21 @@ async function networkFirstStrategy(request, cacheName) {
     
     return response;
   } catch (error) {
-    const cached = await caches.match(request);
+    // ⚡ Enhanced error handling with better logging
+    console.warn(`⚠️ Network-first fetch failed for ${request.url}:`, error.message);
     
-    if (cached) {
-      return cached;
+    try {
+      const cached = await caches.match(request);
+      
+      if (cached) {
+        console.log('✅ Serving cached fallback for:', request.url);
+        return cached;
+      }
+    } catch (cacheError) {
+      console.error('❌ Cache lookup failed:', cacheError.message);
     }
     
+    // Re-throw original error if no cache available
     throw error;
   }
 }

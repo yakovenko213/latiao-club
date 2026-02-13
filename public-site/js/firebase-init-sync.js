@@ -10,7 +10,9 @@
     // Dynamically import Firebase modules
     const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
     const { 
-        getFirestore, 
+        getFirestore,
+        initializeFirestore,
+        enableIndexedDbPersistence,
         collection, 
         doc, 
         addDoc, 
@@ -44,10 +46,28 @@
 
     // Initialize Firebase
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    
+    // ⚡ CRITICAL FIX: Initialize Firestore with experimentalForceLongPolling
+    // This bypasses Service Worker proxy issues and ensures stable connection
+    const db = initializeFirestore(app, {
+        experimentalForceLongPolling: true,
+        cacheSizeBytes: 40000000 // 40MB cache
+    });
+    
     const auth = getAuth(app);
     const functions = getFunctions(app);
     const storage = getStorage(app);
+
+    // ⚡ Enable offline persistence (with error handling)
+    enableIndexedDbPersistence(db).catch((err) => {
+        if (err.code === 'failed-precondition') {
+            console.warn('⚠️ Persistence failed: Multiple tabs open. App will still work online.');
+        } else if (err.code === 'unimplemented') {
+            console.warn('⚠️ Persistence not supported in this browser. App will still work online.');
+        } else {
+            console.error('❌ Persistence error:', err);
+        }
+    });
 
     // Export to global scope IMMEDIATELY
     window.db = db;
@@ -96,7 +116,8 @@
         Timestamp
     };
 
-    console.log('✅ Firebase initialized and exported to window');
+    console.log('✅ Firebase initialized and exported to window (Sync Mode - Optimized)');
+    console.log('⚡ experimentalForceLongPolling: ENABLED');
     console.log('📦 Available:', Object.keys(window).filter(k => 
         ['db', 'auth', 'storage', 'functions', 'collection', 'doc', 'addDoc', 'setDoc', 'getDoc', 'getDocs', 'updateDoc', 'onSnapshot', 'query', 'orderBy', 'Timestamp'].includes(k)
     ).join(', '));

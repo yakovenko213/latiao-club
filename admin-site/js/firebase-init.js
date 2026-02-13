@@ -5,7 +5,9 @@
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { 
-    getFirestore, 
+    getFirestore,
+    initializeFirestore,
+    enableIndexedDbPersistence,
     collection, 
     doc, 
     addDoc, 
@@ -45,10 +47,28 @@ const firebaseConfig = {
 // INITIALIZE FIREBASE
 // ============================================
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+
+// ⚡ CRITICAL FIX: Initialize Firestore with experimentalForceLongPolling
+// This bypasses Service Worker proxy issues and ensures stable connection
+const db = initializeFirestore(app, {
+    experimentalForceLongPolling: true,
+    cacheSizeBytes: 40000000 // 40MB cache
+});
+
 const auth = getAuth(app);
 const functions = getFunctions(app);
 const storage = getStorage(app);
+
+// ⚡ Enable offline persistence (with error handling)
+enableIndexedDbPersistence(db).catch((err) => {
+    if (err.code === 'failed-precondition') {
+        console.warn('⚠️ Persistence failed: Multiple tabs open. App will still work online.');
+    } else if (err.code === 'unimplemented') {
+        console.warn('⚠️ Persistence not supported in this browser. App will still work online.');
+    } else {
+        console.error('❌ Persistence error:', err);
+    }
+});
 
 // ============================================
 // CRITICAL: EXPORT TO WINDOW SO LAYOUT.JS CAN RUN

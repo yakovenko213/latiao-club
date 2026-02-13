@@ -198,6 +198,40 @@
       background-color: #e55d00 !important;
     }
 
+    /* ============================================
+       🪙 CASHBACK BADGE - SUBTLE SHINE ANIMATION
+       ============================================ */
+    @keyframes subtle-shine {
+      0%, 100% {
+        background-position: 200% center;
+      }
+      50% {
+        background-position: -200% center;
+      }
+    }
+
+    .cashback-shine-effect {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(
+        90deg,
+        rgba(254, 243, 199, 1) 0%,
+        rgba(254, 243, 199, 1) 40%,
+        rgba(255, 255, 255, 0.8) 50%,
+        rgba(254, 243, 199, 1) 60%,
+        rgba(254, 243, 199, 1) 100%
+      );
+      background-size: 200% 100%;
+      animation: subtle-shine 3s ease-in-out infinite;
+      animation-delay: 2s;
+    }
+
+    /* Add a subtle shadow on hover for interactivity */
+    .cashback-shine-effect:hover {
+      box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2);
+      transition: box-shadow 0.3s ease;
+    }
+
     #upsell-add-btn:active:not(:disabled) {
       transform: scale(0.95);
     }
@@ -325,6 +359,31 @@
             <span class="font-bold text-gray-900">Разом</span>
             <span id="total" class="text-xl font-extrabold text-primary">0 грн</span>
           </div>
+          
+          <!-- 🪙 Total Cashback Summary Badge -->
+          <div id="cashback-summary-badge" class="hidden flex items-center gap-2 p-3 rounded-xl border border-yellow-200 bg-yellow-50 mt-3 text-sm font-semibold text-amber-900 cashback-shine-effect">
+            <!-- Coin Icon -->
+            <svg class="w-6 h-6 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
+            </svg>
+            <span>Ваш загальний кешбек: <span id="total-cart-cashback" class="font-bold text-amber-700">0</span> грн</span>
+          </div>
+        </div>
+
+        <!-- 🪙 Total Cashback Badge -->
+        <div id="cashback-badge-cart" class="hidden bg-gradient-to-r from-amber-50 to-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4 cashback-shine-effect">
+          <div class="flex items-center gap-3">
+            <!-- Coin Icon -->
+            <svg class="w-6 h-6 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
+            </svg>
+            <!-- Cashback Text -->
+            <div class="flex-1">
+              <p class="text-sm font-semibold text-amber-900">
+                Ваш кешбек за це замовлення: <span id="cart-cashback-amount" class="font-bold text-amber-700">0</span> грн
+              </p>
+            </div>
+          </div>
         </div>
         
         <!-- Checkout Button -->
@@ -343,6 +402,9 @@
   <script type="module">
     import { db } from './js/firebase-init.js';
     import { collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    
+    // Import global cashback config listener
+    import { initCashbackListener, onCashbackStateChange } from './js/cashback-config.js';
     
     // ── Upsell Configuration ──────────────────────────────────
     let currentUpsellProduct = null;
@@ -948,10 +1010,53 @@
       return cart.reduce((sum, item) => sum + item.quantity, 0);
     }
 
+    // ============================================
+    // 🪙 TOGGLE CASHBACK UI ELEMENTS
+    // ============================================
+    function toggleCashbackUI(isEnabled) {
+      console.log('🎨 [Cart] toggleCashbackUI called:', isEnabled ? 'SHOW' : 'HIDE');
+      
+      // Get all cashback elements
+      const cashbackBadgeCart = document.getElementById('cashback-badge-cart');
+      const cashbackSummaryBadge = document.getElementById('cashback-summary-badge');
+      
+      if (isEnabled) {
+        // ✅ SHOW: Remove hidden class
+        console.log('👁️ [Cart] Showing cashback badges...');
+        if (cashbackBadgeCart) {
+          cashbackBadgeCart.classList.remove('hidden');
+          cashbackBadgeCart.style.display = '';
+        }
+        if (cashbackSummaryBadge) {
+          cashbackSummaryBadge.classList.remove('hidden');
+          cashbackSummaryBadge.style.display = '';
+        }
+      } else {
+        // 🙈 HIDE: Add hidden class and force display none
+        console.log('🙈 [Cart] Hiding cashback badges...');
+        if (cashbackBadgeCart) {
+          cashbackBadgeCart.classList.add('hidden');
+          cashbackBadgeCart.style.display = 'none';
+        }
+        if (cashbackSummaryBadge) {
+          cashbackSummaryBadge.classList.add('hidden');
+          cashbackSummaryBadge.style.display = 'none';
+        }
+      }
+      
+      console.log('✅ [Cart] toggleCashbackUI completed');
+    }
+
     // Update UI
     function updateUI() {
       const total = calculateTotal();
       const itemsCount = calculateItemsCount();
+      
+      // Get dynamic cashback percentage (default 8% if not set)
+      const cashbackPercent = (window.cashbackPercent || 8) / 100;
+      
+      // Debug logging (can be removed in production)
+      console.log(`📊 Cart Update: ${itemsCount} items, Total: ${total} грн, Cashback: ${Math.floor(total * cashbackPercent)} грн (${window.cashbackPercent || 8}%)`);
       
       // Update summary with null checks
       const itemsCountEl = document.getElementById('items-count');
@@ -961,6 +1066,92 @@
       if (itemsCountEl) itemsCountEl.textContent = itemsCount;
       if (subtotalEl) subtotalEl.textContent = `${total} грн`;
       if (totalEl) totalEl.textContent = `${total} грн`;
+      
+      // ============================================
+      // 🪙 UPDATE CASHBACK (dynamic % of cart total)
+      // ============================================
+      // ✅ Task: Check if cashback is enabled globally
+      const isCashbackEnabled = window.cashbackEnabled !== false; // default true
+      
+      if (isCashbackEnabled) {
+        // Calculate cashback value once with dynamic percentage
+        const calculatedCashback = Math.floor(total * cashbackPercent);
+        
+        // 🐛 DEBUG: Детальна інформація про кешбек
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('🐛 [CASHBACK DEBUG]');
+        console.log('1️⃣ Total:', total, 'грн');
+        console.log('2️⃣ Math.floor(total * cashbackPercent):', Math.floor(total * cashbackPercent), 'грн', `(${window.cashbackPercent || 8}%)`);
+        console.log('3️⃣ Element total-cart-cashback:', document.getElementById('total-cart-cashback'));
+        console.log('4️⃣ Element cashback-summary-badge:', document.getElementById('cashback-summary-badge'));
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        
+        // Task 1: Update cart cashback amount (main badge)
+        const cashbackAmountEl = document.getElementById('cart-cashback-amount');
+        if (cashbackAmountEl) {
+          cashbackAmountEl.textContent = calculatedCashback;
+          console.log(`✅ Updated cart-cashback-amount: ${calculatedCashback}`);
+        } else {
+          console.warn('⚠️ Element cart-cashback-amount not found');
+        }
+        
+        // Task 2: Update Total Cashback Summary Badge (new placement)
+        const totalCashbackEl = document.getElementById('total-cart-cashback');
+        if (totalCashbackEl) {
+          totalCashbackEl.textContent = calculatedCashback;
+          console.log(`✅ Updated total-cart-cashback: ${calculatedCashback}`);
+        } else {
+          console.warn('⚠️ Element total-cart-cashback not found');
+        }
+        
+        // Task 3: Force visibility based on cart state
+        const cashbackBadge = document.getElementById('cashback-badge-cart');
+        const cashbackSummaryBadge = document.getElementById('cashback-summary-badge');
+        
+        if (cart.length === 0) {
+          // Hide both badges when cart is empty
+          if (cashbackBadge) {
+            cashbackBadge.classList.add('hidden');
+            console.log('🙈 Hidden cashback-badge-cart (cart empty)');
+          }
+          if (cashbackSummaryBadge) {
+            cashbackSummaryBadge.classList.add('hidden');
+            console.log('🙈 Hidden cashback-summary-badge (cart empty)');
+          }
+        } else {
+          // Show badges when cart has items
+          if (cashbackBadge) {
+            cashbackBadge.classList.remove('hidden');
+            cashbackBadge.style.display = ''; // Clear any inline styles
+            console.log('👁️ Showing cashback-badge-cart (cart has items)');
+          } else {
+            console.warn('⚠️ Element cashback-badge-cart not found');
+          }
+          if (cashbackSummaryBadge) {
+            cashbackSummaryBadge.classList.remove('hidden');
+            cashbackSummaryBadge.style.display = ''; // Clear any inline styles
+            console.log('👁️ Showing cashback-summary-badge (cart has items)');
+          } else {
+            console.warn('⚠️ Element cashback-summary-badge not found');
+          }
+        }
+      } else {
+        // ⛔ Cashback DISABLED by admin - hide all badges
+        console.log('🚫 [CASHBACK] Cashback disabled by admin toggle');
+        const cashbackBadge = document.getElementById('cashback-badge-cart');
+        const cashbackSummaryBadge = document.getElementById('cashback-summary-badge');
+        
+        if (cashbackBadge) {
+          cashbackBadge.classList.add('hidden');
+          cashbackBadge.style.display = 'none';
+          console.log('🙈 Forced hide: cashback-badge-cart');
+        }
+        if (cashbackSummaryBadge) {
+          cashbackSummaryBadge.classList.add('hidden');
+          cashbackSummaryBadge.style.display = 'none';
+          console.log('🙈 Forced hide: cashback-summary-badge');
+        }
+      }
       
       // Update delivery cost
       const deliveryCost = document.getElementById('delivery-cost');
@@ -1275,7 +1466,44 @@
     }
 
     // Initialize
-    document.addEventListener('DOMContentLoaded', loadCart);
+    document.addEventListener('DOMContentLoaded', () => {
+      loadCart();
+      
+      // Register cashback state change listener
+      onCashbackStateChange((isEnabled, cashbackPercent) => {
+        console.log('🔄 [Cart] Cashback state changed:', { 
+          enabled: isEnabled, 
+          percent: cashbackPercent 
+        });
+        
+        // ⚡ Toggle UI elements visibility
+        toggleCashbackUI(isEnabled);
+        
+        // Re-render cart to update calculations
+        updateUI();
+      });
+      
+      // Additional safety check: Force badges to show if cart has items
+      setTimeout(() => {
+        const cart = JSON.parse(localStorage.getItem('latiao_cart') || '[]');
+        if (cart.length > 0) {
+          const summaryBadge = document.getElementById('cashback-summary-badge');
+          const cartBadge = document.getElementById('cashback-badge-cart');
+          
+          // Only show if cashback is enabled
+          if (window.cashbackEnabled !== false) {
+            if (summaryBadge) {
+              summaryBadge.classList.remove('hidden');
+              console.log('🔧 Safety check: Forced cashback-summary-badge visible');
+            }
+            if (cartBadge) {
+              cartBadge.classList.remove('hidden');
+              console.log('🔧 Safety check: Forced cashback-badge-cart visible');
+            }
+          }
+        }
+      }, 100);
+    });
   </script>
 
   <!-- 📊 Visitor Device Tracking - Logs ONCE per session -->

@@ -175,6 +175,39 @@
     .sticky-bar {
       box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
     }
+
+    /* ============================================
+       🪙 CASHBACK BADGE - SUBTLE SHINE ANIMATION
+       ============================================ */
+    @keyframes subtle-shine {
+      0%, 100% {
+        background-position: 200% center;
+      }
+      50% {
+        background-position: -200% center;
+      }
+    }
+
+    .cashback-shine-effect {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(
+        90deg,
+        rgba(254, 243, 199, 1) 0%,
+        rgba(254, 243, 199, 1) 40%,
+        rgba(255, 255, 255, 0.8) 50%,
+        rgba(254, 243, 199, 1) 60%,
+        rgba(254, 243, 199, 1) 100%
+      );
+      background-size: 200% 100%;
+      animation: subtle-shine 3s ease-in-out infinite;
+      animation-delay: 2s;
+    }
+
+    .cashback-shine-effect:hover {
+      box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2);
+      transition: box-shadow 0.3s ease;
+    }
   </style>
 </head>
 
@@ -656,6 +689,15 @@
             <p class="text-xs text-gray-500 mt-2 italic">💡 Онлайн оплачуєте тільки 100 грн, решту - при отриманні</p>
           </div>
 
+          <!-- 🪙 Cashback Badge (Outside payment method containers) -->
+          <div id="checkout-cashback-badge" class="hidden flex items-center gap-2 p-3 rounded-xl border border-yellow-200 bg-yellow-50 mt-3 mb-4 text-sm font-semibold text-amber-900 cashback-shine-effect">
+            <!-- Coin Icon -->
+            <svg class="w-6 h-6 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
+            </svg>
+            <span>За це замовлення ви отримаєте: <span id="checkout-cashback-amount" class="font-bold text-amber-700">0</span> грн кешбеку</span>
+          </div>
+
           <p class="text-xs text-gray-500 mb-6">🚚 Доставка оплачується окремо при отриманні</p>
 
           <!-- CTA Button (Desktop) -->
@@ -882,6 +924,12 @@
     // NEW: Import Cloud Functions
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'
     import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js'
+
+    // ============================================
+    // CASHBACK CONFIG - GLOBAL STATE LISTENER
+    // ============================================
+    import { initCashbackListener, onCashbackStateChange } from './js/cashback-config.js';
+    initCashbackListener(); // Initialize global cashback state
 
     // Initialize Functions (make sure your Firebase config is available)
     // If you already have firebase app initialized in firebase-init.js, you can import it
@@ -1327,6 +1375,49 @@
     })
 
     // ============================================
+    // 🪙 CASHBACK STATE CHANGE LISTENER
+    // ============================================
+    onCashbackStateChange((isEnabled, cashbackPercent) => {
+      console.log('🔄 [Checkout] Cashback state changed:', { 
+        enabled: isEnabled, 
+        percent: cashbackPercent 
+      });
+      
+      // Toggle cashback badge visibility
+      const checkoutCashbackBadgeEl = document.getElementById('checkout-cashback-badge');
+      
+      if (checkoutCashbackBadgeEl) {
+        if (isEnabled) {
+          // SHOW: Remove hidden, add flex
+          checkoutCashbackBadgeEl.classList.remove('hidden');
+          checkoutCashbackBadgeEl.classList.add('flex');
+          checkoutCashbackBadgeEl.style.display = '';
+          console.log('👁️ [Checkout] Showing cashback badge');
+        } else {
+          // HIDE: Add hidden, remove flex, force display none
+          checkoutCashbackBadgeEl.classList.add('hidden');
+          checkoutCashbackBadgeEl.classList.remove('flex');
+          checkoutCashbackBadgeEl.style.display = 'none';
+          console.log('🙈 [Checkout] Hiding cashback badge');
+        }
+        
+        // Recalculate and update cashback amount
+        if (isEnabled && cartItems && cartItems.length > 0) {
+          const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+          const discount = promoApplied ? promoDiscount : 0;
+          const total = cartTotal - discount;
+          const cashbackAmount = Math.floor(total * (cashbackPercent / 100));
+          
+          const checkoutCashbackAmountEl = document.getElementById('checkout-cashback-amount');
+          if (checkoutCashbackAmountEl) {
+            checkoutCashbackAmountEl.textContent = cashbackAmount;
+            console.log(`✅ [Checkout] Updated cashback amount: ${cashbackAmount} грн (${cashbackPercent}%)`);
+          }
+        }
+      }
+    });
+
+    // ============================================
     // RENDER PRODUCTS FUNCTION
     // ============================================
 
@@ -1567,6 +1658,30 @@
       // Update final total
       if (totalPriceEl) totalPriceEl.textContent = `${productTotal} грн`
       if (totalPriceMobileEl) totalPriceMobileEl.textContent = `${productTotal} грн`
+
+      // ============================================
+      // 🪙 UPDATE CASHBACK (dynamic % of final total)
+      // ============================================
+      const cashbackPercent = (window.cashbackPercent || 8) / 100;
+      const calculatedCashback = Math.floor(productTotal * cashbackPercent)
+      const checkoutCashbackAmountEl = document.getElementById('checkout-cashback-amount')
+      const checkoutCashbackBadgeEl = document.getElementById('checkout-cashback-badge')
+      
+      if (checkoutCashbackAmountEl) {
+        checkoutCashbackAmountEl.textContent = calculatedCashback
+      }
+      
+      // Show/hide badge based on total amount and cashback enabled state
+      if (checkoutCashbackBadgeEl) {
+        const isCashbackEnabled = window.cashbackEnabled !== false;
+        if (productTotal > 0 && isCashbackEnabled) {
+          checkoutCashbackBadgeEl.classList.remove('hidden')
+          checkoutCashbackBadgeEl.classList.add('flex')
+        } else {
+          checkoutCashbackBadgeEl.classList.add('hidden')
+          checkoutCashbackBadgeEl.classList.remove('flex')
+        }
+      }
 
       // Update payment summary based on current payment method
       const selectedPaymentCard = document.querySelector('[data-payment].selected')

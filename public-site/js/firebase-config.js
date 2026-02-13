@@ -29,9 +29,9 @@
  */
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getFirestore, enableMultiTabIndexedDbPersistence } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-import { getFunctions } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
+import { getFirestore, enableMultiTabIndexedDbPersistence, connectFirestoreEmulator } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { getAuth, connectAuthEmulator } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getFunctions, connectFunctionsEmulator } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
 import { getStorage } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js';
 
@@ -106,7 +106,37 @@ const functions = getFunctions(app);
 const storage = getStorage(app);
 
 // ═══════════════════════════════════════════════════════════════════
-// 🛡️  FIREBASE APP CHECK (PREVENTS BOT ABUSE)
+// � CONNECT TO FIREBASE EMULATORS ON LOCALHOST
+// ═══════════════════════════════════════════════════════════════════
+// This ensures that when running locally, all Firebase requests go to
+// the emulators instead of production. CRITICAL for safe local testing!
+// ═══════════════════════════════════════════════════════════════════
+
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    console.log('🔧 EMULATOR MODE: Connecting to Firebase Emulators...');
+    
+    try {
+        // Connect Firestore to emulator (port 8080)
+        connectFirestoreEmulator(db, 'localhost', 8080);
+        console.log('✅ Firestore Emulator connected on port 8080');
+        
+        // Connect Auth to emulator (port 9099)
+        connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+        console.log('✅ Auth Emulator connected on port 9099');
+        
+        // Connect Functions to emulator (port 5001)
+        connectFunctionsEmulator(functions, 'localhost', 5001);
+        console.log('✅ Functions Emulator connected on port 5001');
+        
+        console.log('🎉 All emulators connected! Safe to test locally.');
+    } catch (error) {
+        console.error('❌ Error connecting to emulators:', error);
+        console.warn('⚠️  Make sure emulators are running: firebase emulators:start');
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// �🛡️  FIREBASE APP CHECK (PREVENTS BOT ABUSE)
 // ═══════════════════════════════════════════════════════════════════
 // 
 // App Check verifies that requests come from your authentic app

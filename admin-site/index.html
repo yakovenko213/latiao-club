@@ -947,6 +947,10 @@
           <i data-lucide="gamepad-2" class="w-5 h-5"></i>
           <span>🌶️ Гра Перчики</span>
         </a>
+        <a href="#cashback-settings" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+          <i data-lucide="coins" class="w-5 h-5"></i>
+          <span>🪙 Кешбек</span>
+        </a>
 
       </nav>
       <!-- Bottom Section: Logout (Sticky Footer) -->
@@ -4224,6 +4228,147 @@
       <!-- ============================================ -->
       <!-- PEPPERS GAME VIEW - Гра Перчики -->
       <!-- ============================================ -->
+      <!-- ============================================ -->
+      <!-- CASHBACK SETTINGS VIEW -->
+      <!-- ============================================ -->
+      <div id="view-cashback-settings" class="view p-8">
+        <div class="max-w-4xl mx-auto">
+          
+          <!-- Header -->
+          <div class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+              <span>🪙</span>
+              Налаштування кешбеку
+            </h2>
+            <p class="text-gray-600 mt-2">Керуйте системою повернення коштів для ваших клієнтів</p>
+          </div>
+
+          <!-- Main Settings Card -->
+          <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            
+            <!-- Card Header -->
+            <div class="bg-gradient-to-r from-amber-50 to-yellow-50 border-b border-yellow-100 px-6 py-4">
+              <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <i data-lucide="settings" class="w-5 h-5 text-amber-600"></i>
+                Основні налаштування
+              </h3>
+            </div>
+
+            <!-- Card Body -->
+            <div class="p-6 space-y-6">
+              
+              <!-- Master Switch -->
+              <div class="flex items-center justify-between p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border border-yellow-200 rounded-xl">
+                <div class="flex-1">
+                  <label for="cashback-toggle" class="font-semibold text-gray-800 cursor-pointer flex items-center gap-2">
+                    <span>💰</span>
+                    <span>Активувати кешбек на сайті</span>
+                  </label>
+                  <p class="text-xs text-gray-600 mt-1">
+                    Якщо увімкнено — всі користувачі сайту бачать значки кешбеку на сторінках товару, кошика та оформлення замовлення.
+                  </p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer ml-4">
+                  <input type="checkbox" id="cashback-toggle" class="sr-only peer">
+                  <div class="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-amber-500"></div>
+                </label>
+              </div>
+
+              <!-- Percentage Input -->
+              <div>
+                <label for="cashback-percent-input" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <i data-lucide="percent" class="w-4 h-4 text-amber-600"></i>
+                  Відсоток кешбеку (%)
+                </label>
+                <div class="relative">
+                  <input 
+                    type="number" 
+                    id="cashback-percent-input" 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none text-lg font-semibold"
+                    placeholder="8"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value="8"
+                  >
+                  <div class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold pointer-events-none">
+                    %
+                  </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">
+                  💡 Введіть відсоток, який повертається клієнту від суми замовлення. Рекомендоване значення: 5-10%
+                </p>
+              </div>
+
+              <!-- Save Button -->
+              <div class="pt-4 border-t border-gray-200">
+                <button 
+                  id="save-cashback-settings"
+                  class="w-full py-4 px-6 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-bold rounded-xl shadow-lg shadow-amber-200 transition-all duration-200 flex items-center justify-center gap-2"
+                >
+                  <i data-lucide="save" class="w-5 h-5"></i>
+                  <span>Зберегти налаштування</span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Info Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            
+            <!-- How It Works -->
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-5">
+              <h4 class="font-bold text-blue-900 mb-3 flex items-center gap-2">
+                <i data-lucide="info" class="w-5 h-5"></i>
+                Як це працює?
+              </h4>
+              <ul class="text-sm text-blue-800 space-y-2">
+                <li class="flex items-start gap-2">
+                  <span class="text-blue-500 mt-0.5">•</span>
+                  <span>Клієнт бачить суму кешбеку на кожній сторінці</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-blue-500 mt-0.5">•</span>
+                  <span>Після оплати замовлення кешбек зараховується на баланс</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-blue-500 mt-0.5">•</span>
+                  <span>Клієнт може використати кешбек при наступному замовленні</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Stats Placeholder -->
+            <div class="bg-green-50 border border-green-200 rounded-xl p-5">
+              <h4 class="font-bold text-green-900 mb-3 flex items-center gap-2">
+                <i data-lucide="trending-up" class="w-5 h-5"></i>
+                Переваги кешбеку
+              </h4>
+              <ul class="text-sm text-green-800 space-y-2">
+                <li class="flex items-start gap-2">
+                  <span class="text-green-500 mt-0.5">•</span>
+                  <span>Підвищує повторні покупки на 30-50%</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-green-500 mt-0.5">•</span>
+                  <span>Збільшує середній чек замовлення</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-green-500 mt-0.5">•</span>
+                  <span>Формує лояльність до бренду</span>
+                </li>
+              </ul>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============================================ -->
+      <!-- PEPPERS GAME VIEW -->
+      <!-- ============================================ -->
       <div id="view-peppers-game" class="view p-8">
         <div class="max-w-7xl mx-auto">
           
@@ -6145,6 +6290,29 @@
           </div>
         </div>
 
+        <!-- Cashback System Toggle Section -->
+        <div class="pt-4 border-t border-gray-200">
+          <h4 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+            <span>🪙</span> Система кешбеку
+          </h4>
+          
+          <div class="flex items-center justify-between p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border border-yellow-200 rounded-xl">
+            <div class="flex-1">
+              <label for="toggle-cashback-system" class="font-semibold text-gray-800 cursor-pointer flex items-center gap-2">
+                <span>💰</span> Активувати систему кешбеку
+              </label>
+              <p class="text-xs text-gray-600 mt-1">
+                Якщо увімкнено — на сторінках товару, кошика та оформлення відображаються значки кешбеку (8% повернення).
+                <br><strong class="text-amber-600">Зміни застосовуються миттєво на всіх відкритих вкладках!</strong>
+              </p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer ml-4">
+              <input type="checkbox" id="toggle-cashback-system" class="sr-only peer">
+              <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+            </label>
+          </div>
+        </div>
+
         <!-- Dev Tools Section -->
         <div class="pt-4 border-t border-gray-200">
           <h4 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
@@ -6502,6 +6670,8 @@
           loadPopups()
         } else if (target === 'gifts') {
           loadGiftsView()
+        } else if (target === 'cashback-settings') {
+          loadCashbackSettings()
         } else if (target === 'merchandising') {
           loadMerchandisingView()
         } else if (target === 'live-chat') {
@@ -15450,6 +15620,14 @@
         document.getElementById('toggle-ai-assistant').checked = isAiEnabled
         console.log('🧠 AI Assistant setting loaded from settings/checkout:', isAiEnabled)
         
+        // Load Cashback System setting from config/general_config (default: true)
+        const cashbackConfigDoc = await getDoc(doc(db, 'config', 'general_config'))
+        const isCashbackEnabled = cashbackConfigDoc.exists() 
+          ? (cashbackConfigDoc.data().isCashbackEnabled !== false) // default true
+          : true
+        document.getElementById('toggle-cashback-system').checked = isCashbackEnabled
+        console.log('🪙 Cashback system setting loaded:', isCashbackEnabled)
+        
       } catch (e) {
         console.error('Error loading settings:', e)
       }
@@ -16211,6 +16389,7 @@
         const isPrepaymentEnabled = document.getElementById('setting-prepayment-toggle').checked
         const isMaintenanceMode = document.getElementById('setting-maintenance-toggle').checked
         const isAiAssistantEnabled = document.getElementById('toggle-ai-assistant').checked
+        const isCashbackEnabled = document.getElementById('toggle-cashback-system').checked
 
         // Save main settings (API tokens only)
         console.log('💾 Saving API credentials to Firestore...')
@@ -16251,6 +16430,13 @@
           aiAssistantEnabled: isAiAssistantEnabled,
           updatedAt: new Date().toISOString()
         }, { merge: true })
+        
+        // Save Cashback System setting to config/general_config
+        console.log('🪙 Saving Cashback System setting to config/general_config:', isCashbackEnabled)
+        await setDoc(doc(db, 'config', 'general_config'), {
+          isCashbackEnabled: isCashbackEnabled,
+          updatedAt: new Date().toISOString()
+        }, { merge: true })
 
         console.log('✅ All settings saved successfully:', {
           turboSmsToken: turboSmsToken ? '•••••' : '',
@@ -16259,7 +16445,8 @@
           senderName,
           isPrepaymentEnabled,
           isMaintenanceMode,
-          aiAssistantEnabled: isAiAssistantEnabled
+          aiAssistantEnabled: isAiAssistantEnabled,
+          isCashbackEnabled: isCashbackEnabled
         })
 
         closeSettingsModal()
@@ -16276,6 +16463,37 @@
     })
 
     // ============================================
+    // INSTANT CASHBACK TOGGLE UPDATE (Real-time)
+    // ============================================
+    document.getElementById('toggle-cashback-system').addEventListener('change', async (e) => {
+      const isCashbackEnabled = e.target.checked
+      console.log('🪙 [INSTANT UPDATE] Cashback toggle changed:', isCashbackEnabled)
+      
+      try {
+        // Save immediately to Firestore
+        await setDoc(doc(db, 'config', 'general_config'), {
+          isCashbackEnabled: isCashbackEnabled,
+          updatedAt: new Date().toISOString()
+        }, { merge: true })
+        
+        console.log('✅ Cashback setting saved instantly to config/general_config')
+        
+        // Show mini toast
+        const toast = document.createElement('div')
+        toast.className = 'fixed bottom-4 right-4 bg-amber-500 text-white px-4 py-2 rounded-lg shadow-lg z-[100] flex items-center gap-2 text-sm'
+        toast.innerHTML = `<span>🪙</span><span>Кешбек ${isCashbackEnabled ? 'увімкнено' : 'вимкнено'}</span>`
+        document.body.appendChild(toast)
+        setTimeout(() => toast.remove(), 2000)
+        
+      } catch (error) {
+        console.error('❌ Error saving cashback setting:', error)
+        // Revert toggle on error
+        e.target.checked = !isCashbackEnabled
+        alert('Помилка збереження налаштування кешбеку: ' + error.message)
+      }
+    })
+
+    // ============================================
     // PROMO CODES MANAGEMENT
     // ============================================
     // ✅ Promo Code logic has been moved to: /js/admin-promo-module.js
@@ -16284,7 +16502,164 @@
     // ============================================
 
     // ============================================
-    // �🎁 GIFTS & SAMPLING MODULE
+    // 🪙 CASHBACK SETTINGS MODULE
+    // ============================================
+    
+    /**
+     * Load cashback settings from Firestore
+     */
+    window.loadCashbackSettings = async function() {
+      try {
+        console.log('🪙 [Cashback] Loading settings from Firestore...');
+        
+        // Fetch from config/general_config
+        const configDoc = await getDoc(doc(db, 'config', 'general_config'));
+        
+        if (configDoc.exists()) {
+          const data = configDoc.data();
+          const isEnabled = data.isCashbackEnabled !== false; // default true
+          const percent = data.cashbackPercent || 8; // default 8%
+          
+          // Update UI
+          document.getElementById('cashback-toggle').checked = isEnabled;
+          document.getElementById('cashback-percent-input').value = percent;
+          
+          console.log('✅ [Cashback] Settings loaded:', { isEnabled, percent });
+        } else {
+          console.warn('⚠️ [Cashback] Config document not found, using defaults');
+          // Set defaults
+          document.getElementById('cashback-toggle').checked = true;
+          document.getElementById('cashback-percent-input').value = 8;
+        }
+        
+      } catch (error) {
+        console.error('❌ [Cashback] Error loading settings:', error);
+        showNotification('Помилка завантаження налаштувань кешбеку', 'error');
+      }
+    };
+    
+    /**
+     * Save cashback settings to Firestore
+     */
+    window.saveCashbackSettings = async function() {
+      try {
+        console.log('💾 [Cashback] Saving settings...');
+        
+        const toggle = document.getElementById('cashback-toggle');
+        const percentInput = document.getElementById('cashback-percent-input');
+        
+        // Validate inputs
+        if (!toggle || !percentInput) {
+          throw new Error('UI elements not found');
+        }
+        
+        const isCashbackEnabled = toggle.checked;
+        const cashbackPercent = parseFloat(percentInput.value);
+        
+        // Validate percentage
+        if (isNaN(cashbackPercent) || cashbackPercent < 0 || cashbackPercent > 100) {
+          showNotification('❌ Невірний відсоток. Введіть значення від 0 до 100', 'error');
+          return;
+        }
+        
+        // Save to Firestore
+        await setDoc(doc(db, 'config', 'general_config'), {
+          isCashbackEnabled: isCashbackEnabled,
+          cashbackPercent: cashbackPercent,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+        
+        console.log('✅ [Cashback] Settings saved successfully:', {
+          isCashbackEnabled,
+          cashbackPercent
+        });
+        
+        // Show success notification
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3 animate-slide-in';
+        toast.innerHTML = `
+          <i data-lucide="check-circle" class="w-6 h-6"></i>
+          <div>
+            <p class="font-bold">Налаштування кешбеку збережено! ✅</p>
+            <p class="text-sm text-green-100">Зміни застосовані миттєво на всіх сторінках</p>
+          </div>
+        `;
+        document.body.appendChild(toast);
+        lucide.createIcons();
+        
+        setTimeout(() => {
+          toast.style.animation = 'slideOut 0.3s ease-out forwards';
+          setTimeout(() => toast.remove(), 300);
+        }, 3000);
+        
+      } catch (error) {
+        console.error('❌ [Cashback] Error saving settings:', error);
+        showNotification('Помилка збереження: ' + error.message, 'error');
+      }
+    };
+    
+    // Setup save button listener (attach on page load)
+    document.addEventListener('DOMContentLoaded', () => {
+      const saveBtn = document.getElementById('save-cashback-settings');
+      if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+          console.log('🔘 [Cashback] Save button clicked');
+          window.saveCashbackSettings();
+        });
+        console.log('✅ [Cashback] Save button listener attached');
+      }
+      
+      // ============================================
+      // ⚡ REAL-TIME TOGGLE LISTENER
+      // ============================================
+      const cashbackToggle = document.getElementById('cashback-toggle');
+      if (cashbackToggle) {
+        cashbackToggle.addEventListener('change', async (event) => {
+          const isEnabled = event.target.checked;
+          console.log('🔄 [Cashback] Toggle changed:', isEnabled ? 'ON' : 'OFF');
+          
+          try {
+            // Update Firestore immediately
+            await setDoc(doc(db, 'config', 'general_config'), {
+              isCashbackEnabled: isEnabled,
+              updatedAt: new Date().toISOString()
+            }, { merge: true });
+            
+            console.log('✅ [Cashback] Real-time update successful');
+            
+            // Show toast notification
+            const status = isEnabled ? 'Увімкнена' : 'Вимкнена';
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 ${isEnabled ? 'bg-green-500' : 'bg-gray-600'} text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3`;
+            toast.style.animation = 'slideIn 0.3s ease-out';
+            toast.innerHTML = `
+              <i data-lucide="${isEnabled ? 'toggle-right' : 'toggle-left'}" class="w-6 h-6"></i>
+              <div>
+                <p class="font-bold">Система кешбеку ${status} ${isEnabled ? '✅' : '⛔'}</p>
+                <p class="text-sm ${isEnabled ? 'text-green-100' : 'text-gray-200'}">Зміни застосовані миттєво на всіх сторінках</p>
+              </div>
+            `;
+            document.body.appendChild(toast);
+            lucide.createIcons();
+            
+            setTimeout(() => {
+              toast.style.animation = 'slideOut 0.3s ease-out forwards';
+              setTimeout(() => toast.remove(), 300);
+            }, 3000);
+            
+          } catch (error) {
+            console.error('❌ [Cashback] Error updating toggle:', error);
+            // Revert toggle state on error
+            event.target.checked = !isEnabled;
+            showNotification('Помилка оновлення: ' + error.message, 'error');
+          }
+        });
+        console.log('✅ [Cashback] Real-time toggle listener attached');
+      }
+    });
+
+    // ============================================
+    // 🎁 GIFTS & SAMPLING MODULE
     // ============================================
 
     let activeGiftIds = []

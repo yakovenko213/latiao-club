@@ -6,6 +6,9 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import {
     getFirestore,
+    initializeFirestore,
+    enableIndexedDbPersistence,
+    connectFirestoreEmulator,
     collection,
     doc,
     addDoc,
@@ -23,8 +26,8 @@ import {
     Timestamp,
     increment
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
+import { getAuth, connectAuthEmulator } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
 import { getStorage } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 
 // ============================================
@@ -43,10 +46,63 @@ const firebaseConfig = {
 // INITIALIZE FIREBASE
 // ============================================
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+
+// ⚡ CRITICAL FIX: Initialize Firestore with experimentalForceLongPolling
+// This bypasses Service Worker proxy issues and ensures stable connection
+const db = initializeFirestore(app, {
+    experimentalForceLongPolling: true,
+    // Use longer timeout for slow connections
+    cacheSizeBytes: 40000000 // 40MB cache
+});
+
 const auth = getAuth(app);
 const functions = getFunctions(app);
 const storage = getStorage(app);
+
+// ============================================
+// 🔧 CONNECT TO FIREBASE EMULATORS ON LOCALHOST
+// ============================================
+// This ensures that when running locally, all Firebase requests go to
+// the emulators instead of production. CRITICAL for safe local testing!
+// ============================================
+
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    console.log('🔧 EMULATOR MODE: Connecting to Firebase Emulators...');
+    
+    try {
+        // Connect Firestore to emulator (port 8080)
+        connectFirestoreEmulator(db, 'localhost', 8080);
+        console.log('✅ Firestore Emulator connected on port 8080');
+        
+        // Connect Auth to emulator (port 9099)
+        connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+        console.log('✅ Auth Emulator connected on port 9099');
+        
+        // Connect Functions to emulator (port 5001)
+        connectFunctionsEmulator(functions, 'localhost', 5001);
+        console.log('✅ Functions Emulator connected on port 5001');
+        
+        console.log('🎉 All emulators connected! Safe to test locally.');
+    } catch (error) {
+        console.error('❌ Error connecting to emulators:', error);
+        console.warn('⚠️  Make sure emulators are running: firebase emulators:start');
+    }
+}
+
+// ============================================
+// ⚡ Enable offline persistence (with error handling)
+// This allows the app to work even if persistence fails
+enableIndexedDbPersistence(db).catch((err) => {
+    if (err.code === 'failed-precondition') {
+        // Multiple tabs open, persistence can only be enabled in one tab at a time
+        console.warn('⚠️ Persistence failed: Multiple tabs open. App will still work online.');
+    } else if (err.code === 'unimplemented') {
+        // The current browser doesn't support persistence
+        console.warn('⚠️ Persistence not supported in this browser. App will still work online.');
+    } else {
+        console.error('❌ Persistence error:', err);
+    }
+});
 
 // ============================================
 // CRITICAL: EXPORT TO WINDOW SO LAYOUT.JS CAN RUN
@@ -100,7 +156,8 @@ window.increment = increment;
 // ============================================
 // LOG SUCCESSFUL INITIALIZATION
 // ============================================
-console.log('🔥 Firebase initialized successfully (Clean Mode)');
+console.log('🔥 Firebase initialized successfully (Optimized Mode)');
+console.log('✅ experimentalForceLongPolling: ENABLED (bypasses Service Worker issues)');
 console.log('✅ window.firebaseApp available:', !!window.firebaseApp);
 console.log('✅ window.firebaseDb available:', !!window.firebaseDb);
 console.log('✅ Firebase App instance:', window.firebaseApp);

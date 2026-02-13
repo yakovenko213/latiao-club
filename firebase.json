@@ -1,194 +1,212 @@
 {
-    "hosting": [
+  "hosting": [
+    {
+      "target": "main",
+      "public": "public-site",
+      "cleanUrls": false,
+      "trailingSlash": false,
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**",
+        "admin.html",
+        "admin-*.html",
+        "admin-site/**"
+      ],
+      "headers": [
         {
-            "target": "main",
-            "public": "public-site",
-            "cleanUrls": false,
-            "trailingSlash": false,
-            "ignore": [
-                "firebase.json",
-                "**/.*",
-                "**/node_modules/**",
-                "admin.html",
-                "admin-*.html",
-                "admin-site/**"
-            ],
-            "headers": [
-                {
-                    "source": "**/*.@(jpg|jpeg|gif|png|webp|svg|ico|woff|woff2|ttf|eot)",
-                    "headers": [
-                        {
-                            "key": "Cache-Control",
-                            "value": "public, max-age=31536000, immutable"
-                        }
-                    ]
-                },
-                {
-                    "source": "**/*.@(js|css)",
-                    "headers": [
-                        {
-                            "key": "Cache-Control",
-                            "value": "no-cache, must-revalidate"
-                        },
-                        {
-                            "key": "Pragma",
-                            "value": "no-cache"
-                        },
-                        {
-                            "key": "Expires",
-                            "value": "0"
-                        }
-                    ]
-                },
-                {
-                    "source": "**/*.html",
-                    "headers": [
-                        {
-                            "key": "Cache-Control",
-                            "value": "no-cache, no-store, must-revalidate"
-                        },
-                        {
-                            "key": "Pragma",
-                            "value": "no-cache"
-                        },
-                        {
-                            "key": "Expires",
-                            "value": "0"
-                        }
-                    ]
-                },
-                {
-                    "source": "**",
-                    "headers": [
-                        {
-                            "key": "X-Content-Type-Options",
-                            "value": "nosniff"
-                        },
-                        {
-                            "key": "X-Frame-Options",
-                            "value": "SAMEORIGIN"
-                        },
-                        {
-                            "key": "X-XSS-Protection",
-                            "value": "1; mode=block"
-                        }
-                    ]
-                }
-            ]
+          "source": "**/*.@(jpg|jpeg|gif|png|webp|svg|ico|woff|woff2|ttf|eot)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
         },
         {
-            "site": "admin-store-latio",
-            "public": "admin-site",
-            "cleanUrls": false,
-            "trailingSlash": false,
-            "ignore": [
-                "firebase.json",
-                "**/.*",
-                "**/node_modules/**"
-            ],
-            "headers": [
-                {
-                    "source": "**/*.@(jpg|jpeg|gif|png|webp|svg|ico|woff|woff2|ttf|eot)",
-                    "headers": [
-                        {
-                            "key": "Cache-Control",
-                            "value": "public, max-age=31536000, immutable"
-                        }
-                    ]
-                },
-                {
-                    "source": "**/*.@(js|css)",
-                    "headers": [
-                        {
-                            "key": "Cache-Control",
-                            "value": "no-cache, must-revalidate"
-                        }
-                    ]
-                },
-                {
-                    "source": "**",
-                    "headers": [
-                        {
-                            "key": "X-Content-Type-Options",
-                            "value": "nosniff"
-                        },
-                        {
-                            "key": "X-Frame-Options",
-                            "value": "SAMEORIGIN"
-                        },
-                        {
-                            "key": "X-XSS-Protection",
-                            "value": "1; mode=block"
-                        }
-                    ]
-                }
-            ]
+          "source": "**/*.@(js|css)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, must-revalidate"
+            },
+            {
+              "key": "Pragma",
+              "value": "no-cache"
+            },
+            {
+              "key": "Expires",
+              "value": "0"
+            }
+          ]
         },
         {
-            "target": "adminpanel",
-            "public": "functions/private",
-            "cleanUrls": false,
-            "trailingSlash": false,
-            "ignore": [
-                "firebase.json",
-                "**/.*",
-                "**/node_modules/**"
-            ],
-            "headers": [
-                {
-                    "source": "**/*.@(js|css|html)",
-                    "headers": [
-                        {
-                            "key": "Cache-Control",
-                            "value": "no-cache, no-store, must-revalidate"
-                        },
-                        {
-                            "key": "Pragma",
-                            "value": "no-cache"
-                        },
-                        {
-                            "key": "Expires",
-                            "value": "0"
-                        }
-                    ]
-                },
-                {
-                    "source": "**",
-                    "headers": [
-                        {
-                            "key": "X-Content-Type-Options",
-                            "value": "nosniff"
-                        },
-                        {
-                            "key": "X-Frame-Options",
-                            "value": "SAMEORIGIN"
-                        },
-                        {
-                            "key": "X-XSS-Protection",
-                            "value": "1; mode=block"
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "functions": [
+          "source": "**/*.html",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, no-store, must-revalidate"
+            },
+            {
+              "key": "Pragma",
+              "value": "no-cache"
+            },
+            {
+              "key": "Expires",
+              "value": "0"
+            }
+          ]
+        },
         {
-            "codebase": "default",
-            "source": "functions",
-            "ignore": [
-                "node_modules",
-                ".git",
-                "firebase-debug.log",
-                "firebase-debug.*.log",
-                "*.local"
-            ]
+          "source": "**",
+          "headers": [
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "SAMEORIGIN"
+            },
+            {
+              "key": "X-XSS-Protection",
+              "value": "1; mode=block"
+            }
+          ]
         }
-    ],
-    "firestore": {
-        "rules": "firestore.rules"
+      ]
     },
-    "storage": {
-        "rules": "storage.rules"
+    {
+      "site": "admin-store-latio",
+      "public": "admin-site",
+      "cleanUrls": false,
+      "trailingSlash": false,
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "headers": [
+        {
+          "source": "**/*.@(jpg|jpeg|gif|png|webp|svg|ico|woff|woff2|ttf|eot)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
+          "source": "**/*.@(js|css)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, must-revalidate"
+            }
+          ]
+        },
+        {
+          "source": "**",
+          "headers": [
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "SAMEORIGIN"
+            },
+            {
+              "key": "X-XSS-Protection",
+              "value": "1; mode=block"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "target": "adminpanel",
+      "public": "functions/private",
+      "cleanUrls": false,
+      "trailingSlash": false,
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "headers": [
+        {
+          "source": "**/*.@(js|css|html)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, no-store, must-revalidate"
+            },
+            {
+              "key": "Pragma",
+              "value": "no-cache"
+            },
+            {
+              "key": "Expires",
+              "value": "0"
+            }
+          ]
+        },
+        {
+          "source": "**",
+          "headers": [
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "SAMEORIGIN"
+            },
+            {
+              "key": "X-XSS-Protection",
+              "value": "1; mode=block"
+            }
+          ]
+        }
+      ]
     }
+  ],
+  "functions": [
+    {
+      "codebase": "default",
+      "source": "functions",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ],
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "emulators": {
+    "auth": {
+      "port": 9099
+    },
+    "functions": {
+      "port": 5001
+    },
+    "firestore": {
+      "port": 8080
+    },
+    "hosting": {
+      "port": 5000
+    },
+    "ui": {
+      "enabled": true
+    },
+    "singleProjectMode": true
+  }
 }
