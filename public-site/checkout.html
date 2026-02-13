@@ -322,6 +322,8 @@
                 required>
               <p id="telegramError" class="mt-1.5 text-xs text-red-500 hidden">Будь ласка, вкажіть нікнейм для зв'язку
               </p>
+              <p id="telegramFormatError" class="mt-1.5 text-xs text-red-500 hidden">Тут можна використовувати лише латиницю, цифри та символ '_'. Електронна пошта не підтримується.
+              </p>
               <p class="mt-1.5 lg:mt-2 text-xs lg:text-sm text-gray-400">Це потрібно, щоб ми могли написати вам у разі
                 уточнень 🤝</p>
             </div>
@@ -553,7 +555,12 @@
             Коментар до замовлення
           </h2>
 
-          <textarea id="comment" rows="3" placeholder="Наприклад: не дзвоніть, напишіть у Telegram…"
+          <!-- No-Call Reassurance Notice (Reactive) -->
+          <div id="no-call-notice" class="bg-red-50 border border-red-100 rounded-xl p-3 mb-2 text-sm text-red-700 hidden transition-all duration-300 ease-in-out opacity-0">
+            ✨ Ми цінуємо ваш спокій! Не хвилюйтеся, ми не турбуємо дзвінками без крайньої потреби — надішлемо всю інформацію у месенджер або SMS.
+          </div>
+
+          <textarea id="comment" rows="3" placeholder="p.s ми не дзвонимо для підтвердження замовлення))"
             class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300 resize-none"></textarea>
         </div>
       </div>
@@ -1197,6 +1204,99 @@
       }
       if (submitBtnMobile) {
         submitBtnMobile.addEventListener('click', submitOrder)
+      }
+
+      // ============================================
+      // ⭐ NO-CALL NOTICE - Reactive reassurance
+      // ============================================
+      const commentTextarea = document.getElementById('comment')
+      const noCallNotice = document.getElementById('no-call-notice')
+      
+      // Keywords to detect (case-insensitive)
+      const noCallKeywords = [
+        'не телефонуйте',
+        'не дзвоніть',
+        'без дзвінків',
+        'не звоните',
+        'не перезванивайте',
+        'no call'
+      ]
+      
+      if (commentTextarea && noCallNotice) {
+        commentTextarea.addEventListener('input', function() {
+          const commentValue = this.value.toLowerCase().trim()
+          
+          // Check if any keyword matches
+          const hasNoCallKeyword = noCallKeywords.some(keyword => 
+            commentValue.includes(keyword)
+          )
+          
+          if (hasNoCallKeyword) {
+            // Show notice with smooth fade-in
+            noCallNotice.classList.remove('hidden')
+            setTimeout(() => {
+              noCallNotice.classList.remove('opacity-0')
+              noCallNotice.classList.add('opacity-100')
+            }, 10)
+          } else {
+            // Hide notice with smooth fade-out
+            noCallNotice.classList.remove('opacity-100')
+            noCallNotice.classList.add('opacity-0')
+            setTimeout(() => {
+              noCallNotice.classList.add('hidden')
+            }, 300)
+          }
+        })
+      }
+
+      // ============================================
+      // ⭐ TELEGRAM NICKNAME - Strict validation
+      // ============================================
+      const telegramInput = document.getElementById('telegram')
+      const telegramFormatError = document.getElementById('telegramFormatError')
+      
+      if (telegramInput && telegramFormatError) {
+        // Real-time character filtering
+        telegramInput.addEventListener('input', function(e) {
+          const originalValue = this.value
+          // Allow ONLY: a-z, A-Z, 0-9, underscore (_)
+          // Remove ALL other characters (Cyrillic, @, spaces, etc.)
+          const filteredValue = originalValue.replace(/[^a-zA-Z0-9_]/g, '')
+          
+          // If value changed (invalid chars were present), show error briefly
+          if (originalValue !== filteredValue) {
+            this.value = filteredValue
+            
+            // Show format error with red border
+            this.classList.remove('border-gray-200')
+            this.classList.add('border-red-500')
+            telegramFormatError.classList.remove('hidden')
+            
+            // Hide error after 3 seconds if field becomes valid
+            setTimeout(() => {
+              if (this.value.length > 0 && /^[a-zA-Z0-9_]+$/.test(this.value)) {
+                this.classList.remove('border-red-500')
+                this.classList.add('border-gray-200')
+                telegramFormatError.classList.add('hidden')
+              }
+            }, 3000)
+          } else if (filteredValue.length > 0 && /^[a-zA-Z0-9_]+$/.test(filteredValue)) {
+            // Valid input - clear error state
+            this.classList.remove('border-red-500')
+            this.classList.add('border-gray-200')
+            telegramFormatError.classList.add('hidden')
+          }
+        })
+        
+        // Additional validation on blur
+        telegramInput.addEventListener('blur', function() {
+          const value = this.value.trim()
+          if (value.length > 0 && !/^[a-zA-Z0-9_]+$/.test(value)) {
+            this.classList.remove('border-gray-200')
+            this.classList.add('border-red-500')
+            telegramFormatError.classList.remove('hidden')
+          }
+        })
       }
 
       // 6. UKRPOSHTA POSTCODE - Allow only numeric input (5 digits)
@@ -2398,7 +2498,9 @@
       const telegram = document.getElementById('telegram').value.trim()
       const { total } = calculateTotals()
 
-      const isValid = fullName !== '' && phone !== '' && telegram !== '' && total >= 100
+      // Validate telegram format (only letters, numbers, underscore)
+      const isTelegramValid = telegram !== '' && /^[a-zA-Z0-9_]+$/.test(telegram)
+      const isValid = fullName !== '' && phone !== '' && isTelegramValid && total >= 100
 
       const desktopBtn = document.getElementById('submitBtnDesktop')
       const mobileBtn = document.getElementById('submitBtnMobile')
@@ -2443,7 +2545,9 @@
 
       // Hide all error messages
       const telegramError = document.getElementById('telegramError')
+      const telegramFormatError = document.getElementById('telegramFormatError')
       if (telegramError) telegramError.classList.add('hidden')
+      if (telegramFormatError) telegramFormatError.classList.add('hidden')
 
       // Validate Name
       if (name === '') {
@@ -2469,13 +2573,19 @@
         if (!firstError) firstError = { input: phoneInput, message: 'Будь ласка, введіть коректний номер телефону (наприклад, +380501234567)' }
       }
 
-      // Validate Telegram
+      // Validate Telegram (both presence and format)
       if (telegram === '') {
         isValid = false
         telegramInput.classList.remove('border-gray-200')
         telegramInput.classList.add('border-red-500')
         if (telegramError) telegramError.classList.remove('hidden')
         if (!firstError) firstError = { input: telegramInput, message: 'Будь ласка, вкажіть нікнейм Telegram' }
+      } else if (!/^[a-zA-Z0-9_]+$/.test(telegram)) {
+        isValid = false
+        telegramInput.classList.remove('border-gray-200')
+        telegramInput.classList.add('border-red-500')
+        if (telegramFormatError) telegramFormatError.classList.remove('hidden')
+        if (!firstError) firstError = { input: telegramInput, message: 'Нікнейм Telegram може містити лише латинські літери, цифри та символ "_"' }
       }
 
       // If validation failed, scroll to first error and show alert
