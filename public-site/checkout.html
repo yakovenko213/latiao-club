@@ -208,6 +208,129 @@
       box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2);
       transition: box-shadow 0.3s ease;
     }
+
+    /* ============================================
+       🪙 CASHBACK LIMIT REACHED - GLOW EFFECT
+       ============================================ */
+    @keyframes limit-glow {
+      0%, 100% {
+        box-shadow: 0 0 4px rgba(251, 191, 36, 0.4);
+      }
+      50% {
+        box-shadow: 0 0 10px rgba(251, 191, 36, 0.8), 0 0 20px rgba(251, 191, 36, 0.4);
+      }
+    }
+
+    .cashback-limit-reached {
+      animation: limit-glow 2s ease-in-out infinite;
+      background-color: #fbbf24 !important;
+      border-color: #f59e0b !important;
+      color: #78350f !important;
+    }
+
+    /* ============================================
+       🪙 CASHBACK TOOLTIP - FIXED VISIBILITY
+       ============================================ */
+    #checkout-cashback-badge {
+      position: relative;
+      z-index: 100;
+      overflow: visible !important;
+    }
+    
+    #checkout-cashback-badge .cashback-shine-effect {
+      overflow: visible !important;
+    }
+    
+    /* Tooltip container */
+    .cashback-tooltip-wrapper {
+      position: relative;
+      z-index: 9999;
+    }
+    
+    /* Tooltip popup - hidden by default */
+    .cashback-tooltip-popup {
+      position: absolute;
+      bottom: calc(100% + 12px);
+      right: -8px;
+      width: 280px;
+      padding: 12px 14px;
+      background: linear-gradient(145deg, #ffffff, #f8f9fa);
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(8px);
+      transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+      z-index: 9999;
+      pointer-events: auto;
+    }
+    
+    /* Tooltip arrow */
+    .cashback-tooltip-popup::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      right: 14px;
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 8px solid #ffffff;
+      filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));
+    }
+    
+    /* Show tooltip on hover (desktop) */
+    .cashback-tooltip-wrapper:hover .cashback-tooltip-popup,
+    .cashback-tooltip-wrapper:focus-within .cashback-tooltip-popup,
+    .cashback-tooltip-popup.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    
+    /* Info button styles */
+    .cashback-info-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #fef3c7, #fcd34d);
+      border: 2px solid #f59e0b;
+      color: #92400e;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: auto !important;
+    }
+    
+    .cashback-info-btn:hover {
+      background: linear-gradient(145deg, #fcd34d, #fbbf24);
+      transform: scale(1.1);
+      box-shadow: 0 2px 8px rgba(251, 191, 36, 0.4);
+    }
+    
+    .cashback-info-btn:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.4);
+    }
+    
+    /* Mobile: larger touch target */
+    @media (max-width: 768px) {
+      .cashback-info-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
+      }
+      
+      .cashback-tooltip-popup {
+        right: -12px;
+        width: 260px;
+      }
+    }
   </style>
 </head>
 
@@ -756,16 +879,20 @@
               </div>
               
               <!-- Info Icon (i) with Tooltip - shows only when maxEarnLimit is set -->
-              <div id="cashback-info-tooltip" class="hidden relative group flex-shrink-0">
-                <button type="button" class="w-5 h-5 rounded-full bg-amber-200 border border-amber-400 flex items-center justify-center text-amber-800 text-xs font-bold hover:bg-amber-300 transition-colors cursor-help focus:outline-none focus:ring-2 focus:ring-amber-400" aria-label="Інформація про ліміт кешбеку">
+              <div id="cashback-info-tooltip" class="hidden cashback-tooltip-wrapper flex-shrink-0">
+                <button id="cashback-info-btn" type="button" class="cashback-info-btn" aria-label="Інформація про ліміт кешбеку" aria-expanded="false">
                   i
                 </button>
-                <!-- Tooltip (CSS-only hover reveal with dark bg, white text, arrow) -->
-                <div class="absolute bottom-full right-0 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
-                  <div class="relative">
-                    <p class="leading-relaxed">Максимальна сума кешбеку на одне замовлення: <span id="tooltip-max-limit" class="font-bold text-amber-400">0</span> грн</p>
-                    <!-- Arrow pointing down -->
-                    <div class="absolute -bottom-3 right-2 w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-gray-900"></div>
+                <!-- Tooltip Popup (Light style with shadow and arrow) -->
+                <div id="cashback-tooltip-content" class="cashback-tooltip-popup" role="tooltip">
+                  <div class="flex items-start gap-2">
+                    <svg class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                    <div>
+                      <p class="text-sm font-semibold text-gray-800 mb-1">Ліміт нарахування</p>
+                      <p class="text-xs text-gray-600 leading-relaxed">Максимальна сума кешбеку на одне замовлення: <span id="tooltip-max-limit" class="font-bold text-amber-600">0</span> грн</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1015,8 +1142,32 @@
     // ============================================
     // CASHBACK CONFIG - GLOBAL STATE LISTENER
     // ============================================
-    import { initCashbackListener, onCashbackStateChange } from './js/cashback-config.js';
+    import { initCashbackListener, onCashbackStateChange, calculateCashback } from './js/cashback-config.js';
     initCashbackListener(); // Initialize global cashback state
+
+    // ============================================
+    // 🪙 TASK 2: calculateOrderCashback() - Main Calculation Function
+    // Takes order total (after all discounts) and returns capped cashback
+    // ============================================
+    function calculateOrderCashback(currentTotal) {
+      const cashbackPercent = window.cashbackPercent || 8;
+      const maxEarnLimit = window.cashbackMaxEarnLimit || 0;
+      
+      // Step 1: Calculate raw/potential cashback
+      const rawAmount = Math.floor(currentTotal * (cashbackPercent / 100));
+      
+      // Step 2: Apply the cap (maxEarnLimit)
+      const finalAward = (maxEarnLimit > 0) ? Math.min(rawAmount, maxEarnLimit) : rawAmount;
+      
+      // Step 3: Return both for UI context
+      return {
+        rawAmount: rawAmount,
+        finalAward: finalAward,
+        isLimitReached: maxEarnLimit > 0 && rawAmount >= maxEarnLimit,
+        cashbackPercent: cashbackPercent,
+        maxEarnLimit: maxEarnLimit
+      };
+    }
 
     // Initialize Functions (make sure your Firebase config is available)
     // If you already have firebase app initialized in firebase-init.js, you can import it
@@ -1611,7 +1762,62 @@
       console.log('✅ All event listeners attached successfully')
       console.log('✅ Page leave detection enabled for Telegram notifications')
       console.log('✅ Checkout page initialized successfully')
+      
+      // ============================================
+      // 🪙 TOOLTIP CLICK/TOUCH HANDLER (Mobile Support)
+      // ============================================
+      initCashbackTooltip();
     })
+    
+    // ============================================
+    // 🪙 CASHBACK TOOLTIP - CLICK/TOUCH TOGGLE
+    // ============================================
+    function initCashbackTooltip() {
+      const infoBtn = document.getElementById('cashback-info-btn');
+      const tooltipContent = document.getElementById('cashback-tooltip-content');
+      
+      if (!infoBtn || !tooltipContent) return;
+      
+      let isTooltipOpen = false;
+      
+      // Toggle tooltip on click/touch (works on both mobile and desktop)
+      infoBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        isTooltipOpen = !isTooltipOpen;
+        
+        if (isTooltipOpen) {
+          tooltipContent.classList.add('active');
+          infoBtn.setAttribute('aria-expanded', 'true');
+          console.log('🪙 [Tooltip] Opened');
+        } else {
+          tooltipContent.classList.remove('active');
+          infoBtn.setAttribute('aria-expanded', 'false');
+          console.log('🪙 [Tooltip] Closed');
+        }
+      });
+      
+      // Close tooltip when clicking outside
+      document.addEventListener('click', function(e) {
+        if (isTooltipOpen && !infoBtn.contains(e.target) && !tooltipContent.contains(e.target)) {
+          isTooltipOpen = false;
+          tooltipContent.classList.remove('active');
+          infoBtn.setAttribute('aria-expanded', 'false');
+        }
+      });
+      
+      // Close on Escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && isTooltipOpen) {
+          isTooltipOpen = false;
+          tooltipContent.classList.remove('active');
+          infoBtn.setAttribute('aria-expanded', 'false');
+        }
+      });
+      
+      console.log('✅ [Tooltip] Click handler initialized');
+    }
 
     // ============================================
     // 🪙 CASHBACK STATE CHANGE LISTENER
@@ -1641,42 +1847,47 @@
           console.log('🙈 [Checkout] Hiding cashback badge');
         }
         
-        // Recalculate and update cashback amount with maxEarnLimit
+        // TASK 4: Recalculate using calculateOrderCashback when state changes
         if (isEnabled && cartItems && cartItems.length > 0) {
           const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
           const discount = promoApplied ? promoDiscount : 0;
           const total = cartTotal - discount;
           
-          // Calculate potential cashback
-          const potentialCashback = Math.floor(total * (cashbackPercent / 100));
-          
-          // Apply max earn limit if set
-          let finalCashback = potentialCashback;
-          let isLimitReached = false;
-          
-          if (maxEarnLimit > 0 && potentialCashback > maxEarnLimit) {
-            finalCashback = maxEarnLimit;
-            isLimitReached = true;
-          }
+          // Use the unified calculation function
+          const result = calculateOrderCashback(total);
           
           // Update amount display (Product Page style format)
           const checkoutCashbackAmountEl = document.getElementById('checkout-cashback-amount');
           if (checkoutCashbackAmountEl) {
-            checkoutCashbackAmountEl.textContent = `+${finalCashback}`;
-            console.log(`✅ [Checkout] Updated cashback: ${finalCashback} грн (${cashbackPercent}%${isLimitReached ? ', capped at ' + maxEarnLimit : ''})`);
+            checkoutCashbackAmountEl.textContent = `+${result.finalAward}`;
+            console.log(`✅ [Checkout] Updated cashback: ${result.finalAward} грн (${result.cashbackPercent}%${result.isLimitReached ? ', capped at ' + result.maxEarnLimit : ''})`);
           }
           
-          // Show/hide info tooltip - show only if maxEarnLimit is set (not 0)
+          // Show/hide info tooltip + glow effect
           const infoTooltip = document.getElementById('cashback-info-tooltip');
           const tooltipMaxLimitEl = document.getElementById('tooltip-max-limit');
+          const infoBtn = document.getElementById('cashback-info-btn');
+          
           if (infoTooltip && tooltipMaxLimitEl) {
-            if (maxEarnLimit > 0) {
+            if (result.maxEarnLimit > 0) {
               infoTooltip.classList.remove('hidden');
-              tooltipMaxLimitEl.textContent = maxEarnLimit;
+              tooltipMaxLimitEl.textContent = result.maxEarnLimit;
+              
+              // Apply glow effect when limit is reached
+              if (infoBtn) {
+                if (result.isLimitReached) {
+                  infoBtn.classList.add('cashback-limit-reached');
+                } else {
+                  infoBtn.classList.remove('cashback-limit-reached');
+                }
+              }
             } else {
               infoTooltip.classList.add('hidden');
             }
           }
+          
+          // Store for order submission
+          window._calculatedCashbackForOrder = result.finalAward;
         }
       }
     });
@@ -1964,41 +2175,47 @@
       if (totalPriceMobileEl) totalPriceMobileEl.textContent = `${finalTotal} грн`
 
       // ============================================
-      // 🪙 TASK 2-3: UPDATE CASHBACK SUMMARY (Enhanced with Max Earn Limit)
+      // 🪙 TASK 2-4: UPDATE CASHBACK SUMMARY (Using calculateOrderCashback)
       // ============================================
-      const cashbackPercent = (window.cashbackPercent || 8) / 100;
-      const maxEarnLimit = window.cashbackMaxEarnLimit || 0; // 0 = no limit
-      
-      // Calculate potential cashback (before limit)
-      let potentialCashback = Math.floor(productTotal * cashbackPercent);
-      
-      // Apply max earn limit if set
-      let calculatedCashback = potentialCashback;
-      let isLimitReached = false;
-      
-      if (maxEarnLimit > 0 && potentialCashback > maxEarnLimit) {
-        calculatedCashback = maxEarnLimit;
-        isLimitReached = true;
-        console.log(`🪙 [Checkout] Cashback limited: ${potentialCashback} → ${calculatedCashback} грн (max: ${maxEarnLimit})`);
-      }
+      const cashbackResult = calculateOrderCashback(productTotal);
+      const { rawAmount, finalAward, isLimitReached, cashbackPercent: cbPercent, maxEarnLimit } = cashbackResult;
       
       // TASK 3: Update cashback amount display (matches Product Page style)
       const checkoutCashbackAmountEl = document.getElementById('checkout-cashback-amount')
       if (checkoutCashbackAmountEl) {
-        checkoutCashbackAmountEl.textContent = `+${calculatedCashback}`
+        checkoutCashbackAmountEl.textContent = `+${finalAward}`
       }
       
-      // TASK 4: Show/hide info tooltip - show only if maxEarnLimit is set (not 0)
+      // Log for debugging
+      if (isLimitReached) {
+        console.log(`🪙 [Checkout] Cashback limited: ${rawAmount} → ${finalAward} грн (max: ${maxEarnLimit})`);
+      }
+      
+      // TASK 3: Show/hide info tooltip + Apply glow effect when limit is reached
       const infoTooltip = document.getElementById('cashback-info-tooltip')
       const tooltipMaxLimitEl = document.getElementById('tooltip-max-limit')
+      const infoBtn = document.getElementById('cashback-info-btn')
+      
       if (infoTooltip && tooltipMaxLimitEl) {
         if (maxEarnLimit > 0) {
           infoTooltip.classList.remove('hidden')
           tooltipMaxLimitEl.textContent = maxEarnLimit
+          
+          // TASK 3: Apply glow effect when limit is reached
+          if (infoBtn) {
+            if (isLimitReached) {
+              infoBtn.classList.add('cashback-limit-reached')
+            } else {
+              infoBtn.classList.remove('cashback-limit-reached')
+            }
+          }
         } else {
           infoTooltip.classList.add('hidden')
         }
       }
+      
+      // Store calculated cashback for order submission
+      window._calculatedCashbackForOrder = finalAward;
       
       // TASK 2-3: Update "Списано" (spent) row - Conditional rendering
       const cashbackUsedSummary = document.getElementById('cashback-used-summary')
@@ -3602,21 +3819,20 @@
         }
         
         // ============================================
-        // TASK 2: CALCULATE POINTS EARNED FOR THIS ORDER
-        // Calculate from FINAL total (after all discounts including cashback)
-        // Apply maxEarnLimit if set
+        // TASK 4: CALCULATE POINTS EARNED FOR THIS ORDER
+        // Using the unified calculateOrderCashback() function
+        // Ensures consistency with what's displayed in the UI
         // ============================================
         
-        const cashbackPercentage = (window.cashbackPercent || 8) / 100;
-        const potentialPointsEarned = Math.floor(finalTotal * cashbackPercentage);
-        const maxEarnLimit = window.cashbackMaxEarnLimit || 0;
-        const pointsEarned = (maxEarnLimit > 0) ? Math.min(potentialPointsEarned, maxEarnLimit) : potentialPointsEarned;
+        const cashbackResult = calculateOrderCashback(finalTotal);
+        const pointsEarned = cashbackResult.finalAward;
         
-        console.log('🎁 Cashback to be earned:');
-        console.log('   Percentage rate:', (cashbackPercentage * 100).toFixed(0) + '%');
+        console.log('🎁 Cashback to be earned (via calculateOrderCashback):');
+        console.log('   Percentage rate:', cashbackResult.cashbackPercent + '%');
         console.log('   Calculated from final total:', finalTotal, 'грн');
-        console.log('   Potential earned:', potentialPointsEarned, 'грн');
-        console.log('   Max earn limit:', maxEarnLimit > 0 ? maxEarnLimit + ' грн' : 'немає');
+        console.log('   Raw amount:', cashbackResult.rawAmount, 'грн');
+        console.log('   Max earn limit:', cashbackResult.maxEarnLimit > 0 ? cashbackResult.maxEarnLimit + ' грн' : 'немає');
+        console.log('   Limit reached:', cashbackResult.isLimitReached);
         console.log('   ✅ Final points earned:', pointsEarned, 'грн');
 
         // ============================================
