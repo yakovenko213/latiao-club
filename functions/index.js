@@ -15,6 +15,9 @@ const MONO_TOKEN = "m6veKEWDDwa6i0kh_3Ansgw";
 const MY_WEBHOOK_URL = "https://handlemonowebhook-6bhm4jhyba-uc.a.run.app";
 const MONO_API_URL = "https://api.monobank.ua/api/merchant/invoice/create";
 
+// 🔀 Primary domain for all redirects (avoids technical domain exposure)
+const PRODUCTION_DOMAIN = process.env.PRODUCTION_DOMAIN || 'latiao-snack.com.ua';
+
 function getSafeErrorMessage(error) {
   if (!error) return 'Unknown error';
   if (typeof error === 'string') return error;
@@ -410,7 +413,8 @@ exports.createMonoInvoice = functions.https.onCall(async (data, context) => {
       description = `Оплата замовлення #${orderId.substring(0, 8).toUpperCase()}`;
     }
 
-    const projectUrl = `https://${process.env.GCLOUD_PROJECT}.web.app`;
+    // Use production domain for redirects (not Firebase technical domain)
+    const projectUrl = `https://${PRODUCTION_DOMAIN}`;
 
     const payload = {
       amount: invoiceAmount,

@@ -25,6 +25,9 @@
     })();
   </script>
 
+  <!-- 🔀 DOMAIN REDIRECT - Redirect Firebase domains to primary domain -->
+  <script src="./js/domain-redirect.js"></script>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script>
@@ -3578,9 +3581,16 @@
       // Clear cart before redirect
       localStorage.removeItem('latiao_cart')
 
+      // Use primary domain for redirect (avoid technical domain)
+      const PRODUCTION_DOMAIN = 'latiao-snack.com.ua';
+      const baseURL = window.location.hostname === PRODUCTION_DOMAIN 
+        ? '' 
+        : `https://${PRODUCTION_DOMAIN}`;
+      
       // Redirect to thank-you.html with orderId parameter
-      console.log('🔄 Redirecting to thank-you.html?orderId=' + orderId)
-      window.location.href = 'thank-you.html?orderId=' + orderId
+      const redirectUrl = `${baseURL}/thank-you.html?orderId=${orderId}`;
+      console.log('🔄 Redirecting to:', redirectUrl)
+      window.location.href = redirectUrl
     }
 
     // ============================================
