@@ -10070,6 +10070,29 @@
         document.getElementById('modal-total-items').textContent = `${totalQuantity} шт`
 
         // ============================================
+        // TASK 4: EXTRACT CASHBACK DATA FROM ORDER
+        // ============================================
+        // Витягуємо списаний кешбек (multiple fallback fields)
+        const cashbackUsed = (typeof order.cashbackUsed === 'number' ? order.cashbackUsed : order.cashbackUsed?.amount) || 
+                            order.appliedCashback || 
+                            (order.payment?.cashbackUsed) || 
+                            0;
+        
+        // Витягуємо нарахований кешбек
+        const cashbackEarned = order.earnedCashback || 
+                              order.pointsEarned || 
+                              order.cashbackEarned || 
+                              0;
+        
+        // TASK 4: Log warning if cashback fields are missing
+        if (!order.cashbackUsed && !order.appliedCashback && !order.earnedCashback && !order.pointsEarned) {
+          console.warn('⚠️ Cashback fields missing for order:', orderId);
+        }
+        
+        // Debug log для перевірки
+        console.log('📊 Cashback Data:', { orderId: orderId.slice(-8), cashbackUsed, cashbackEarned });
+
+        // ============================================
         // DYNAMICALLY GENERATE ORDER SUMMARY HTML
         // ============================================
         const summaryContainer = document.getElementById('modal-order-summary')
@@ -10099,6 +10122,29 @@
                                   <p class="text-lg font-bold text-green-600">- ${discountAmount} грн (-${discountPercent}%)</p>
                               </div>
                               
+                              <!-- TASK 1-3: CASHBACK INFO SECTION -->
+                              ${cashbackUsed > 0 || cashbackEarned > 0 ? `
+                              <div class="flex justify-end mt-3 mb-3">
+                                  <div class="bg-gradient-to-br from-amber-50 to-yellow-50 border-2 border-amber-200 rounded-xl px-4 py-3 w-full max-w-md shadow-sm">
+                                      <h5 class="text-sm font-bold text-amber-900 mb-2 flex items-center gap-2">
+                                          🪙 <span>Кешбек</span>
+                                      </h5>
+                                      <div class="space-y-2">
+                                          ${cashbackUsed > 0 ? `
+                                          <div class="flex justify-between items-center">
+                                              <span class="text-sm text-amber-800">Списано:</span>
+                                              <span class="text-base font-bold text-orange-600">- ${cashbackUsed} грн</span>
+                                          </div>
+                                          ` : ''}
+                                          <div class="flex justify-between items-center">
+                                              <span class="text-sm text-amber-800">Нараховано:</span>
+                                              <span class="text-base font-bold text-green-600">+ ${cashbackEarned} грн</span>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+                              ` : ''}
+                              
                               <!-- Final Total -->
                               <div class="flex justify-end items-center gap-3 pt-2 border-t-2 border-gray-300">
                                   <p class="text-sm text-gray-600">Сума замовлення:</p>
@@ -10108,6 +10154,29 @@
         } else {
           // No discount - show only final total
           summaryHTML = `
+                              <!-- TASK 1-3: CASHBACK INFO SECTION (No Discount Case) -->
+                              ${cashbackUsed > 0 || cashbackEarned > 0 ? `
+                              <div class="flex justify-end mb-3">
+                                  <div class="bg-gradient-to-br from-amber-50 to-yellow-50 border-2 border-amber-200 rounded-xl px-4 py-3 w-full max-w-md shadow-sm">
+                                      <h5 class="text-sm font-bold text-amber-900 mb-2 flex items-center gap-2">
+                                          🪙 <span>Кешбек</span>
+                                      </h5>
+                                      <div class="space-y-2">
+                                          ${cashbackUsed > 0 ? `
+                                          <div class="flex justify-between items-center">
+                                              <span class="text-sm text-amber-800">Списано:</span>
+                                              <span class="text-base font-bold text-orange-600">- ${cashbackUsed} грн</span>
+                                          </div>
+                                          ` : ''}
+                                          <div class="flex justify-between items-center">
+                                              <span class="text-sm text-amber-800">Нараховано:</span>
+                                              <span class="text-base font-bold text-green-600">+ ${cashbackEarned} грн</span>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+                              ` : ''}
+                              
                               <div class="flex justify-end items-center gap-3 pt-2">
                                   <p class="text-sm text-gray-600">Сума замовлення:</p>
                                   <p class="text-3xl font-extrabold text-orange-600">${finalTotal} грн</p>
