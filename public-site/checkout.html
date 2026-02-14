@@ -6,6 +6,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Оформлення замовлення | LATIAO SNACK</title>
 
+  <!-- Google Tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-KE8MZNKEYH"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'AW-17389864689');
+  </script>
+
   <!-- CRITICAL: Apply theme immediately to prevent flash -->
   <script>
     (function() {
@@ -166,6 +175,39 @@
     .sticky-bar {
       box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
     }
+
+    /* ============================================
+       🪙 CASHBACK BADGE - SUBTLE SHINE ANIMATION
+       ============================================ */
+    @keyframes subtle-shine {
+      0%, 100% {
+        background-position: 200% center;
+      }
+      50% {
+        background-position: -200% center;
+      }
+    }
+
+    .cashback-shine-effect {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(
+        90deg,
+        rgba(254, 243, 199, 1) 0%,
+        rgba(254, 243, 199, 1) 40%,
+        rgba(255, 255, 255, 0.8) 50%,
+        rgba(254, 243, 199, 1) 60%,
+        rgba(254, 243, 199, 1) 100%
+      );
+      background-size: 200% 100%;
+      animation: subtle-shine 3s ease-in-out infinite;
+      animation-delay: 2s;
+    }
+
+    .cashback-shine-effect:hover {
+      box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2);
+      transition: box-shadow 0.3s ease;
+    }
   </style>
 </head>
 
@@ -280,6 +322,8 @@
                 required>
               <p id="telegramError" class="mt-1.5 text-xs text-red-500 hidden">Будь ласка, вкажіть нікнейм для зв'язку
               </p>
+              <p id="telegramFormatError" class="mt-1.5 text-xs text-red-500 hidden">Тут можна використовувати лише латиницю, цифри та символ '_'. Електронна пошта не підтримується.
+              </p>
               <p class="mt-1.5 lg:mt-2 text-xs lg:text-sm text-gray-400">Це потрібно, щоб ми могли написати вам у разі
                 уточнень 🤝</p>
             </div>
@@ -375,11 +419,15 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1.5 lg:mb-2">Відділення / Поштомат <span
                   class="text-orange-500">*</span></label>
-              <select id="np-warehouse-select"
-                class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 transition-all duration-300 focus:border-orange-400 focus:ring-2 focus:ring-orange-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled>
-                <option value="">Спочатку оберіть місто</option>
-              </select>
+              <div class="relative">
+                <input type="text" id="np-warehouse-input" placeholder="Спочатку оберіть місто"
+                  class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300 focus:border-orange-400 focus:ring-2 focus:ring-orange-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  autocomplete="off" disabled>
+                <!-- Warehouse autocomplete dropdown (Dynamic suggestions) -->
+                <ul id="np-warehouse-list"
+                  class="hidden absolute z-50 w-full mt-1 bg-white border-2 border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                </ul>
+              </div>
             </div>
           </div>
 
@@ -507,7 +555,12 @@
             Коментар до замовлення
           </h2>
 
-          <textarea id="comment" rows="3" placeholder="Наприклад: не дзвоніть, напишіть у Telegram…"
+          <!-- No-Call Reassurance Notice (Reactive) -->
+          <div id="no-call-notice" class="bg-red-50 border border-red-100 rounded-xl p-3 mb-2 text-sm text-red-700 hidden transition-all duration-300 ease-in-out opacity-0">
+            ✨ Ми цінуємо ваш спокій! Не хвилюйтеся, ми не турбуємо дзвінками без крайньої потреби — надішлемо всю інформацію у месенджер або SMS.
+          </div>
+
+          <textarea id="comment" rows="3" placeholder="p.s ми не дзвонимо для підтвердження замовлення))"
             class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300 resize-none"></textarea>
         </div>
       </div>
@@ -641,6 +694,15 @@
               </div>
             </div>
             <p class="text-xs text-gray-500 mt-2 italic">💡 Онлайн оплачуєте тільки 100 грн, решту - при отриманні</p>
+          </div>
+
+          <!-- 🪙 Cashback Badge (Outside payment method containers) -->
+          <div id="checkout-cashback-badge" class="hidden flex items-center gap-2 p-3 rounded-xl border border-yellow-200 bg-yellow-50 mt-3 mb-4 text-sm font-semibold text-amber-900 cashback-shine-effect">
+            <!-- Coin Icon -->
+            <svg class="w-6 h-6 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
+            </svg>
+            <span>За це замовлення ви отримаєте: <span id="checkout-cashback-amount" class="font-bold text-amber-700">0</span> грн кешбеку</span>
           </div>
 
           <p class="text-xs text-gray-500 mb-6">🚚 Доставка оплачується окремо при отриманні</p>
@@ -870,6 +932,12 @@
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'
     import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js'
 
+    // ============================================
+    // CASHBACK CONFIG - GLOBAL STATE LISTENER
+    // ============================================
+    import { initCashbackListener, onCashbackStateChange } from './js/cashback-config.js';
+    initCashbackListener(); // Initialize global cashback state
+
     // Initialize Functions (make sure your Firebase config is available)
     // If you already have firebase app initialized in firebase-init.js, you can import it
     // Otherwise, you'll need to initialize it here with your config
@@ -933,6 +1001,8 @@
     const NP_API_KEY = 'ca63f7a56b807b0e882e567c7041abf3' // Replace with your actual API key
     const NP_URL = 'https://api.novaposhta.ua/v2.0/json/'
     const NP_API_URL = NP_URL // Alias for backward compatibility
+    let allWarehouses = [] // Store all warehouses for the selected city for filtering
+    let selectedWarehouse = null // Store selected warehouse object
 
     // Ukrposhta API Configuration
     const UP_API_BASE_URL = 'https://www.ukrposhta.ua/address-classifier-ws/get_'
@@ -1136,6 +1206,99 @@
         submitBtnMobile.addEventListener('click', submitOrder)
       }
 
+      // ============================================
+      // ⭐ NO-CALL NOTICE - Reactive reassurance
+      // ============================================
+      const commentTextarea = document.getElementById('comment')
+      const noCallNotice = document.getElementById('no-call-notice')
+      
+      // Keywords to detect (case-insensitive)
+      const noCallKeywords = [
+        'не телефонуйте',
+        'не дзвоніть',
+        'без дзвінків',
+        'не звоните',
+        'не перезванивайте',
+        'no call'
+      ]
+      
+      if (commentTextarea && noCallNotice) {
+        commentTextarea.addEventListener('input', function() {
+          const commentValue = this.value.toLowerCase().trim()
+          
+          // Check if any keyword matches
+          const hasNoCallKeyword = noCallKeywords.some(keyword => 
+            commentValue.includes(keyword)
+          )
+          
+          if (hasNoCallKeyword) {
+            // Show notice with smooth fade-in
+            noCallNotice.classList.remove('hidden')
+            setTimeout(() => {
+              noCallNotice.classList.remove('opacity-0')
+              noCallNotice.classList.add('opacity-100')
+            }, 10)
+          } else {
+            // Hide notice with smooth fade-out
+            noCallNotice.classList.remove('opacity-100')
+            noCallNotice.classList.add('opacity-0')
+            setTimeout(() => {
+              noCallNotice.classList.add('hidden')
+            }, 300)
+          }
+        })
+      }
+
+      // ============================================
+      // ⭐ TELEGRAM NICKNAME - Strict validation
+      // ============================================
+      const telegramInput = document.getElementById('telegram')
+      const telegramFormatError = document.getElementById('telegramFormatError')
+      
+      if (telegramInput && telegramFormatError) {
+        // Real-time character filtering
+        telegramInput.addEventListener('input', function(e) {
+          const originalValue = this.value
+          // Allow ONLY: a-z, A-Z, 0-9, underscore (_)
+          // Remove ALL other characters (Cyrillic, @, spaces, etc.)
+          const filteredValue = originalValue.replace(/[^a-zA-Z0-9_]/g, '')
+          
+          // If value changed (invalid chars were present), show error briefly
+          if (originalValue !== filteredValue) {
+            this.value = filteredValue
+            
+            // Show format error with red border
+            this.classList.remove('border-gray-200')
+            this.classList.add('border-red-500')
+            telegramFormatError.classList.remove('hidden')
+            
+            // Hide error after 3 seconds if field becomes valid
+            setTimeout(() => {
+              if (this.value.length > 0 && /^[a-zA-Z0-9_]+$/.test(this.value)) {
+                this.classList.remove('border-red-500')
+                this.classList.add('border-gray-200')
+                telegramFormatError.classList.add('hidden')
+              }
+            }, 3000)
+          } else if (filteredValue.length > 0 && /^[a-zA-Z0-9_]+$/.test(filteredValue)) {
+            // Valid input - clear error state
+            this.classList.remove('border-red-500')
+            this.classList.add('border-gray-200')
+            telegramFormatError.classList.add('hidden')
+          }
+        })
+        
+        // Additional validation on blur
+        telegramInput.addEventListener('blur', function() {
+          const value = this.value.trim()
+          if (value.length > 0 && !/^[a-zA-Z0-9_]+$/.test(value)) {
+            this.classList.remove('border-gray-200')
+            this.classList.add('border-red-500')
+            telegramFormatError.classList.remove('hidden')
+          }
+        })
+      }
+
       // 6. UKRPOSHTA POSTCODE - Allow only numeric input (5 digits)
       const postcodeInput = document.getElementById('up-postcode-input')
       if (postcodeInput) {
@@ -1155,7 +1318,7 @@
         'phone',
         'telegram',
         'np-city-input',
-        'np-warehouse-select',
+        'np-warehouse-input',
         'comment'
       ]
 
@@ -1310,6 +1473,49 @@
       console.log('✅ Page leave detection enabled for Telegram notifications')
       console.log('✅ Checkout page initialized successfully')
     })
+
+    // ============================================
+    // 🪙 CASHBACK STATE CHANGE LISTENER
+    // ============================================
+    onCashbackStateChange((isEnabled, cashbackPercent) => {
+      console.log('🔄 [Checkout] Cashback state changed:', { 
+        enabled: isEnabled, 
+        percent: cashbackPercent 
+      });
+      
+      // Toggle cashback badge visibility
+      const checkoutCashbackBadgeEl = document.getElementById('checkout-cashback-badge');
+      
+      if (checkoutCashbackBadgeEl) {
+        if (isEnabled) {
+          // SHOW: Remove hidden, add flex
+          checkoutCashbackBadgeEl.classList.remove('hidden');
+          checkoutCashbackBadgeEl.classList.add('flex');
+          checkoutCashbackBadgeEl.style.display = '';
+          console.log('👁️ [Checkout] Showing cashback badge');
+        } else {
+          // HIDE: Add hidden, remove flex, force display none
+          checkoutCashbackBadgeEl.classList.add('hidden');
+          checkoutCashbackBadgeEl.classList.remove('flex');
+          checkoutCashbackBadgeEl.style.display = 'none';
+          console.log('🙈 [Checkout] Hiding cashback badge');
+        }
+        
+        // Recalculate and update cashback amount
+        if (isEnabled && cartItems && cartItems.length > 0) {
+          const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+          const discount = promoApplied ? promoDiscount : 0;
+          const total = cartTotal - discount;
+          const cashbackAmount = Math.floor(total * (cashbackPercent / 100));
+          
+          const checkoutCashbackAmountEl = document.getElementById('checkout-cashback-amount');
+          if (checkoutCashbackAmountEl) {
+            checkoutCashbackAmountEl.textContent = cashbackAmount;
+            console.log(`✅ [Checkout] Updated cashback amount: ${cashbackAmount} грн (${cashbackPercent}%)`);
+          }
+        }
+      }
+    });
 
     // ============================================
     // RENDER PRODUCTS FUNCTION
@@ -1552,6 +1758,30 @@
       // Update final total
       if (totalPriceEl) totalPriceEl.textContent = `${productTotal} грн`
       if (totalPriceMobileEl) totalPriceMobileEl.textContent = `${productTotal} грн`
+
+      // ============================================
+      // 🪙 UPDATE CASHBACK (dynamic % of final total)
+      // ============================================
+      const cashbackPercent = (window.cashbackPercent || 8) / 100;
+      const calculatedCashback = Math.floor(productTotal * cashbackPercent)
+      const checkoutCashbackAmountEl = document.getElementById('checkout-cashback-amount')
+      const checkoutCashbackBadgeEl = document.getElementById('checkout-cashback-badge')
+      
+      if (checkoutCashbackAmountEl) {
+        checkoutCashbackAmountEl.textContent = calculatedCashback
+      }
+      
+      // Show/hide badge based on total amount and cashback enabled state
+      if (checkoutCashbackBadgeEl) {
+        const isCashbackEnabled = window.cashbackEnabled !== false;
+        if (productTotal > 0 && isCashbackEnabled) {
+          checkoutCashbackBadgeEl.classList.remove('hidden')
+          checkoutCashbackBadgeEl.classList.add('flex')
+        } else {
+          checkoutCashbackBadgeEl.classList.add('hidden')
+          checkoutCashbackBadgeEl.classList.remove('flex')
+        }
+      }
 
       // Update payment summary based on current payment method
       const selectedPaymentCard = document.querySelector('[data-payment].selected')
@@ -2103,11 +2333,15 @@
      * @param {string} cityRef - City reference ID from selected city
      */
     async function loadNovaPoshtaWarehouses(cityRef) {
-      const warehouseSelect = document.getElementById('np-warehouse-select')
+      const warehouseInput = document.getElementById('np-warehouse-input')
+      const warehouseList = document.getElementById('np-warehouse-list')
 
       // Show loading state
-      warehouseSelect.disabled = true
-      warehouseSelect.innerHTML = '<option>⏳ Завантаження відділень...</option>'
+      warehouseInput.disabled = true
+      warehouseInput.placeholder = '⏳ Завантаження відділень...'
+      warehouseInput.value = ''
+      selectedWarehouse = null
+      warehouseList.classList.add('hidden')
 
       try {
         // API Request: Get warehouses by city reference
@@ -2131,38 +2365,96 @@
 
         // Response Handling: Check if warehouses were found
         if (data.success && data.data && data.data.length > 0) {
-          const warehouses = data.data
-          renderWarehouses(warehouses)
+          allWarehouses = data.data // Store warehouses globally for filtering
+          warehouseInput.placeholder = 'Почніть вводити номер або назву відділення...'
+          warehouseInput.disabled = false
+          warehouseInput.focus() // Auto-focus for better UX
         } else {
-          warehouseSelect.innerHTML = '<option>❌ Відділення не знайдено</option>'
-          warehouseSelect.disabled = false
+          allWarehouses = []
+          warehouseInput.placeholder = '❌ Відділення не знайдено'
+          warehouseInput.disabled = false
         }
       } catch (error) {
         console.error('❌ Error fetching warehouses:', error)
-        warehouseSelect.innerHTML = '<option>⚠️ Помилка завантаження</option>'
-        warehouseSelect.disabled = false
+        allWarehouses = []
+        warehouseInput.placeholder = '⚠️ Помилка завантаження'
+        warehouseInput.disabled = false
       }
     }
 
     /**
-     * Render Warehouses in Select Dropdown
-     * Populates the warehouse select with options
-     * @param {Array} warehouses - Array of warehouse objects from API response
+     * Search and Filter Warehouses
+     * Filters warehouses based on user input (branch number or description text)
+     * @param {string} query - User input search query
      */
-    function renderWarehouses(warehouses) {
-      const warehouseSelect = document.getElementById('np-warehouse-select')
-      warehouseSelect.innerHTML = '<option value="">Оберіть відділення...</option>'
+    function searchWarehouses(query) {
+      const warehouseList = document.getElementById('np-warehouse-list')
+      
+      // Clear previous results
+      warehouseList.innerHTML = ''
 
-      // Loop through warehouses and create options
-      warehouses.forEach(warehouse => {
-        const option = document.createElement('option')
-        option.value = warehouse.Ref // Warehouse reference ID
-        option.textContent = warehouse.Description // Warehouse full name/address
-        warehouseSelect.appendChild(option)
+      // If query is empty, hide the list
+      if (!query || query.trim() === '') {
+        warehouseList.classList.add('hidden')
+        return
+      }
+
+      const searchTerm = query.toLowerCase().trim()
+
+      // Filter warehouses: match against branch number (e.g., "12") and full description
+      const filteredWarehouses = allWarehouses.filter(warehouse => {
+        const description = warehouse.Description.toLowerCase()
+        
+        // Extract branch number from description (e.g., "Відділення №12" -> "12")
+        const numberMatch = warehouse.Description.match(/№(\d+)/)
+        const branchNumber = numberMatch ? numberMatch[1] : ''
+        
+        // Match if query is in the branch number or description
+        return branchNumber.includes(searchTerm) || description.includes(searchTerm)
       })
 
-      // Enable the select field
-      warehouseSelect.disabled = false
+      // Render filtered results
+      if (filteredWarehouses.length > 0) {
+        renderWarehouseAutocomplete(filteredWarehouses)
+      } else {
+        warehouseList.innerHTML = '<li class="px-4 py-2 text-sm text-gray-500">❌ Відділення не знайдено</li>'
+        warehouseList.classList.remove('hidden')
+      }
+    }
+
+    /**
+     * Render Warehouse Autocomplete Suggestions
+     * Creates clickable list items for each filtered warehouse
+     * @param {Array} warehouses - Array of filtered warehouse objects
+     */
+    function renderWarehouseAutocomplete(warehouses) {
+      const warehouseList = document.getElementById('np-warehouse-list')
+      warehouseList.innerHTML = '' // Clear previous results
+
+      // Loop through each warehouse and create a list item
+      warehouses.forEach(warehouse => {
+        const li = document.createElement('li')
+        li.className = 'px-4 py-2.5 hover:bg-orange-50 cursor-pointer text-sm text-gray-900 border-b border-gray-100 last:border-b-0 transition-colors'
+        li.textContent = warehouse.Description // Display warehouse full description
+
+        // Click Action: Select this warehouse
+        li.onclick = () => {
+          // Set input value to selected warehouse description
+          document.getElementById('np-warehouse-input').value = warehouse.Description
+
+          // Save warehouse object for later use
+          selectedWarehouse = warehouse
+
+          // Hide suggestion list
+          warehouseList.classList.add('hidden')
+          warehouseList.innerHTML = ''
+        }
+
+        warehouseList.appendChild(li)
+      })
+
+      // Show the populated list
+      warehouseList.classList.remove('hidden')
     }
 
     // ============================================
@@ -2174,14 +2466,26 @@
       searchNovaPoshtaCities(event.target.value)
     })
 
+    // Listen for input events on warehouse input field
+    document.getElementById('np-warehouse-input').addEventListener('input', function (event) {
+      searchWarehouses(event.target.value)
+    })
+
     // Close autocomplete when clicking outside
     document.addEventListener('click', function (event) {
       const cityInput = document.getElementById('np-city-input')
       const cityList = document.getElementById('np-city-list')
+      const warehouseInput = document.getElementById('np-warehouse-input')
+      const warehouseList = document.getElementById('np-warehouse-list')
 
-      // Check if click was outside both the input and the list
+      // Check if click was outside both the city input and the list
       if (cityInput && cityList && !cityInput.contains(event.target) && !cityList.contains(event.target)) {
         cityList.classList.add('hidden')
+      }
+
+      // Check if click was outside both the warehouse input and the list
+      if (warehouseInput && warehouseList && !warehouseInput.contains(event.target) && !warehouseList.contains(event.target)) {
+        warehouseList.classList.add('hidden')
       }
     })
 
@@ -2194,7 +2498,9 @@
       const telegram = document.getElementById('telegram').value.trim()
       const { total } = calculateTotals()
 
-      const isValid = fullName !== '' && phone !== '' && telegram !== '' && total >= 100
+      // Validate telegram format (only letters, numbers, underscore)
+      const isTelegramValid = telegram !== '' && /^[a-zA-Z0-9_]+$/.test(telegram)
+      const isValid = fullName !== '' && phone !== '' && isTelegramValid && total >= 100
 
       const desktopBtn = document.getElementById('submitBtnDesktop')
       const mobileBtn = document.getElementById('submitBtnMobile')
@@ -2239,7 +2545,9 @@
 
       // Hide all error messages
       const telegramError = document.getElementById('telegramError')
+      const telegramFormatError = document.getElementById('telegramFormatError')
       if (telegramError) telegramError.classList.add('hidden')
+      if (telegramFormatError) telegramFormatError.classList.add('hidden')
 
       // Validate Name
       if (name === '') {
@@ -2265,13 +2573,19 @@
         if (!firstError) firstError = { input: phoneInput, message: 'Будь ласка, введіть коректний номер телефону (наприклад, +380501234567)' }
       }
 
-      // Validate Telegram
+      // Validate Telegram (both presence and format)
       if (telegram === '') {
         isValid = false
         telegramInput.classList.remove('border-gray-200')
         telegramInput.classList.add('border-red-500')
         if (telegramError) telegramError.classList.remove('hidden')
         if (!firstError) firstError = { input: telegramInput, message: 'Будь ласка, вкажіть нікнейм Telegram' }
+      } else if (!/^[a-zA-Z0-9_]+$/.test(telegram)) {
+        isValid = false
+        telegramInput.classList.remove('border-gray-200')
+        telegramInput.classList.add('border-red-500')
+        if (telegramFormatError) telegramFormatError.classList.remove('hidden')
+        if (!firstError) firstError = { input: telegramInput, message: 'Нікнейм Telegram може містити лише латинські літери, цифри та символ "_"' }
       }
 
       // If validation failed, scroll to first error and show alert
@@ -2344,8 +2658,7 @@
 
         if (deliveryMethod === 'nova') {
           const npCity = document.getElementById('np-city-input')?.value.trim() || ''
-          const npWarehouseSelect = document.getElementById('np-warehouse-select')
-          const npWarehouse = npWarehouseSelect?.options[npWarehouseSelect.selectedIndex]?.text || ''
+          const npWarehouse = selectedWarehouse?.Description || document.getElementById('np-warehouse-input')?.value.trim() || ''
 
           deliveryInfo.city = npCity
           deliveryInfo.branch = npWarehouse
@@ -2720,8 +3033,7 @@
         if (deliveryMethod === 'nova') {
           // Nova Poshta delivery details
           const npCity = document.getElementById('np-city-input').value.trim()
-          const npWarehouseSelect = document.getElementById('np-warehouse-select')
-          const npWarehouse = npWarehouseSelect.options[npWarehouseSelect.selectedIndex]?.text || ''
+          const npWarehouse = selectedWarehouse?.Description || document.getElementById('np-warehouse-input')?.value.trim() || ''
 
           deliveryInfo.city = npCity
           deliveryInfo.warehouse = npWarehouse
@@ -3371,6 +3683,11 @@
 
   <!-- Live Chat Widget -->
   <script type="module" src="./js/chat-widget.js"></script>
+
+  <!-- 🌶️ Chili Pepper Hunt Game -->
+  <script type="module" src="./js/pepper-hunt-game.js"></script>
+  <script type="module" src="./js/pepper-hunt-init.js"></script>
+  <script type="module" src="./js/pepper-placer.js"></script>
 </body>
 
 </html>
