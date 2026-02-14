@@ -523,13 +523,16 @@ exports.handleMonoWebhook = functions.https.onRequest(async (req, res) => {
           const configDoc = await admin.firestore().collection('config').doc('general_config').get();
           const cashbackPercent = configDoc.exists() ? (configDoc.data().cashbackPercent || 8) : 8;
           const isCashbackEnabled = configDoc.exists() ? (configDoc.data().isCashbackEnabled !== false) : true;
+          const maxEarnLimit = configDoc.exists() ? (configDoc.data().maxEarnLimit || 0) : 0;
 
           if (!isCashbackEnabled) {
             console.log('🪙 Cashback system is disabled, skipping...');
           } else {
             // 2. Calculate earned cashback (percentage of total order amount)
-            const earnedCashback = Math.floor(totalAmount * (cashbackPercent / 100));
-            console.log(`🪙 Calculated cashback: ${earnedCashback} грн (${cashbackPercent}% of ${totalAmount} грн)`);
+            // Apply maxEarnLimit if set
+            const potentialCashback = Math.floor(totalAmount * (cashbackPercent / 100));
+            const earnedCashback = (maxEarnLimit > 0) ? Math.min(potentialCashback, maxEarnLimit) : potentialCashback;
+            console.log(`🪙 Calculated cashback: ${earnedCashback} грн (${cashbackPercent}% of ${totalAmount} грн, limit: ${maxEarnLimit > 0 ? maxEarnLimit + ' грн' : 'немає'})`);
 
             if (earnedCashback <= 0) {
               console.log('🪙 Cashback amount is 0, skipping...');

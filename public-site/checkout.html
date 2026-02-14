@@ -739,34 +739,49 @@
             <p class="text-xs text-gray-500 mt-2 italic">💡 Онлайн оплачуєте тільки 100 грн, решту - при отриманні</p>
           </div>
 
-          <!-- 🪙 TASK 1-4: Enhanced Cashback Summary Block -->
+          <!-- 🪙 TASK 1-4: Enhanced Cashback Summary Block - Product Page Style -->
           <div id="checkout-cashback-badge" class="hidden mt-3 mb-4">
-            <!-- Compact Cashback Summary -->
-            <div class="p-4 rounded-xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 shadow-sm">
-              <div class="flex items-center gap-2 mb-3">
-                <!-- Coin Icon -->
-                <svg class="w-5 h-5 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
-                </svg>
-                <h4 class="text-sm font-bold text-amber-900">🪙 Кешбек по цьому замовленню</h4>
+            <!-- Main Cashback Badge (matches Product Page style) -->
+            <div class="bg-gradient-to-r from-amber-50 to-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-center gap-3 cashback-shine-effect">
+              <!-- Coin Icon (exact same as Product Page) -->
+              <svg class="w-6 h-6 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
+              </svg>
+              
+              <!-- Cashback Text (exact style as Product Page) -->
+              <div class="flex-1">
+                <p class="text-sm font-medium text-amber-900">
+                  За це замовлення буде нараховано <span id="checkout-cashback-amount" class="font-bold text-amber-700">+0</span> грн
+                </p>
               </div>
               
-              <!-- Cashback Breakdown (Compact) -->
-              <div class="bg-white bg-opacity-70 rounded-lg p-3 space-y-2">
-                <!-- TASK 2-3: Списано Row (Conditional - only if appliedCashback > 0) -->
-                <div id="cashback-spent-row" class="hidden flex items-center justify-between">
-                  <span class="text-sm font-medium text-gray-700">Списано:</span>
-                  <span class="text-base font-bold text-red-600" id="cashback-spent-amount">- 0 грн</span>
-                </div>
-                
-                <!-- TASK 2-3: Нараховано Row (Always show) -->
-                <div class="flex items-center justify-between">
-                  <span class="text-sm font-medium text-gray-700">Нараховано:</span>
-                  <span class="text-base font-bold text-green-600" id="checkout-cashback-amount">+ 0 грн</span>
+              <!-- Info Icon (i) with Tooltip - shows only when maxEarnLimit is set -->
+              <div id="cashback-info-tooltip" class="hidden relative group flex-shrink-0">
+                <button type="button" class="w-5 h-5 rounded-full bg-amber-200 border border-amber-400 flex items-center justify-center text-amber-800 text-xs font-bold hover:bg-amber-300 transition-colors cursor-help focus:outline-none focus:ring-2 focus:ring-amber-400" aria-label="Інформація про ліміт кешбеку">
+                  i
+                </button>
+                <!-- Tooltip (CSS-only hover reveal with dark bg, white text, arrow) -->
+                <div class="absolute bottom-full right-0 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
+                  <div class="relative">
+                    <p class="leading-relaxed">Максимальна сума кешбеку на одне замовлення: <span id="tooltip-max-limit" class="font-bold text-amber-400">0</span> грн</p>
+                    <!-- Arrow pointing down -->
+                    <div class="absolute -bottom-3 right-2 w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-gray-900"></div>
+                  </div>
                 </div>
               </div>
-              
-              <p class="text-xs text-amber-800 mt-2 italic">💡 Кешбек буде зараховано після виконання замовлення</p>
+            </div>
+            
+            <!-- Additional Info: Used cashback row (shows only when applying cashback) -->
+            <div id="cashback-used-summary" class="hidden mt-2 p-2.5 rounded-lg bg-red-50 border border-red-200">
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-red-700 flex items-center gap-1.5">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  Списано з балансу:
+                </span>
+                <span class="text-sm font-bold text-red-600" id="cashback-spent-display">- 0 грн</span>
+              </div>
             </div>
           </div>
 
@@ -1601,10 +1616,11 @@
     // ============================================
     // 🪙 CASHBACK STATE CHANGE LISTENER
     // ============================================
-    onCashbackStateChange((isEnabled, cashbackPercent) => {
+    onCashbackStateChange((isEnabled, cashbackPercent, maxEarnLimit = 0) => {
       console.log('🔄 [Checkout] Cashback state changed:', { 
         enabled: isEnabled, 
-        percent: cashbackPercent 
+        percent: cashbackPercent,
+        maxLimit: maxEarnLimit
       });
       
       // Toggle cashback badge visibility
@@ -1625,18 +1641,41 @@
           console.log('🙈 [Checkout] Hiding cashback badge');
         }
         
-        // Recalculate and update cashback amount
+        // Recalculate and update cashback amount with maxEarnLimit
         if (isEnabled && cartItems && cartItems.length > 0) {
           const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
           const discount = promoApplied ? promoDiscount : 0;
           const total = cartTotal - discount;
-          const cashbackAmount = Math.floor(total * (cashbackPercent / 100));
           
+          // Calculate potential cashback
+          const potentialCashback = Math.floor(total * (cashbackPercent / 100));
+          
+          // Apply max earn limit if set
+          let finalCashback = potentialCashback;
+          let isLimitReached = false;
+          
+          if (maxEarnLimit > 0 && potentialCashback > maxEarnLimit) {
+            finalCashback = maxEarnLimit;
+            isLimitReached = true;
+          }
+          
+          // Update amount display (Product Page style format)
           const checkoutCashbackAmountEl = document.getElementById('checkout-cashback-amount');
           if (checkoutCashbackAmountEl) {
-            // TASK 3: Format with "+" prefix
-            checkoutCashbackAmountEl.textContent = `+ ${cashbackAmount} грн`;
-            console.log(`✅ [Checkout] Updated cashback amount: ${cashbackAmount} грн (${cashbackPercent}%)`);
+            checkoutCashbackAmountEl.textContent = `+${finalCashback}`;
+            console.log(`✅ [Checkout] Updated cashback: ${finalCashback} грн (${cashbackPercent}%${isLimitReached ? ', capped at ' + maxEarnLimit : ''})`);
+          }
+          
+          // Show/hide info tooltip - show only if maxEarnLimit is set (not 0)
+          const infoTooltip = document.getElementById('cashback-info-tooltip');
+          const tooltipMaxLimitEl = document.getElementById('tooltip-max-limit');
+          if (infoTooltip && tooltipMaxLimitEl) {
+            if (maxEarnLimit > 0) {
+              infoTooltip.classList.remove('hidden');
+              tooltipMaxLimitEl.textContent = maxEarnLimit;
+            } else {
+              infoTooltip.classList.add('hidden');
+            }
           }
         }
       }
@@ -1925,28 +1964,53 @@
       if (totalPriceMobileEl) totalPriceMobileEl.textContent = `${finalTotal} грн`
 
       // ============================================
-      // 🪙 TASK 2-3: UPDATE CASHBACK SUMMARY (Enhanced)
+      // 🪙 TASK 2-3: UPDATE CASHBACK SUMMARY (Enhanced with Max Earn Limit)
       // ============================================
       const cashbackPercent = (window.cashbackPercent || 8) / 100;
-      const calculatedCashback = Math.floor(productTotal * cashbackPercent)
+      const maxEarnLimit = window.cashbackMaxEarnLimit || 0; // 0 = no limit
       
-      // TASK 3: Update "Нараховано" (earned) field
+      // Calculate potential cashback (before limit)
+      let potentialCashback = Math.floor(productTotal * cashbackPercent);
+      
+      // Apply max earn limit if set
+      let calculatedCashback = potentialCashback;
+      let isLimitReached = false;
+      
+      if (maxEarnLimit > 0 && potentialCashback > maxEarnLimit) {
+        calculatedCashback = maxEarnLimit;
+        isLimitReached = true;
+        console.log(`🪙 [Checkout] Cashback limited: ${potentialCashback} → ${calculatedCashback} грн (max: ${maxEarnLimit})`);
+      }
+      
+      // TASK 3: Update cashback amount display (matches Product Page style)
       const checkoutCashbackAmountEl = document.getElementById('checkout-cashback-amount')
       if (checkoutCashbackAmountEl) {
-        checkoutCashbackAmountEl.textContent = `+ ${calculatedCashback} грн`
+        checkoutCashbackAmountEl.textContent = `+${calculatedCashback}`
+      }
+      
+      // TASK 4: Show/hide info tooltip - show only if maxEarnLimit is set (not 0)
+      const infoTooltip = document.getElementById('cashback-info-tooltip')
+      const tooltipMaxLimitEl = document.getElementById('tooltip-max-limit')
+      if (infoTooltip && tooltipMaxLimitEl) {
+        if (maxEarnLimit > 0) {
+          infoTooltip.classList.remove('hidden')
+          tooltipMaxLimitEl.textContent = maxEarnLimit
+        } else {
+          infoTooltip.classList.add('hidden')
+        }
       }
       
       // TASK 2-3: Update "Списано" (spent) row - Conditional rendering
-      const cashbackSpentRow = document.getElementById('cashback-spent-row')
-      const cashbackSpentAmountEl = document.getElementById('cashback-spent-amount')
+      const cashbackUsedSummary = document.getElementById('cashback-used-summary')
+      const cashbackSpentDisplay = document.getElementById('cashback-spent-display')
       
       if (appliedCashback > 0) {
         // Show spent row and update amount
-        if (cashbackSpentRow) cashbackSpentRow.classList.remove('hidden')
-        if (cashbackSpentAmountEl) cashbackSpentAmountEl.textContent = `- ${appliedCashback} грн`
+        if (cashbackUsedSummary) cashbackUsedSummary.classList.remove('hidden')
+        if (cashbackSpentDisplay) cashbackSpentDisplay.textContent = `- ${appliedCashback} грн`
       } else {
         // Hide spent row when no cashback is applied
-        if (cashbackSpentRow) cashbackSpentRow.classList.add('hidden')
+        if (cashbackUsedSummary) cashbackUsedSummary.classList.add('hidden')
       }
       
       // Show/hide entire badge based on total amount and cashback enabled state
@@ -3540,15 +3604,20 @@
         // ============================================
         // TASK 2: CALCULATE POINTS EARNED FOR THIS ORDER
         // Calculate from FINAL total (after all discounts including cashback)
+        // Apply maxEarnLimit if set
         // ============================================
         
         const cashbackPercentage = (window.cashbackPercent || 8) / 100;
-        const pointsEarned = Math.floor(finalTotal * cashbackPercentage);
+        const potentialPointsEarned = Math.floor(finalTotal * cashbackPercentage);
+        const maxEarnLimit = window.cashbackMaxEarnLimit || 0;
+        const pointsEarned = (maxEarnLimit > 0) ? Math.min(potentialPointsEarned, maxEarnLimit) : potentialPointsEarned;
         
         console.log('🎁 Cashback to be earned:');
         console.log('   Percentage rate:', (cashbackPercentage * 100).toFixed(0) + '%');
         console.log('   Calculated from final total:', finalTotal, 'грн');
-        console.log('   ✅ Points earned:', pointsEarned, 'грн');
+        console.log('   Potential earned:', potentialPointsEarned, 'грн');
+        console.log('   Max earn limit:', maxEarnLimit > 0 ? maxEarnLimit + ' грн' : 'немає');
+        console.log('   ✅ Final points earned:', pointsEarned, 'грн');
 
         // ============================================
         // STEP 6: Collect Additional Info (including Promo Code)

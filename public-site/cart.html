@@ -1076,15 +1076,19 @@
       
       if (isCashbackEnabled) {
         // Calculate cashback value once with dynamic percentage
-        const calculatedCashback = Math.floor(total * cashbackPercent);
+        const potentialCashback = Math.floor(total * cashbackPercent);
+        const maxEarnLimit = window.cashbackMaxEarnLimit || 0;
+        const calculatedCashback = (maxEarnLimit > 0) ? Math.min(potentialCashback, maxEarnLimit) : potentialCashback;
         
         // 🐛 DEBUG: Детальна інформація про кешбек
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log('🐛 [CASHBACK DEBUG]');
         console.log('1️⃣ Total:', total, 'грн');
-        console.log('2️⃣ Math.floor(total * cashbackPercent):', Math.floor(total * cashbackPercent), 'грн', `(${window.cashbackPercent || 8}%)`);
-        console.log('3️⃣ Element total-cart-cashback:', document.getElementById('total-cart-cashback'));
-        console.log('4️⃣ Element cashback-summary-badge:', document.getElementById('cashback-summary-badge'));
+        console.log('2️⃣ Potential cashback:', potentialCashback, 'грн', `(${window.cashbackPercent || 8}%)`);
+        console.log('3️⃣ Max earn limit:', maxEarnLimit > 0 ? maxEarnLimit + ' грн' : 'немає');
+        console.log('4️⃣ Final cashback:', calculatedCashback, 'грн');
+        console.log('5️⃣ Element total-cart-cashback:', document.getElementById('total-cart-cashback'));
+        console.log('6️⃣ Element cashback-summary-badge:', document.getElementById('cashback-summary-badge'));
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         
         // Task 1: Update cart cashback amount (main badge)

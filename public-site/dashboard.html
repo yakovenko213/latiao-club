@@ -1338,6 +1338,12 @@
     /**
      * Load transaction history for cashback
      * Queries cashback_transactions collection
+     * 
+     * NOTE: This query requires a composite Firestore index.
+     * If you see "Missing Index" error, create it here:
+     * https://console.firebase.google.com/v1/r/project/my-magazin-81c96/firestore/indexes?create_composite=Cl5wcm9qZWN0cy9teS1tYWdhemluLTgxYzk2L2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9jYXNoYmFja190cmFuc2FjdGlvbnMvaW5kZXhlcy9fEAEaCgoG
+     * 
+     * Required index: cashback_transactions (userId ASC, createdAt DESC)
      */
     async function loadCashbackTransactions() {
       try {
@@ -1350,7 +1356,7 @@
 
         if (!window.firebaseInit) {
           console.warn('⚠️ Firebase not available for transactions');
-          return [];
+          return { transactions: [], error: null };
         }
 
         const { db, collection, query, where, orderBy, getDocs } = window.firebaseInit;
@@ -1359,7 +1365,7 @@
         const sessionData = localStorage.getItem('user_session');
         if (!sessionData) {
           console.log('ℹ️ No user session');
-          return [];
+          return { transactions: [], error: null };
         }
 
         const user = JSON.parse(sessionData);
@@ -1367,10 +1373,11 @@
         
         if (!userPhone) {
           console.warn('⚠️ No user phone found');
-          return [];
+          return { transactions: [], error: null };
         }
 
         // Query cashback_transactions collection
+        // Requires composite index: userId (ASC) + createdAt (DESC)
         const transactionsRef = collection(db, 'cashback_transactions');
         const q = query(
           transactionsRef, 
@@ -1389,11 +1396,21 @@
         });
 
         console.log('📋 Loaded', transactions.length, 'cashback transactions');
-        return transactions;
+        return { transactions, error: null };
 
       } catch (error) {
         console.error('❌ Error loading cashback transactions:', error);
-        return [];
+        
+        // Check if it's a missing index error
+        if (error.code === 'failed-precondition' || 
+            error.message?.includes('index') || 
+            error.message?.includes('Index')) {
+          console.warn('⚠️ Missing Firestore index for cashback_transactions query');
+          console.log('📌 Create index at: https://console.firebase.google.com/v1/r/project/my-magazin-81c96/firestore/indexes?create_composite=Cl5wcm9qZWN0cy9teS1tYWdhemluLTgxYzk2L2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9jYXNoYmFja190cmFuc2FjdGlvbnMvaW5kZXhlcy9fEAEaCgoG');
+          return { transactions: [], error: 'missing_index' };
+        }
+        
+        return { transactions: [], error: 'unknown' };
       }
     }
 
@@ -1418,13 +1435,36 @@
       contentEl.classList.add('hidden');
 
       // Load transactions
-      const transactions = await loadCashbackTransactions();
+      const result = await loadCashbackTransactions();
+      const transactions = result.transactions;
+      const error = result.error;
 
       // Hide loading
       loadingEl.classList.add('hidden');
 
+      // Handle missing index error
+      if (error === 'missing_index') {
+        // Show user-friendly message for missing index
+        emptyEl.innerHTML = `
+          <svg class="w-16 h-16 mx-auto text-amber-500/50 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <h3 class="text-lg font-semibold text-foreground dark:text-white mb-2">Історія оновлюється</h3>
+          <p class="text-sm text-muted-foreground dark:text-gray-400">Будь ласка, зачекайте кілька хвилин.</p>
+        `;
+        emptyEl.classList.remove('hidden');
+        return;
+      }
+
       if (transactions.length === 0) {
-        // Show empty state
+        // Show empty state with proper message
+        emptyEl.innerHTML = `
+          <svg class="w-16 h-16 mx-auto text-muted-foreground/30 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+          <h3 class="text-lg font-semibold text-foreground dark:text-white mb-2">У вас ще немає транзакцій кешбеку</h3>
+          <p class="text-sm text-muted-foreground dark:text-gray-400">Кешбек буде нараховуватись після оплати замовлень</p>
+        `;
         emptyEl.classList.remove('hidden');
       } else {
         // Populate table
@@ -1454,6 +1494,7 @@
                           transaction.type === 'order_payment' ? '🛒 Оплата замовлення' :
                           transaction.type === 'manual_debit' ? '⚠️ Списання' :
                           transaction.type === 'refund' ? '↩️ Повернення' :
+                          transaction.type === 'limit_correction' ? '🔄 Коригування ліміту' :
                           '📋 Інше';
           const amountColor = isCredit ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500';
           const amountSign = isCredit ? '+' : '';

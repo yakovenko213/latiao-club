@@ -184,7 +184,8 @@ const cashbackCallbacks = [];
 // Current cashback state
 let cashbackState = {
     isEnabled: true,  // Default enabled
-    percent: 8        // Default 8%
+    percent: 8,       // Default 8%
+    maxEarnLimit: 0   // Default 0 (no limit)
 };
 
 /**
@@ -201,17 +202,19 @@ export function initCashbackListener() {
                 // Update global state
                 cashbackState.isEnabled = data.isCashbackEnabled !== false; // default true
                 cashbackState.percent = data.cashbackPercent || 8;
+                cashbackState.maxEarnLimit = data.maxEarnLimit || 0; // 0 = no limit
                 
                 // Update window global for legacy code
                 window.cashbackEnabled = cashbackState.isEnabled;
                 window.cashbackPercent = cashbackState.percent;
+                window.cashbackMaxEarnLimit = cashbackState.maxEarnLimit;
                 
-                console.log(`🪙 [Cashback] State updated: enabled=${cashbackState.isEnabled}, percent=${cashbackState.percent}%`);
+                console.log(`🪙 [Cashback] State updated: enabled=${cashbackState.isEnabled}, percent=${cashbackState.percent}%, maxEarnLimit=${cashbackState.maxEarnLimit} грн`);
                 
-                // Notify all registered callbacks
+                // Notify all registered callbacks with extended data
                 cashbackCallbacks.forEach(callback => {
                     try {
-                        callback(cashbackState.isEnabled, cashbackState.percent);
+                        callback(cashbackState.isEnabled, cashbackState.percent, cashbackState.maxEarnLimit);
                     } catch (e) {
                         console.error('❌ [Cashback] Callback error:', e);
                     }
@@ -220,6 +223,7 @@ export function initCashbackListener() {
                 // Document doesn't exist - use defaults
                 window.cashbackEnabled = true;
                 window.cashbackPercent = 8;
+                window.cashbackMaxEarnLimit = 0;
                 console.log('🪙 [Cashback] Config not found, using defaults');
             }
         }, (error) => {
@@ -227,6 +231,7 @@ export function initCashbackListener() {
             // Use defaults on error
             window.cashbackEnabled = true;
             window.cashbackPercent = 8;
+            window.cashbackMaxEarnLimit = 0;
         });
         
         console.log('✅ [Cashback] Listener initialized');
@@ -235,12 +240,13 @@ export function initCashbackListener() {
         // Fallback to defaults
         window.cashbackEnabled = true;
         window.cashbackPercent = 8;
+        window.cashbackMaxEarnLimit = 0;
     }
 }
 
 /**
  * Register a callback for cashback state changes
- * @param {Function} callback - Function to call with (isEnabled, percent)
+ * @param {Function} callback - Function to call with (isEnabled, percent, maxEarnLimit)
  */
 export function onCashbackStateChange(callback) {
     if (typeof callback === 'function') {
@@ -248,9 +254,28 @@ export function onCashbackStateChange(callback) {
         
         // Immediately call with current state if already known
         if (window.cashbackEnabled !== undefined) {
-            callback(window.cashbackEnabled, window.cashbackPercent || 8);
+            callback(window.cashbackEnabled, window.cashbackPercent || 8, window.cashbackMaxEarnLimit || 0);
         }
     }
+}
+
+/**
+ * Calculate cashback for an order with limit applied
+ * @param {number} orderTotal - The order total amount
+ * @returns {number} - The final cashback amount (respecting maxEarnLimit)
+ */
+export function calculateCashback(orderTotal) {
+    const percent = (window.cashbackPercent || 8) / 100;
+    const maxLimit = window.cashbackMaxEarnLimit || 0;
+    
+    const potentialCashback = Math.floor(orderTotal * percent);
+    
+    // Apply limit only if maxLimit > 0
+    if (maxLimit > 0 && potentialCashback > maxLimit) {
+        return maxLimit;
+    }
+    
+    return potentialCashback;
 }
 
 // ═══════════════════════════════════════════════════════════════════
