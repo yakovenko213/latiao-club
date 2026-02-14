@@ -626,6 +626,40 @@
           <!-- Divider -->
           <div class="border-t border-gray-100 my-5"></div>
 
+          <!-- ✨ USE CASHBACK CARD (NEW - with 50% Rule) -->
+          <div id="use-cashback-card" class="hidden mb-5 p-4 bg-gradient-to-br from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-xl shadow-sm">
+            <div class="flex items-start gap-3 mb-3">
+              <div class="flex-shrink-0 w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center text-white text-xl">
+                ✨
+              </div>
+              <div class="flex-1">
+                <h3 class="text-base font-bold text-amber-900 mb-1">Ваш кешбек баланс</h3>
+                <p class="text-2xl font-extrabold text-amber-700" id="available-balance">0 грн</p>
+              </div>
+            </div>
+            
+            <div class="bg-white bg-opacity-60 rounded-lg p-3 mb-3">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-semibold text-gray-700">Доступно для цього замовлення:</span>
+                <span class="text-lg font-bold text-amber-600" id="max-spendable-cashback">0 грн</span>
+              </div>
+              <p class="text-xs text-gray-600 italic">
+                За нашими правилами, ви можете оплатити кешбеком до 50% вартості замовлення.
+              </p>
+            </div>
+            
+            <label class="flex items-center gap-3 cursor-pointer group">
+              <div class="relative">
+                <input type="checkbox" id="use-cashback-toggle" class="sr-only peer">
+                <div class="w-14 h-7 bg-gray-300 rounded-full peer peer-checked:bg-amber-500 transition-all duration-300"></div>
+                <div class="absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
+              </div>
+              <span class="text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
+                Використати кешбек для цього замовлення
+              </span>
+            </label>
+          </div>
+
           <!-- Total - Standard View (Online Payment) -->
           <div id="summary-standard" class="mb-2">
             <!-- Subtotal (before discount) -->
@@ -645,6 +679,15 @@
                 Знижка:
               </span>
               <span class="text-sm font-bold text-green-600" id="discountAmount">- 0 грн</span>
+            </div>
+
+            <!-- 🪙 Cashback Discount Row (NEW - if cashback applied) -->
+            <div id="cashback-discount-row" class="hidden flex items-center justify-between mb-2">
+              <span class="text-sm text-amber-700 flex items-center gap-1">
+                <span class="text-base">🪙</span>
+                Використано кешбек:
+              </span>
+              <span class="text-sm font-bold text-amber-600" id="cashbackUsedAmount">- 0 грн</span>
             </div>
 
             <!-- Divider (if discount applied) -->
@@ -1025,6 +1068,16 @@
     const DELIVERY_COST = 70
 
     // ============================================
+    // 🪙 CASHBACK LOOKUP VARIABLES (NEW)
+    // ============================================
+    let appliedCashback = 0 // Global variable for cashback discount
+    let userCashbackBalance = 0 // User's total balance
+    let userSpendableAmount = 0 // 50% of balance (spendable)
+    let cashbackDebounceTimer = null // For debouncing phone input
+    let maxCashbackForOrder = 0 // Maximum cashback allowed for current order (50% rule)
+    let currentUserPhone = null // Store normalized user phone for balance updates
+
+    // ============================================
     // ABANDONED CART: Order submission flag
     // Prevents Telegram notification if order was placed
     // ============================================
@@ -1359,6 +1412,55 @@
             console.log('🔥 AGGRESSIVE SAVE: Phone blur triggered')
             saveAbandonedCart()
           }
+        })
+
+        // ============================================
+        // 🪙 CASHBACK LOOKUP ON PHONE INPUT
+        // ============================================
+        phoneInput.addEventListener('input', function () {
+          const phone = this.value.trim()
+          const digits = phone.replace(/\D/g, '') // Extract only digits
+
+          // 🐛 DEBUG: Log phone input
+          console.log('📱 Phone entered:', phone, '| Digits only:', digits)
+
+          // Clear previous debounce timer
+          if (cashbackDebounceTimer) {
+            clearTimeout(cashbackDebounceTimer)
+          }
+
+          // If phone is invalid or too short, hide cashback card
+          if (digits.length < 10) {
+            console.log('⏭️ Phone too short (' + digits.length + ' digits), skipping lookup')
+            hideCashbackCard()
+            return
+          }
+
+          // Debounce: Wait 600ms before looking up
+          console.log('⏰ Starting 600ms debounce timer...')
+          cashbackDebounceTimer = setTimeout(async () => {
+            console.log('✅ Debounce complete, fetching cashback balance...')
+            await fetchUserCashbackBalance(phone)
+          }, 600)
+        })
+      }
+
+      // ============================================
+      // 🪙 USE CASHBACK TOGGLE LISTENER (50% rule)
+      // ============================================
+      const useCashbackToggle = document.getElementById('use-cashback-toggle')
+      if (useCashbackToggle) {
+        useCashbackToggle.addEventListener('change', function () {
+          if (this.checked) {
+            // Apply cashback (respecting 50% rule)
+            appliedCashback = maxCashbackForOrder
+            console.log('✨ Cashback applied:', appliedCashback, 'грн (50% rule)')
+          } else {
+            appliedCashback = 0
+            console.log('✨ Cashback removed')
+          }
+          // Recalculate totals with new cashback
+          calculateTotals()
         })
       }
 
@@ -1755,9 +1857,49 @@
         if (discountDivider) discountDivider.classList.add('hidden')
       }
 
-      // Update final total
-      if (totalPriceEl) totalPriceEl.textContent = `${productTotal} грн`
-      if (totalPriceMobileEl) totalPriceMobileEl.textContent = `${productTotal} грн`
+      // ✨ Update cashback card with 50% rule BEFORE applying cashback
+      if (userCashbackBalance > 0) {
+        // Get current order total (after promo discount if any)
+        const orderTotalForCashback = productTotal
+        
+        // Apply 50% rule: user can spend up to 50% of order total OR their full balance, whichever is less
+        const fiftyPercentOfOrder = Math.floor(orderTotalForCashback * 0.5)
+        maxCashbackForOrder = Math.min(userCashbackBalance, fiftyPercentOfOrder)
+        
+        // Update UI
+        const maxSpendableEl = document.getElementById('max-spendable-cashback')
+        if (maxSpendableEl) {
+          maxSpendableEl.textContent = maxCashbackForOrder + ' грн'
+        }
+        
+        // If toggle is ON, update appliedCashback to reflect the new max
+        const useCashbackToggle = document.getElementById('use-cashback-toggle')
+        if (useCashbackToggle && useCashbackToggle.checked) {
+          appliedCashback = maxCashbackForOrder
+        }
+      }
+
+      // ============================================
+      // 🪙 NEW: APPLY CASHBACK DISCOUNT TO FINAL TOTAL
+      // ============================================
+      let finalTotal = productTotal
+      
+      // Show/hide cashback discount row
+      const cashbackDiscountRow = document.getElementById('cashback-discount-row')
+      const cashbackUsedAmountEl = document.getElementById('cashbackUsedAmount')
+      
+      if (appliedCashback > 0) {
+        finalTotal -= appliedCashback
+        if (cashbackDiscountRow) cashbackDiscountRow.classList.remove('hidden')
+        if (cashbackUsedAmountEl) cashbackUsedAmountEl.textContent = `- ${appliedCashback} грн`
+        if (discountDivider) discountDivider.classList.remove('hidden')
+      } else {
+        if (cashbackDiscountRow) cashbackDiscountRow.classList.add('hidden')
+      }
+
+      // Update final total (with cashback applied)
+      if (totalPriceEl) totalPriceEl.textContent = `${finalTotal} грн`
+      if (totalPriceMobileEl) totalPriceMobileEl.textContent = `${finalTotal} грн`
 
       // ============================================
       // 🪙 UPDATE CASHBACK (dynamic % of final total)
@@ -1791,6 +1933,212 @@
       }
 
       return { total: productTotal, subtotal }
+    }
+
+    // ============================================
+    // 🪙 CASHBACK LOOKUP HELPER FUNCTIONS
+    // ============================================
+    
+    /**
+     * Fetch user's cashback balance and show beautiful card
+     */
+    async function fetchUserCashbackBalance(phoneNumber) {
+      console.log('\n╔════════════════════════════════════════════════════════════╗')
+      console.log('║       🪙 CASHBACK LOOKUP DEBUG SESSION START           ║')
+      console.log('╚════════════════════════════════════════════════════════════╝')
+      
+      try {
+        const phoneDigits = phoneNumber.replace(/\D/g, '')
+        console.log('📞 Raw phone input:', phoneNumber)
+        console.log('🔢 Extracted digits:', phoneDigits, '(length:', phoneDigits.length + ')')
+        
+        // Normalize phone to 380XXXXXXXXX format (12 digits)
+        let normalizedPhone = phoneDigits
+        if (phoneDigits.startsWith('380') && phoneDigits.length === 12) {
+          normalizedPhone = phoneDigits
+        } else if (phoneDigits.startsWith('0') && phoneDigits.length === 10) {
+          normalizedPhone = '38' + phoneDigits
+        } else if (phoneDigits.length === 9) {
+          normalizedPhone = '380' + phoneDigits
+        }
+
+        // 🔧 FIX: Create searchPhone with '+' prefix to match Firestore format
+        const searchPhone = normalizedPhone.startsWith('+') ? normalizedPhone : '+' + normalizedPhone
+        
+        console.log('🔄 Normalized phone (digits only):', normalizedPhone)
+        console.log('🔧 Search phone (with + prefix):', searchPhone)
+        console.log('\n🔍 Searching Firestore...')
+        console.log('   Collection: "users"')
+        console.log('   Trying Document ID #1:', searchPhone, '(with +)')
+        
+        currentUserPhone = searchPhone
+
+        // Query Firestore users collection with '+' prefix
+        let userDocRef = doc(db, 'users', searchPhone)
+        let userDoc = await getDoc(userDocRef)
+        
+        // Fallback: Try without '+' if not found (backward compatibility)
+        if (!userDoc.exists()) {
+          console.log('   Trying Document ID #2:', normalizedPhone, '(without +)')
+          userDocRef = doc(db, 'users', normalizedPhone)
+          userDoc = await getDoc(userDocRef)
+          currentUserPhone = normalizedPhone
+        }
+
+        console.log('📡 Firestore response received')
+        console.log('   Document exists:', userDoc.exists())
+
+        if (userDoc.exists()) {
+          console.log('\n✅ USER FOUND! Document ID:', userDoc.id)
+          console.log('✅ Match found with format:', currentUserPhone)
+          
+          const userData = userDoc.data()
+          console.log('\n📄 FULL USER DATA OBJECT:')
+          console.log(JSON.stringify(userData, null, 2))
+          
+          console.log('\n🔑 Available fields in this document:')
+          console.log(Object.keys(userData))
+          
+          // 🐛 AUTOMATED BALANCE DETECTION
+          console.log('\n🔍 SCANNING FOR NUMERIC FIELDS (potential balance fields)...')
+          const numericFields = Object.entries(userData).filter(([key, value]) => typeof value === 'number')
+          console.log('💰 Numeric fields found:', numericFields.length)
+          numericFields.forEach(([key, value]) => {
+            console.log(`   → ${key}: ${value} (type: ${typeof value})`)
+          })
+          
+          // Check for balance field
+          const balance = Number(userData.cashbackBalance) || 0
+          const spendable = Math.floor(balance * 0.5)
+          
+          console.log('\n📊 BALANCE CALCULATION:')
+          console.log('   Field used: "cashbackBalance"')
+          console.log('   Raw value:', userData.cashbackBalance)
+          console.log('   Converted to Number:', balance, 'грн')
+          console.log('   50% Spendable amount:', spendable, 'грн')
+          console.log('   Is greater than 0?', balance > 0)
+
+          if (balance > 0) {
+            userCashbackBalance = balance
+            console.log('\n✅ BALANCE VALID! Updating UI...')
+            
+            // Update UI
+            const availableBalanceEl = document.getElementById('available-balance')
+            if (availableBalanceEl) {
+              availableBalanceEl.textContent = balance + ' грн'
+              console.log('   ✓ Updated #available-balance element')
+            } else {
+              console.warn('   ⚠️ Element #available-balance not found!')
+            }
+            
+            // Calculate 50% rule based on current order total
+            console.log('\n🧮 Calculating 50% rule...')
+            updateCashbackCard()
+            
+            // Show the card
+            const cardEl = document.getElementById('use-cashback-card')
+            if (cardEl) {
+              cardEl.classList.remove('hidden')
+              console.log('   ✓ Cashback card shown (#use-cashback-card)')
+            } else {
+              console.error('   ❌ Element #use-cashback-card not found in DOM!')
+            }
+            
+            console.log('\n🎉 Cashback balance loaded successfully:', balance, 'грн')
+            console.log('💰 Spendable amount (50%):', spendable, 'грн')
+          } else {
+            console.warn('\n⚠️ Balance is 0 or invalid, hiding cashback card')
+            console.log('   cashbackBalance field value:', userData.cashbackBalance)
+            hideCashbackCard()
+          }
+        } else {
+          console.warn('\n⚠️ NO USER FOUND in "users" collection')
+          console.log('   Tried phone formats:')
+          console.log('   1. With +:', searchPhone)
+          console.log('   2. Without +:', normalizedPhone)
+          console.log('   Possible reasons:')
+          console.log('   1. User document does not exist')
+          console.log('   2. Phone format in Firestore is different')
+          console.log('   3. User has not made any orders yet')
+          hideCashbackCard()
+        }
+      } catch (error) {
+        console.error('\n❌ ERROR DURING CASHBACK LOOKUP:')
+        console.error('   Error type:', error.name)
+        console.error('   Error message:', error.message)
+        console.error('   Full error:', error)
+        hideCashbackCard()
+      }
+      
+      console.log('\n╔════════════════════════════════════════════════════════════╗')
+      console.log('║       🪙 CASHBACK LOOKUP DEBUG SESSION END             ║')
+      console.log('╚════════════════════════════════════════════════════════════╝\n')
+    }
+
+    /**
+     * Update cashback card with 50% rule calculation
+     */
+    function updateCashbackCard() {
+      // Get current order total (after promo discount if any)
+      const orderTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) - promoDiscount
+      
+      // Apply 50% rule: user can spend up to 50% of order total OR their full balance, whichever is less
+      const fiftyPercentOfOrder = Math.floor(orderTotal * 0.5)
+      maxCashbackForOrder = Math.min(userCashbackBalance, fiftyPercentOfOrder)
+      
+      console.log('\n📊 50% RULE CALCULATION:')
+      console.log('   User cashback balance:', userCashbackBalance, 'грн')
+      console.log('   Current order total:', orderTotal, 'грн')
+      console.log('   50% of order total:', fiftyPercentOfOrder, 'грн')
+      console.log('   → Max spendable (min of both):', maxCashbackForOrder, 'грн')
+      
+      // Update UI
+      const maxSpendableEl = document.getElementById('max-spendable-cashback')
+      if (maxSpendableEl) {
+        maxSpendableEl.textContent = maxCashbackForOrder + ' грн'
+        console.log('   ✓ Updated #max-spendable-cashback element')
+      } else {
+        console.warn('   ⚠️ Element #max-spendable-cashback not found!')
+      }
+      
+      console.log('💡 50% Rule Applied:', {
+        orderTotal,
+        userBalance: userCashbackBalance,
+        fiftyPercent: fiftyPercentOfOrder,
+        maxAllowed: maxCashbackForOrder
+      })
+    }
+
+    /**
+     * Hide cashback card and reset state
+     */
+    function hideCashbackCard() {
+      console.log('🙈 Hiding cashback card and resetting state...')
+      
+      const cardEl = document.getElementById('use-cashback-card')
+      const toggleEl = document.getElementById('use-cashback-toggle')
+      
+      if (cardEl) {
+        cardEl.classList.add('hidden')
+        console.log('   ✓ Card hidden')
+      }
+      if (toggleEl) {
+        toggleEl.checked = false
+        console.log('   ✓ Toggle reset to OFF')
+      }
+      
+      console.log('   Reset: appliedCashback = 0')
+      console.log('   Reset: userCashbackBalance = 0')
+      console.log('   Reset: maxCashbackForOrder = 0')
+      console.log('   Reset: currentUserPhone = null')
+      
+      appliedCashback = 0
+      userCashbackBalance = 0
+      maxCashbackForOrder = 0
+      currentUserPhone = null
+      
+      calculateTotals()
+      console.log('   ✓ Totals recalculated')
     }
 
     // ============================================
@@ -3139,6 +3487,15 @@
           // Promo Code (if applied)
           promoCode: promoCodeData,
 
+          // ✨ Cashback Used (NEW - with 50% rule)
+          cashbackUsed: appliedCashback > 0 ? {
+            amount: appliedCashback,
+            userPhone: currentUserPhone,
+            userBalance: userCashbackBalance,
+            orderTotal: total,
+            maxAllowed: maxCashbackForOrder
+          } : null,
+
           // Additional Information
           comment: comment,
 
@@ -3272,6 +3629,43 @@
         await setDoc(doc(db, 'orders', orderId), orderData);
 
         console.log('✅ Order saved successfully! Order ID:', orderId)
+
+        // ============================================
+        // ✨ STEP 8.2: DEDUCT CASHBACK FROM USER BALANCE (50% RULE)
+        // ============================================
+        if (appliedCashback > 0 && currentUserPhone) {
+          try {
+            console.log('💰 Deducting cashback from user balance...')
+            
+            const userDocRef = doc(db, 'users', currentUserPhone)
+            await updateDoc(userDocRef, {
+              cashbackBalance: increment(-appliedCashback)
+            })
+            
+            console.log('✅ Cashback deducted:', appliedCashback, 'грн')
+            
+            // ============================================
+            // RECORD CASHBACK TRANSACTION
+            // ============================================
+            await addDoc(collection(db, 'cashback_transactions'), {
+              userId: currentUserPhone,
+              orderId: orderId,
+              type: 'order_payment',
+              amount: -appliedCashback, // Negative for deduction
+              balanceBefore: userCashbackBalance,
+              balanceAfter: userCashbackBalance - appliedCashback,
+              orderTotal: total,
+              maxAllowed: maxCashbackForOrder,
+              timestamp: serverTimestamp(),
+              description: `Використано для оплати замовлення №${orderId}`
+            })
+            
+            console.log('✅ Cashback transaction recorded')
+          } catch (cashbackError) {
+            console.error('❌ Failed to deduct cashback (non-critical):', cashbackError)
+            // Continue with order processing - cashback deduction is non-critical
+          }
+        }
 
         // ============================================
         // STEP 8.3: Mini-CRM - Sync Customer Profile
