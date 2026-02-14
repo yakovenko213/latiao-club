@@ -68,6 +68,25 @@ service cloud.firestore {
     }
     
     // =============================================
+    // 📱 SMS QUEUE - Server-side SMS Scheduling
+    // =============================================
+    // Used by Cloud Function to process scheduled SMS messages
+    // Admin creates queue entries, Cloud Function processes them
+    match /sms_queue/{queueId} {
+      // ✅ Admin can create and read queue entries
+      allow read, create: if request.auth != null;
+      // ✅ Cloud Functions can update status (no auth needed for server)
+      // Admin can also update/delete for management
+      allow update, delete: if request.auth != null;
+    }
+    
+    // SMS Logs - Tracking sms scheduler runs (Cloud Function only writes)
+    match /sms_logs/{logId} {
+      allow read: if request.auth != null;  // Admin can view logs
+      // Cloud Functions bypass rules with admin SDK
+    }
+    
+    // =============================================
     // 🌐 PUBLIC COLLECTIONS (Anyone can read)
     // =============================================
     

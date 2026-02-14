@@ -1061,6 +1061,277 @@ exports.scheduledStockSync = onSchedule({
 });
 
 // ═══════════════════════════════════════════════════════════════════════
+// 📱 SCHEDULED SMS SENDER - TurboSMS Queue Processor
+// Runs every 15 minutes to send scheduled SMS messages from sms_queue
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * ⏰ Scheduled Cloud Function: Process SMS Queue
+ * Runs every 15 minutes to check and send pending SMS messages
+ */
+exports.scheduledSmsSender = onSchedule({
+  schedule: 'every 15 minutes',
+  timeZone: 'Europe/Kiev',
+  timeoutSeconds: 120,
+  memory: '256MiB'
+}, async (event) => {
+  console.log('═══════════════════════════════════════════════════════════');
+  console.log('📱 [SMS SCHEDULER] Starting scheduled SMS processor...');
+  console.log('═══════════════════════════════════════════════════════════');
+
+  const db = admin.firestore();
+  const now = new Date();
+  const results = {
+    processed: 0,
+    sent: 0,
+    failed: 0,
+    skippedOutsideHours: 0,
+    errors: []
+  };
+
+  try {
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // STEP 1: Get working hours from config/general_config
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    let workingHoursStart = 9;  // Default: 9:00
+    let workingHoursEnd = 17;   // Default: 17:00
+
+    try {
+      const configDoc = await db.collection('config').doc('general_config').get();
+      if (configDoc.exists) {
+        const config = configDoc.data();
+        if (config.smsWorkingHoursStart) {
+          workingHoursStart = parseInt(config.smsWorkingHoursStart.split(':')[0]) || 9;
+        }
+        if (config.smsWorkingHoursEnd) {
+          workingHoursEnd = parseInt(config.smsWorkingHoursEnd.split(':')[0]) || 17;
+        }
+        console.log(`📅 Working hours loaded from config: ${workingHoursStart}:00 - ${workingHoursEnd}:00`);
+      }
+    } catch (configError) {
+      console.log('⚠️ Could not load working hours config, using defaults');
+    }
+
+    // Check if current time is within working hours
+    const currentHour = now.getHours();
+    const isWithinWorkingHours = currentHour >= workingHoursStart && currentHour < workingHoursEnd;
+    
+    console.log(`🕐 Current time: ${now.toLocaleTimeString('uk-UA')} (Hour: ${currentHour})`);
+    console.log(`📅 Working hours: ${workingHoursStart}:00 - ${workingHoursEnd}:00`);
+    console.log(`✅ Within working hours: ${isWithinWorkingHours}`);
+
+    if (!isWithinWorkingHours) {
+      console.log('⏰ Outside working hours - skipping SMS sending');
+      console.log('═══════════════════════════════════════════════════════════');
+      return null;
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // STEP 2: Get TurboSMS credentials
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    let turboSmsToken = null;
+    let senderName = 'Latiao';
+
+    try {
+      // Try settings/config first
+      const settingsDoc = await db.collection('settings').doc('config').get();
+      if (settingsDoc.exists) {
+        const settings = settingsDoc.data();
+        turboSmsToken = settings.turboSmsToken || settings.apiToken;
+        senderName = settings.senderName || senderName;
+      }
+      
+      // Fallback to config collection
+      if (!turboSmsToken) {
+        const configSnapshot = await db.collection('config').get();
+        for (const doc of configSnapshot.docs) {
+          const data = doc.data();
+          if (data.turboSmsToken) {
+            turboSmsToken = data.turboSmsToken;
+            senderName = data.senderName || senderName;
+            break;
+          }
+        }
+      }
+    } catch (credError) {
+      console.error('❌ Failed to load TurboSMS credentials:', getSafeErrorMessage(credError));
+    }
+
+    if (!turboSmsToken) {
+      console.error('❌ TurboSMS API token not found - cannot send SMS');
+      await db.collection('sms_logs').add({
+        type: 'scheduler_error',
+        error: 'TurboSMS API token not found',
+        timestamp: admin.firestore.FieldValue.serverTimestamp()
+      });
+      return null;
+    }
+
+    console.log('🔑 TurboSMS credentials loaded');
+    console.log('📝 Sender name:', senderName);
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // STEP 3: Query pending SMS from queue
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    const pendingQuery = await db.collection('sms_queue')
+      .where('status', '==', 'pending')
+      .where('scheduledTime', '<=', admin.firestore.Timestamp.fromDate(now))
+      .limit(50)  // Process max 50 per run to avoid timeout
+      .get();
+
+    console.log(`📋 Found ${pendingQuery.size} pending SMS messages to process`);
+
+    if (pendingQuery.empty) {
+      console.log('✅ No pending SMS messages - nothing to do');
+      console.log('═══════════════════════════════════════════════════════════');
+      return null;
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // STEP 4: Process each pending SMS
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    for (const queueDoc of pendingQuery.docs) {
+      results.processed++;
+      const queueId = queueDoc.id;
+      const queueData = queueDoc.data();
+
+      console.log(`\n📤 Processing SMS #${results.processed}: ${queueId}`);
+      console.log(`   📞 Phone: ${queueData.phoneNumber}`);
+      console.log(`   📝 Type: ${queueData.type || 'review_request'}`);
+
+      try {
+        // Clean phone number for TurboSMS (remove + sign if present)
+        let phone = queueData.phoneNumber;
+        if (phone.startsWith('+')) {
+          phone = phone.substring(1);
+        }
+
+        // Send SMS via TurboSMS API
+        const response = await fetch('https://api.turbosms.ua/message/send.json', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${turboSmsToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            recipients: [phone],
+            sms: {
+              sender: senderName,
+              text: queueData.messageText
+            }
+          })
+        });
+
+        const result = await response.json();
+        console.log(`   📥 TurboSMS response: ${JSON.stringify(result)}`);
+
+        // Check for success (TurboSMS uses various success codes)
+        const isSuccess = (
+          result.response_code === 0 ||
+          result.response_code === '0' ||
+          result.response_code === 801 ||
+          result.response_code === '801' ||
+          result.response_status === 'OK' ||
+          result.response_status === 'SUCCESS' ||
+          result.response_status === 'SUCCESS_MESSAGE_SENT'
+        );
+
+        if (isSuccess) {
+          // ✅ SUCCESS - Update queue status
+          await db.collection('sms_queue').doc(queueId).update({
+            status: 'sent',
+            sentAt: admin.firestore.FieldValue.serverTimestamp(),
+            turboSmsResponse: result.response_status || 'OK',
+            turboSmsMessageId: result.message_id || null
+          });
+
+          // Update related order if orderId exists
+          if (queueData.orderId) {
+            await db.collection('orders').doc(queueData.orderId).update({
+              reviewRequestStatus: 'sent',
+              reviewRequestSent: true,
+              reviewRequestSentAt: admin.firestore.FieldValue.serverTimestamp(),
+              reviewRequestMethod: 'turbosms-scheduled'
+            });
+          }
+
+          results.sent++;
+          console.log(`   ✅ SMS sent successfully`);
+
+        } else {
+          // ❌ FAILED - Mark as failed
+          await db.collection('sms_queue').doc(queueId).update({
+            status: 'failed',
+            failedAt: admin.firestore.FieldValue.serverTimestamp(),
+            error: result.response_status || 'Unknown TurboSMS error',
+            turboSmsResponse: result
+          });
+
+          results.failed++;
+          results.errors.push({
+            queueId,
+            phone: queueData.phoneNumber,
+            error: result.response_status
+          });
+          console.log(`   ❌ SMS failed: ${result.response_status}`);
+        }
+
+      } catch (sendError) {
+        // ❌ EXCEPTION - Mark as failed
+        await db.collection('sms_queue').doc(queueId).update({
+          status: 'failed',
+          failedAt: admin.firestore.FieldValue.serverTimestamp(),
+          error: getSafeErrorMessage(sendError)
+        });
+
+        results.failed++;
+        results.errors.push({
+          queueId,
+          phone: queueData.phoneNumber,
+          error: getSafeErrorMessage(sendError)
+        });
+        console.error(`   ❌ Exception: ${getSafeErrorMessage(sendError)}`);
+      }
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // STEP 5: Log results
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    console.log('\n═══════════════════════════════════════════════════════════');
+    console.log('📊 SMS SCHEDULER RESULTS:');
+    console.log(`   📋 Processed: ${results.processed}`);
+    console.log(`   ✅ Sent: ${results.sent}`);
+    console.log(`   ❌ Failed: ${results.failed}`);
+    console.log('═══════════════════════════════════════════════════════════');
+
+    // Log to Firestore
+    await db.collection('sms_logs').add({
+      type: 'scheduler_run',
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      results: results,
+      success: results.failed === 0
+    });
+
+    return null;
+
+  } catch (error) {
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('❌ CRITICAL: SMS Scheduler failed');
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('Error:', getSafeErrorMessage(error));
+
+    await db.collection('sms_logs').add({
+      type: 'scheduler_error',
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      error: getSafeErrorMessage(error),
+      success: false
+    });
+
+    return null;
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════
 // 🤖 AI CHAT AUTO-RESPONDER (Gemini 2.0 Flash)
 // ═══════════════════════════════════════════════════════════════════════
 

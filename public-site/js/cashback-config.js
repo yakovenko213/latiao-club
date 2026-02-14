@@ -29,7 +29,7 @@
  */
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getFirestore, enableMultiTabIndexedDbPersistence, connectFirestoreEmulator } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { getFirestore, connectFirestoreEmulator, doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 import { getAuth, connectAuthEmulator } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { getFunctions, connectFunctionsEmulator } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
 import { getStorage } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
@@ -172,29 +172,89 @@ if (RECAPTCHA_SITE_KEY) {
     }
 }
 
+// NOTE: Persistence is already enabled in firebase-init.js - do not duplicate here
+
 // ═══════════════════════════════════════════════════════════════════
-// 💾 OFFLINE PERSISTENCE
+// � CASHBACK STATE MANAGEMENT
 // ═══════════════════════════════════════════════════════════════════
 
-enableMultiTabIndexedDbPersistence(db)
-  .catch((err) => {
-    if (err.code === 'failed-precondition') {
-      // Multiple tabs open, persistence can only be enabled in one tab at a time
-      if (window.__consoleMode === 'development') {
-        console.warn('Persistence failed: Multiple tabs open');
-      }
-    } else if (err.code === 'unimplemented') {
-      // Browser doesn't support persistence
-      if (window.__consoleMode === 'development') {
-        console.warn('Persistence not supported by browser');
-      }
-    } else {
-      console.error('Persistence error:', err);
+// Store registered callbacks for cashback state changes
+const cashbackCallbacks = [];
+
+// Current cashback state
+let cashbackState = {
+    isEnabled: true,  // Default enabled
+    percent: 8        // Default 8%
+};
+
+/**
+ * Initialize cashback listener - listens to Firestore for config changes
+ * Sets up real-time listener on config/general_config document
+ */
+export function initCashbackListener() {
+    try {
+        const configRef = doc(db, 'config', 'general_config');
+        
+        onSnapshot(configRef, (docSnapshot) => {
+            if (docSnapshot.exists()) {
+                const data = docSnapshot.data();
+                // Update global state
+                cashbackState.isEnabled = data.isCashbackEnabled !== false; // default true
+                cashbackState.percent = data.cashbackPercent || 8;
+                
+                // Update window global for legacy code
+                window.cashbackEnabled = cashbackState.isEnabled;
+                window.cashbackPercent = cashbackState.percent;
+                
+                console.log(`🪙 [Cashback] State updated: enabled=${cashbackState.isEnabled}, percent=${cashbackState.percent}%`);
+                
+                // Notify all registered callbacks
+                cashbackCallbacks.forEach(callback => {
+                    try {
+                        callback(cashbackState.isEnabled, cashbackState.percent);
+                    } catch (e) {
+                        console.error('❌ [Cashback] Callback error:', e);
+                    }
+                });
+            } else {
+                // Document doesn't exist - use defaults
+                window.cashbackEnabled = true;
+                window.cashbackPercent = 8;
+                console.log('🪙 [Cashback] Config not found, using defaults');
+            }
+        }, (error) => {
+            console.error('❌ [Cashback] Listener error:', error);
+            // Use defaults on error
+            window.cashbackEnabled = true;
+            window.cashbackPercent = 8;
+        });
+        
+        console.log('✅ [Cashback] Listener initialized');
+    } catch (error) {
+        console.error('❌ [Cashback] Failed to init listener:', error);
+        // Fallback to defaults
+        window.cashbackEnabled = true;
+        window.cashbackPercent = 8;
     }
-  });
+}
+
+/**
+ * Register a callback for cashback state changes
+ * @param {Function} callback - Function to call with (isEnabled, percent)
+ */
+export function onCashbackStateChange(callback) {
+    if (typeof callback === 'function') {
+        cashbackCallbacks.push(callback);
+        
+        // Immediately call with current state if already known
+        if (window.cashbackEnabled !== undefined) {
+            callback(window.cashbackEnabled, window.cashbackPercent || 8);
+        }
+    }
+}
 
 // ═══════════════════════════════════════════════════════════════════
-// 📤 EXPORTS
+// �📤 EXPORTS
 // ═══════════════════════════════════════════════════════════════════
 
 export { 

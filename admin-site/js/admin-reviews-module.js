@@ -1289,6 +1289,7 @@ function getNextWorkingHoursStart() {
 
 /**
  * Schedule SMS sending for next working hours
+ * Creates document in sms_queue for Cloud Function to process
  * @param {string} orderId - Order ID
  * @param {Object} smsData - SMS data (phone, message, etc.)
  */
@@ -1297,16 +1298,37 @@ async function scheduleSmsForWorkingHours(orderId, smsData) {
   
   console.log('⏳ Scheduling SMS for:', nextStart.toLocaleString('uk-UA'))
   
-  // Update order with scheduled status
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // CREATE SMS QUEUE ENTRY - Cloud Function will process this
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const queueEntry = {
+    phoneNumber: smsData.phone,
+    messageText: smsData.message,
+    scheduledTime: Timestamp.fromDate(nextStart),
+    status: 'pending',
+    type: 'review_request',
+    orderId: orderId,
+    customerName: smsData.customerName || '',
+    orderNumber: smsData.orderNumber || '',
+    createdAt: serverTimestamp(),
+    createdBy: 'admin_panel'
+  }
+  
+  // Add to sms_queue collection
+  const queueRef = await addDoc(collection(db, 'sms_queue'), queueEntry)
+  console.log('📱 SMS added to queue:', queueRef.id)
+  
+  // Also update order with scheduled status (for UI display)
   await updateDoc(doc(db, 'orders', orderId), {
     reviewRequestStatus: 'scheduled',
     reviewRequestScheduledFor: Timestamp.fromDate(nextStart),
     reviewRequestScheduledAt: serverTimestamp(),
     reviewRequestPhone: smsData.phone,
-    reviewRequestMessage: smsData.message
+    reviewRequestMessage: smsData.message,
+    smsQueueId: queueRef.id
   })
   
-  console.log('✅ SMS scheduled successfully')
+  console.log('✅ SMS scheduled successfully - Cloud Function will process at:', nextStart.toLocaleString('uk-UA'))
   
   return nextStart
 }
@@ -1458,8 +1480,10 @@ async function sendScheduledSms(orderId, order) {
 }
 
 /**
- * Start automatic scheduler
- * Checks every 60 seconds for scheduled messages
+ * Start automatic scheduler (CLIENT-SIDE BACKUP)
+ * NOTE: Primary SMS processing is now handled by Cloud Function (scheduledSmsSender)
+ * which runs every 15 minutes. This client-side scheduler serves as a backup
+ * when admin panel is open, checking every 60 seconds for immediate feedback.
  */
 function startScheduler() {
   if (schedulerInterval) {
@@ -1467,17 +1491,18 @@ function startScheduler() {
     return
   }
   
-  console.log('⏰ [SCHEDULER] Starting automatic scheduler...')
+  console.log('⏰ [SCHEDULER] Starting client-side backup scheduler...')
+  console.log('📱 Primary SMS processing handled by Cloud Function (every 15 min)')
   
   // Run immediately
   processScheduledReviews()
   
-  // Then run every 60 seconds
+  // Then run every 60 seconds (backup to Cloud Function)
   schedulerInterval = setInterval(() => {
     processScheduledReviews()
   }, 60000)  // 60 seconds
   
-  console.log('✅ [SCHEDULER] Scheduler started (checks every 60 seconds)')
+  console.log('✅ [SCHEDULER] Backup scheduler started (checks every 60 seconds)')
 }
 
 /**

@@ -6,15 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Оформлення замовлення | LATIAO SNACK</title>
 
-  <!-- Google Tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17389864689"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'AW-17389864689');
-  </script>
-
   <!-- CRITICAL: Apply theme immediately to prevent flash -->
   <script>
     (function() {
@@ -175,39 +166,6 @@
     .sticky-bar {
       box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
     }
-
-    /* ============================================
-       🪙 CASHBACK BADGE - SUBTLE SHINE ANIMATION
-       ============================================ */
-    @keyframes subtle-shine {
-      0%, 100% {
-        background-position: 200% center;
-      }
-      50% {
-        background-position: -200% center;
-      }
-    }
-
-    .cashback-shine-effect {
-      position: relative;
-      overflow: hidden;
-      background: linear-gradient(
-        90deg,
-        rgba(254, 243, 199, 1) 0%,
-        rgba(254, 243, 199, 1) 40%,
-        rgba(255, 255, 255, 0.8) 50%,
-        rgba(254, 243, 199, 1) 60%,
-        rgba(254, 243, 199, 1) 100%
-      );
-      background-size: 200% 100%;
-      animation: subtle-shine 3s ease-in-out infinite;
-      animation-delay: 2s;
-    }
-
-    .cashback-shine-effect:hover {
-      box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2);
-      transition: box-shadow 0.3s ease;
-    }
   </style>
 </head>
 
@@ -310,17 +268,8 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1.5 lg:mb-2">Номер телефону <span
                   class="text-orange-500">*</span></label>
-              <div class="relative">
-                <input type="tel" id="phone" placeholder="+380..."
-                  class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300">
-                <!-- Loading Spinner -->
-                <div id="phone-loading-spinner" class="hidden absolute right-3 top-1/2 -translate-y-1/2">
-                  <svg class="animate-spin h-5 w-5 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                </div>
-              </div>
+              <input type="tel" id="phone" placeholder="+380..."
+                class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300">
             </div>
 
             <div>
@@ -330,8 +279,6 @@
                 class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300"
                 required>
               <p id="telegramError" class="mt-1.5 text-xs text-red-500 hidden">Будь ласка, вкажіть нікнейм для зв'язку
-              </p>
-              <p id="telegramFormatError" class="mt-1.5 text-xs text-red-500 hidden">Тут можна використовувати лише латиницю, цифри та символ '_'. Електронна пошта не підтримується.
               </p>
               <p class="mt-1.5 lg:mt-2 text-xs lg:text-sm text-gray-400">Це потрібно, щоб ми могли написати вам у разі
                 уточнень 🤝</p>
@@ -428,15 +375,11 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1.5 lg:mb-2">Відділення / Поштомат <span
                   class="text-orange-500">*</span></label>
-              <div class="relative">
-                <input type="text" id="np-warehouse-input" placeholder="Спочатку оберіть місто"
-                  class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300 focus:border-orange-400 focus:ring-2 focus:ring-orange-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  autocomplete="off" disabled>
-                <!-- Warehouse autocomplete dropdown (Dynamic suggestions) -->
-                <ul id="np-warehouse-list"
-                  class="hidden absolute z-50 w-full mt-1 bg-white border-2 border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                </ul>
-              </div>
+              <select id="np-warehouse-select"
+                class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 transition-all duration-300 focus:border-orange-400 focus:ring-2 focus:ring-orange-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled>
+                <option value="">Спочатку оберіть місто</option>
+              </select>
             </div>
           </div>
 
@@ -564,12 +507,7 @@
             Коментар до замовлення
           </h2>
 
-          <!-- No-Call Reassurance Notice (Reactive) -->
-          <div id="no-call-notice" class="bg-red-50 border border-red-100 rounded-xl p-3 mb-2 text-sm text-red-700 hidden transition-all duration-300 ease-in-out opacity-0">
-            ✨ Ми цінуємо ваш спокій! Не хвилюйтеся, ми не турбуємо дзвінками без крайньої потреби — надішлемо всю інформацію у месенджер або SMS.
-          </div>
-
-          <textarea id="comment" rows="3" placeholder="p.s ми не дзвонимо для підтвердження замовлення))"
+          <textarea id="comment" rows="3" placeholder="Наприклад: не дзвоніть, напишіть у Telegram…"
             class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300 resize-none"></textarea>
         </div>
       </div>
@@ -659,54 +597,6 @@
             <!-- Divider (if discount applied) -->
             <div id="discount-divider" class="hidden border-t border-gray-200 my-2"></div>
 
-            <!-- Cashback Usage Block -->
-            <div id="cashback-usage-block" class="hidden mb-3">
-              <div class="bg-gradient-to-br from-amber-50 to-yellow-50 border-2 border-amber-200 rounded-xl p-4">
-                <!-- Balance Display -->
-                <div class="flex items-center justify-between mb-3">
-                  <div class="flex items-center gap-2">
-                    <span class="text-2xl">🪙</span>
-                    <div>
-                      <p class="text-xs text-gray-600 font-medium">На вашому балансі:</p>
-                      <p class="text-lg font-bold text-amber-600"><span id="user-balance-val">0</span> грн</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- Spendable Amount Info -->
-                <div class="mb-3 p-3 bg-white/50 rounded-lg border border-amber-100">
-                  <p class="text-xs text-gray-700 leading-relaxed">
-                    💡 Ви можете використати <strong>половину свого балансу</strong>: <span id="spendable-val" class="font-bold text-amber-600">0</span> грн для цього замовлення
-                  </p>
-                </div>
-                
-                <!-- Toggle Checkbox -->
-                <label class="flex items-start gap-3 cursor-pointer group">
-                  <div class="flex items-center h-5 mt-0.5">
-                    <input 
-                      type="checkbox" 
-                      id="use-cashback-toggle"
-                      class="w-4 h-4 text-amber-600 bg-white border-amber-300 rounded focus:ring-amber-500 focus:ring-2 cursor-pointer"
-                      onchange="toggleCashbackUsage()"
-                    >
-                  </div>
-                  <div class="flex-1">
-                    <span class="text-sm font-semibold text-gray-900 group-hover:text-amber-700 transition-colors">
-                      Списати <span id="applied-amount" class="text-amber-600">0</span> грн
-                    </span>
-                  </div>
-                </label>
-                
-                <!-- Applied Cashback Display -->
-                <div id="cashback-applied-display" class="hidden mt-3 pt-3 border-t border-amber-200">
-                  <div class="flex items-center justify-between">
-                    <span class="text-sm text-amber-700 font-medium">🎉 Кешбек застосовано:</span>
-                    <span class="text-sm font-bold text-amber-600">-<span id="cashback-used-display">0</span> грн</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <!-- Final Total -->
             <div class="flex items-center justify-between mb-2">
               <span class="text-lg font-bold text-gray-900">До сплати:</span>
@@ -751,15 +641,6 @@
               </div>
             </div>
             <p class="text-xs text-gray-500 mt-2 italic">💡 Онлайн оплачуєте тільки 100 грн, решту - при отриманні</p>
-          </div>
-
-          <!-- 🪙 Cashback Badge (Outside payment method containers) -->
-          <div id="checkout-cashback-badge" class="hidden flex items-center gap-2 p-3 rounded-xl border border-yellow-200 bg-yellow-50 mt-3 mb-4 text-sm font-semibold text-amber-900 cashback-shine-effect">
-            <!-- Coin Icon -->
-            <svg class="w-6 h-6 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
-            </svg>
-            <span>За це замовлення ви отримаєте: <span id="checkout-cashback-amount" class="font-bold text-amber-700">0</span> грн кешбеку</span>
           </div>
 
           <p class="text-xs text-gray-500 mb-6">🚚 Доставка оплачується окремо при отриманні</p>
@@ -989,12 +870,6 @@
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'
     import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js'
 
-    // ============================================
-    // CASHBACK CONFIG - GLOBAL STATE LISTENER
-    // ============================================
-    import { initCashbackListener, onCashbackStateChange } from './js/cashback-config.js';
-    initCashbackListener(); // Initialize global cashback state
-
     // Initialize Functions (make sure your Firebase config is available)
     // If you already have firebase app initialized in firebase-init.js, you can import it
     // Otherwise, you'll need to initialize it here with your config
@@ -1058,8 +933,6 @@
     const NP_API_KEY = 'ca63f7a56b807b0e882e567c7041abf3' // Replace with your actual API key
     const NP_URL = 'https://api.novaposhta.ua/v2.0/json/'
     const NP_API_URL = NP_URL // Alias for backward compatibility
-    let allWarehouses = [] // Store all warehouses for the selected city for filtering
-    let selectedWarehouse = null // Store selected warehouse object
 
     // Ukrposhta API Configuration
     const UP_API_BASE_URL = 'https://www.ukrposhta.ua/address-classifier-ws/get_'
@@ -1080,12 +953,6 @@
     let appliedPromoCode = null // Store full promo details
     const FREE_DELIVERY_THRESHOLD = 1100
     const DELIVERY_COST = 70
-    
-    // Cashback usage variables
-    let userCashbackBalance = 0
-    let cashbackUsed = 0
-    let isCashbackEnabled = false
-    let currentUserId = null
 
     // ============================================
     // ABANDONED CART: Order submission flag
@@ -1220,9 +1087,6 @@
       initializeDeliveryMethod()
       initializePaymentMethod()
       updatePaymentAvailability()
-      
-      // ⭐ Load user's cashback balance (if logged in)
-      loadUserCashbackBalance()
 
       // ============================================
       // ⭐ ATTACH EVENT LISTENERS PROGRAMMATICALLY
@@ -1272,99 +1136,6 @@
         submitBtnMobile.addEventListener('click', submitOrder)
       }
 
-      // ============================================
-      // ⭐ NO-CALL NOTICE - Reactive reassurance
-      // ============================================
-      const commentTextarea = document.getElementById('comment')
-      const noCallNotice = document.getElementById('no-call-notice')
-      
-      // Keywords to detect (case-insensitive)
-      const noCallKeywords = [
-        'не телефонуйте',
-        'не дзвоніть',
-        'без дзвінків',
-        'не звоните',
-        'не перезванивайте',
-        'no call'
-      ]
-      
-      if (commentTextarea && noCallNotice) {
-        commentTextarea.addEventListener('input', function() {
-          const commentValue = this.value.toLowerCase().trim()
-          
-          // Check if any keyword matches
-          const hasNoCallKeyword = noCallKeywords.some(keyword => 
-            commentValue.includes(keyword)
-          )
-          
-          if (hasNoCallKeyword) {
-            // Show notice with smooth fade-in
-            noCallNotice.classList.remove('hidden')
-            setTimeout(() => {
-              noCallNotice.classList.remove('opacity-0')
-              noCallNotice.classList.add('opacity-100')
-            }, 10)
-          } else {
-            // Hide notice with smooth fade-out
-            noCallNotice.classList.remove('opacity-100')
-            noCallNotice.classList.add('opacity-0')
-            setTimeout(() => {
-              noCallNotice.classList.add('hidden')
-            }, 300)
-          }
-        })
-      }
-
-      // ============================================
-      // ⭐ TELEGRAM NICKNAME - Strict validation
-      // ============================================
-      const telegramInput = document.getElementById('telegram')
-      const telegramFormatError = document.getElementById('telegramFormatError')
-      
-      if (telegramInput && telegramFormatError) {
-        // Real-time character filtering
-        telegramInput.addEventListener('input', function(e) {
-          const originalValue = this.value
-          // Allow ONLY: a-z, A-Z, 0-9, underscore (_)
-          // Remove ALL other characters (Cyrillic, @, spaces, etc.)
-          const filteredValue = originalValue.replace(/[^a-zA-Z0-9_]/g, '')
-          
-          // If value changed (invalid chars were present), show error briefly
-          if (originalValue !== filteredValue) {
-            this.value = filteredValue
-            
-            // Show format error with red border
-            this.classList.remove('border-gray-200')
-            this.classList.add('border-red-500')
-            telegramFormatError.classList.remove('hidden')
-            
-            // Hide error after 3 seconds if field becomes valid
-            setTimeout(() => {
-              if (this.value.length > 0 && /^[a-zA-Z0-9_]+$/.test(this.value)) {
-                this.classList.remove('border-red-500')
-                this.classList.add('border-gray-200')
-                telegramFormatError.classList.add('hidden')
-              }
-            }, 3000)
-          } else if (filteredValue.length > 0 && /^[a-zA-Z0-9_]+$/.test(filteredValue)) {
-            // Valid input - clear error state
-            this.classList.remove('border-red-500')
-            this.classList.add('border-gray-200')
-            telegramFormatError.classList.add('hidden')
-          }
-        })
-        
-        // Additional validation on blur
-        telegramInput.addEventListener('blur', function() {
-          const value = this.value.trim()
-          if (value.length > 0 && !/^[a-zA-Z0-9_]+$/.test(value)) {
-            this.classList.remove('border-gray-200')
-            this.classList.add('border-red-500')
-            telegramFormatError.classList.remove('hidden')
-          }
-        })
-      }
-
       // 6. UKRPOSHTA POSTCODE - Allow only numeric input (5 digits)
       const postcodeInput = document.getElementById('up-postcode-input')
       if (postcodeInput) {
@@ -1384,7 +1155,7 @@
         'phone',
         'telegram',
         'np-city-input',
-        'np-warehouse-input',
+        'np-warehouse-select',
         'comment'
       ]
 
@@ -1417,21 +1188,6 @@
       }
 
       if (phoneInput) {
-        // Load cashback balance when phone is entered (with debounce)
-        let cashbackLoadTimeout = null
-        phoneInput.addEventListener('input', function() {
-          const phone = this.value.trim()
-          
-          // Only load if phone has at least 10 digits (Ukrainian phone format)
-          if (phone.length >= 10) {
-            clearTimeout(cashbackLoadTimeout)
-            cashbackLoadTimeout = setTimeout(() => {
-              console.log('📞 Phone entered, loading cashback balance...')
-              loadUserCashbackBalance()
-            }, 500) // 500ms debounce
-          }
-        })
-        
         phoneInput.addEventListener('blur', function () {
           const phone = this.value.trim()
 
@@ -1439,8 +1195,6 @@
           if (phone.length >= 10) {
             console.log('🔥 AGGRESSIVE SAVE: Phone blur triggered')
             saveAbandonedCart()
-            // Also load cashback balance
-            loadUserCashbackBalance()
           }
         })
       }
@@ -1556,49 +1310,6 @@
       console.log('✅ Page leave detection enabled for Telegram notifications')
       console.log('✅ Checkout page initialized successfully')
     })
-
-    // ============================================
-    // 🪙 CASHBACK STATE CHANGE LISTENER
-    // ============================================
-    onCashbackStateChange((isEnabled, cashbackPercent) => {
-      console.log('🔄 [Checkout] Cashback state changed:', { 
-        enabled: isEnabled, 
-        percent: cashbackPercent 
-      });
-      
-      // Toggle cashback badge visibility
-      const checkoutCashbackBadgeEl = document.getElementById('checkout-cashback-badge');
-      
-      if (checkoutCashbackBadgeEl) {
-        if (isEnabled) {
-          // SHOW: Remove hidden, add flex
-          checkoutCashbackBadgeEl.classList.remove('hidden');
-          checkoutCashbackBadgeEl.classList.add('flex');
-          checkoutCashbackBadgeEl.style.display = '';
-          console.log('👁️ [Checkout] Showing cashback badge');
-        } else {
-          // HIDE: Add hidden, remove flex, force display none
-          checkoutCashbackBadgeEl.classList.add('hidden');
-          checkoutCashbackBadgeEl.classList.remove('flex');
-          checkoutCashbackBadgeEl.style.display = 'none';
-          console.log('🙈 [Checkout] Hiding cashback badge');
-        }
-        
-        // Recalculate and update cashback amount
-        if (isEnabled && cartItems && cartItems.length > 0) {
-          const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-          const discount = promoApplied ? promoDiscount : 0;
-          const total = cartTotal - discount;
-          const cashbackAmount = Math.floor(total * (cashbackPercent / 100));
-          
-          const checkoutCashbackAmountEl = document.getElementById('checkout-cashback-amount');
-          if (checkoutCashbackAmountEl) {
-            checkoutCashbackAmountEl.textContent = cashbackAmount;
-            console.log(`✅ [Checkout] Updated cashback amount: ${cashbackAmount} грн (${cashbackPercent}%)`);
-          }
-        }
-      }
-    });
 
     // ============================================
     // RENDER PRODUCTS FUNCTION
@@ -1780,15 +1491,12 @@
 
       const discount = promoApplied ? promoDiscount : 0
       const subtotalWithDiscount = subtotal - discount
-      
-      // Apply cashback (if enabled)
-      const subtotalAfterCashback = subtotalWithDiscount - cashbackUsed
 
       const isFreeDelivery = subtotalWithDiscount >= FREE_DELIVERY_THRESHOLD
       const deliveryCost = isFreeDelivery ? 0 : DELIVERY_COST
 
       // IMPORTANT: Total shows ONLY product sum (delivery paid separately on delivery)
-      const productTotal = subtotalAfterCashback
+      const productTotal = subtotalWithDiscount
 
       // Update UI with null checks
       const itemCountEl = document.getElementById('itemCount')
@@ -1841,44 +1549,9 @@
         if (discountDivider) discountDivider.classList.add('hidden')
       }
 
-      // Update cashback used display
-      const cashbackUsedDisplayEl = document.getElementById('cashback-used-display')
-      const cashbackAppliedDisplay = document.getElementById('cashback-applied-display')
-      
-      if (cashbackUsed > 0 && cashbackAppliedDisplay && cashbackUsedDisplayEl) {
-        cashbackAppliedDisplay.classList.remove('hidden')
-        cashbackUsedDisplayEl.textContent = cashbackUsed
-      } else if (cashbackAppliedDisplay) {
-        cashbackAppliedDisplay.classList.add('hidden')
-      }
-      
       // Update final total
       if (totalPriceEl) totalPriceEl.textContent = `${productTotal} грн`
       if (totalPriceMobileEl) totalPriceMobileEl.textContent = `${productTotal} грн`
-
-      // ============================================
-      // 🪙 UPDATE CASHBACK (dynamic % of final total)
-      // ============================================
-      const cashbackPercent = (window.cashbackPercent || 8) / 100;
-      const calculatedCashback = Math.floor(productTotal * cashbackPercent)
-      const checkoutCashbackAmountEl = document.getElementById('checkout-cashback-amount')
-      const checkoutCashbackBadgeEl = document.getElementById('checkout-cashback-badge')
-      
-      if (checkoutCashbackAmountEl) {
-        checkoutCashbackAmountEl.textContent = calculatedCashback
-      }
-      
-      // Show/hide badge based on total amount and cashback enabled state
-      if (checkoutCashbackBadgeEl) {
-        const isCashbackEnabled = window.cashbackEnabled !== false;
-        if (productTotal > 0 && isCashbackEnabled) {
-          checkoutCashbackBadgeEl.classList.remove('hidden')
-          checkoutCashbackBadgeEl.classList.add('flex')
-        } else {
-          checkoutCashbackBadgeEl.classList.add('hidden')
-          checkoutCashbackBadgeEl.classList.remove('flex')
-        }
-      }
 
       // Update payment summary based on current payment method
       const selectedPaymentCard = document.querySelector('[data-payment].selected')
@@ -1887,165 +1560,7 @@
         updatePaymentSummary(paymentMethod)
       }
 
-      return { total: productTotal, subtotal, subtotalWithDiscount }
-    }
-    
-    // ============================================
-    // CASHBACK FUNCTIONALITY
-    // ============================================
-    
-    /**
-     * Load user's cashback balance dynamically by phone number
-     */
-    async function loadUserCashbackBalance(phoneNumber) {
-      try {
-        console.log('🪙 [Cashback] Loading balance for phone:', phoneNumber)
-        
-        // Show loading spinner
-        const spinner = document.getElementById('phone-loading-spinner')
-        if (spinner) spinner.classList.remove('hidden')
-        
-        // Check if Firebase is initialized
-        if (!window.firebaseInit || !window.firebaseInit.db) {
-          console.log('⚠️ [Cashback] Firebase not initialized')
-          if (spinner) spinner.classList.add('hidden')
-          return
-        }
-        
-        const { db } = window.firebaseInit
-        
-        // Normalize phone (remove +38 prefix if exists, then add back)
-        const normalizedPhone = phoneNumber.replace(/^\+?38/, '').replace(/\D/g, '')
-        
-        // Validate phone length (10 or 12 digits for Ukrainian numbers)
-        if (normalizedPhone.length < 10 || normalizedPhone.length > 12) {
-          console.log('⚠️ [Cashback] Invalid phone length:', normalizedPhone.length)
-          resetCashbackUI()
-          if (spinner) spinner.classList.add('hidden')
-          return
-        }
-        
-        const formattedPhone = '+38' + normalizedPhone
-        currentUserId = formattedPhone
-        
-        console.log('🔍 [Cashback] Searching Firestore for:', formattedPhone)
-        
-        // Fetch user document from Firestore
-        const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')
-        const userRef = doc(db, 'users', formattedPhone)
-        const userSnap = await getDoc(userRef)
-        
-        if (userSnap.exists()) {
-          const userData = userSnap.data()
-          userCashbackBalance = Number(userData.cashbackBalance || 0)
-          
-          console.log('✅ [Cashback] User found! Balance:', userCashbackBalance, 'грн')
-          
-          // Show cashback block if balance > 0
-          if (userCashbackBalance > 0) {
-            showCashbackUI()
-          } else {
-            console.log('ℹ️ [Cashback] Balance is 0')
-            resetCashbackUI()
-          }
-        } else {
-          console.log('ℹ️ [Cashback] User not found in database')
-          resetCashbackUI()
-        }
-        
-        // Hide loading spinner
-        if (spinner) spinner.classList.add('hidden')
-        
-      } catch (error) {
-        console.error('❌ [Cashback] Error loading balance:', error)
-        resetCashbackUI()
-        
-        // Hide loading spinner
-        const spinner = document.getElementById('phone-loading-spinner')
-        if (spinner) spinner.classList.add('hidden')
-      }
-    }
-    
-    /**
-     * Show cashback UI with user's balance (50% of balance rule)
-     */
-    function showCashbackUI() {
-      const cashbackBlock = document.getElementById('cashback-usage-block')
-      const balanceEl = document.getElementById('user-balance-val')
-      const spendableEl = document.getElementById('spendable-val')
-      const appliedEl = document.getElementById('applied-amount')
-      
-      if (!cashbackBlock) return
-      
-      // Calculate spendable amount (50% of balance)
-      const spendableAmount = Math.floor(userCashbackBalance * 0.5)
-      
-      // Update UI elements
-      if (balanceEl) balanceEl.textContent = userCashbackBalance
-      if (spendableEl) spendableEl.textContent = spendableAmount
-      if (appliedEl) appliedEl.textContent = spendableAmount
-      
-      // Show the block
-      cashbackBlock.classList.remove('hidden')
-      
-      console.log('📊 [Cashback] UI displayed - Balance:', userCashbackBalance, 'Spendable:', spendableAmount)
-    }
-    
-    /**
-     * Reset cashback UI and disable usage
-     */
-    function resetCashbackUI() {
-      console.log('🔄 [Cashback] Resetting UI...')
-      
-      // Hide the cashback block
-      const cashbackBlock = document.getElementById('cashback-usage-block')
-      if (cashbackBlock) cashbackBlock.classList.add('hidden')
-      
-      // Uncheck the toggle if it was checked
-      const checkbox = document.getElementById('use-cashback-toggle')
-      if (checkbox && checkbox.checked) {
-        checkbox.checked = false
-        
-        // Reset cashback amount
-        cashbackUsed = 0
-        isCashbackEnabled = false
-        
-        // Recalculate totals
-        calculateTotals()
-        
-        console.log('✅ [Cashback] Checkbox unchecked and amount reset')
-      }
-      
-      // Reset balance value
-      userCashbackBalance = 0
-      currentUserId = null
-    }
-    
-    /**
-     * Toggle cashback usage on/off (50% of balance)
-     */
-    window.toggleCashbackUsage = function() {
-      const checkbox = document.getElementById('use-cashback-toggle')
-      isCashbackEnabled = checkbox.checked
-      
-      if (isCashbackEnabled) {
-        // Calculate spendable amount (50% of user's balance)
-        cashbackUsed = Math.floor(userCashbackBalance * 0.5)
-        
-        // Verify it doesn't exceed order total (safety check)
-        const { subtotalWithDiscount } = calculateTotals()
-        if (cashbackUsed > subtotalWithDiscount) {
-          cashbackUsed = subtotalWithDiscount
-        }
-        
-        console.log('✅ [Cashback] Enabled:', cashbackUsed, 'грн (50% of', userCashbackBalance, 'грн balance)')
-      } else {
-        cashbackUsed = 0
-        console.log('❌ [Cashback] Disabled')
-      }
-      
-      // Recalculate totals
-      calculateTotals()
+      return { total: productTotal, subtotal }
     }
 
     // ============================================
@@ -2455,11 +1970,6 @@
 
         // Recalculate totals
         calculateTotals()
-        
-        // Update max spendable cashback after promo is applied
-        if (userCashbackBalance > 0) {
-          updateMaxSpendableCashback()
-        }
 
       } catch (error) {
         console.error('Promo code error:', error)
@@ -2593,15 +2103,11 @@
      * @param {string} cityRef - City reference ID from selected city
      */
     async function loadNovaPoshtaWarehouses(cityRef) {
-      const warehouseInput = document.getElementById('np-warehouse-input')
-      const warehouseList = document.getElementById('np-warehouse-list')
+      const warehouseSelect = document.getElementById('np-warehouse-select')
 
       // Show loading state
-      warehouseInput.disabled = true
-      warehouseInput.placeholder = '⏳ Завантаження відділень...'
-      warehouseInput.value = ''
-      selectedWarehouse = null
-      warehouseList.classList.add('hidden')
+      warehouseSelect.disabled = true
+      warehouseSelect.innerHTML = '<option>⏳ Завантаження відділень...</option>'
 
       try {
         // API Request: Get warehouses by city reference
@@ -2625,96 +2131,38 @@
 
         // Response Handling: Check if warehouses were found
         if (data.success && data.data && data.data.length > 0) {
-          allWarehouses = data.data // Store warehouses globally for filtering
-          warehouseInput.placeholder = 'Почніть вводити номер або назву відділення...'
-          warehouseInput.disabled = false
-          warehouseInput.focus() // Auto-focus for better UX
+          const warehouses = data.data
+          renderWarehouses(warehouses)
         } else {
-          allWarehouses = []
-          warehouseInput.placeholder = '❌ Відділення не знайдено'
-          warehouseInput.disabled = false
+          warehouseSelect.innerHTML = '<option>❌ Відділення не знайдено</option>'
+          warehouseSelect.disabled = false
         }
       } catch (error) {
         console.error('❌ Error fetching warehouses:', error)
-        allWarehouses = []
-        warehouseInput.placeholder = '⚠️ Помилка завантаження'
-        warehouseInput.disabled = false
+        warehouseSelect.innerHTML = '<option>⚠️ Помилка завантаження</option>'
+        warehouseSelect.disabled = false
       }
     }
 
     /**
-     * Search and Filter Warehouses
-     * Filters warehouses based on user input (branch number or description text)
-     * @param {string} query - User input search query
+     * Render Warehouses in Select Dropdown
+     * Populates the warehouse select with options
+     * @param {Array} warehouses - Array of warehouse objects from API response
      */
-    function searchWarehouses(query) {
-      const warehouseList = document.getElementById('np-warehouse-list')
-      
-      // Clear previous results
-      warehouseList.innerHTML = ''
+    function renderWarehouses(warehouses) {
+      const warehouseSelect = document.getElementById('np-warehouse-select')
+      warehouseSelect.innerHTML = '<option value="">Оберіть відділення...</option>'
 
-      // If query is empty, hide the list
-      if (!query || query.trim() === '') {
-        warehouseList.classList.add('hidden')
-        return
-      }
-
-      const searchTerm = query.toLowerCase().trim()
-
-      // Filter warehouses: match against branch number (e.g., "12") and full description
-      const filteredWarehouses = allWarehouses.filter(warehouse => {
-        const description = warehouse.Description.toLowerCase()
-        
-        // Extract branch number from description (e.g., "Відділення №12" -> "12")
-        const numberMatch = warehouse.Description.match(/№(\d+)/)
-        const branchNumber = numberMatch ? numberMatch[1] : ''
-        
-        // Match if query is in the branch number or description
-        return branchNumber.includes(searchTerm) || description.includes(searchTerm)
-      })
-
-      // Render filtered results
-      if (filteredWarehouses.length > 0) {
-        renderWarehouseAutocomplete(filteredWarehouses)
-      } else {
-        warehouseList.innerHTML = '<li class="px-4 py-2 text-sm text-gray-500">❌ Відділення не знайдено</li>'
-        warehouseList.classList.remove('hidden')
-      }
-    }
-
-    /**
-     * Render Warehouse Autocomplete Suggestions
-     * Creates clickable list items for each filtered warehouse
-     * @param {Array} warehouses - Array of filtered warehouse objects
-     */
-    function renderWarehouseAutocomplete(warehouses) {
-      const warehouseList = document.getElementById('np-warehouse-list')
-      warehouseList.innerHTML = '' // Clear previous results
-
-      // Loop through each warehouse and create a list item
+      // Loop through warehouses and create options
       warehouses.forEach(warehouse => {
-        const li = document.createElement('li')
-        li.className = 'px-4 py-2.5 hover:bg-orange-50 cursor-pointer text-sm text-gray-900 border-b border-gray-100 last:border-b-0 transition-colors'
-        li.textContent = warehouse.Description // Display warehouse full description
-
-        // Click Action: Select this warehouse
-        li.onclick = () => {
-          // Set input value to selected warehouse description
-          document.getElementById('np-warehouse-input').value = warehouse.Description
-
-          // Save warehouse object for later use
-          selectedWarehouse = warehouse
-
-          // Hide suggestion list
-          warehouseList.classList.add('hidden')
-          warehouseList.innerHTML = ''
-        }
-
-        warehouseList.appendChild(li)
+        const option = document.createElement('option')
+        option.value = warehouse.Ref // Warehouse reference ID
+        option.textContent = warehouse.Description // Warehouse full name/address
+        warehouseSelect.appendChild(option)
       })
 
-      // Show the populated list
-      warehouseList.classList.remove('hidden')
+      // Enable the select field
+      warehouseSelect.disabled = false
     }
 
     // ============================================
@@ -2726,26 +2174,14 @@
       searchNovaPoshtaCities(event.target.value)
     })
 
-    // Listen for input events on warehouse input field
-    document.getElementById('np-warehouse-input').addEventListener('input', function (event) {
-      searchWarehouses(event.target.value)
-    })
-
     // Close autocomplete when clicking outside
     document.addEventListener('click', function (event) {
       const cityInput = document.getElementById('np-city-input')
       const cityList = document.getElementById('np-city-list')
-      const warehouseInput = document.getElementById('np-warehouse-input')
-      const warehouseList = document.getElementById('np-warehouse-list')
 
-      // Check if click was outside both the city input and the list
+      // Check if click was outside both the input and the list
       if (cityInput && cityList && !cityInput.contains(event.target) && !cityList.contains(event.target)) {
         cityList.classList.add('hidden')
-      }
-
-      // Check if click was outside both the warehouse input and the list
-      if (warehouseInput && warehouseList && !warehouseInput.contains(event.target) && !warehouseList.contains(event.target)) {
-        warehouseList.classList.add('hidden')
       }
     })
 
@@ -2758,9 +2194,7 @@
       const telegram = document.getElementById('telegram').value.trim()
       const { total } = calculateTotals()
 
-      // Validate telegram format (only letters, numbers, underscore)
-      const isTelegramValid = telegram !== '' && /^[a-zA-Z0-9_]+$/.test(telegram)
-      const isValid = fullName !== '' && phone !== '' && isTelegramValid && total >= 100
+      const isValid = fullName !== '' && phone !== '' && telegram !== '' && total >= 100
 
       const desktopBtn = document.getElementById('submitBtnDesktop')
       const mobileBtn = document.getElementById('submitBtnMobile')
@@ -2805,9 +2239,7 @@
 
       // Hide all error messages
       const telegramError = document.getElementById('telegramError')
-      const telegramFormatError = document.getElementById('telegramFormatError')
       if (telegramError) telegramError.classList.add('hidden')
-      if (telegramFormatError) telegramFormatError.classList.add('hidden')
 
       // Validate Name
       if (name === '') {
@@ -2833,19 +2265,13 @@
         if (!firstError) firstError = { input: phoneInput, message: 'Будь ласка, введіть коректний номер телефону (наприклад, +380501234567)' }
       }
 
-      // Validate Telegram (both presence and format)
+      // Validate Telegram
       if (telegram === '') {
         isValid = false
         telegramInput.classList.remove('border-gray-200')
         telegramInput.classList.add('border-red-500')
         if (telegramError) telegramError.classList.remove('hidden')
         if (!firstError) firstError = { input: telegramInput, message: 'Будь ласка, вкажіть нікнейм Telegram' }
-      } else if (!/^[a-zA-Z0-9_]+$/.test(telegram)) {
-        isValid = false
-        telegramInput.classList.remove('border-gray-200')
-        telegramInput.classList.add('border-red-500')
-        if (telegramFormatError) telegramFormatError.classList.remove('hidden')
-        if (!firstError) firstError = { input: telegramInput, message: 'Нікнейм Telegram може містити лише латинські літери, цифри та символ "_"' }
       }
 
       // If validation failed, scroll to first error and show alert
@@ -2918,7 +2344,8 @@
 
         if (deliveryMethod === 'nova') {
           const npCity = document.getElementById('np-city-input')?.value.trim() || ''
-          const npWarehouse = selectedWarehouse?.Description || document.getElementById('np-warehouse-input')?.value.trim() || ''
+          const npWarehouseSelect = document.getElementById('np-warehouse-select')
+          const npWarehouse = npWarehouseSelect?.options[npWarehouseSelect.selectedIndex]?.text || ''
 
           deliveryInfo.city = npCity
           deliveryInfo.branch = npWarehouse
@@ -3293,7 +2720,8 @@
         if (deliveryMethod === 'nova') {
           // Nova Poshta delivery details
           const npCity = document.getElementById('np-city-input').value.trim()
-          const npWarehouse = selectedWarehouse?.Description || document.getElementById('np-warehouse-input')?.value.trim() || ''
+          const npWarehouseSelect = document.getElementById('np-warehouse-select')
+          const npWarehouse = npWarehouseSelect.options[npWarehouseSelect.selectedIndex]?.text || ''
 
           deliveryInfo.city = npCity
           deliveryInfo.warehouse = npWarehouse
@@ -3393,11 +2821,8 @@
             subtotal: subtotal,
             originalTotal: originalTotal,  // Price before discount
             discountAmount: promoDiscount,  // Discount applied
-            total: total  // Final price after discount and cashback
+            total: total  // Final price after discount
           },
-          
-          // Cashback Info
-          cashbackUsed: cashbackUsed || 0,
 
           // Promo Code (if applied)
           promoCode: promoCodeData,
@@ -3580,44 +3005,6 @@
             console.log('✅ Promo code usage updated:', appliedPromoCode.code)
           } catch (promoError) {
             console.error('⚠️ Failed to update promo usage (non-critical):', promoError)
-          }
-        }
-        
-        // ============================================
-        // STEP 8.6: Update Cashback Balance (if used)
-        // ============================================
-        if (cashbackUsed > 0 && currentUserId) {
-          try {
-            console.log('🪙 [Cashback] Deducting', cashbackUsed, 'грн from user balance...')
-            
-            const { doc: firestoreDoc, updateDoc, increment, addDoc, collection, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')
-            
-            // Update user's cashback balance
-            const userRef = firestoreDoc(db, 'users', currentUserId)
-            await updateDoc(userRef, {
-              cashbackBalance: increment(-cashbackUsed),
-              totalCashbackSpent: increment(cashbackUsed),
-              updatedAt: serverTimestamp()
-            })
-            
-            console.log('✅ [Cashback] Balance updated successfully')
-            
-            // Add transaction record for audit trail
-            const transactionRef = collection(db, 'cashback_transactions')
-            await addDoc(transactionRef, {
-              userId: currentUserId,
-              userName: fullName,
-              amount: -cashbackUsed,
-              type: 'order_payment',
-              description: `Оплата замовлення #${orderId}`,
-              orderId: orderId,
-              createdAt: serverTimestamp()
-            })
-            
-            console.log('✅ [Cashback] Transaction recorded')
-            
-          } catch (cashbackError) {
-            console.error('⚠️ Failed to update cashback balance (non-critical):', cashbackError)
           }
         }
 
@@ -3984,11 +3371,6 @@
 
   <!-- Live Chat Widget -->
   <script type="module" src="./js/chat-widget.js"></script>
-
-  <!-- 🌶️ Chili Pepper Hunt Game -->
-  <script type="module" src="./js/pepper-hunt-game.js"></script>
-  <script type="module" src="./js/pepper-hunt-init.js"></script>
-  <script type="module" src="./js/pepper-placer.js"></script>
 </body>
 
 </html>
