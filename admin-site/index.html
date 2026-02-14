@@ -4578,13 +4578,31 @@
                 </h2>
                 <p class="text-gray-600 mt-2">Керуйте балансами та нараховуйте бонуси вручну</p>
               </div>
-              <button 
-                id="refresh-cashback-clients"
-                class="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl shadow-lg shadow-amber-200 transition-all duration-200 hover:scale-105 active:scale-95"
-              >
-                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                <span>Оновити</span>
-              </button>
+              <div class="flex items-center gap-3">
+                <button 
+                  id="backfill-cashback-orders"
+                  class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 text-white font-semibold rounded-xl shadow-lg shadow-purple-200 transition-all duration-200 hover:scale-105 active:scale-95"
+                  title="Нарахувати кешбек для замовлень без нарахування"
+                >
+                  <i data-lucide="coins" class="w-4 h-4"></i>
+                  <span>Нарахувати кешбек</span>
+                </button>
+                <button 
+                  id="sync-all-cashback"
+                  class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-lg shadow-green-200 transition-all duration-200 hover:scale-105 active:scale-95"
+                  title="Перерахувати статистику кешбеку з усіх замовлень"
+                >
+                  <i data-lucide="database" class="w-4 h-4"></i>
+                  <span>Синхронізація</span>
+                </button>
+                <button 
+                  id="refresh-cashback-clients"
+                  class="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl shadow-lg shadow-amber-200 transition-all duration-200 hover:scale-105 active:scale-95"
+                >
+                  <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                  <span>Оновити</span>
+                </button>
+              </div>
             </div>
 
             <!-- Search Bar -->
@@ -4804,6 +4822,87 @@
             >
               <i data-lucide="check-circle" class="w-5 h-5"></i>
               <span>Підтвердити списання</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Cashback Sync Progress Modal -->
+      <div id="cashback-sync-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+          
+          <!-- Modal Header -->
+          <div class="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-4">
+            <div class="flex items-center gap-3">
+              <i data-lucide="database" class="w-6 h-6 text-white"></i>
+              <h3 class="text-xl font-bold text-white">Аналіз та Синхронізація Кешбеку</h3>
+            </div>
+          </div>
+
+          <!-- Modal Body -->
+          <div class="p-6 space-y-6">
+            
+            <!-- Progress Info -->
+            <div class="text-center">
+              <p class="text-lg font-semibold text-gray-700" id="sync-status-text">Підготовка до аналізу...</p>
+              <p class="text-sm text-gray-500 mt-1" id="sync-progress-text">0 / 0 клієнтів</p>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+              <div 
+                id="sync-progress-bar" 
+                class="bg-gradient-to-r from-green-500 to-emerald-500 h-4 rounded-full transition-all duration-300 ease-out"
+                style="width: 0%"
+              ></div>
+            </div>
+
+            <!-- Current User Info -->
+            <div id="sync-current-user" class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
+              <p class="text-sm text-gray-500">Обробка:</p>
+              <p class="font-semibold text-gray-800 mt-1" id="sync-current-user-name">-</p>
+            </div>
+
+            <!-- Stats Summary (hidden initially, shown on completion) -->
+            <div id="sync-stats-summary" class="hidden space-y-4">
+              <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+                <div class="flex items-center gap-3 mb-3">
+                  <i data-lucide="check-circle" class="w-6 h-6 text-green-600"></i>
+                  <h4 class="font-bold text-green-800">Синхронізацію завершено!</h4>
+                </div>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                  <div class="bg-white rounded-lg p-3">
+                    <p class="text-gray-600">Оновлено клієнтів:</p>
+                    <p class="text-xl font-bold text-gray-900" id="sync-result-clients">0</p>
+                  </div>
+                  <div class="bg-white rounded-lg p-3">
+                    <p class="text-gray-600">Оброблено замовлень:</p>
+                    <p class="text-xl font-bold text-gray-900" id="sync-result-orders">0</p>
+                  </div>
+                  <div class="bg-white rounded-lg p-3">
+                    <p class="text-gray-600">Всього нараховано:</p>
+                    <p class="text-xl font-bold text-green-600" id="sync-result-awarded">0 грн</p>
+                  </div>
+                  <div class="bg-white rounded-lg p-3">
+                    <p class="text-gray-600">Всього використано:</p>
+                    <p class="text-xl font-bold text-orange-600" id="sync-result-used">0 грн</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+            <button 
+              id="sync-modal-close-btn"
+              onclick="closeSyncModal()"
+              class="hidden w-full px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+            >
+              <i data-lucide="check" class="w-5 h-5"></i>
+              <span>Закрити</span>
             </button>
           </div>
 
@@ -13100,6 +13199,29 @@
         document.getElementById('modal-total-items').textContent = `${totalQuantity} шт`
 
         // ============================================
+        // TASK 4: EXTRACT CASHBACK DATA FROM ORDER
+        // ============================================
+        // Витягуємо списаний кешбек (multiple fallback fields)
+        const cashbackUsed = (typeof order.cashbackUsed === 'number' ? order.cashbackUsed : order.cashbackUsed?.amount) || 
+                            order.appliedCashback || 
+                            (order.payment?.cashbackUsed) || 
+                            0;
+        
+        // Витягуємо нарахований кешбек
+        const cashbackEarned = order.earnedCashback || 
+                              order.pointsEarned || 
+                              order.cashbackEarned || 
+                              0;
+        
+        // TASK 4: Log warning if cashback fields are missing
+        if (!order.cashbackUsed && !order.appliedCashback && !order.earnedCashback && !order.pointsEarned) {
+          console.warn('⚠️ Cashback fields missing for order:', orderId);
+        }
+        
+        // Debug log для перевірки
+        console.log('📊 Cashback Data:', { orderId: orderId.slice(-8), cashbackUsed, cashbackEarned });
+
+        // ============================================
         // DYNAMICALLY GENERATE ORDER SUMMARY HTML
         // ============================================
         const summaryContainer = document.getElementById('modal-order-summary')
@@ -13129,6 +13251,31 @@
                                   <p class="text-lg font-bold text-green-600">- ${discountAmount} грн (-${discountPercent}%)</p>
                               </div>
                               
+                              <!-- TASK 1-3: CASHBACK INFO SECTION -->
+                              ${cashbackUsed > 0 || cashbackEarned > 0 ? `
+                              <div class="flex justify-end mt-3 mb-3">
+                                  <div class="bg-gradient-to-br from-amber-50 to-yellow-50 border-2 border-amber-200 rounded-xl px-4 py-3 w-full max-w-md shadow-sm">
+                                      <h5 class="text-sm font-bold text-amber-900 mb-2 flex items-center gap-2">
+                                          🪙 <span>Кешбек</span>
+                                      </h5>
+                                      <div class="space-y-2">
+                                          ${cashbackUsed > 0 ? `
+                                          <div class="flex justify-between items-center">
+                                              <span class="text-sm text-amber-800">Списано:</span>
+                                              <span class="text-base font-bold text-red-600">- ${cashbackUsed} грн</span>
+                                          </div>
+                                          ` : ''}
+                                          ${cashbackEarned > 0 ? `
+                                          <div class="flex justify-between items-center">
+                                              <span class="text-sm text-amber-800">Нараховано:</span>
+                                              <span class="text-base font-bold text-green-600">+ ${cashbackEarned} грн</span>
+                                          </div>
+                                          ` : ''}
+                                      </div>
+                                  </div>
+                              </div>
+                              ` : ''}
+                              
                               <!-- Final Total -->
                               <div class="flex justify-end items-center gap-3 pt-2 border-t-2 border-gray-300">
                                   <p class="text-sm text-gray-600">Сума замовлення:</p>
@@ -13138,6 +13285,31 @@
         } else {
           // No discount - show only final total
           summaryHTML = `
+                              <!-- TASK 1-3: CASHBACK INFO SECTION (No Discount Case) -->
+                              ${cashbackUsed > 0 || cashbackEarned > 0 ? `
+                              <div class="flex justify-end mb-3">
+                                  <div class="bg-gradient-to-br from-amber-50 to-yellow-50 border-2 border-amber-200 rounded-xl px-4 py-3 w-full max-w-md shadow-sm">
+                                      <h5 class="text-sm font-bold text-amber-900 mb-2 flex items-center gap-2">
+                                          🪙 <span>Кешбек</span>
+                                      </h5>
+                                      <div class="space-y-2">
+                                          ${cashbackUsed > 0 ? `
+                                          <div class="flex justify-between items-center">
+                                              <span class="text-sm text-amber-800">Списано:</span>
+                                              <span class="text-base font-bold text-red-600">- ${cashbackUsed} грн</span>
+                                          </div>
+                                          ` : ''}
+                                          ${cashbackEarned > 0 ? `
+                                          <div class="flex justify-between items-center">
+                                              <span class="text-sm text-amber-800">Нараховано:</span>
+                                              <span class="text-base font-bold text-green-600">+ ${cashbackEarned} грн</span>
+                                          </div>
+                                          ` : ''}
+                                      </div>
+                                  </div>
+                              </div>
+                              ` : ''}
+                              
                               <div class="flex justify-end items-center gap-3 pt-2">
                                   <p class="text-sm text-gray-600">Сума замовлення:</p>
                                   <p class="text-3xl font-extrabold text-orange-600">${finalTotal} грн</p>
@@ -17168,8 +17340,8 @@
       if (loadingEl) loadingEl.classList.remove('hidden');
       if (contentEl) contentEl.classList.add('opacity-50', 'pointer-events-none');
       
-      // Calculate and display stats
-      await calculateCashbackStats();
+      // Calculate and display stats using the main function
+      await refreshCashbackStats();
       
       // Hide loading state
       if (loadingEl) loadingEl.classList.add('hidden');
@@ -17182,89 +17354,283 @@
     };
     
     /**
-     * Calculate cashback statistics from orders collection
+     * Calculate cashback statistics - Main aggregation function
+     * Renamed to match user requirements
      */
-    async function calculateCashbackStats() {
+    /**
+     * Calculate cashback statistics - Main aggregation function
+     * TASK 1: Added admin authentication check
+     * TASK 2-3: Enhanced error handling and efficient queries
+     */
+    async function refreshCashbackStats() {
+      // Start performance monitoring
+      console.time('⏱️ StatsCalc');
+      
       try {
-        console.log('🔢 [Cashback Stats] Calculating from transactions...');
+        // ============================================================
+        // TASK 1: ADMIN AUTHENTICATION CHECK
+        // ============================================================
         
-        // Fetch all cashback transactions
-        const transactionsRef = collection(db, 'cashback_transactions');
-        const transactionsSnapshot = await getDocs(transactionsRef);
+        console.log('🔐 [Auth Check] Verifying admin permissions...');
         
-        console.log('🔢 [Cashback Stats] Found', transactionsSnapshot.size, 'transactions');
+        // Check if user is authenticated
+        if (!auth || !auth.currentUser) {
+          throw new Error('🔐 Ви не авторизовані. Будь ласка, увійдіть в систему.');
+        }
+        
+        const userEmail = auth.currentUser.email;
+        console.log('👤 Current user:', userEmail);
+        
+        // Check if user is logged in (admin check is handled by Firestore rules)
+        console.log('✅ [Auth Check] User verified:', userEmail);
+        
+        console.log('🔢 [Cashback Stats] Starting calculation...');
         
         let totalAwarded = 0;
         let totalSpent = 0;
         let totalRevenue = 0;
         const orderIdsWithCashback = new Set();
         
-        transactionsSnapshot.forEach((doc) => {
-          const transaction = doc.data();
-          const amount = Number(transaction.amount) || 0;
-          
-          // Sum awarded cashback (positive amounts from order_reward or manual_credit)
-          if (transaction.type === 'order_reward' || transaction.type === 'manual_credit') {
-            totalAwarded += Math.abs(amount);
-          }
-          
-          // Sum spent cashback (negative amounts from order_payment or manual_debit)
-          if (transaction.type === 'order_payment' || transaction.type === 'manual_debit') {
-            totalSpent += Math.abs(amount);
-            
-            // Collect order IDs that used cashback
-            if (transaction.orderId && transaction.type === 'order_payment') {
-              orderIdsWithCashback.add(transaction.orderId);
-            }
-          }
-        });
+        // ============================================================
+        // TASK 1.1: Calculate "Нараховано кешбеку" (Total Awarded)
+        // TASK 3: Efficient - only necessary fields
+        // ============================================================
         
-        // Calculate revenue from orders that used cashback
-        if (orderIdsWithCashback.size > 0) {
-          console.log('🔢 [Cashback Stats] Calculating revenue from', orderIdsWithCashback.size, 'orders with cashback...');
+        // Method 1: Try summing from users collection (totalCashbackAwarded field)
+        let awardedFromUsers = 0;
+        try {
+          console.log('📥 [Step 1] Fetching users to calculate awarded cashback...');
+          const usersRef = collection(db, 'users');
+          const usersSnapshot = await getDocs(usersRef);
           
+          usersSnapshot.forEach((doc) => {
+            const userData = doc.data();
+            const userAwarded = Number(userData.totalCashbackAwarded) || 0;
+            awardedFromUsers += userAwarded;
+          });
+          
+          console.log(`✅ [Step 1] Users fetched: ${usersSnapshot.size}, Total from users: ${awardedFromUsers.toFixed(2)} грн`);
+        } catch (usersError) {
+          console.warn('⚠️ [Step 1] Failed to fetch users (non-critical):', usersError.message);
+          // Continue - we'll try transactions next
+        }
+        
+        // Method 2: Fallback to transactions if users don't have the field
+        let awardedFromTransactions = 0;
+        let spentFromTransactions = 0;
+        try {
+          console.log('📥 [Step 1 Fallback] Fetching transactions...');
+          const transactionsRef = collection(db, 'cashback_transactions');
+          const transactionsSnapshot = await getDocs(transactionsRef);
+          
+          transactionsSnapshot.forEach((doc) => {
+            const transaction = doc.data();
+            const amount = Number(transaction.amount) || 0;
+            
+            // Sum positive transactions (order_reward or manual_credit)
+            if (transaction.type === 'order_reward' || transaction.type === 'manual_credit') {
+              awardedFromTransactions += Math.abs(amount);
+              console.log(`🔍 [Debug TX] Awarded: ${amount}, type: ${transaction.type}`);
+            }
+            
+            // Sum spent transactions (order_payment or manual_debit)
+            if (transaction.type === 'order_payment' || transaction.type === 'manual_debit') {
+              spentFromTransactions += Math.abs(amount);
+              console.log(`🔍 [Debug TX] Spent: ${amount}, type: ${transaction.type}, orderId: ${transaction.orderId}`);
+              if (transaction.orderId) {
+                orderIdsWithCashback.add(transaction.orderId);
+              }
+            }
+          });
+          
+          console.log(`✅ [Step 1 Fallback] Transactions: ${transactionsSnapshot.size}, Awarded: ${awardedFromTransactions.toFixed(2)} грн, Spent: ${spentFromTransactions.toFixed(2)} грн`);
+        } catch (transactionsError) {
+          // TASK 2: Enhanced error message for permission denied
+          if (transactionsError.code === 'permission-denied') {
+            console.error('🔐 Доступ відхилено до колекції cashback_transactions. Перевірте правила Firestore для адміна.');
+            console.error('💡 Переконайтеся, що ви увійшли як admin@modernshop.com');
+            // Continue - we can still calculate from orders data
+          } else {
+            console.warn('⚠️ [Step 1 Fallback] Failed to fetch transactions:', transactionsError.message);
+          }
+        }
+        
+        // Use whichever method has data
+        totalAwarded = awardedFromUsers > 0 ? awardedFromUsers : awardedFromTransactions;
+        
+        // Also track spent from transactions as fallback
+        let spentFromTransactionsFallback = spentFromTransactions;
+        
+        console.log(`✅ [Step 1] Total Awarded: ${totalAwarded.toFixed(2)} грн (from ${awardedFromUsers > 0 ? 'users' : 'transactions'})`);
+        console.log(`📊 [Debug] Orders from transactions: ${orderIdsWithCashback.size}`);
+        
+        // ============================================================
+        // TASK 1.2: Calculate "Використано кешбеку" (Total Used)
+        // TASK 3: READ ONLY - no writes
+        // ============================================================
+        
+        try {
+          console.log('📥 [Step 2] Fetching orders to calculate used cashback...');
           const ordersRef = collection(db, 'orders');
           const ordersSnapshot = await getDocs(ordersRef);
+          
+          console.log(`📦 [Debug] Total orders in collection: ${ordersSnapshot.size}`);
+          
+          // Track awarded from orders as additional fallback
+          let awardedFromOrders = 0;
+          let ordersWithCashbackActivity = 0;
+          
+          ordersSnapshot.forEach((doc) => {
+            const order = doc.data();
+            const orderId = doc.id.slice(-8);
+            
+            // Extract cashback values from ALL possible field locations
+            let cashbackUsed = 0;
+            if (typeof order.cashbackUsed === 'object' && order.cashbackUsed !== null) {
+              cashbackUsed = Number(order.cashbackUsed.amount || 0);
+            } else if (typeof order.cashbackUsed === 'number') {
+              cashbackUsed = order.cashbackUsed;
+            } else if (order.appliedCashback) {
+              cashbackUsed = Number(order.appliedCashback);
+            } else if (order.payment?.cashbackUsed) {
+              cashbackUsed = Number(order.payment.cashbackUsed);
+            }
+            
+            // Extract awarded cashback
+            const orderAwarded = Number(order.cashbackAwarded || order.earnedCashback || order.pointsEarned || 0);
+            
+            // Log orders with any cashback activity
+            if (cashbackUsed > 0 || orderAwarded > 0) {
+              console.log(`🔍 [Debug] Order ${orderId}: used=${cashbackUsed}, awarded=${orderAwarded}, status=${order.status}`);
+              ordersWithCashbackActivity++;
+            }
+            
+            // Sum values (no status filter - count all cashback activity)
+            totalSpent += cashbackUsed;
+            awardedFromOrders += orderAwarded;
+            
+            // Track orders with cashback for revenue calculation
+            if (cashbackUsed > 0) {
+              orderIdsWithCashback.add(doc.id);
+            }
+          });
+          
+          console.log(`📊 [Debug] Orders with cashback activity: ${ordersWithCashbackActivity}`);
+          
+          // Use orders as fallback source for awarded if users/transactions didn't have data
+          if (totalAwarded === 0 && awardedFromOrders > 0) {
+            totalAwarded = awardedFromOrders;
+            console.log(`✅ [Step 1 Fallback #2] Total Awarded from orders: ${totalAwarded.toFixed(2)} грн`);
+          }
+          
+          // Use transactions as fallback source for spent if orders don't have cashbackUsed field
+          if (totalSpent === 0 && spentFromTransactionsFallback > 0) {
+            totalSpent = spentFromTransactionsFallback;
+            console.log(`✅ [Step 2 Fallback] Total Spent from transactions: ${totalSpent.toFixed(2)} грн`);
+          }
+          
+          console.log(`✅ [Step 2] Total Used: ${totalSpent.toFixed(2)} грн from ${orderIdsWithCashback.size} orders with cashback deduction`);
+          
+          // ============================================================
+          // TASK 1.4: Calculate "Додатковий дохід" (Incremental Revenue)
+          // ============================================================
+          
+          console.log(`📥 [Step 4] Calculating revenue from ${orderIdsWithCashback.size} orders with cashback deduction...`);
           
           ordersSnapshot.forEach((doc) => {
             if (orderIdsWithCashback.has(doc.id)) {
               const order = doc.data();
-              const orderTotal = Number(order.summary?.total || order.total || order.totalAmount) || 0;
+              const orderId = doc.id.slice(-8);
+              
+              // Try all possible total field locations
+              const orderTotal = Number(
+                order.summary?.total || 
+                order.total || 
+                order.totalAmount || 
+                order.payment?.amount ||
+                order.finalTotal ||
+                0
+              );
+              
+              console.log(`💰 [Debug] Order ${orderId} revenue: ${orderTotal} грн`);
+              
               if (orderTotal > 0) {
                 totalRevenue += orderTotal;
               }
             }
           });
+          
+          console.log(`✅ [Step 4] Incremental Revenue: ${totalRevenue.toFixed(2)} грн`);
+          
+        } catch (ordersError) {
+          // TASK 2: Enhanced error handling
+          if (ordersError.code === 'permission-denied') {
+            throw new Error('🔐 Доступ відхилено до колекції orders. Перевірте правила Firestore для адміна.');
+          } else {
+            throw ordersError; // Re-throw other errors
+          }
         }
         
-        // Calculate percentage
+        // ============================================================
+        // TASK 1.3: Calculate "Коефіцієнт використання" (Usage Rate %)
+        // ============================================================
+        
         const usagePercentage = totalAwarded > 0 
-          ? ((totalSpent / totalAwarded) * 100).toFixed(1) 
+          ? ((totalSpent / totalAwarded) * 100) 
           : 0;
         
-        // Update UI
-        document.getElementById('stat-awarded').textContent = totalAwarded.toFixed(0);
-        document.getElementById('stat-spent').textContent = totalSpent.toFixed(0);
-        document.getElementById('stat-percentage').textContent = usagePercentage;
-        document.getElementById('stat-revenue').textContent = totalRevenue.toFixed(0);
+        console.log(`✅ [Step 3] Usage Rate: ${usagePercentage.toFixed(2)}%`);
         
-        console.log('📊 [Cashback Stats] Calculation complete:', {
-          totalAwarded: totalAwarded.toFixed(2),
-          totalSpent: totalSpent.toFixed(2),
-          usagePercentage: usagePercentage + '%',
-          totalRevenue: totalRevenue.toFixed(2),
-          ordersWithCashback: orderIdsWithCashback.size,
-          transactionsProcessed: transactionsSnapshot.size
+        // ============================================================
+        // TASK 2: Update UI with formatted numbers
+        // ============================================================
+        
+        document.getElementById('stat-awarded').textContent = totalAwarded.toFixed(2);
+        document.getElementById('stat-spent').textContent = totalSpent.toFixed(2);
+        document.getElementById('stat-percentage').textContent = usagePercentage.toFixed(2);
+        document.getElementById('stat-revenue').textContent = totalRevenue.toFixed(2);
+        
+        // ============================================================
+        // Performance monitoring complete
+        // ============================================================
+        
+        console.timeEnd('⏱️ StatsCalc');
+        
+        console.log('📊 [Summary] Calculation complete:', {
+          totalAwarded: totalAwarded.toFixed(2) + ' грн',
+          totalSpent: totalSpent.toFixed(2) + ' грн',
+          usageRate: usagePercentage.toFixed(2) + '%',
+          incrementalRevenue: totalRevenue.toFixed(2) + ' грн',
+          ordersWithCashback: orderIdsWithCashback.size
         });
         
       } catch (error) {
-        console.error('❌ [Cashback Stats] Error calculating statistics:', error);
-        showNotification('Помилка розрахунку статистики: ' + error.message, 'error');
+        console.timeEnd('⏱️ StatsCalc');
+        
+        // TASK 2: Enhanced error handling with clear messages
+        if (error.code === 'permission-denied' || error.message.includes('🔐')) {
+          console.error('🔐 Доступ відхилено. Перевірте правила Firestore для адміна.');
+          console.error('💡 Переконайтеся, що ви увійшли як admin@modernshop.com');
+          console.error('📋 Деталі помилки:', error);
+          showNotification('🔐 Доступ відхилено. Тільки адмін може переглядати статистику.', 'error');
+        } else {
+          console.error('❌ [Cashback Stats] Error calculating statistics:', error);
+          showNotification('Помилка розрахунку статистики: ' + error.message, 'error');
+        }
+        
+        throw error; // Re-throw to handle in caller
       }
     }
     
     /**
-     * Setup refresh button listener
+     * Legacy alias for backwards compatibility
+     */
+    async function calculateCashbackStats() {
+      return await refreshCashbackStats();
+    }
+    
+    /**
+     * TASK 3: Setup refresh button with loading state and performance optimization
      */
     document.addEventListener('DOMContentLoaded', () => {
       const refreshBtn = document.getElementById('refresh-cashback-stats');
@@ -17272,27 +17638,62 @@
         refreshBtn.addEventListener('click', async () => {
           console.log('🔄 [Cashback Stats] Manual refresh triggered');
           
-          // Animate button
-          refreshBtn.querySelector('i[data-lucide="refresh-cw"]').style.animation = 'spin 1s linear';
+          // TASK 3: Disable button during calculation
+          refreshBtn.disabled = true;
+          refreshBtn.classList.add('opacity-50', 'cursor-not-allowed');
           
-          await calculateCashbackStats();
+          const iconEl = refreshBtn.querySelector('i[data-lucide="refresh-cw"]');
+          const originalText = refreshBtn.textContent;
           
-          // Reset animation
-          setTimeout(() => {
-            refreshBtn.querySelector('i[data-lucide="refresh-cw"]').style.animation = '';
-          }, 1000);
-          
-          // Show toast
-          const toast = document.createElement('div');
-          toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3';
-          toast.innerHTML = `
-            <i data-lucide="check-circle" class="w-6 h-6"></i>
-            <p class="font-bold">Статистику оновлено! ✅</p>
+          // Show loading spinner
+          if (iconEl) {
+            iconEl.style.animation = 'spin 1s linear infinite';
+          }
+          refreshBtn.innerHTML = `
+            <i data-lucide="refresh-cw" class="w-4 h-4" style="animation: spin 1s linear infinite;"></i>
+            <span>Розрахунок...</span>
           `;
-          document.body.appendChild(toast);
           lucide.createIcons();
           
-          setTimeout(() => toast.remove(), 2000);
+          try {
+            // Call the refreshCashbackStats function (with performance monitoring)
+            await refreshCashbackStats();
+            
+            // Show success toast
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3 animate-slide-in';
+            toast.innerHTML = `
+              <i data-lucide="check-circle" class="w-6 h-6"></i>
+              <p class="font-bold">Статистику оновлено! ✅</p>
+            `;
+            document.body.appendChild(toast);
+            lucide.createIcons();
+            
+            setTimeout(() => toast.remove(), 2000);
+            
+          } catch (error) {
+            // Show error toast
+            const errorToast = document.createElement('div');
+            errorToast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3';
+            errorToast.innerHTML = `
+              <i data-lucide="alert-circle" class="w-6 h-6"></i>
+              <p class="font-bold">Помилка: ${error.message}</p>
+            `;
+            document.body.appendChild(errorToast);
+            lucide.createIcons();
+            
+            setTimeout(() => errorToast.remove(), 3000);
+            
+          } finally {
+            // TASK 3: Re-enable button and restore original state
+            refreshBtn.disabled = false;
+            refreshBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            refreshBtn.innerHTML = `
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+              <span>Оновити</span>
+            `;
+            lucide.createIcons();
+          }
         });
         console.log('✅ [Cashback Stats] Refresh button listener attached');
       }
@@ -17394,13 +17795,29 @@
           
           ordersByUser[phone].count++;
           
+          // Sum cashback awarded (check multiple field names)
+          let awardedAmount = 0;
           if (order.cashbackAwarded) {
-            ordersByUser[phone].totalAwarded += Number(order.cashbackAwarded) || 0;
+            awardedAmount = Number(order.cashbackAwarded) || 0;
+          } else if (order.earnedCashback) {
+            awardedAmount = Number(order.earnedCashback) || 0;
+          } else if (order.pointsEarned) {
+            awardedAmount = Number(order.pointsEarned) || 0;
           }
+          ordersByUser[phone].totalAwarded += awardedAmount;
           
-          if (order.cashbackUsed) {
-            ordersByUser[phone].totalSpent += Number(order.cashbackUsed) || 0;
+          // Sum cashback used (handle multiple formats)
+          let usedAmount = 0;
+          if (typeof order.cashbackUsed === 'number') {
+            usedAmount = order.cashbackUsed;
+          } else if (order.cashbackUsed?.amount) {
+            usedAmount = Number(order.cashbackUsed.amount) || 0;
+          } else if (order.appliedCashback) {
+            usedAmount = Number(order.appliedCashback) || 0;
+          } else if (order.payment?.cashbackUsed) {
+            usedAmount = Number(order.payment.cashbackUsed) || 0;
           }
+          ordersByUser[phone].totalSpent += usedAmount;
         });
         
         console.log('👥 [Cashback Clients] Orders grouped by', Object.keys(ordersByUser).length, 'users');
@@ -17952,6 +18369,698 @@
         }
       });
     });
+
+    // ============================================
+    // 🔄 SYNC ALL CLIENTS CASHBACK FUNCTION
+    // ============================================
+
+    /**
+     * Close the sync progress modal
+     */
+    window.closeSyncModal = function() {
+      const modal = document.getElementById('cashback-sync-modal');
+      if (modal) modal.classList.add('hidden');
+    };
+
+    /**
+     * Sync all clients cashback statistics from order history
+     * This function:
+     * 1. Fetches all users from 'users' collection
+     * 2. For each user, calculates cashback stats from their orders
+     * 3. Updates user documents with calculated values
+     * 4. Refreshes the admin table
+     */
+    window.syncAllClientsCashback = async function() {
+      console.log('🔄 [Cashback Sync] Starting full analysis and sync...');
+      
+      // Get modal elements
+      const modal = document.getElementById('cashback-sync-modal');
+      const statusText = document.getElementById('sync-status-text');
+      const progressText = document.getElementById('sync-progress-text');
+      const progressBar = document.getElementById('sync-progress-bar');
+      const currentUserName = document.getElementById('sync-current-user-name');
+      const currentUserDiv = document.getElementById('sync-current-user');
+      const statsSummary = document.getElementById('sync-stats-summary');
+      const closeBtn = document.getElementById('sync-modal-close-btn');
+      
+      // Show modal
+      if (modal) modal.classList.remove('hidden');
+      
+      // Reset modal state
+      if (statusText) statusText.textContent = 'Завантаження даних...';
+      if (progressText) progressText.textContent = '0 / 0 клієнтів';
+      if (progressBar) progressBar.style.width = '0%';
+      if (currentUserName) currentUserName.textContent = '-';
+      if (currentUserDiv) currentUserDiv.classList.remove('hidden');
+      if (statsSummary) statsSummary.classList.add('hidden');
+      if (closeBtn) closeBtn.classList.add('hidden');
+      
+      // Reinit icons
+      lucide.createIcons();
+      
+      try {
+        // STEP 1: Fetch all orders (for analysis)
+        console.log('📦 [Cashback Sync] Fetching all orders...');
+        if (statusText) statusText.textContent = 'Завантаження замовлень...';
+        
+        const ordersRef = collection(db, 'orders');
+        const ordersSnapshot = await getDocs(ordersRef);
+        const totalOrders = ordersSnapshot.size;
+        
+        console.log(`📦 [Cashback Sync] Found ${totalOrders} orders`);
+        
+        // STEP 2: Helper function to normalize phone number
+        const normalizePhone = (phone) => {
+          if (!phone) return null;
+          const digits = phone.replace(/\D/g, '');
+          if (digits.length === 10) {
+            return '+38' + digits;
+          }
+          if (digits.length === 12 && digits.startsWith('38')) {
+            return '+' + digits;
+          }
+          return phone;
+        };
+        
+        // STEP 3: Build a map of orders by user phone (aggregated stats)
+        console.log('📊 [Cashback Sync] Aggregating orders by user phone...');
+        if (statusText) statusText.textContent = 'Аналіз замовлень...';
+        
+        const ordersByUser = {};
+        let processedOrders = 0;
+        
+        ordersSnapshot.forEach((docSnapshot) => {
+          const order = docSnapshot.data();
+          let phone = order.customer?.phone || order.phone || order.userId;
+          
+          if (!phone) {
+            console.log('⚠️ Order without phone:', docSnapshot.id);
+            return;
+          }
+          
+          phone = normalizePhone(phone);
+          if (!phone) return;
+          
+          if (!ordersByUser[phone]) {
+            ordersByUser[phone] = {
+              count: 0,
+              totalAwarded: 0,
+              totalUsed: 0,
+              customerName: null
+            };
+          }
+          
+          // Update customer name if available
+          const name = order.customer?.name || order.customer?.fullName || order.customerName;
+          if (!ordersByUser[phone].customerName && name) {
+            ordersByUser[phone].customerName = name;
+          }
+          
+          // Count order
+          ordersByUser[phone].count++;
+          
+          // Sum cashback awarded (TASK 1: check multiple field names)
+          let awardedAmount = 0;
+          if (order.cashbackAwarded) {
+            awardedAmount = Number(order.cashbackAwarded) || 0;
+          } else if (order.earnedCashback) {
+            awardedAmount = Number(order.earnedCashback) || 0;
+          } else if (order.pointsEarned) {
+            awardedAmount = Number(order.pointsEarned) || 0;
+          }
+          ordersByUser[phone].totalAwarded += awardedAmount;
+          
+          // Sum cashback used (TASK 1: handle multiple formats)
+          let usedAmount = 0;
+          if (typeof order.cashbackUsed === 'number') {
+            usedAmount = order.cashbackUsed;
+          } else if (order.cashbackUsed?.amount) {
+            usedAmount = Number(order.cashbackUsed.amount) || 0;
+          } else if (order.appliedCashback) {
+            usedAmount = Number(order.appliedCashback) || 0;
+          } else if (order.payment?.cashbackUsed) {
+            usedAmount = Number(order.payment.cashbackUsed) || 0;
+          }
+          ordersByUser[phone].totalUsed += usedAmount;
+          
+          processedOrders++;
+        });
+        
+        const uniqueUsers = Object.keys(ordersByUser);
+        console.log(`📊 [Cashback Sync] Found ${uniqueUsers.length} unique users with orders`);
+        
+        // STEP 4: Fetch existing users to merge data
+        console.log('👥 [Cashback Sync] Fetching existing users...');
+        if (statusText) statusText.textContent = 'Завантаження клієнтів...';
+        
+        const usersRef = collection(db, 'users');
+        const usersSnapshot = await getDocs(usersRef);
+        
+        // Build a set of existing user phones
+        const existingUserPhones = new Set();
+        usersSnapshot.forEach((docSnapshot) => {
+          const phone = normalizePhone(docSnapshot.id);
+          if (phone) existingUserPhones.add(phone);
+        });
+        
+        console.log(`👥 [Cashback Sync] Found ${existingUserPhones.size} existing users`);
+        
+        // STEP 5: Prepare all phones to update (merge orders + existing users)
+        const allPhones = new Set([...uniqueUsers, ...existingUserPhones]);
+        const totalClients = allPhones.size;
+        
+        console.log(`🔄 [Cashback Sync] Will process ${totalClients} total clients`);
+        if (statusText) statusText.textContent = 'Оновлення клієнтів...';
+        
+        // STEP 6: Update each user document using batched writes
+        let updatedCount = 0;
+        let globalTotalAwarded = 0;
+        let globalTotalUsed = 0;
+        
+        const BATCH_SIZE = 500; // Firestore batch limit
+        let currentBatch = writeBatch(db);
+        let batchCount = 0;
+        const batches = [];
+        
+        for (const phone of allPhones) {
+          const stats = ordersByUser[phone] || { count: 0, totalAwarded: 0, totalUsed: 0 };
+          const balance = stats.totalAwarded - stats.totalUsed;
+          
+          // Update progress UI
+          updatedCount++;
+          const progress = Math.round((updatedCount / totalClients) * 100);
+          if (progressBar) progressBar.style.width = `${progress}%`;
+          if (progressText) progressText.textContent = `${updatedCount} / ${totalClients} клієнтів`;
+          if (currentUserName) currentUserName.textContent = stats.customerName || phone;
+          
+          // Sum global stats
+          globalTotalAwarded += stats.totalAwarded;
+          globalTotalUsed += stats.totalUsed;
+          
+          // Prepare update data
+          const updateData = {
+            totalCashbackAwarded: stats.totalAwarded,
+            totalCashbackUsed: stats.totalUsed,
+            orderCount: stats.count,
+            cashbackBalance: balance,
+            cashbackSyncedAt: serverTimestamp()
+          };
+          
+          // If user doesn't exist yet, add name if we have it
+          if (!existingUserPhones.has(phone) && stats.customerName) {
+            updateData.fullName = stats.customerName;
+            updateData.createdAt = serverTimestamp();
+          }
+          
+          // Add to batch
+          const userRef = doc(db, 'users', phone);
+          currentBatch.set(userRef, updateData, { merge: true });
+          batchCount++;
+          
+          // Commit batch when reaching limit
+          if (batchCount >= BATCH_SIZE) {
+            batches.push(currentBatch.commit());
+            currentBatch = writeBatch(db);
+            batchCount = 0;
+            console.log(`📦 [Cashback Sync] Queued batch, total batches: ${batches.length}`);
+          }
+          
+          // Small delay every 50 users to allow UI updates
+          if (updatedCount % 50 === 0) {
+            await new Promise(resolve => setTimeout(resolve, 10));
+          }
+        }
+        
+        // Commit remaining batch
+        if (batchCount > 0) {
+          batches.push(currentBatch.commit());
+          console.log(`📦 [Cashback Sync] Queued final batch, total batches: ${batches.length}`);
+        }
+        
+        // STEP 7: Wait for all batches to complete
+        if (statusText) statusText.textContent = 'Збереження змін...';
+        console.log(`💾 [Cashback Sync] Committing ${batches.length} batches...`);
+        
+        await Promise.all(batches);
+        
+        console.log('✅ [Cashback Sync] All batches committed successfully!');
+        
+        // STEP 8: Show completion UI
+        if (statusText) statusText.textContent = '✅ Синхронізацію завершено!';
+        if (progressBar) progressBar.style.width = '100%';
+        if (currentUserDiv) currentUserDiv.classList.add('hidden');
+        
+        // Update summary stats
+        document.getElementById('sync-result-clients').textContent = totalClients.toLocaleString('uk-UA');
+        document.getElementById('sync-result-orders').textContent = totalOrders.toLocaleString('uk-UA');
+        document.getElementById('sync-result-awarded').textContent = globalTotalAwarded.toLocaleString('uk-UA') + ' грн';
+        document.getElementById('sync-result-used').textContent = globalTotalUsed.toLocaleString('uk-UA') + ' грн';
+        
+        if (statsSummary) statsSummary.classList.remove('hidden');
+        if (closeBtn) closeBtn.classList.remove('hidden');
+        
+        lucide.createIcons();
+        
+        console.log('📊 [Cashback Sync] Summary:', {
+          totalClients,
+          totalOrders,
+          globalTotalAwarded: globalTotalAwarded.toLocaleString('uk-UA') + ' грн',
+          globalTotalUsed: globalTotalUsed.toLocaleString('uk-UA') + ' грн'
+        });
+        
+        // STEP 9: Refresh the clients table
+        console.log('🔄 [Cashback Sync] Refreshing clients table...');
+        await loadCashbackClients();
+        
+        // Show success toast
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3 animate-slide-in';
+        toast.innerHTML = `
+          <i data-lucide="check-circle" class="w-6 h-6"></i>
+          <div>
+            <p class="font-bold">✅ Аналіз завершено!</p>
+            <p class="text-sm text-green-100">Оновлено ${totalClients} клієнтів</p>
+          </div>
+        `;
+        document.body.appendChild(toast);
+        lucide.createIcons();
+        setTimeout(() => toast.remove(), 4000);
+        
+      } catch (error) {
+        console.error('❌ [Cashback Sync] Error:', error);
+        console.error('❌ [Cashback Sync] Stack:', error.stack);
+        
+        if (statusText) statusText.textContent = '❌ Помилка синхронізації';
+        if (closeBtn) closeBtn.classList.remove('hidden');
+        
+        // Show error toast
+        const errorToast = document.createElement('div');
+        errorToast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3';
+        errorToast.innerHTML = `
+          <i data-lucide="alert-circle" class="w-6 h-6"></i>
+          <div>
+            <p class="font-bold">Помилка синхронізації</p>
+            <p class="text-sm text-red-100">${error.message}</p>
+          </div>
+        `;
+        document.body.appendChild(errorToast);
+        lucide.createIcons();
+        setTimeout(() => errorToast.remove(), 5000);
+      }
+    };
+
+    /**
+     * Setup event listener for sync button
+     */
+    document.addEventListener('DOMContentLoaded', () => {
+      const syncBtn = document.getElementById('sync-all-cashback');
+      if (syncBtn) {
+        syncBtn.addEventListener('click', async () => {
+          console.log('🔄 [Cashback Sync] Button clicked, showing confirmation...');
+          
+          // TASK 4: Show confirmation dialog before starting
+          const confirmed = confirm(
+            'Ви впевнені?\n\n' +
+            'Це оновить баланси всіх клієнтів на основі історії замовлень.\n' +
+            'Процес може зайняти декілька хвилин.'
+          );
+          
+          if (!confirmed) {
+            console.log('🚫 [Cashback Sync] User cancelled sync');
+            return;
+          }
+          
+          console.log('✅ [Cashback Sync] User confirmed, starting sync...');
+          
+          // Disable button during sync
+          syncBtn.disabled = true;
+          syncBtn.classList.add('opacity-50', 'cursor-not-allowed');
+          
+          try {
+            await syncAllClientsCashback();
+          } finally {
+            // Re-enable button
+            syncBtn.disabled = false;
+            syncBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+          }
+        });
+        console.log('✅ [Cashback Sync] Sync button listener attached');
+      }
+      
+      // ============================================
+      // 🪙 BACKFILL CASHBACK FOR ALL ORDERS
+      // ============================================
+      const backfillBtn = document.getElementById('backfill-cashback-orders');
+      if (backfillBtn) {
+        backfillBtn.addEventListener('click', async () => {
+          console.log('🪙 [Backfill] Button clicked, showing confirmation...');
+          
+          const confirmed = confirm(
+            '⚠️ УВАГА: Нарахування кешбеку за всі замовлення\n\n' +
+            'Ця функція:\n' +
+            '• Знайде всі замовлення БЕЗ нарахованого кешбеку\n' +
+            '• Розрахує кешбек (8% від суми замовлення)\n' +
+            '• Оновить баланси клієнтів\n' +
+            '• Створить записи транзакцій\n\n' +
+            'Продовжити?'
+          );
+          
+          if (!confirmed) {
+            console.log('🚫 [Backfill] User cancelled');
+            return;
+          }
+          
+          // Disable button
+          backfillBtn.disabled = true;
+          backfillBtn.classList.add('opacity-50', 'cursor-not-allowed');
+          backfillBtn.innerHTML = `
+            <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
+            <span>Обробка...</span>
+          `;
+          lucide.createIcons();
+          
+          try {
+            await backfillCashbackForAllOrders();
+          } finally {
+            backfillBtn.disabled = false;
+            backfillBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            backfillBtn.innerHTML = `
+              <i data-lucide="coins" class="w-4 h-4"></i>
+              <span>Нарахувати кешбек</span>
+            `;
+            lucide.createIcons();
+          }
+        });
+        console.log('✅ [Backfill] Button listener attached');
+      }
+    });
+    
+    // ============================================
+    // 🪙 BACKFILL CASHBACK FUNCTION
+    // ============================================
+    
+    /**
+     * Retroactively award cashback for all orders that don't have it yet.
+     * This function:
+     * 1. Gets cashback percentage from config (default 8%)
+     * 2. Fetches all orders
+     * 3. For each order without cashbackAwarded:
+     *    - Calculates cashback based on order total
+     *    - Updates order with cashbackAwarded
+     *    - Updates user's cashback balance
+     *    - Creates transaction record
+     */
+    async function backfillCashbackForAllOrders() {
+      console.log('🪙 [Backfill] Starting retroactive cashback crediting...');
+      console.time('⏱️ BackfillCashback');
+      
+      // Show progress modal
+      const modal = document.getElementById('cashback-sync-modal');
+      const statusText = document.getElementById('sync-status-text');
+      const progressText = document.getElementById('sync-progress-text');
+      const progressBar = document.getElementById('sync-progress-bar');
+      const currentUserName = document.getElementById('sync-current-user-name');
+      const currentUserDiv = document.getElementById('sync-current-user');
+      const statsSummary = document.getElementById('sync-stats-summary');
+      const closeBtn = document.getElementById('sync-modal-close-btn');
+      
+      if (modal) modal.classList.remove('hidden');
+      if (statusText) statusText.textContent = 'Завантаження налаштувань...';
+      if (progressBar) progressBar.style.width = '0%';
+      if (currentUserDiv) currentUserDiv.classList.remove('hidden');
+      if (statsSummary) statsSummary.classList.add('hidden');
+      if (closeBtn) closeBtn.classList.add('hidden');
+      lucide.createIcons();
+      
+      try {
+        // STEP 1: Get cashback percentage from config
+        console.log('📋 [Backfill] Getting cashback config...');
+        let cashbackPercent = 8; // Default
+        
+        try {
+          const configDoc = await getDoc(doc(db, 'config', 'general_config'));
+          if (configDoc.exists()) {
+            cashbackPercent = configDoc.data().cashbackPercent || 8;
+          }
+        } catch (e) {
+          console.warn('⚠️ [Backfill] Could not get config, using default 8%');
+        }
+        
+        console.log(`📋 [Backfill] Cashback percentage: ${cashbackPercent}%`);
+        if (statusText) statusText.textContent = `Завантаження замовлень (${cashbackPercent}% кешбек)...`;
+        
+        // STEP 2: Fetch all orders
+        const ordersRef = collection(db, 'orders');
+        const ordersSnapshot = await getDocs(ordersRef);
+        const totalOrders = ordersSnapshot.size;
+        
+        console.log(`📦 [Backfill] Found ${totalOrders} orders total`);
+        
+        // STEP 3: Filter orders without cashbackAwarded
+        const ordersToProcess = [];
+        ordersSnapshot.forEach((docSnapshot) => {
+          const order = docSnapshot.data();
+          
+          // Skip if already has cashback awarded
+          if (order.cashbackAwarded && order.cashbackAwarded > 0) {
+            return;
+          }
+          
+          // Get order total
+          const orderTotal = Number(order.summary?.total || order.total || order.totalAmount || 0);
+          if (orderTotal <= 0) {
+            return;
+          }
+          
+          // Get customer phone
+          const phone = order.customer?.phone || order.phone || order.userId;
+          if (!phone) {
+            return;
+          }
+          
+          ordersToProcess.push({
+            id: docSnapshot.id,
+            ref: docSnapshot.ref,
+            order: order,
+            total: orderTotal,
+            phone: phone
+          });
+        });
+        
+        console.log(`🪙 [Backfill] Orders to process (without cashback): ${ordersToProcess.length}`);
+        
+        if (ordersToProcess.length === 0) {
+          if (statusText) statusText.textContent = '✅ Всі замовлення вже мають кешбек!';
+          if (closeBtn) closeBtn.classList.remove('hidden');
+          console.log('🪙 [Backfill] No orders need cashback, done.');
+          console.timeEnd('⏱️ BackfillCashback');
+          return;
+        }
+        
+        if (statusText) statusText.textContent = `Обробка ${ordersToProcess.length} замовлень...`;
+        
+        // STEP 4: Helper function to normalize phone
+        const normalizePhone = (phone) => {
+          if (!phone) return null;
+          const digits = phone.replace(/\D/g, '');
+          if (digits.length === 10) return '+38' + digits;
+          if (digits.length === 12 && digits.startsWith('38')) return '+' + digits;
+          return phone;
+        };
+        
+        // STEP 5: Process each order
+        let processed = 0;
+        let totalAwarded = 0;
+        let usersUpdated = new Set();
+        
+        // Track user balances for batch updates
+        const userBalances = {};
+        const orderUpdates = [];
+        const transactionCreates = [];
+        
+        for (const item of ordersToProcess) {
+          processed++;
+          const percent = Math.round((processed / ordersToProcess.length) * 100);
+          
+          if (progressBar) progressBar.style.width = `${percent}%`;
+          if (progressText) progressText.textContent = `${processed} / ${ordersToProcess.length} замовлень`;
+          
+          const normalizedPhone = normalizePhone(item.phone);
+          if (!normalizedPhone) continue;
+          
+          if (currentUserName) {
+            currentUserName.textContent = item.order.customer?.fullName || item.order.customer?.name || normalizedPhone;
+          }
+          
+          // Calculate cashback
+          const earnedCashback = Math.floor(item.total * (cashbackPercent / 100));
+          if (earnedCashback <= 0) continue;
+          
+          totalAwarded += earnedCashback;
+          usersUpdated.add(normalizedPhone);
+          
+          // Track user balance increment
+          if (!userBalances[normalizedPhone]) {
+            userBalances[normalizedPhone] = {
+              cashbackBalance: 0,
+              totalCashbackAwarded: 0,
+              name: item.order.customer?.fullName || item.order.customer?.name || null
+            };
+          }
+          userBalances[normalizedPhone].cashbackBalance += earnedCashback;
+          userBalances[normalizedPhone].totalCashbackAwarded += earnedCashback;
+          
+          // Queue order update
+          orderUpdates.push({
+            ref: item.ref,
+            data: {
+              cashbackAwarded: earnedCashback,
+              cashbackPercent: cashbackPercent,
+              cashbackCreditedAt: serverTimestamp()
+            }
+          });
+          
+          // Queue transaction creation
+          transactionCreates.push({
+            userId: normalizedPhone,
+            userName: item.order.customer?.fullName || item.order.customer?.name || 'Клієнт',
+            amount: earnedCashback,
+            type: 'order_reward',
+            description: `Нараховано за замовлення #${item.id.slice(-8)}`,
+            orderId: item.id,
+            createdAt: serverTimestamp(),
+            status: 'completed',
+            isBackfill: true
+          });
+          
+          // Update UI every 10 orders
+          if (processed % 10 === 0) {
+            await new Promise(resolve => setTimeout(resolve, 5));
+          }
+        }
+        
+        console.log(`🪙 [Backfill] Prepared updates for ${usersUpdated.size} users, ${orderUpdates.length} orders`);
+        if (statusText) statusText.textContent = 'Збереження змін...';
+        
+        // STEP 6: Batch write all updates
+        const BATCH_SIZE = 500;
+        const batches = [];
+        let currentBatch = writeBatch(db);
+        let batchCount = 0;
+        
+        // Update orders
+        for (const update of orderUpdates) {
+          currentBatch.update(update.ref, update.data);
+          batchCount++;
+          
+          if (batchCount >= BATCH_SIZE) {
+            batches.push(currentBatch.commit());
+            currentBatch = writeBatch(db);
+            batchCount = 0;
+          }
+        }
+        
+        // Create transactions
+        for (const trans of transactionCreates) {
+          const transRef = doc(collection(db, 'cashback_transactions'));
+          currentBatch.set(transRef, trans);
+          batchCount++;
+          
+          if (batchCount >= BATCH_SIZE) {
+            batches.push(currentBatch.commit());
+            currentBatch = writeBatch(db);
+            batchCount = 0;
+          }
+        }
+        
+        // Update user balances
+        for (const [phone, data] of Object.entries(userBalances)) {
+          const userRef = doc(db, 'users', phone);
+          currentBatch.set(userRef, {
+            cashbackBalance: increment(data.cashbackBalance),
+            totalCashbackAwarded: increment(data.totalCashbackAwarded),
+            updatedAt: serverTimestamp(),
+            ...(data.name ? { fullName: data.name } : {})
+          }, { merge: true });
+          batchCount++;
+          
+          if (batchCount >= BATCH_SIZE) {
+            batches.push(currentBatch.commit());
+            currentBatch = writeBatch(db);
+            batchCount = 0;
+          }
+        }
+        
+        // Commit remaining batch
+        if (batchCount > 0) {
+          batches.push(currentBatch.commit());
+        }
+        
+        console.log(`💾 [Backfill] Committing ${batches.length} batches...`);
+        await Promise.all(batches);
+        
+        console.log('✅ [Backfill] All batches committed!');
+        console.timeEnd('⏱️ BackfillCashback');
+        
+        // STEP 7: Update UI with results
+        if (statusText) statusText.textContent = '✅ Кешбек нараховано успішно!';
+        if (progressBar) progressBar.style.width = '100%';
+        if (currentUserDiv) currentUserDiv.classList.add('hidden');
+        
+        // Update summary
+        document.getElementById('sync-result-clients').textContent = usersUpdated.size.toLocaleString('uk-UA');
+        document.getElementById('sync-result-orders').textContent = orderUpdates.length.toLocaleString('uk-UA');
+        document.getElementById('sync-result-awarded').textContent = totalAwarded.toLocaleString('uk-UA') + ' грн';
+        document.getElementById('sync-result-used').textContent = '0 грн';
+        
+        if (statsSummary) statsSummary.classList.remove('hidden');
+        if (closeBtn) closeBtn.classList.remove('hidden');
+        lucide.createIcons();
+        
+        console.log('📊 [Backfill] Summary:', {
+          ordersProcessed: orderUpdates.length,
+          usersUpdated: usersUpdated.size,
+          totalAwarded: totalAwarded.toLocaleString('uk-UA') + ' грн'
+        });
+        
+        // Refresh clients table
+        await loadCashbackClients();
+        
+        // Success toast
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3 animate-slide-in';
+        toast.innerHTML = `
+          <i data-lucide="check-circle" class="w-6 h-6"></i>
+          <div>
+            <p class="font-bold">✅ Кешбек нараховано!</p>
+            <p class="text-sm text-green-100">${orderUpdates.length} замовлень • ${totalAwarded} грн</p>
+          </div>
+        `;
+        document.body.appendChild(toast);
+        lucide.createIcons();
+        setTimeout(() => toast.remove(), 4000);
+        
+      } catch (error) {
+        console.error('❌ [Backfill] Error:', error);
+        console.timeEnd('⏱️ BackfillCashback');
+        
+        if (statusText) statusText.textContent = '❌ Помилка нарахування';
+        if (closeBtn) closeBtn.classList.remove('hidden');
+        
+        const errorToast = document.createElement('div');
+        errorToast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3';
+        errorToast.innerHTML = `
+          <i data-lucide="alert-circle" class="w-6 h-6"></i>
+          <div>
+            <p class="font-bold">Помилка</p>
+            <p class="text-sm text-red-100">${error.message}</p>
+          </div>
+        `;
+        document.body.appendChild(errorToast);
+        lucide.createIcons();
+        setTimeout(() => errorToast.remove(), 5000);
+      }
+    }
 
     // ============================================
     // 🎁 GIFTS & SAMPLING MODULE

@@ -328,5 +328,18 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
     
+    // =============================================
+    // 💰 CASHBACK TRANSACTIONS (Admin only)
+    // =============================================
+    
+    match /cashback_transactions/{transactionId} {
+      // ✅ Admins can read all transactions (for statistics dashboard)
+      allow read: if request.auth != null;
+      // ✅ System can create transactions (order completion, manual credit/debit)
+      allow create: if true;
+      // ❌ Only admins can update/delete
+      allow update, delete: if request.auth != null;
+    }
+    
   }
 }

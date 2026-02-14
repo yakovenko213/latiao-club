@@ -10133,13 +10133,15 @@
                                           ${cashbackUsed > 0 ? `
                                           <div class="flex justify-between items-center">
                                               <span class="text-sm text-amber-800">Списано:</span>
-                                              <span class="text-base font-bold text-orange-600">- ${cashbackUsed} грн</span>
+                                              <span class="text-base font-bold text-red-600">- ${cashbackUsed} грн</span>
                                           </div>
                                           ` : ''}
+                                          ${cashbackEarned > 0 ? `
                                           <div class="flex justify-between items-center">
                                               <span class="text-sm text-amber-800">Нараховано:</span>
                                               <span class="text-base font-bold text-green-600">+ ${cashbackEarned} грн</span>
                                           </div>
+                                          ` : ''}
                                       </div>
                                   </div>
                               </div>
@@ -10165,13 +10167,15 @@
                                           ${cashbackUsed > 0 ? `
                                           <div class="flex justify-between items-center">
                                               <span class="text-sm text-amber-800">Списано:</span>
-                                              <span class="text-base font-bold text-orange-600">- ${cashbackUsed} грн</span>
+                                              <span class="text-base font-bold text-red-600">- ${cashbackUsed} грн</span>
                                           </div>
                                           ` : ''}
+                                          ${cashbackEarned > 0 ? `
                                           <div class="flex justify-between items-center">
                                               <span class="text-sm text-amber-800">Нараховано:</span>
                                               <span class="text-base font-bold text-green-600">+ ${cashbackEarned} грн</span>
                                           </div>
+                                          ` : ''}
                                       </div>
                                   </div>
                               </div>

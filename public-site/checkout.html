@@ -739,13 +739,35 @@
             <p class="text-xs text-gray-500 mt-2 italic">💡 Онлайн оплачуєте тільки 100 грн, решту - при отриманні</p>
           </div>
 
-          <!-- 🪙 Cashback Badge (Outside payment method containers) -->
-          <div id="checkout-cashback-badge" class="hidden flex items-center gap-2 p-3 rounded-xl border border-yellow-200 bg-yellow-50 mt-3 mb-4 text-sm font-semibold text-amber-900 cashback-shine-effect">
-            <!-- Coin Icon -->
-            <svg class="w-6 h-6 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
-            </svg>
-            <span>За це замовлення ви отримаєте: <span id="checkout-cashback-amount" class="font-bold text-amber-700">0</span> грн кешбеку</span>
+          <!-- 🪙 TASK 1-4: Enhanced Cashback Summary Block -->
+          <div id="checkout-cashback-badge" class="hidden mt-3 mb-4">
+            <!-- Compact Cashback Summary -->
+            <div class="p-4 rounded-xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 shadow-sm">
+              <div class="flex items-center gap-2 mb-3">
+                <!-- Coin Icon -->
+                <svg class="w-5 h-5 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
+                </svg>
+                <h4 class="text-sm font-bold text-amber-900">🪙 Кешбек по цьому замовленню</h4>
+              </div>
+              
+              <!-- Cashback Breakdown (Compact) -->
+              <div class="bg-white bg-opacity-70 rounded-lg p-3 space-y-2">
+                <!-- TASK 2-3: Списано Row (Conditional - only if appliedCashback > 0) -->
+                <div id="cashback-spent-row" class="hidden flex items-center justify-between">
+                  <span class="text-sm font-medium text-gray-700">Списано:</span>
+                  <span class="text-base font-bold text-red-600" id="cashback-spent-amount">- 0 грн</span>
+                </div>
+                
+                <!-- TASK 2-3: Нараховано Row (Always show) -->
+                <div class="flex items-center justify-between">
+                  <span class="text-sm font-medium text-gray-700">Нараховано:</span>
+                  <span class="text-base font-bold text-green-600" id="checkout-cashback-amount">+ 0 грн</span>
+                </div>
+              </div>
+              
+              <p class="text-xs text-amber-800 mt-2 italic">💡 Кешбек буде зараховано після виконання замовлення</p>
+            </div>
           </div>
 
           <p class="text-xs text-gray-500 mb-6">🚚 Доставка оплачується окремо при отриманні</p>
@@ -1590,15 +1612,15 @@
       
       if (checkoutCashbackBadgeEl) {
         if (isEnabled) {
-          // SHOW: Remove hidden, add flex
+          // SHOW: Remove hidden, add block
           checkoutCashbackBadgeEl.classList.remove('hidden');
-          checkoutCashbackBadgeEl.classList.add('flex');
+          checkoutCashbackBadgeEl.classList.add('block');
           checkoutCashbackBadgeEl.style.display = '';
           console.log('👁️ [Checkout] Showing cashback badge');
         } else {
-          // HIDE: Add hidden, remove flex, force display none
+          // HIDE: Add hidden, remove block, force display none
           checkoutCashbackBadgeEl.classList.add('hidden');
-          checkoutCashbackBadgeEl.classList.remove('flex');
+          checkoutCashbackBadgeEl.classList.remove('block');
           checkoutCashbackBadgeEl.style.display = 'none';
           console.log('🙈 [Checkout] Hiding cashback badge');
         }
@@ -1612,7 +1634,8 @@
           
           const checkoutCashbackAmountEl = document.getElementById('checkout-cashback-amount');
           if (checkoutCashbackAmountEl) {
-            checkoutCashbackAmountEl.textContent = cashbackAmount;
+            // TASK 3: Format with "+" prefix
+            checkoutCashbackAmountEl.textContent = `+ ${cashbackAmount} грн`;
             console.log(`✅ [Checkout] Updated cashback amount: ${cashbackAmount} грн (${cashbackPercent}%)`);
           }
         }
@@ -1902,26 +1925,40 @@
       if (totalPriceMobileEl) totalPriceMobileEl.textContent = `${finalTotal} грн`
 
       // ============================================
-      // 🪙 UPDATE CASHBACK (dynamic % of final total)
+      // 🪙 TASK 2-3: UPDATE CASHBACK SUMMARY (Enhanced)
       // ============================================
       const cashbackPercent = (window.cashbackPercent || 8) / 100;
       const calculatedCashback = Math.floor(productTotal * cashbackPercent)
-      const checkoutCashbackAmountEl = document.getElementById('checkout-cashback-amount')
-      const checkoutCashbackBadgeEl = document.getElementById('checkout-cashback-badge')
       
+      // TASK 3: Update "Нараховано" (earned) field
+      const checkoutCashbackAmountEl = document.getElementById('checkout-cashback-amount')
       if (checkoutCashbackAmountEl) {
-        checkoutCashbackAmountEl.textContent = calculatedCashback
+        checkoutCashbackAmountEl.textContent = `+ ${calculatedCashback} грн`
       }
       
-      // Show/hide badge based on total amount and cashback enabled state
+      // TASK 2-3: Update "Списано" (spent) row - Conditional rendering
+      const cashbackSpentRow = document.getElementById('cashback-spent-row')
+      const cashbackSpentAmountEl = document.getElementById('cashback-spent-amount')
+      
+      if (appliedCashback > 0) {
+        // Show spent row and update amount
+        if (cashbackSpentRow) cashbackSpentRow.classList.remove('hidden')
+        if (cashbackSpentAmountEl) cashbackSpentAmountEl.textContent = `- ${appliedCashback} грн`
+      } else {
+        // Hide spent row when no cashback is applied
+        if (cashbackSpentRow) cashbackSpentRow.classList.add('hidden')
+      }
+      
+      // Show/hide entire badge based on total amount and cashback enabled state
+      const checkoutCashbackBadgeEl = document.getElementById('checkout-cashback-badge')
       if (checkoutCashbackBadgeEl) {
         const isCashbackEnabled = window.cashbackEnabled !== false;
         if (productTotal > 0 && isCashbackEnabled) {
           checkoutCashbackBadgeEl.classList.remove('hidden')
-          checkoutCashbackBadgeEl.classList.add('flex')
+          checkoutCashbackBadgeEl.classList.add('block')
         } else {
           checkoutCashbackBadgeEl.classList.add('hidden')
-          checkoutCashbackBadgeEl.classList.remove('flex')
+          checkoutCashbackBadgeEl.classList.remove('block')
         }
       }
 
@@ -3439,6 +3476,81 @@
         const originalTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
 
         // ============================================
+        // TASK 1: CALCULATE FINAL TOTALS WITH CASHBACK
+        // ============================================
+        
+        // Step 1: Start with total after promo discount
+        let finalTotal = total - appliedCashback
+        
+        // Step 2: Ensure finalTotal is never negative (safety check)
+        if (finalTotal < 0) {
+          console.warn('⚠️ Final total was negative, adjusting to 0');
+          finalTotal = 0;
+        }
+        
+        console.log('💰 Order Calculation Breakdown:');
+        console.log('   Subtotal (original):', subtotal, 'грн');
+        console.log('   Promo discount:', promoDiscount, 'грн');
+        console.log('   Total after promo:', total, 'грн');
+        console.log('   Applied cashback:', appliedCashback, 'грн');
+        console.log('   ✅ FINAL TOTAL:', finalTotal, 'грн');
+        
+        // ============================================
+        // TASK 3: SECURITY & VALIDATION - VERIFY CASHBACK BALANCE
+        // ============================================
+        
+        if (appliedCashback > 0) {
+          console.log('🔐 [Security] Validating cashback usage...');
+          
+          // Check 1: User must have a phone number
+          if (!currentUserPhone) {
+            throw new Error('❌ Помилка: Номер телефону не знайдено для перевірки кешбеку');
+          }
+          
+          // Check 2: Re-verify user's actual balance from Firestore
+          console.log('📥 [Security] Re-fetching user balance for validation...');
+          const userDocRef = doc(db, 'users', currentUserPhone);
+          const userDocSnap = await getDoc(userDocRef);
+          
+          if (!userDocSnap.exists()) {
+            throw new Error('❌ Помилка: Профіль користувача не знайдено');
+          }
+          
+          const currentBalance = Number(userDocSnap.data().cashbackBalance) || 0;
+          console.log('   Current balance in DB:', currentBalance, 'грн');
+          console.log('   Attempting to use:', appliedCashback, 'грн');
+          
+          // Check 3: Verify user has enough balance
+          if (appliedCashback > currentBalance) {
+            throw new Error(`❌ Недостатньо кешбеку. Ваш баланс: ${currentBalance} грн, спроба використати: ${appliedCashback} грн`);
+          }
+          
+          // Check 4: Verify 50% rule (TASK 3)
+          const maxAllowedCashback = Math.floor(total * 0.5);
+          if (appliedCashback > maxAllowedCashback) {
+            throw new Error(`❌ Перевищеноліміт кешбеку. Максимум для цього замовлення: ${maxAllowedCashback} грн (50% від ${total} грн)`);
+          }
+          
+          // Update the verified balance for transaction logging
+          userCashbackBalance = currentBalance;
+          
+          console.log('✅ [Security] Cashback validation passed');
+        }
+        
+        // ============================================
+        // TASK 2: CALCULATE POINTS EARNED FOR THIS ORDER
+        // Calculate from FINAL total (after all discounts including cashback)
+        // ============================================
+        
+        const cashbackPercentage = (window.cashbackPercent || 8) / 100;
+        const pointsEarned = Math.floor(finalTotal * cashbackPercentage);
+        
+        console.log('🎁 Cashback to be earned:');
+        console.log('   Percentage rate:', (cashbackPercentage * 100).toFixed(0) + '%');
+        console.log('   Calculated from final total:', finalTotal, 'грн');
+        console.log('   ✅ Points earned:', pointsEarned, 'грн');
+
+        // ============================================
         // STEP 6: Collect Additional Info (including Promo Code)
         // ============================================
         const comment = document.getElementById('comment')?.value.trim() || ''
@@ -3452,7 +3564,7 @@
         } : null
 
         // ============================================
-        // STEP 7: Construct Order Object
+        // STEP 7: Construct Order Object (TASK 2: Updated Structure)
         // ============================================
         const orderData = {
           // 🔒 SECURITY: userId for future Firebase Auth integration
@@ -3474,27 +3586,26 @@
           // Order Items
           items: orderItems,
 
-          // Order Totals
+          // ============================================
+          // TASK 2: UPDATED ORDER TOTALS STRUCTURE
+          // ============================================
           summary: {
             itemCount: itemCount,
             totalQuantity: totalQuantity,
-            subtotal: subtotal,
-            originalTotal: originalTotal,  // Price before discount
-            discountAmount: promoDiscount,  // Discount applied
-            total: total  // Final price after discount
+            subtotal: subtotal,              // Original price before discounts
+            originalTotal: originalTotal,    // Also original (redundant but kept for compatibility)
+            discountAmount: promoDiscount,   // Promo discount applied
+            total: finalTotal                // ✅ FINAL amount to be paid (after promo + cashback)
           },
+          
+          // TASK 2: Top-level fields for easy access
+          totalAmount: finalTotal,           // ✅ What user actually pays
+          subtotal: subtotal,                // ✅ Original price
+          cashbackUsed: appliedCashback,     // ✅ Amount subtracted (as number)
+          pointsEarned: pointsEarned,        // ✅ New cashback earned for THIS order
 
           // Promo Code (if applied)
           promoCode: promoCodeData,
-
-          // ✨ Cashback Used (NEW - with 50% rule)
-          cashbackUsed: appliedCashback > 0 ? {
-            amount: appliedCashback,
-            userPhone: currentUserPhone,
-            userBalance: userCashbackBalance,
-            orderTotal: total,
-            maxAllowed: maxCashbackForOrder
-          } : null,
 
           // Additional Information
           comment: comment,
@@ -3624,28 +3735,33 @@
           // Continue anyway - userId is optional for now
         }
 
-        // Use setDoc with custom ID instead of addDoc
-        // This forces Firestore to use our short ID as the Document ID
         await setDoc(doc(db, 'orders', orderId), orderData);
 
         console.log('✅ Order saved successfully! Order ID:', orderId)
 
         // ============================================
-        // ✨ STEP 8.2: DEDUCT CASHBACK FROM USER BALANCE (50% RULE)
+        // TASK 4: UPDATE USER BALANCE ATOMICALLY + RECORD TRANSACTION
         // ============================================
         if (appliedCashback > 0 && currentUserPhone) {
           try {
-            console.log('💰 Deducting cashback from user balance...')
+            console.log('💰 [Task 4] Deducting cashback from user balance...')
+            console.log('   User:', currentUserPhone);
+            console.log('   Amount to deduct:', appliedCashback, 'грн');
+            console.log('   Balance before:', userCashbackBalance, 'грн');
             
             const userDocRef = doc(db, 'users', currentUserPhone)
+            
+            // TASK 4: Atomic decrement using FieldValue.increment
             await updateDoc(userDocRef, {
               cashbackBalance: increment(-appliedCashback)
             })
             
-            console.log('✅ Cashback deducted:', appliedCashback, 'грн')
+            const finalBalance = userCashbackBalance - appliedCashback;
+            console.log('   ✅ New balance:', finalBalance, 'грн');
+            console.log(`✅ Successfully deducted ${appliedCashback} грн from user ${currentUserPhone}`);
             
             // ============================================
-            // RECORD CASHBACK TRANSACTION
+            // TASK 4: RECORD CASHBACK TRANSACTION (Logging)
             // ============================================
             await addDoc(collection(db, 'cashback_transactions'), {
               userId: currentUserPhone,
@@ -3653,17 +3769,41 @@
               type: 'order_payment',
               amount: -appliedCashback, // Negative for deduction
               balanceBefore: userCashbackBalance,
-              balanceAfter: userCashbackBalance - appliedCashback,
-              orderTotal: total,
+              balanceAfter: finalBalance,
+              orderTotal: finalTotal,
+              orderSubtotal: subtotal,
               maxAllowed: maxCashbackForOrder,
               timestamp: serverTimestamp(),
               description: `Використано для оплати замовлення №${orderId}`
             })
             
-            console.log('✅ Cashback transaction recorded')
+            console.log('✅ Cashback transaction logged to database')
+            
+            // Also record the points that will be earned (for future reference)
+            if (pointsEarned > 0) {
+              console.log(`🎁 User will earn ${pointsEarned} грн cashback for this order (pending completion)`);
+            }
+            
           } catch (cashbackError) {
-            console.error('❌ Failed to deduct cashback (non-critical):', cashbackError)
-            // Continue with order processing - cashback deduction is non-critical
+            // CRITICAL ERROR: Order was saved but cashback deduction failed
+            // This requires manual intervention
+            console.error('❌ [CRITICAL] Failed to deduct cashback after order creation!');
+            console.error('   Order ID:', orderId);
+            console.error('   User:', currentUserPhone);
+            console.error('   Amount:', appliedCashback, 'грн');
+            console.error('   Error:', cashbackError);
+            console.error('⚠️ Manual intervention required: Verify user balance and order');
+            
+            // Show user-friendly alert
+            alert(
+              `⚠️ Замовлення створено, але виникла помилка з кешбеком.\n\n` +
+              `Номер замовлення: ${orderId}\n` +
+              `Будь ласка, зв'яжіться з підтримкою для уточнення балансу кешбеку.\n\n` +
+              `Ми вирішимо це питання вручну.`
+            );
+            
+            // Don't throw - allow order processing to continue
+            // The order is valid, just the cashback accounting needs manual fix
           }
         }
 

@@ -1135,7 +1135,8 @@
   <script type="module" src="./js/layout.js"></script>
 
   <script type="module">
-    import './js/maintenance-check.js' // CRITICAL: Check maintenance mode FIRST
+    // Maintenance check is already handled by script tag above
+    // No need to import it again here
     import { db } from './js/firebase-init.js'
     import { doc, getDoc, collection, query, where, getDocs, limit, addDoc, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
     
@@ -1268,8 +1269,11 @@
 
         // Check if product is hidden
         if (currentProduct.isVisible === false) {
-          document.getElementById('loading-state').style.display = 'none'
-          document.getElementById('product-container').innerHTML = `
+          const loadingState = document.getElementById('loading-state')
+          if (loadingState) loadingState.style.display = 'none'
+          
+          const productContainer = document.getElementById('product-container')
+          if (productContainer) productContainer.innerHTML = `
             <div class="text-center py-20 px-4">
               <p class="text-red-500 font-bold mb-2">❌ Цей товар тимчасово недоступний</p>
               <a href="index.html" class="text-spicy hover:underline">Повернутись на головну</a>
@@ -1289,10 +1293,15 @@
         // Load mobile upsell bundle
         await loadMobileUpsellBundle(currentProduct)
 
-        // Show content, hide loading
-        document.getElementById('loading-state').style.display = 'none'
-        document.getElementById('main-content').classList.remove('hidden')
-        document.getElementById('mobile-cart-bar').classList.remove('hidden')
+        // Show content, hide loading (with null checks)
+        const loadingState = document.getElementById('loading-state')
+        if (loadingState) loadingState.style.display = 'none'
+        
+        const mainContent = document.getElementById('main-content')
+        if (mainContent) mainContent.classList.remove('hidden')
+        
+        const mobileCartBar = document.getElementById('mobile-cart-bar')
+        if (mobileCartBar) mobileCartBar.classList.remove('hidden')
 
       } catch (err) {
         console.error('❌ Помилка завантаження:', err)
@@ -2452,10 +2461,12 @@
         lightbox.classList.add('active')
         document.body.style.overflow = 'hidden'
 
-        // Show/hide navigation arrows
+        // Show/hide navigation arrows (with null checks)
         const showNav = productImages.length > 1
-        document.getElementById('lightbox-prev').style.display = showNav ? 'flex' : 'none'
-        document.getElementById('lightbox-next').style.display = showNav ? 'flex' : 'none'
+        const prevBtn = document.getElementById('lightbox-prev')
+        const nextBtn = document.getElementById('lightbox-next')
+        if (prevBtn) prevBtn.style.display = showNav ? 'flex' : 'none'
+        if (nextBtn) nextBtn.style.display = showNav ? 'flex' : 'none'
       }
     }
 
@@ -2610,10 +2621,18 @@
         setInterval(updateShippingStatus, 60000)
       } catch (err) {
         console.error('[v0] Product page error:', err)
-        document.getElementById('loading-state').style.display = 'none'
-        document.getElementById('main-content').classList.remove('hidden')
-        document.getElementById('product-name').textContent = 'Помилка завантаження'
-        document.getElementById('product-sku').textContent = err.message
+        
+        const loadingStateErr = document.getElementById('loading-state')
+        if (loadingStateErr) loadingStateErr.style.display = 'none'
+        
+        const mainContentErr = document.getElementById('main-content')
+        if (mainContentErr) mainContentErr.classList.remove('hidden')
+        
+        const productName = document.getElementById('product-name')
+        if (productName) productName.textContent = 'Помилка завантаження'
+        
+        const productSku = document.getElementById('product-sku')
+        if (productSku) productSku.textContent = err.message
       }
     }
 

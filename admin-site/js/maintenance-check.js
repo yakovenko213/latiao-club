@@ -8,8 +8,8 @@
 import { db, auth } from './firebase-init.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-// Admin email for bypass (change to your actual admin email)
-const ADMIN_EMAIL = 'yakovenko7002@gmail.com';
+// Admin email for bypass - update this to your admin email
+const ADMIN_EMAIL = 'admin@modernshop.com';
 
 /**
  * Check if user is admin through multiple methods:
@@ -55,16 +55,49 @@ async function isUserAdmin(user) {
 
 /**
  * Check if maintenance mode is active.
- * ADMIN BYPASS: Waits for Firebase Auth to confirm if user is admin.
- * Regular users see the maintenance screen, admins get access with a badge.
+ * FAIL-SAFE: Always reveals page even if errors occur.
+ * INSTANT ADMIN CHECK: Checks auth.currentUser synchronously before async operations.
  */
 export async function checkMaintenanceMode() {
     try {
         console.log('🔍 Checking maintenance mode...');
         
-        // Step 1: Get maintenance status from Firestore
-        const globalDoc = await getDoc(doc(db, 'settings', 'global'));
-        const isMaintenanceMode = globalDoc.exists() && globalDoc.data().isMaintenance === true;
+        // ⚡ INSTANT ADMIN CHECK (Synchronous - No Waiting!)
+        // If user is already logged in as admin, bypass immediately
+        if (auth && auth.currentUser) {
+            const currentEmail = auth.currentUser.email;
+            if (currentEmail === ADMIN_EMAIL) {
+                console.log('⚡ INSTANT ADMIN DETECTED:', currentEmail);
+                console.log('🔑 Admin bypass activated - skipping all maintenance checks');
+                localStorage.setItem('isAdmin', 'true');
+                sessionStorage.setItem('maintenanceBypass', 'true');
+                
+                // Show admin badge and reveal site immediately
+                try {
+                    showAdminMaintenanceBadge();
+                } catch (e) {
+                    console.warn('Badge display failed, continuing...', e);
+                }
+                
+                revealPage();
+                return;
+            }
+        }
+        
+        // Step 1: Get maintenance status from Firestore (with timeout)
+        let isMaintenanceMode = false;
+        try {
+            const globalDoc = await Promise.race([
+                getDoc(doc(db, 'settings', 'global')),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 3000))
+            ]);
+            isMaintenanceMode = globalDoc.exists() && globalDoc.data().isMaintenance === true;
+        } catch (firestoreError) {
+            console.warn('⚠️ Firestore check failed, assuming no maintenance:', firestoreError.message);
+            // FAIL-SAFE: If Firestore fails, allow access
+            revealPage();
+            return;
+        }
         
         if (!isMaintenanceMode) {
             // NORMAL MODE - No maintenance, reveal site immediately
@@ -84,13 +117,21 @@ export async function checkMaintenanceMode() {
         if (adminAccess) {
             // ALLOW ACCESS FOR ADMIN WITH WARNING BADGE
             console.warn('⚠️ Maintenance Mode is ON, but you have Admin access.');
-            showAdminMaintenanceBadge();
+            try {
+                showAdminMaintenanceBadge();
+            } catch (e) {
+                console.warn('Badge display failed, continuing...', e);
+            }
             revealPage(); // Reveal site for admin
             
         } else {
             // BLOCK SITE FOR REGULAR USERS
             console.log('🚧 MAINTENANCE MODE ACTIVE - Blocking site for public users');
-            renderMaintenanceScreen();
+            try {
+                renderMaintenanceScreen();
+            } catch (e) {
+                console.error('Failed to render maintenance screen:', e);
+            }
             revealPage(); // Reveal maintenance screen
             throw new Error('MAINTENANCE_MODE_ACTIVE');
         }
@@ -100,9 +141,20 @@ export async function checkMaintenanceMode() {
             // Expected - maintenance mode is on, stop everything
             return;
         }
-        // Unexpected error - log but allow site to load (fail-safe)
-        console.error('⚠️ Error checking maintenance mode:', error);
-        revealPage(); // Reveal site even on error (fail-safe)
+        // FAIL-SAFE: Unexpected error - log but ALWAYS reveal page
+        console.error('⚠️ Critical error in maintenance check - FAILING OPEN (allowing access):', error);
+        
+        // Force reveal page even on error
+        try {
+            revealPage();
+        } catch (revealError) {
+            // Last resort: manual reveal
+            console.error('Even revealPage failed - forcing manual reveal:', revealError);
+            if (document.body) {
+                document.body.style.visibility = 'visible';
+                document.body.style.opacity = '1';
+            }
+        }
     }
 }
 
@@ -304,35 +356,89 @@ function renderMaintenanceScreen() {
 }
 
 /**
- * Show floating badge for admins when maintenance mode is ON
+ * Show prominent banner for admins when maintenance mode is ON
  */
 function showAdminMaintenanceBadge() {
     // Prevent duplicate badges
     if (document.getElementById('admin-maintenance-badge')) return;
     
-    const badge = document.createElement('div');
-    badge.id = 'admin-maintenance-badge';
-    badge.className = 'fixed bottom-4 right-4 z-50 bg-red-600 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-3 animate-pulse';
-    badge.innerHTML = `
-        <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-        </svg>
-        <div class="flex flex-col gap-1">
-            <span class="text-sm font-bold">🔧 Режим: Технічні роботи</span>
-            <span class="text-xs opacity-90">Ви маєте права адміністратора</span>
+    const banner = document.createElement('div');
+    banner.id = 'admin-maintenance-badge';
+    banner.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 999999;
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        color: white;
+        padding: 12px 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        animation: slideDown 0.5s ease-out;
+    `;
+    
+    banner.innerHTML = `
+        <style>
+            @keyframes slideDown {
+                from { transform: translateY(-100%); }
+                to { transform: translateY(0); }
+            }
+            @keyframes warningPulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.7; }
+            }
+            #admin-maintenance-icon {
+                animation: warningPulse 2s ease-in-out infinite;
+            }
+        </style>
+        <div style="max-width: 1400px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                <span id="admin-maintenance-icon" style="font-size: 24px;">⚠️</span>
+                <div>
+                    <div style="font-weight: 700; font-size: 16px; margin-bottom: 2px;">
+                        Режим технічних робіт увімкнено
+                    </div>
+                    <div style="font-size: 13px; opacity: 0.95;">
+                        Сайт зараз бачите тільки ви (Адміністратор). Відвідувачі бачать екран обслуговування.
+                    </div>
+                </div>
+            </div>
+            <button 
+                onclick="if(confirm('Не забудьте вимкнути режим технічних робіт в адмін-панелі після завершення тестування!')) { this.parentElement.parentElement.style.display = 'none'; }"
+                style="
+                    background: rgba(255, 255, 255, 0.2);
+                    border: 1px solid rgba(255, 255, 255, 0.3);
+                    color: white;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    font-weight: 600;
+                    transition: all 0.2s;
+                    white-space: nowrap;
+                "
+                onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'"
+                onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'"
+            >
+                Зрозуміло ✓
+            </button>
         </div>
     `;
     
-    // Insert badge into body (after it's loaded)
+    // Insert banner into body (after it's loaded)
     if (document.body) {
-        document.body.appendChild(badge);
+        document.body.appendChild(banner);
+        // Push content down to avoid overlap
+        document.body.style.paddingTop = '80px';
     } else {
         document.addEventListener('DOMContentLoaded', () => {
-            document.body.appendChild(badge);
+            document.body.appendChild(banner);
+            document.body.style.paddingTop = '80px';
         });
     }
     
-    console.log('🔴 Admin badge displayed - Maintenance Mode is ON but bypassed');
+    console.log('🔴 Admin banner displayed - Maintenance Mode is ON but bypassed for admin');
 }
 
 // Auto-run check on import (top-level await)

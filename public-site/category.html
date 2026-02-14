@@ -112,8 +112,8 @@
   </script>
   <!-- Dark Mode Module -->
   <script src="./js/dark-mode.js"></script>
-  <!-- Product Cache Manager -->
-  <script src="./js/product-cache-manager.js"></script>
+  <!-- Product Cache Manager - MUST be type="module" for imports -->
+  <script type="module" src="./js/product-cache-manager.js"></script>
   <!-- Performance Monitor (dev tool) -->
   <script src="./js/performance-monitor.js"></script>
   <style>
@@ -508,8 +508,8 @@
 
   <!-- Логіка сторінки категорії -->
   <script type="module">
-    // CRITICAL: Check maintenance mode FIRST
-    import './js/maintenance-check.js'
+    // Maintenance check is already handled by script tag above (line 501)
+    // No need to import it again here
 
     // Import Firebase - use same pattern as storefront.js for consistency
     import { db } from './js/firebase-init.js'
@@ -578,16 +578,20 @@
       const categorySlug = urlParams.get('slug')
 
       if (!categorySlug) {
-        document.getElementById('loading-state').style.display = 'none'
-        document.getElementById('products-grid').innerHTML = '<div class="col-span-full text-center py-10 text-gray-500">❌ Категорію не вказано в URL</div>'
+        const loadingState = document.getElementById('loading-state')
+        if (loadingState) loadingState.style.display = 'none'
+        
+        const productsGrid = document.getElementById('products-grid')
+        if (productsGrid) productsGrid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-500">❌ Категорію не вказано в URL</div>'
         return
       }
 
       // ⚡ FIX: Declare usedCache OUTSIDE try block to avoid "Can't find variable" error
       let usedCache = false;
       
-      // ⚡ FIX: Set loading state immediately
-      document.getElementById('loading-state').style.display = 'flex';
+      // ⚡ FIX: Set loading state immediately (with null-check)
+      const loadingStateEl = document.getElementById('loading-state')
+      if (loadingStateEl) loadingStateEl.style.display = 'flex';
 
       // 🎯 Track category view for personalization (time spent tracking)
       try {
@@ -641,7 +645,10 @@
           filteredProducts = [...allProducts]
           renderProducts(filteredProducts)
           setupFilterListeners()
-          document.getElementById('loading-state').style.display = 'none'
+          
+          const loadingEl = document.getElementById('loading-state')
+          if (loadingEl) loadingEl.style.display = 'none'
+          
           usedCache = true
         } else {
           // No cache - show skeleton
@@ -789,7 +796,8 @@
           </div>
         `;
       } finally {
-        document.getElementById('loading-state').style.display = 'none';
+        const finalLoadingEl = document.getElementById('loading-state')
+        if (finalLoadingEl) finalLoadingEl.style.display = 'none'
       }
     }
 
@@ -1052,8 +1060,12 @@
         throw new Error('Firebase initialization timeout')
       } catch (err) {
         console.error('[v0] startPage error:', err)
-        document.getElementById('loading-state').style.display = 'none'
-        document.getElementById('products-grid').innerHTML = `
+        
+        const loadingStateErr = document.getElementById('loading-state')
+        if (loadingStateErr) loadingStateErr.style.display = 'none'
+        
+        const productsGridErr = document.getElementById('products-grid')
+        if (productsGridErr) productsGridErr.innerHTML = `
           <div class="col-span-full text-center py-10">
             <div class="text-6xl mb-4">&#128293;</div>
             <h3 class="text-xl font-bold text-red-600 mb-2">Помилка завантаження</h3>
