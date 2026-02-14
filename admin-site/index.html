@@ -4912,6 +4912,94 @@
         </div>
       </div>
 
+      <!-- ============================================ -->
+      <!-- SMS SENDING MODAL -->
+      <!-- ============================================ -->
+      <div id="sms-send-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in">
+          
+          <!-- Modal Header -->
+          <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                <i data-lucide="message-square" class="w-6 h-6"></i>
+                <span id="sms-modal-title">Надіслати SMS</span>
+              </h3>
+              <button onclick="closeSmsModal()" class="text-white/80 hover:text-white transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Modal Body -->
+          <div class="p-6 space-y-4">
+            
+            <!-- Client Info -->
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <p class="text-sm text-gray-600 mb-1">Отримувач:</p>
+              <p class="font-bold text-gray-900 text-lg" id="sms-modal-client-name">-</p>
+              <p class="text-sm text-gray-600 mt-1" id="sms-modal-client-phone">-</p>
+            </div>
+
+            <!-- Message Textarea -->
+            <div>
+              <label for="sms-message-text" class="block text-sm font-semibold text-gray-700 mb-2">
+                Текст повідомлення <span class="text-red-500">*</span>
+              </label>
+              <textarea 
+                id="sms-message-text" 
+                rows="4" 
+                maxlength="670"
+                placeholder="Введіть текст SMS..."
+                oninput="updateSmsCharCounter()"
+                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+              ></textarea>
+            </div>
+
+            <!-- Character Counter -->
+            <div class="flex items-center justify-between text-sm">
+              <div class="flex items-center gap-2">
+                <span class="text-gray-500">Символів:</span>
+                <span id="sms-char-count" class="font-semibold text-gray-700">0</span>
+                <span class="text-gray-400">/</span>
+                <span id="sms-char-limit" class="text-gray-500">160</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-gray-500">SMS:</span>
+                <span id="sms-parts-count" class="font-semibold text-blue-600">0</span>
+                <span id="sms-encoding-badge" class="px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-700">Latin</span>
+              </div>
+            </div>
+
+            <!-- Info Alert -->
+            <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-3 flex items-start gap-3">
+              <i data-lucide="info" class="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5"></i>
+              <p class="text-xs text-yellow-800">Кирилиця: 1 SMS = 70 символів. Латиниця: 1 SMS = 160 символів.</p>
+            </div>
+
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex gap-3">
+            <button 
+              onclick="closeSmsModal()"
+              class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-100 transition-all"
+            >
+              Скасувати
+            </button>
+            <button 
+              id="confirm-send-sms"
+              onclick="confirmSendSms()"
+              class="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-2"
+            >
+              <i data-lucide="send" class="w-5 h-5"></i>
+              <span>Надіслати</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
       <!-- Cashback Sync Progress Modal -->
       <div id="cashback-sync-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
@@ -18626,6 +18714,7 @@
               <button 
                 onclick="openManualCashbackModal(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(client))}')))"
                 class="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transition-all hover:scale-105 active:scale-95"
+                title="Нарахувати кешбек"
               >
                 <i data-lucide="plus-circle" class="w-4 h-4"></i>
                 <span>Нарахувати</span>
@@ -18633,9 +18722,18 @@
               <button 
                 onclick="openDebitCashbackModal(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(client))}')))"
                 class="inline-flex items-center gap-2 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transition-all hover:scale-105 active:scale-95"
+                title="Списати кешбек"
               >
                 <i data-lucide="minus-circle" class="w-4 h-4"></i>
                 <span>Списати</span>
+              </button>
+              <button 
+                onclick="openSmsModal(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(client))}')))"
+                class="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transition-all hover:scale-105 active:scale-95"
+                title="Надіслати SMS"
+              >
+                <i data-lucide="message-square" class="w-4 h-4"></i>
+                <span>SMS</span>
               </button>
             </div>
           </td>
@@ -18732,6 +18830,295 @@
         document.body.style.overflow = '';
       }
       currentClientForCashback = null;
+    };
+    
+    // ============================================
+    // 📱 SMS SENDING MODULE
+    // ============================================
+    
+    // Current client for SMS
+    let currentClientForSms = null;
+    
+    /**
+     * Update SMS character counter
+     */
+    window.updateSmsCharCounter = function() {
+      const textarea = document.getElementById('sms-message-text');
+      const charCount = document.getElementById('sms-char-count');
+      const charLimit = document.getElementById('sms-char-limit');
+      const partsCount = document.getElementById('sms-parts-count');
+      const encodingBadge = document.getElementById('sms-encoding-badge');
+      
+      if (!textarea) return;
+      
+      const text = textarea.value;
+      const length = text.length;
+      
+      // Detect Cyrillic characters
+      const hasCyrillic = /[а-яА-ЯіІїЇєЄґҐ]/.test(text);
+      
+      // SMS limits: Latin = 160 chars (single) / 153 per part (multipart)
+      //             Cyrillic = 70 chars (single) / 67 per part (multipart)
+      const singleLimit = hasCyrillic ? 70 : 160;
+      const multipartLimit = hasCyrillic ? 67 : 153;
+      
+      // Calculate number of SMS parts
+      let parts = 1;
+      if (length > singleLimit) {
+        parts = Math.ceil(length / multipartLimit);
+      }
+      
+      // Update UI
+      charCount.textContent = length;
+      charLimit.textContent = length <= singleLimit ? singleLimit : (parts * multipartLimit);
+      partsCount.textContent = parts;
+      
+      // Update encoding badge
+      if (hasCyrillic) {
+        encodingBadge.textContent = 'Кирилиця';
+        encodingBadge.className = 'px-2 py-0.5 text-xs font-medium rounded-full bg-orange-100 text-orange-700';
+      } else {
+        encodingBadge.textContent = 'Latin';
+        encodingBadge.className = 'px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-700';
+      }
+      
+      // Color the counter based on length
+      if (parts > 3) {
+        charCount.className = 'font-semibold text-red-600';
+      } else if (parts > 1) {
+        charCount.className = 'font-semibold text-yellow-600';
+      } else {
+        charCount.className = 'font-semibold text-gray-700';
+      }
+    };
+    
+    /**
+     * Open SMS sending modal
+     */
+    window.openSmsModal = function(client) {
+      console.log('📱 [SMS] Opening modal for:', client.fullName);
+      
+      currentClientForSms = client;
+      
+      // Populate modal
+      document.getElementById('sms-modal-title').textContent = `Надіслати SMS для ${client.fullName}`;
+      document.getElementById('sms-modal-client-name').textContent = client.fullName;
+      document.getElementById('sms-modal-client-phone').textContent = client.phone;
+      
+      // Clear textarea
+      document.getElementById('sms-message-text').value = '';
+      updateSmsCharCounter();
+      
+      // Reset send button
+      const sendBtn = document.getElementById('confirm-send-sms');
+      if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i><span>Надіслати</span>';
+      }
+      
+      // Show modal
+      const modal = document.getElementById('sms-send-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      }
+      
+      // Reinit icons
+      lucide.createIcons();
+    };
+    
+    /**
+     * Close SMS sending modal
+     */
+    window.closeSmsModal = function() {
+      const modal = document.getElementById('sms-send-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+      currentClientForSms = null;
+    };
+    
+    /**
+     * Format phone number for TurboSMS (must be 380XXXXXXXXX format)
+     */
+    function formatPhoneForSms(phone) {
+      if (!phone) return null;
+      
+      // Remove all non-digit characters
+      let cleanPhone = phone.replace(/\D/g, '');
+      
+      // Handle different formats
+      if (cleanPhone.startsWith('380')) {
+        return cleanPhone; // Already correct format
+      } else if (cleanPhone.startsWith('80')) {
+        return '3' + cleanPhone; // Add 3 prefix
+      } else if (cleanPhone.startsWith('0')) {
+        return '38' + cleanPhone; // Add 38 prefix
+      } else if (cleanPhone.length === 9) {
+        return '380' + cleanPhone; // Add 380 prefix
+      }
+      
+      return cleanPhone;
+    }
+    
+    /**
+     * Send real SMS via TurboSMS API
+     */
+    async function sendRealSMS(phoneNumber, messageText) {
+      console.log('📤 [TurboSMS] Sending SMS to:', phoneNumber);
+      
+      // Step 1: Get TurboSMS credentials from Firestore (config/keyCrmSourceId or settings/config)
+      let apiToken, senderName;
+      
+      try {
+        // First try config/keyCrmSourceId (as per task spec)
+        const keyCrmDoc = await getDoc(doc(db, 'config', 'keyCrmSourceId'));
+        if (keyCrmDoc.exists() && keyCrmDoc.data().turboSmsToken) {
+          const data = keyCrmDoc.data();
+          apiToken = data.turboSmsToken;
+          senderName = data.senderName || 'latiao_info';
+          console.log('📱 [TurboSMS] Using credentials from config/keyCrmSourceId');
+        } else {
+          // Fallback to settings/config
+          const settingsDoc = await getDoc(doc(db, 'settings', 'config'));
+          if (settingsDoc.exists() && settingsDoc.data().turboSmsToken) {
+            const data = settingsDoc.data();
+            apiToken = data.turboSmsToken;
+            senderName = data.senderName || 'Msg';
+            console.log('📱 [TurboSMS] Using credentials from settings/config');
+          }
+        }
+      } catch (error) {
+        console.error('❌ [TurboSMS] Error fetching credentials:', error);
+        throw new Error('Не вдалося отримати API credentials');
+      }
+      
+      if (!apiToken) {
+        throw new Error('TurboSMS API Token не налаштовано! Додайте токен в налаштуваннях.');
+      }
+      
+      // Step 2: Format phone number
+      const formattedPhone = formatPhoneForSms(phoneNumber);
+      if (!formattedPhone || formattedPhone.length < 12) {
+        throw new Error(`Некоректний номер телефону: ${phoneNumber}`);
+      }
+      
+      console.log('📱 [TurboSMS] Formatted phone:', formattedPhone);
+      console.log('📱 [TurboSMS] Sender name:', senderName);
+      
+      // Step 3: Send SMS via TurboSMS API
+      const response = await fetch('https://api.turbosms.ua/message/send.json', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiToken}`
+        },
+        body: JSON.stringify({
+          recipients: [formattedPhone],
+          sms: {
+            sender: senderName,
+            text: messageText
+          }
+        })
+      });
+      
+      const result = await response.json();
+      console.log('📥 [TurboSMS] Response:', result);
+      
+      // Step 4: Handle response
+      const isSuccess = response.ok && (
+        result.response_code === 0 ||
+        result.response_code === '0' ||
+        result.response_code === 'SUCCESS_MESSAGE_SENT' ||
+        result.response_status === 'SUCCESS_MESSAGE_SENT' ||
+        (result.response_result && result.response_result.length > 0 && result.response_result[0].status === 'OK')
+      );
+      
+      if (!isSuccess) {
+        const errorMessage = result.response_status || result.response_code || 'Unknown TurboSMS error';
+        throw new Error(errorMessage);
+      }
+      
+      return {
+        success: true,
+        messageId: result.response_result?.[0]?.message_id || null,
+        phone: formattedPhone
+      };
+    }
+    
+    /**
+     * Confirm and send SMS
+     */
+    window.confirmSendSms = async function() {
+      if (!currentClientForSms) {
+        console.error('❌ No client selected for SMS');
+        return;
+      }
+      
+      const messageText = document.getElementById('sms-message-text').value.trim();
+      
+      // Validate message
+      if (!messageText) {
+        alert('Будь ласка, введіть текст повідомлення');
+        document.getElementById('sms-message-text').focus();
+        return;
+      }
+      
+      if (messageText.length > 670) {
+        alert('Повідомлення занадто довге (максимум 670 символів)');
+        return;
+      }
+      
+      // Disable send button
+      const sendBtn = document.getElementById('confirm-send-sms');
+      if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<div class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div><span>Надсилання...</span>';
+      }
+      
+      try {
+        // Send SMS
+        const result = await sendRealSMS(currentClientForSms.phone, messageText);
+        
+        console.log('✅ [SMS] Sent successfully:', result);
+        
+        // Log to Firestore (optional - sms_history collection)
+        try {
+          const logsRef = collection(db, 'logs', 'sms_history', 'messages');
+          await addDoc(logsRef, {
+            recipientPhone: currentClientForSms.phone,
+            recipientName: currentClientForSms.fullName,
+            messageText: messageText,
+            messageLength: messageText.length,
+            sentAt: serverTimestamp(),
+            sentBy: 'admin',
+            status: 'sent',
+            turboSmsMessageId: result.messageId || null
+          });
+          console.log('📝 [SMS] Logged to Firestore');
+        } catch (logError) {
+          console.warn('⚠️ [SMS] Failed to log to Firestore:', logError);
+          // Non-critical, continue
+        }
+        
+        // Show success toast
+        showToast(`✅ SMS успішно надіслано на ${currentClientForSms.phone}!`, 'success');
+        
+        // Close modal
+        closeSmsModal();
+        
+      } catch (error) {
+        console.error('❌ [SMS] Error:', error);
+        alert(`❌ Помилка відправки SMS:\n\n${error.message}\n\nПеревірте:\n- TurboSMS API Token\n- Баланс рахунку\n- Формат номеру телефону`);
+        
+        // Re-enable send button
+        if (sendBtn) {
+          sendBtn.disabled = false;
+          sendBtn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i><span>Надіслати</span>';
+          lucide.createIcons();
+        }
+      }
     };
     
     /**
