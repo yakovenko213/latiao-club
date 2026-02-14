@@ -4038,7 +4038,8 @@
             
             // TASK 4: Atomic decrement using FieldValue.increment
             await updateDoc(userDocRef, {
-              cashbackBalance: increment(-appliedCashback)
+              cashbackBalance: increment(-appliedCashback),
+              totalCashbackUsed: increment(appliedCashback)  // 🆕 TASK 1: Track total used cashback
             })
             
             const finalBalance = userCashbackBalance - appliedCashback;
