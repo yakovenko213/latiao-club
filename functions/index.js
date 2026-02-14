@@ -1479,3 +1479,247 @@ exports.aiChatResponder = functions.https.onRequest(async (req, res) => {
   }
 });
 
+
+// ═══════════════════════════════════════════════════════════════════════
+// 🛒 GOOGLE MERCHANT CENTER XML FEED
+// Public HTTP endpoint for Google Shopping scheduled fetch
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * Configuration for Google Merchant Feed
+ */
+const MERCHANT_CONFIG = {
+  storeName: 'Latiao Club Store',
+  storeUrl: 'https://latiao-snack.com.ua',
+  storeDescription: 'Найкращі гострі снеки латіо з Китаю в Україні',
+  brand: 'Latiao Snack',
+  currency: 'UAH',
+  condition: 'new',
+  productPagePath: '/product.html?id='
+};
+
+/**
+ * Escapes special XML characters
+ */
+function escapeXml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+/**
+ * Strips HTML tags from a string
+ */
+function stripHtml(html) {
+  if (!html) return '';
+  return String(html)
+    .replace(/<[^>]*>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Wraps content in CDATA for safe XML inclusion
+ */
+function wrapCDATA(content) {
+  if (!content) return '<![CDATA[]]>';
+  const escaped = String(content).replace(/]]>/g, ']]]]><![CDATA[>');
+  return `<![CDATA[${escaped}]]>`;
+}
+
+/**
+ * Generates XML for a single product item
+ */
+function generateProductXml(productId, product) {
+  const title = product.name || product.title || 'Без назви';
+  const description = stripHtml(product.description || product.shortDescription || title);
+  const price = product.price || 0;
+  const stock = product.stock ?? product.quantity ?? 1;
+  const availability = stock > 0 ? 'in_stock' : 'out_of_stock';
+  
+  // Fallback placeholder image (hosted on your domain for reliability)
+  const FALLBACK_IMAGE = 'https://latiao-snack.com.ua/images/placeholder-product.png';
+  
+  // Get all image URLs
+  let allImages = [];
+  if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+    allImages = product.images.filter(img => img && typeof img === 'string');
+  } else if (product.image) {
+    allImages = [product.image];
+  } else if (product.imageUrl) {
+    allImages = [product.imageUrl];
+  }
+  
+  // Process each image URL to ensure it's a valid absolute URL
+  allImages = allImages.map(url => {
+    if (!url) return null;
+    url = String(url).trim();
+    
+    // Already a Firebase Storage URL - use as is
+    if (url.includes('firebasestorage.googleapis.com')) {
+      return url;
+    }
+    
+    // Already absolute URL
+    if (url.startsWith('https://') || url.startsWith('http://')) {
+      return url;
+    }
+    
+    // Relative URL - make absolute
+    return MERCHANT_CONFIG.storeUrl + (url.startsWith('/') ? '' : '/') + url;
+  }).filter(url => url !== null);
+  
+  // Get main image (or fallback)
+  const mainImage = allImages.length > 0 ? allImages[0] : FALLBACK_IMAGE;
+  
+  // Get additional images (up to 10 as per Google spec)
+  const additionalImages = allImages.slice(1, 11);
+  
+  const productLink = `${MERCHANT_CONFIG.storeUrl}${MERCHANT_CONFIG.productPagePath}${productId}`;
+  const category = product.category || 'Снеки';
+  const googleCategory = product.googleCategory || 'Food, Beverages & Tobacco > Food Items > Snack Foods';
+  const sku = product.sku || productId;
+  const gtin = product.gtin || product.barcode || '';
+  
+  // Sale price handling
+  const isOnSale = product.isOnSale === true && product.originalPrice;
+  const salePrice = isOnSale ? price : null;
+  const regularPrice = isOnSale ? product.originalPrice : price;
+  const weight = product.weight || product.weightGrams || '';
+  
+  // Build additional images XML
+  let additionalImagesXml = '';
+  additionalImages.forEach(imgUrl => {
+    additionalImagesXml += `
+    <g:additional_image_link>${wrapCDATA(imgUrl)}</g:additional_image_link>`;
+  });
+
+  return `  <item>
+    <g:id>${escapeXml(productId)}</g:id>
+    <g:title>${wrapCDATA(title)}</g:title>
+    <g:description>${wrapCDATA(description)}</g:description>
+    <g:link>${wrapCDATA(productLink)}</g:link>
+    <g:image_link>${wrapCDATA(mainImage)}</g:image_link>${additionalImagesXml}
+    <g:availability>${availability}</g:availability>
+    <g:price>${regularPrice} ${MERCHANT_CONFIG.currency}</g:price>${salePrice ? `
+    <g:sale_price>${salePrice} ${MERCHANT_CONFIG.currency}</g:sale_price>` : ''}
+    <g:condition>${MERCHANT_CONFIG.condition}</g:condition>
+    <g:brand>${escapeXml(MERCHANT_CONFIG.brand)}</g:brand>
+    <g:mpn>${escapeXml(sku)}</g:mpn>${gtin ? `
+    <g:gtin>${escapeXml(gtin)}</g:gtin>` : ''}
+    <g:product_type>${wrapCDATA(category)}</g:product_type>
+    <g:google_product_category>${escapeXml(googleCategory)}</g:google_product_category>${weight ? `
+    <g:shipping_weight>${weight} g</g:shipping_weight>` : ''}
+  </item>
+`;
+}
+
+
+/**
+ * HTTP Cloud Function: Google Merchant Center XML Feed
+ * 
+ * Public endpoint that generates XML feed on-the-fly from Firestore products.
+ * Implements caching to reduce Firestore reads and costs.
+ * 
+ * URL: https://us-central1-my-magazin-81c96.cloudfunctions.net/getGoogleFeed
+ * 
+ * Usage in Google Merchant Center:
+ * 1. Go to Products → Feeds → Add feed
+ * 2. Select "Scheduled fetch"
+ * 3. Paste the function URL
+ * 4. Set fetch frequency (daily recommended)
+ */
+exports.getGoogleFeed = functions.https.onRequest(async (req, res) => {
+    console.log('🛒 Google Merchant Feed requested');
+    
+    try {
+      // Set caching headers - cache for 1 hour in CDN and browser
+      // This prevents excessive Firestore reads when Google crawls frequently
+      res.set('Cache-Control', 'public, max-age=3600, s-maxage=3600');
+      res.set('Content-Type', 'application/xml; charset=utf-8');
+      
+      // Allow CORS for testing
+      res.set('Access-Control-Allow-Origin', '*');
+      
+      if (req.method === 'OPTIONS') {
+        res.set('Access-Control-Allow-Methods', 'GET');
+        res.set('Access-Control-Allow-Headers', 'Content-Type');
+        return res.status(204).send('');
+      }
+      
+      // Fetch all products from Firestore
+      const db = admin.firestore();
+      const productsSnapshot = await db.collection('products').get();
+      
+      if (productsSnapshot.empty) {
+        console.log('⚠️ No products found in Firestore');
+        return res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">
+<channel>
+  <title>${escapeXml(MERCHANT_CONFIG.storeName)}</title>
+  <link>${MERCHANT_CONFIG.storeUrl}</link>
+  <description>No products available</description>
+</channel>
+</rss>`);
+      }
+      
+      // Build XML header
+      let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">
+<channel>
+  <title>${escapeXml(MERCHANT_CONFIG.storeName)}</title>
+  <link>${MERCHANT_CONFIG.storeUrl}</link>
+  <description>${escapeXml(MERCHANT_CONFIG.storeDescription)}</description>
+`;
+      
+      let productCount = 0;
+      let skippedCount = 0;
+      
+      // Process each product
+      productsSnapshot.forEach(doc => {
+        const product = doc.data();
+        const productId = doc.id;
+        
+        // Skip hidden/inactive products
+        if (product.isVisible === false || product.isActive === false) {
+          skippedCount++;
+          return;
+        }
+        
+        // Skip products without price
+        if (!product.price || product.price <= 0) {
+          skippedCount++;
+          return;
+        }
+        
+        // Generate product XML
+        xml += generateProductXml(productId, product);
+        productCount++;
+      });
+      
+      // Close XML
+      xml += `</channel>
+</rss>`;
+      
+      console.log(`✅ Generated feed with ${productCount} products (${skippedCount} skipped)`);
+      
+      return res.status(200).send(xml);
+      
+    } catch (error) {
+      console.error('❌ Google Feed Error:', getSafeErrorMessage(error));
+      
+      // Return valid XML error response
+      res.set('Content-Type', 'application/xml; charset=utf-8');
+      return res.status(500).send(`<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">
+<channel>
+  <title>Error</title>
+  <description>Feed generation error: ${escapeXml(getSafeErrorMessage(error))}</description>
+</channel>
+</rss>`);
+    }
+  });

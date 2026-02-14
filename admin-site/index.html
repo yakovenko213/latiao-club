@@ -1429,6 +1429,13 @@
                 <i data-lucide="plus" class="w-4 h-4"></i>
                 <span>Додати товар</span>
               </button>
+              <!-- Google Merchant Feed Button -->
+              <button onclick="window.showGoogleFeedUrl()"
+                class="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition"
+                title="Показати URL для Google Merchant Center">
+                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                <span>Google Фід</span>
+              </button>
               <!-- Bulk Delete Button (Hidden by default) -->
               <button id="bulk-delete-btn" 
                 onclick="window.deleteSelectedProducts()"
@@ -21456,6 +21463,11 @@
 
   <!-- Restock Requests Module (ES6 Module) -->
   <script type="module" src="js/admin-restock-module.js"></script>
+
+  <!-- ============================================ -->
+  <!-- GOOGLE MERCHANT CENTER FEED GENERATOR -->
+  <!-- ============================================ -->
+  <script src="/js/google-merchant-feed.js"></script>
 
 </body>
 

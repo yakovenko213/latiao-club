@@ -74,6 +74,12 @@
             }
           ]
         }
+      ],
+      "rewrites": [
+        {
+          "source": "/google_feed.xml",
+          "function": "getGoogleFeed"
+        }
       ]
     },
     {
