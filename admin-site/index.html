@@ -17955,8 +17955,17 @@
      */
     /**
      * Calculate cashback statistics - Main aggregation function
-     * TASK 1: Added admin authentication check
-     * TASK 2-3: Enhanced error handling and efficient queries
+     * 
+     * LOGIC:
+     * 1. Total Awarded (Нараховано): Sum of pointsEarned from PAID orders only
+     * 2. Total Used (Використано): Sum of appliedCashback/cashbackUsed from ALL existing orders (excludes deleted)
+     * 3. Usage Ratio: (Used / Awarded) * 100
+     * 4. Additional Revenue: Sum of total price from orders where cashback was used
+     * 
+     * STATUS HANDLING:
+     * - Paid statuses: 'paid', '💰 Оплачено', 'completed', 'delivered', 'shipped', 'received'
+     * - Cancelled status: 'cancelled', 'Скасовано' - excluded from awarded cashback
+     * - Deleted orders: automatically excluded (not in collection)
      */
     async function refreshCashbackStats() {
       // Start performance monitoring
@@ -17964,257 +17973,221 @@
       
       try {
         // ============================================================
-        // TASK 1: ADMIN AUTHENTICATION CHECK
+        // AUTH CHECK
         // ============================================================
         
         console.log('🔐 [Auth Check] Verifying admin permissions...');
         
-        // Check if user is authenticated
         if (!auth || !auth.currentUser) {
           throw new Error('🔐 Ви не авторизовані. Будь ласка, увійдіть в систему.');
         }
         
         const userEmail = auth.currentUser.email;
         console.log('👤 Current user:', userEmail);
+        console.log('🔢 [Cashback Stats] Starting calculation from orders collection...');
         
-        // Check if user is logged in (admin check is handled by Firestore rules)
-        console.log('✅ [Auth Check] User verified:', userEmail);
-        
-        console.log('🔢 [Cashback Stats] Starting calculation...');
-        
-        let totalAwarded = 0;
-        let totalSpent = 0;
-        let totalRevenue = 0;
-        const orderIdsWithCashback = new Set();
+        // Initialize counters
+        let totalAwarded = 0;       // Sum of pointsEarned from paid orders
+        let totalSpent = 0;         // Sum of cashbackUsed from all orders
+        let totalRevenue = 0;       // Sum of order totals where cashback was used
+        let paidOrdersCount = 0;
+        let ordersWithCashbackUsed = 0;
         
         // ============================================================
-        // TASK 1.1: Calculate "Нараховано кешбеку" (Total Awarded)
-        // TASK 3: Efficient - only necessary fields
+        // Define valid statuses for counting awarded cashback
+        // ============================================================
+        const PAID_STATUSES = [
+          'paid', 
+          '💰 Оплачено',
+          'completed', 
+          'delivered', 
+          'shipped', 
+          'received',
+          'Виконано',
+          'Доставлено'
+        ];
+        
+        const CANCELLED_STATUSES = [
+          'cancelled',
+          'Скасовано',
+          '❌ Скасовано'
+        ];
+        
+        // ============================================================
+        // FETCH ALL ORDERS
         // ============================================================
         
-        // Method 1: Try summing from users collection (totalCashbackAwarded field)
+        console.log('📥 [Step 1] Fetching all orders from Firestore...');
+        const ordersRef = collection(db, 'orders');
+        const ordersSnapshot = await getDocs(ordersRef);
+        
+        console.log(`📦 Total orders in collection: ${ordersSnapshot.size}`);
+        
+        // ============================================================
+        // PROCESS EACH ORDER
+        // ============================================================
+        
+        ordersSnapshot.forEach((doc) => {
+          const order = doc.data();
+          const orderId = doc.id;
+          const orderStatus = order.status || '';
+          
+          // ----------------------------------------------------------
+          // TASK 1: Calculate Total Awarded (Нараховано)
+          // Only count pointsEarned from PAID orders (exclude cancelled)
+          // ----------------------------------------------------------
+          
+          const isPaidStatus = PAID_STATUSES.some(s => 
+            orderStatus.toLowerCase().includes(s.toLowerCase()) || 
+            orderStatus === s
+          );
+          
+          const isCancelled = CANCELLED_STATUSES.some(s => 
+            orderStatus.toLowerCase().includes(s.toLowerCase()) || 
+            orderStatus === s
+          );
+          
+          // Get pointsEarned/cashbackAwarded value
+          let pointsEarned = 0;
+          if (typeof order.pointsEarned === 'number') {
+            pointsEarned = order.pointsEarned;
+          } else if (typeof order.cashbackAwarded === 'number') {
+            pointsEarned = order.cashbackAwarded;
+          } else if (typeof order.earnedCashback === 'number') {
+            pointsEarned = order.earnedCashback;
+          }
+          
+          // Only add to awarded if order is paid AND not cancelled
+          if (isPaidStatus && !isCancelled && pointsEarned > 0) {
+            totalAwarded += pointsEarned;
+            paidOrdersCount++;
+          }
+          
+          // ----------------------------------------------------------
+          // TASK 2: Calculate Total Used (Використано)
+          // Sum cashbackUsed/appliedCashback from ALL existing orders
+          // (deleted orders are automatically excluded - they don't exist)
+          // ----------------------------------------------------------
+          
+          let cashbackUsed = 0;
+          
+          // Handle different storage formats for cashbackUsed
+          if (typeof order.cashbackUsed === 'object' && order.cashbackUsed !== null) {
+            cashbackUsed = Number(order.cashbackUsed.amount || 0);
+          } else if (typeof order.cashbackUsed === 'number') {
+            cashbackUsed = order.cashbackUsed;
+          } else if (typeof order.appliedCashback === 'number') {
+            cashbackUsed = order.appliedCashback;
+          } else if (order.payment?.cashbackUsed) {
+            cashbackUsed = Number(order.payment.cashbackUsed);
+          }
+          
+          if (cashbackUsed > 0) {
+            totalSpent += cashbackUsed;
+            ordersWithCashbackUsed++;
+            
+            // ----------------------------------------------------------
+            // TASK 4: Calculate Additional Revenue (Додатковий дохід)
+            // Sum total price of orders where cashback was used
+            // ----------------------------------------------------------
+            
+            const orderTotal = Number(
+              order.summary?.total || 
+              order.total || 
+              order.totalAmount || 
+              order.finalTotal ||
+              order.payment?.amount ||
+              0
+            );
+            
+            if (orderTotal > 0) {
+              totalRevenue += orderTotal;
+            }
+            
+            // Debug log for orders with cashback activity
+            console.log(`💰 Order ${orderId.slice(-8)}: status=${orderStatus}, used=${cashbackUsed}, total=${orderTotal}`);
+          }
+        });
+        
+        // ============================================================
+        // ALTERNATIVE: Also check users collection for totalCashbackAwarded
+        // This provides more accurate data if orders don't have pointsEarned
+        // ============================================================
+        
         let awardedFromUsers = 0;
+        let usedFromUsers = 0;
+        
         try {
-          console.log('📥 [Step 1] Fetching users to calculate awarded cashback...');
+          console.log('📥 [Step 2] Fetching users for verification...');
           const usersRef = collection(db, 'users');
           const usersSnapshot = await getDocs(usersRef);
           
           usersSnapshot.forEach((doc) => {
             const userData = doc.data();
-            const userAwarded = Number(userData.totalCashbackAwarded) || 0;
-            awardedFromUsers += userAwarded;
+            awardedFromUsers += Number(userData.totalCashbackAwarded || 0);
+            usedFromUsers += Number(userData.totalCashbackUsed || 0);
           });
           
-          console.log(`✅ [Step 1] Users fetched: ${usersSnapshot.size}, Total from users: ${awardedFromUsers.toFixed(2)} грн`);
+          console.log(`👥 Users: awarded=${awardedFromUsers.toFixed(2)}, used=${usedFromUsers.toFixed(2)}`);
+          
+          // Use users collection data if it's more complete
+          if (awardedFromUsers > totalAwarded) {
+            console.log(`📊 Using users collection data for awarded (${awardedFromUsers} > ${totalAwarded})`);
+            totalAwarded = awardedFromUsers;
+          }
+          
+          // For spent, also consider users collection
+          if (usedFromUsers > totalSpent) {
+            console.log(`📊 Using users collection data for spent (${usedFromUsers} > ${totalSpent})`);
+            totalSpent = usedFromUsers;
+          }
+          
         } catch (usersError) {
-          console.warn('⚠️ [Step 1] Failed to fetch users (non-critical):', usersError.message);
-          // Continue - we'll try transactions next
-        }
-        
-        // Method 2: Fallback to transactions if users don't have the field
-        let awardedFromTransactions = 0;
-        let spentFromTransactions = 0;
-        try {
-          console.log('📥 [Step 1 Fallback] Fetching transactions...');
-          const transactionsRef = collection(db, 'cashback_transactions');
-          const transactionsSnapshot = await getDocs(transactionsRef);
-          
-          transactionsSnapshot.forEach((doc) => {
-            const transaction = doc.data();
-            const amount = Number(transaction.amount) || 0;
-            
-            // Sum positive transactions (order_reward or manual_credit)
-            if (transaction.type === 'order_reward' || transaction.type === 'manual_credit') {
-              awardedFromTransactions += Math.abs(amount);
-              console.log(`🔍 [Debug TX] Awarded: ${amount}, type: ${transaction.type}`);
-            }
-            
-            // Sum spent transactions (order_payment or manual_debit)
-            if (transaction.type === 'order_payment' || transaction.type === 'manual_debit') {
-              spentFromTransactions += Math.abs(amount);
-              console.log(`🔍 [Debug TX] Spent: ${amount}, type: ${transaction.type}, orderId: ${transaction.orderId}`);
-              if (transaction.orderId) {
-                orderIdsWithCashback.add(transaction.orderId);
-              }
-            }
-          });
-          
-          console.log(`✅ [Step 1 Fallback] Transactions: ${transactionsSnapshot.size}, Awarded: ${awardedFromTransactions.toFixed(2)} грн, Spent: ${spentFromTransactions.toFixed(2)} грн`);
-        } catch (transactionsError) {
-          // TASK 2: Enhanced error message for permission denied
-          if (transactionsError.code === 'permission-denied') {
-            console.error('🔐 Доступ відхилено до колекції cashback_transactions. Перевірте правила Firestore для адміна.');
-            console.error('💡 Переконайтеся, що ви увійшли як admin@modernshop.com');
-            // Continue - we can still calculate from orders data
-          } else {
-            console.warn('⚠️ [Step 1 Fallback] Failed to fetch transactions:', transactionsError.message);
-          }
-        }
-        
-        // Use whichever method has data
-        totalAwarded = awardedFromUsers > 0 ? awardedFromUsers : awardedFromTransactions;
-        
-        // Also track spent from transactions as fallback
-        let spentFromTransactionsFallback = spentFromTransactions;
-        
-        console.log(`✅ [Step 1] Total Awarded: ${totalAwarded.toFixed(2)} грн (from ${awardedFromUsers > 0 ? 'users' : 'transactions'})`);
-        console.log(`📊 [Debug] Orders from transactions: ${orderIdsWithCashback.size}`);
-        
-        // ============================================================
-        // TASK 1.2: Calculate "Використано кешбеку" (Total Used)
-        // TASK 3: READ ONLY - no writes
-        // ============================================================
-        
-        try {
-          console.log('📥 [Step 2] Fetching orders to calculate used cashback...');
-          const ordersRef = collection(db, 'orders');
-          const ordersSnapshot = await getDocs(ordersRef);
-          
-          console.log(`📦 [Debug] Total orders in collection: ${ordersSnapshot.size}`);
-          
-          // Track awarded from orders as additional fallback
-          let awardedFromOrders = 0;
-          let ordersWithCashbackActivity = 0;
-          
-          ordersSnapshot.forEach((doc) => {
-            const order = doc.data();
-            const orderId = doc.id.slice(-8);
-            
-            // Extract cashback values from ALL possible field locations
-            let cashbackUsed = 0;
-            if (typeof order.cashbackUsed === 'object' && order.cashbackUsed !== null) {
-              cashbackUsed = Number(order.cashbackUsed.amount || 0);
-            } else if (typeof order.cashbackUsed === 'number') {
-              cashbackUsed = order.cashbackUsed;
-            } else if (order.appliedCashback) {
-              cashbackUsed = Number(order.appliedCashback);
-            } else if (order.payment?.cashbackUsed) {
-              cashbackUsed = Number(order.payment.cashbackUsed);
-            }
-            
-            // Extract awarded cashback
-            const orderAwarded = Number(order.cashbackAwarded || order.earnedCashback || order.pointsEarned || 0);
-            
-            // Log orders with any cashback activity
-            if (cashbackUsed > 0 || orderAwarded > 0) {
-              console.log(`🔍 [Debug] Order ${orderId}: used=${cashbackUsed}, awarded=${orderAwarded}, status=${order.status}`);
-              ordersWithCashbackActivity++;
-            }
-            
-            // Sum values (no status filter - count all cashback activity)
-            totalSpent += cashbackUsed;
-            awardedFromOrders += orderAwarded;
-            
-            // Track orders with cashback for revenue calculation
-            if (cashbackUsed > 0) {
-              orderIdsWithCashback.add(doc.id);
-            }
-          });
-          
-          console.log(`📊 [Debug] Orders with cashback activity: ${ordersWithCashbackActivity}`);
-          
-          // Use orders as fallback source for awarded if users/transactions didn't have data
-          if (totalAwarded === 0 && awardedFromOrders > 0) {
-            totalAwarded = awardedFromOrders;
-            console.log(`✅ [Step 1 Fallback #2] Total Awarded from orders: ${totalAwarded.toFixed(2)} грн`);
-          }
-          
-          // Use transactions as fallback source for spent if orders don't have cashbackUsed field
-          if (totalSpent === 0 && spentFromTransactionsFallback > 0) {
-            totalSpent = spentFromTransactionsFallback;
-            console.log(`✅ [Step 2 Fallback] Total Spent from transactions: ${totalSpent.toFixed(2)} грн`);
-          }
-          
-          console.log(`✅ [Step 2] Total Used: ${totalSpent.toFixed(2)} грн from ${orderIdsWithCashback.size} orders with cashback deduction`);
-          
-          // ============================================================
-          // TASK 1.4: Calculate "Додатковий дохід" (Incremental Revenue)
-          // ============================================================
-          
-          console.log(`📥 [Step 4] Calculating revenue from ${orderIdsWithCashback.size} orders with cashback deduction...`);
-          
-          ordersSnapshot.forEach((doc) => {
-            if (orderIdsWithCashback.has(doc.id)) {
-              const order = doc.data();
-              const orderId = doc.id.slice(-8);
-              
-              // Try all possible total field locations
-              const orderTotal = Number(
-                order.summary?.total || 
-                order.total || 
-                order.totalAmount || 
-                order.payment?.amount ||
-                order.finalTotal ||
-                0
-              );
-              
-              console.log(`💰 [Debug] Order ${orderId} revenue: ${orderTotal} грн`);
-              
-              if (orderTotal > 0) {
-                totalRevenue += orderTotal;
-              }
-            }
-          });
-          
-          console.log(`✅ [Step 4] Incremental Revenue: ${totalRevenue.toFixed(2)} грн`);
-          
-        } catch (ordersError) {
-          // TASK 2: Enhanced error handling
-          if (ordersError.code === 'permission-denied') {
-            throw new Error('🔐 Доступ відхилено до колекції orders. Перевірте правила Firestore для адміна.');
-          } else {
-            throw ordersError; // Re-throw other errors
-          }
+          console.warn('⚠️ Could not fetch users collection:', usersError.message);
+          // Continue with orders data only
         }
         
         // ============================================================
-        // TASK 1.3: Calculate "Коефіцієнт використання" (Usage Rate %)
+        // TASK 3: Calculate Usage Ratio (Коефіцієнт використання)
         // ============================================================
         
         const usagePercentage = totalAwarded > 0 
           ? ((totalSpent / totalAwarded) * 100) 
           : 0;
         
-        console.log(`✅ [Step 3] Usage Rate: ${usagePercentage.toFixed(2)}%`);
+        // ============================================================
+        // UPDATE UI
+        // ============================================================
         
-        // ============================================================
-        // TASK 2: Update UI with formatted numbers
-        // ============================================================
+        console.log('📊 [Final Results]:', {
+          totalAwarded: totalAwarded.toFixed(2) + ' грн',
+          totalSpent: totalSpent.toFixed(2) + ' грн',
+          usageRate: usagePercentage.toFixed(2) + '%',
+          additionalRevenue: totalRevenue.toFixed(2) + ' грн',
+          paidOrdersCount,
+          ordersWithCashbackUsed
+        });
         
         document.getElementById('stat-awarded').textContent = totalAwarded.toFixed(2);
         document.getElementById('stat-spent').textContent = totalSpent.toFixed(2);
         document.getElementById('stat-percentage').textContent = usagePercentage.toFixed(2);
         document.getElementById('stat-revenue').textContent = totalRevenue.toFixed(2);
         
-        // ============================================================
-        // Performance monitoring complete
-        // ============================================================
-        
         console.timeEnd('⏱️ StatsCalc');
-        
-        console.log('📊 [Summary] Calculation complete:', {
-          totalAwarded: totalAwarded.toFixed(2) + ' грн',
-          totalSpent: totalSpent.toFixed(2) + ' грн',
-          usageRate: usagePercentage.toFixed(2) + '%',
-          incrementalRevenue: totalRevenue.toFixed(2) + ' грн',
-          ordersWithCashback: orderIdsWithCashback.size
-        });
+        console.log('✅ [Cashback Stats] Calculation complete');
         
       } catch (error) {
         console.timeEnd('⏱️ StatsCalc');
         
-        // TASK 2: Enhanced error handling with clear messages
         if (error.code === 'permission-denied' || error.message.includes('🔐')) {
           console.error('🔐 Доступ відхилено. Перевірте правила Firestore для адміна.');
-          console.error('💡 Переконайтеся, що ви увійшли як admin@modernshop.com');
-          console.error('📋 Деталі помилки:', error);
           showNotification('🔐 Доступ відхилено. Тільки адмін може переглядати статистику.', 'error');
         } else {
           console.error('❌ [Cashback Stats] Error calculating statistics:', error);
           showNotification('Помилка розрахунку статистики: ' + error.message, 'error');
         }
         
-        throw error; // Re-throw to handle in caller
+        throw error;
       }
     }
     
