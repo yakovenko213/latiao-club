@@ -308,6 +308,39 @@
             </div>
           </div>
 
+          <!-- 🪙 TASK: Cashback Summary Card -->
+          <div id="cashback-summary-card" class="hidden bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 fade-in card-hover">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-3">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="flex-shrink: 0;">
+                <circle cx="12" cy="12" r="10" fill="#E67E22" stroke="#D48806" stroke-width="1.5"/>
+                <text x="12" y="16" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="10" font-weight="bold">₴</text>
+              </svg>
+              Кешбек
+            </h3>
+            <div class="space-y-3" style="background-color: #FFF9E6; border: 1px solid #FFD700; border-radius: 12px; padding: 15px;">
+              <!-- Earned Cashback Row -->
+              <div id="earned-cashback-row" class="hidden">
+                <div class="flex justify-between items-center">
+                  <span class="text-sm text-gray-700" style="color: #5C4033;">За це замовлення вам нараховано:</span>
+                  <span id="earned-cashback-amount" class="font-bold text-green-600">+ 0 грн</span>
+                </div>
+              </div>
+              
+              <!-- Used Cashback Row (Conditional) -->
+              <div id="used-cashback-row" class="hidden">
+                <div class="flex justify-between items-center">
+                  <span class="text-sm text-gray-700" style="color: #5C4033;">Списано кешбеку:</span>
+                  <span id="used-cashback-amount" class="font-bold text-orange-600">- 0 грн</span>
+                </div>
+              </div>
+              
+              <!-- Info Text -->
+              <div class="pt-2 border-t border-yellow-200">
+                <p class="text-xs text-gray-600" style="color: #5C4033; opacity: 0.8;">Ваш новий баланс кешбеку буде оновлено після підтвердження оплати.</p>
+              </div>
+            </div>
+          </div>
+
           <!-- Contact Info Card -->
           <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 fade-in card-hover">
             <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -926,6 +959,45 @@
         }
       }
 
+      // ============================================
+      // 🪙 TASK: CASHBACK SUMMARY BLOCK
+      // ============================================
+      const cashbackCard = document.getElementById('cashback-summary-card');
+      const earnedCashbackRow = document.getElementById('earned-cashback-row');
+      const usedCashbackRow = document.getElementById('used-cashback-row');
+      const earnedCashbackAmount = document.getElementById('earned-cashback-amount');
+      const usedCashbackAmount = document.getElementById('used-cashback-amount');
+      
+      // Get cashback data from order
+      const pointsEarned = Number(orderData.pointsEarned) || 0;
+      const cashbackUsed = Number(orderData.cashbackUsed) || 0;
+      
+      console.log('🪙 === CASHBACK SUMMARY DEBUG ===');
+      console.log('🪙 Points earned from order:', pointsEarned);
+      console.log('🪙 Cashback used from order:', cashbackUsed);
+      
+      // Show cashback card if there's any cashback activity
+      if (pointsEarned > 0 || cashbackUsed > 0) {
+        console.log('✅ Showing cashback summary card');
+        if (cashbackCard) cashbackCard.classList.remove('hidden');
+        
+        // Show earned cashback
+        if (pointsEarned > 0) {
+          console.log('✅ Showing earned cashback:', pointsEarned, 'грн');
+          if (earnedCashbackRow) earnedCashbackRow.classList.remove('hidden');
+          if (earnedCashbackAmount) earnedCashbackAmount.textContent = `+ ${pointsEarned} грн`;
+        }
+        
+        // Show used cashback (conditional)
+        if (cashbackUsed > 0) {
+          console.log('✅ Showing used cashback:', cashbackUsed, 'грн');
+          if (usedCashbackRow) usedCashbackRow.classList.remove('hidden');
+          if (usedCashbackAmount) usedCashbackAmount.textContent = `- ${cashbackUsed} грн`;
+        }
+      } else {
+        console.log('ℹ️ No cashback activity, hiding cashback card');
+      }
+      
       // ============================================
       // RENDER PAYMENT INFO WITH PREPAYMENT BREAKDOWN
       // ============================================
