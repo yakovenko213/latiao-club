@@ -310,8 +310,17 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1.5 lg:mb-2">Номер телефону <span
                   class="text-orange-500">*</span></label>
-              <input type="tel" id="phone" placeholder="+380..."
-                class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300">
+              <div class="relative">
+                <input type="tel" id="phone" placeholder="+380..."
+                  class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300">
+                <!-- Loading Spinner -->
+                <div id="phone-loading-spinner" class="hidden absolute right-3 top-1/2 -translate-y-1/2">
+                  <svg class="animate-spin h-5 w-5 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </div>
+              </div>
             </div>
 
             <div>
@@ -649,6 +658,54 @@
 
             <!-- Divider (if discount applied) -->
             <div id="discount-divider" class="hidden border-t border-gray-200 my-2"></div>
+
+            <!-- Cashback Usage Block -->
+            <div id="cashback-usage-block" class="hidden mb-3">
+              <div class="bg-gradient-to-br from-amber-50 to-yellow-50 border-2 border-amber-200 rounded-xl p-4">
+                <!-- Balance Display -->
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-2">
+                    <span class="text-2xl">🪙</span>
+                    <div>
+                      <p class="text-xs text-gray-600 font-medium">На вашому балансі:</p>
+                      <p class="text-lg font-bold text-amber-600"><span id="user-balance-val">0</span> грн</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Spendable Amount Info -->
+                <div class="mb-3 p-3 bg-white/50 rounded-lg border border-amber-100">
+                  <p class="text-xs text-gray-700 leading-relaxed">
+                    💡 Ви можете використати <strong>половину свого балансу</strong>: <span id="spendable-val" class="font-bold text-amber-600">0</span> грн для цього замовлення
+                  </p>
+                </div>
+                
+                <!-- Toggle Checkbox -->
+                <label class="flex items-start gap-3 cursor-pointer group">
+                  <div class="flex items-center h-5 mt-0.5">
+                    <input 
+                      type="checkbox" 
+                      id="use-cashback-toggle"
+                      class="w-4 h-4 text-amber-600 bg-white border-amber-300 rounded focus:ring-amber-500 focus:ring-2 cursor-pointer"
+                      onchange="toggleCashbackUsage()"
+                    >
+                  </div>
+                  <div class="flex-1">
+                    <span class="text-sm font-semibold text-gray-900 group-hover:text-amber-700 transition-colors">
+                      Списати <span id="applied-amount" class="text-amber-600">0</span> грн
+                    </span>
+                  </div>
+                </label>
+                
+                <!-- Applied Cashback Display -->
+                <div id="cashback-applied-display" class="hidden mt-3 pt-3 border-t border-amber-200">
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-amber-700 font-medium">🎉 Кешбек застосовано:</span>
+                    <span class="text-sm font-bold text-amber-600">-<span id="cashback-used-display">0</span> грн</span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <!-- Final Total -->
             <div class="flex items-center justify-between mb-2">
@@ -1023,6 +1080,12 @@
     let appliedPromoCode = null // Store full promo details
     const FREE_DELIVERY_THRESHOLD = 1100
     const DELIVERY_COST = 70
+    
+    // Cashback usage variables
+    let userCashbackBalance = 0
+    let cashbackUsed = 0
+    let isCashbackEnabled = false
+    let currentUserId = null
 
     // ============================================
     // ABANDONED CART: Order submission flag
@@ -1157,6 +1220,9 @@
       initializeDeliveryMethod()
       initializePaymentMethod()
       updatePaymentAvailability()
+      
+      // ⭐ Load user's cashback balance (if logged in)
+      loadUserCashbackBalance()
 
       // ============================================
       // ⭐ ATTACH EVENT LISTENERS PROGRAMMATICALLY
@@ -1351,6 +1417,21 @@
       }
 
       if (phoneInput) {
+        // Load cashback balance when phone is entered (with debounce)
+        let cashbackLoadTimeout = null
+        phoneInput.addEventListener('input', function() {
+          const phone = this.value.trim()
+          
+          // Only load if phone has at least 10 digits (Ukrainian phone format)
+          if (phone.length >= 10) {
+            clearTimeout(cashbackLoadTimeout)
+            cashbackLoadTimeout = setTimeout(() => {
+              console.log('📞 Phone entered, loading cashback balance...')
+              loadUserCashbackBalance()
+            }, 500) // 500ms debounce
+          }
+        })
+        
         phoneInput.addEventListener('blur', function () {
           const phone = this.value.trim()
 
@@ -1358,6 +1439,8 @@
           if (phone.length >= 10) {
             console.log('🔥 AGGRESSIVE SAVE: Phone blur triggered')
             saveAbandonedCart()
+            // Also load cashback balance
+            loadUserCashbackBalance()
           }
         })
       }
@@ -1697,12 +1780,15 @@
 
       const discount = promoApplied ? promoDiscount : 0
       const subtotalWithDiscount = subtotal - discount
+      
+      // Apply cashback (if enabled)
+      const subtotalAfterCashback = subtotalWithDiscount - cashbackUsed
 
       const isFreeDelivery = subtotalWithDiscount >= FREE_DELIVERY_THRESHOLD
       const deliveryCost = isFreeDelivery ? 0 : DELIVERY_COST
 
       // IMPORTANT: Total shows ONLY product sum (delivery paid separately on delivery)
-      const productTotal = subtotalWithDiscount
+      const productTotal = subtotalAfterCashback
 
       // Update UI with null checks
       const itemCountEl = document.getElementById('itemCount')
@@ -1755,6 +1841,17 @@
         if (discountDivider) discountDivider.classList.add('hidden')
       }
 
+      // Update cashback used display
+      const cashbackUsedDisplayEl = document.getElementById('cashback-used-display')
+      const cashbackAppliedDisplay = document.getElementById('cashback-applied-display')
+      
+      if (cashbackUsed > 0 && cashbackAppliedDisplay && cashbackUsedDisplayEl) {
+        cashbackAppliedDisplay.classList.remove('hidden')
+        cashbackUsedDisplayEl.textContent = cashbackUsed
+      } else if (cashbackAppliedDisplay) {
+        cashbackAppliedDisplay.classList.add('hidden')
+      }
+      
       // Update final total
       if (totalPriceEl) totalPriceEl.textContent = `${productTotal} грн`
       if (totalPriceMobileEl) totalPriceMobileEl.textContent = `${productTotal} грн`
@@ -1790,7 +1887,165 @@
         updatePaymentSummary(paymentMethod)
       }
 
-      return { total: productTotal, subtotal }
+      return { total: productTotal, subtotal, subtotalWithDiscount }
+    }
+    
+    // ============================================
+    // CASHBACK FUNCTIONALITY
+    // ============================================
+    
+    /**
+     * Load user's cashback balance dynamically by phone number
+     */
+    async function loadUserCashbackBalance(phoneNumber) {
+      try {
+        console.log('🪙 [Cashback] Loading balance for phone:', phoneNumber)
+        
+        // Show loading spinner
+        const spinner = document.getElementById('phone-loading-spinner')
+        if (spinner) spinner.classList.remove('hidden')
+        
+        // Check if Firebase is initialized
+        if (!window.firebaseInit || !window.firebaseInit.db) {
+          console.log('⚠️ [Cashback] Firebase not initialized')
+          if (spinner) spinner.classList.add('hidden')
+          return
+        }
+        
+        const { db } = window.firebaseInit
+        
+        // Normalize phone (remove +38 prefix if exists, then add back)
+        const normalizedPhone = phoneNumber.replace(/^\+?38/, '').replace(/\D/g, '')
+        
+        // Validate phone length (10 or 12 digits for Ukrainian numbers)
+        if (normalizedPhone.length < 10 || normalizedPhone.length > 12) {
+          console.log('⚠️ [Cashback] Invalid phone length:', normalizedPhone.length)
+          resetCashbackUI()
+          if (spinner) spinner.classList.add('hidden')
+          return
+        }
+        
+        const formattedPhone = '+38' + normalizedPhone
+        currentUserId = formattedPhone
+        
+        console.log('🔍 [Cashback] Searching Firestore for:', formattedPhone)
+        
+        // Fetch user document from Firestore
+        const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')
+        const userRef = doc(db, 'users', formattedPhone)
+        const userSnap = await getDoc(userRef)
+        
+        if (userSnap.exists()) {
+          const userData = userSnap.data()
+          userCashbackBalance = Number(userData.cashbackBalance || 0)
+          
+          console.log('✅ [Cashback] User found! Balance:', userCashbackBalance, 'грн')
+          
+          // Show cashback block if balance > 0
+          if (userCashbackBalance > 0) {
+            showCashbackUI()
+          } else {
+            console.log('ℹ️ [Cashback] Balance is 0')
+            resetCashbackUI()
+          }
+        } else {
+          console.log('ℹ️ [Cashback] User not found in database')
+          resetCashbackUI()
+        }
+        
+        // Hide loading spinner
+        if (spinner) spinner.classList.add('hidden')
+        
+      } catch (error) {
+        console.error('❌ [Cashback] Error loading balance:', error)
+        resetCashbackUI()
+        
+        // Hide loading spinner
+        const spinner = document.getElementById('phone-loading-spinner')
+        if (spinner) spinner.classList.add('hidden')
+      }
+    }
+    
+    /**
+     * Show cashback UI with user's balance (50% of balance rule)
+     */
+    function showCashbackUI() {
+      const cashbackBlock = document.getElementById('cashback-usage-block')
+      const balanceEl = document.getElementById('user-balance-val')
+      const spendableEl = document.getElementById('spendable-val')
+      const appliedEl = document.getElementById('applied-amount')
+      
+      if (!cashbackBlock) return
+      
+      // Calculate spendable amount (50% of balance)
+      const spendableAmount = Math.floor(userCashbackBalance * 0.5)
+      
+      // Update UI elements
+      if (balanceEl) balanceEl.textContent = userCashbackBalance
+      if (spendableEl) spendableEl.textContent = spendableAmount
+      if (appliedEl) appliedEl.textContent = spendableAmount
+      
+      // Show the block
+      cashbackBlock.classList.remove('hidden')
+      
+      console.log('📊 [Cashback] UI displayed - Balance:', userCashbackBalance, 'Spendable:', spendableAmount)
+    }
+    
+    /**
+     * Reset cashback UI and disable usage
+     */
+    function resetCashbackUI() {
+      console.log('🔄 [Cashback] Resetting UI...')
+      
+      // Hide the cashback block
+      const cashbackBlock = document.getElementById('cashback-usage-block')
+      if (cashbackBlock) cashbackBlock.classList.add('hidden')
+      
+      // Uncheck the toggle if it was checked
+      const checkbox = document.getElementById('use-cashback-toggle')
+      if (checkbox && checkbox.checked) {
+        checkbox.checked = false
+        
+        // Reset cashback amount
+        cashbackUsed = 0
+        isCashbackEnabled = false
+        
+        // Recalculate totals
+        calculateTotals()
+        
+        console.log('✅ [Cashback] Checkbox unchecked and amount reset')
+      }
+      
+      // Reset balance value
+      userCashbackBalance = 0
+      currentUserId = null
+    }
+    
+    /**
+     * Toggle cashback usage on/off (50% of balance)
+     */
+    window.toggleCashbackUsage = function() {
+      const checkbox = document.getElementById('use-cashback-toggle')
+      isCashbackEnabled = checkbox.checked
+      
+      if (isCashbackEnabled) {
+        // Calculate spendable amount (50% of user's balance)
+        cashbackUsed = Math.floor(userCashbackBalance * 0.5)
+        
+        // Verify it doesn't exceed order total (safety check)
+        const { subtotalWithDiscount } = calculateTotals()
+        if (cashbackUsed > subtotalWithDiscount) {
+          cashbackUsed = subtotalWithDiscount
+        }
+        
+        console.log('✅ [Cashback] Enabled:', cashbackUsed, 'грн (50% of', userCashbackBalance, 'грн balance)')
+      } else {
+        cashbackUsed = 0
+        console.log('❌ [Cashback] Disabled')
+      }
+      
+      // Recalculate totals
+      calculateTotals()
     }
 
     // ============================================
@@ -2200,6 +2455,11 @@
 
         // Recalculate totals
         calculateTotals()
+        
+        // Update max spendable cashback after promo is applied
+        if (userCashbackBalance > 0) {
+          updateMaxSpendableCashback()
+        }
 
       } catch (error) {
         console.error('Promo code error:', error)
@@ -3133,8 +3393,11 @@
             subtotal: subtotal,
             originalTotal: originalTotal,  // Price before discount
             discountAmount: promoDiscount,  // Discount applied
-            total: total  // Final price after discount
+            total: total  // Final price after discount and cashback
           },
+          
+          // Cashback Info
+          cashbackUsed: cashbackUsed || 0,
 
           // Promo Code (if applied)
           promoCode: promoCodeData,
@@ -3317,6 +3580,44 @@
             console.log('✅ Promo code usage updated:', appliedPromoCode.code)
           } catch (promoError) {
             console.error('⚠️ Failed to update promo usage (non-critical):', promoError)
+          }
+        }
+        
+        // ============================================
+        // STEP 8.6: Update Cashback Balance (if used)
+        // ============================================
+        if (cashbackUsed > 0 && currentUserId) {
+          try {
+            console.log('🪙 [Cashback] Deducting', cashbackUsed, 'грн from user balance...')
+            
+            const { doc: firestoreDoc, updateDoc, increment, addDoc, collection, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')
+            
+            // Update user's cashback balance
+            const userRef = firestoreDoc(db, 'users', currentUserId)
+            await updateDoc(userRef, {
+              cashbackBalance: increment(-cashbackUsed),
+              totalCashbackSpent: increment(cashbackUsed),
+              updatedAt: serverTimestamp()
+            })
+            
+            console.log('✅ [Cashback] Balance updated successfully')
+            
+            // Add transaction record for audit trail
+            const transactionRef = collection(db, 'cashback_transactions')
+            await addDoc(transactionRef, {
+              userId: currentUserId,
+              userName: fullName,
+              amount: -cashbackUsed,
+              type: 'order_payment',
+              description: `Оплата замовлення #${orderId}`,
+              orderId: orderId,
+              createdAt: serverTimestamp()
+            })
+            
+            console.log('✅ [Cashback] Transaction recorded')
+            
+          } catch (cashbackError) {
+            console.error('⚠️ Failed to update cashback balance (non-critical):', cashbackError)
           }
         }
 

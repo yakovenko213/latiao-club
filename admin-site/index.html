@@ -17178,39 +17178,56 @@
      */
     async function calculateCashbackStats() {
       try {
-        console.log('🔢 [Cashback Stats] Calculating from orders...');
+        console.log('🔢 [Cashback Stats] Calculating from transactions...');
         
-        // Fetch all orders
-        const ordersRef = collection(db, 'orders');
-        const ordersSnapshot = await getDocs(ordersRef);
+        // Fetch all cashback transactions
+        const transactionsRef = collection(db, 'cashback_transactions');
+        const transactionsSnapshot = await getDocs(transactionsRef);
+        
+        console.log('🔢 [Cashback Stats] Found', transactionsSnapshot.size, 'transactions');
         
         let totalAwarded = 0;
         let totalSpent = 0;
         let totalRevenue = 0;
-        let ordersWithCashback = 0;
+        const orderIdsWithCashback = new Set();
         
-        ordersSnapshot.forEach((doc) => {
-          const order = doc.data();
+        transactionsSnapshot.forEach((doc) => {
+          const transaction = doc.data();
+          const amount = Number(transaction.amount) || 0;
           
-          // Sum awarded cashback
-          if (order.cashbackAwarded && typeof order.cashbackAwarded === 'number') {
-            totalAwarded += order.cashbackAwarded;
+          // Sum awarded cashback (positive amounts from order_reward or manual_credit)
+          if (transaction.type === 'order_reward' || transaction.type === 'manual_credit') {
+            totalAwarded += Math.abs(amount);
           }
           
-          // Sum spent cashback
-          if (order.cashbackUsed && typeof order.cashbackUsed === 'number') {
-            totalSpent += order.cashbackUsed;
-          }
-          
-          // Sum revenue from orders that used cashback
-          if (order.cashbackUsed && order.cashbackUsed > 0) {
-            ordersWithCashback++;
-            const orderTotal = Number(order.total) || Number(order.totalAmount) || 0;
-            if (orderTotal > 0) {
-              totalRevenue += orderTotal;
+          // Sum spent cashback (negative amounts from order_payment or manual_debit)
+          if (transaction.type === 'order_payment' || transaction.type === 'manual_debit') {
+            totalSpent += Math.abs(amount);
+            
+            // Collect order IDs that used cashback
+            if (transaction.orderId && transaction.type === 'order_payment') {
+              orderIdsWithCashback.add(transaction.orderId);
             }
           }
         });
+        
+        // Calculate revenue from orders that used cashback
+        if (orderIdsWithCashback.size > 0) {
+          console.log('🔢 [Cashback Stats] Calculating revenue from', orderIdsWithCashback.size, 'orders with cashback...');
+          
+          const ordersRef = collection(db, 'orders');
+          const ordersSnapshot = await getDocs(ordersRef);
+          
+          ordersSnapshot.forEach((doc) => {
+            if (orderIdsWithCashback.has(doc.id)) {
+              const order = doc.data();
+              const orderTotal = Number(order.summary?.total || order.total || order.totalAmount) || 0;
+              if (orderTotal > 0) {
+                totalRevenue += orderTotal;
+              }
+            }
+          });
+        }
         
         // Calculate percentage
         const usagePercentage = totalAwarded > 0 
@@ -17228,7 +17245,8 @@
           totalSpent: totalSpent.toFixed(2),
           usagePercentage: usagePercentage + '%',
           totalRevenue: totalRevenue.toFixed(2),
-          ordersWithCashback
+          ordersWithCashback: orderIdsWithCashback.size,
+          transactionsProcessed: transactionsSnapshot.size
         });
         
       } catch (error) {

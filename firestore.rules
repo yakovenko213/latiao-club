@@ -108,6 +108,14 @@ service cloud.firestore {
     }
     
     // Config - ADMIN ONLY for system configuration (TurboSMS, etc.)
+    // EXCEPTION: general_config is PUBLIC READ for cashback switch
+    match /config/general_config {
+      // ✅ PUBLIC READ - website needs to check isCashbackEnabled without auth
+      allow read: if true;
+      // ❌ WRITE restricted to authenticated admins only
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
     match /config/{docId} {
       // ❌ Only ADMINS can read/write config (contains sensitive data like API keys)
       allow read, write: if request.auth != null;

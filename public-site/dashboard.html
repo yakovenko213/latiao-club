@@ -1448,11 +1448,12 @@
           // Determine type and color
           const amount = Number(transaction.amount) || 0;
           const isCredit = amount > 0;
-          const typeText = transaction.type === 'order' ? 'Нарахування' :
-                          transaction.type === 'admin_bonus' ? 'Бонус' :
-                          transaction.type === 'spent' ? 'Списання' :
-                          transaction.type === 'refund' ? 'Повернення' :
-                          'Інше';
+          const typeText = transaction.type === 'order_reward' ? '🎁 Нарахування' :
+                          transaction.type === 'manual_credit' ? '💎 Бонус від адміністратора' :
+                          transaction.type === 'order_payment' ? '🛒 Оплата замовлення' :
+                          transaction.type === 'manual_debit' ? '⚠️ Списання' :
+                          transaction.type === 'refund' ? '↩️ Повернення' :
+                          '📋 Інше';
           const amountColor = isCredit ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500';
           const amountSign = isCredit ? '+' : '';
 

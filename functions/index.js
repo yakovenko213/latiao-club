@@ -508,6 +508,103 @@ exports.handleMonoWebhook = functions.https.onRequest(async (req, res) => {
       // ============================================
       console.log(`✅ Payment marked as paid for order ${orderDoc.id}. Stock deduction will be triggered automatically.`);
 
+      // ============================================
+      // 🪙 CASHBACK CREDITING SYSTEM
+      // Award cashback after successful payment
+      // ============================================
+      try {
+        // Prevent double-crediting
+        if (orderData.cashbackAwarded) {
+          console.log(`⚠️ Cashback already awarded for order ${orderDoc.id}, skipping...`);
+        } else {
+          console.log(`🪙 Starting cashback crediting for order ${orderDoc.id}...`);
+
+          // 1. Get cashback percentage from config (default 8%)
+          const configDoc = await admin.firestore().collection('config').doc('general_config').get();
+          const cashbackPercent = configDoc.exists() ? (configDoc.data().cashbackPercent || 8) : 8;
+          const isCashbackEnabled = configDoc.exists() ? (configDoc.data().isCashbackEnabled !== false) : true;
+
+          if (!isCashbackEnabled) {
+            console.log('🪙 Cashback system is disabled, skipping...');
+          } else {
+            // 2. Calculate earned cashback (percentage of total order amount)
+            const earnedCashback = Math.floor(totalAmount * (cashbackPercent / 100));
+            console.log(`🪙 Calculated cashback: ${earnedCashback} грн (${cashbackPercent}% of ${totalAmount} грн)`);
+
+            if (earnedCashback <= 0) {
+              console.log('🪙 Cashback amount is 0, skipping...');
+            } else {
+              // 3. Find user by phone number
+              const customerPhone = orderData.customer?.phone || orderData.phone;
+              if (!customerPhone) {
+                console.log('⚠️ No customer phone found, cannot credit cashback');
+              } else {
+                // Normalize phone number
+                const normalizePhone = (phone) => {
+                  const digits = phone.replace(/\D/g, '');
+                  if (digits.length === 10) return '+38' + digits;
+                  if (digits.length === 12 && digits.startsWith('38')) return '+' + digits;
+                  return phone;
+                };
+
+                const normalizedPhone = normalizePhone(customerPhone);
+                console.log(`🪙 Looking up user by phone: ${normalizedPhone}`);
+
+                const userRef = admin.firestore().collection('users').doc(normalizedPhone);
+                const userDoc = await userRef.get();
+
+                if (!userDoc.exists()) {
+                  // Create new user document if doesn't exist
+                  console.log(`🪙 Creating new user document for ${normalizedPhone}`);
+                  await userRef.set({
+                    phone: normalizedPhone,
+                    name: orderData.customer?.fullName || '',
+                    cashbackBalance: earnedCashback,
+                    totalCashbackAwarded: earnedCashback,
+                    totalCashbackSpent: 0,
+                    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                  });
+                } else {
+                  // Update existing user
+                  console.log(`🪙 Updating existing user ${normalizedPhone}`);
+                  await userRef.update({
+                    cashbackBalance: admin.firestore.FieldValue.increment(earnedCashback),
+                    totalCashbackAwarded: admin.firestore.FieldValue.increment(earnedCashback),
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                  });
+                }
+
+                // 4. Create transaction record
+                console.log(`🪙 Creating transaction record...`);
+                await admin.firestore().collection('cashback_transactions').add({
+                  userId: normalizedPhone,
+                  userName: orderData.customer?.fullName || 'Клієнт',
+                  amount: earnedCashback,
+                  type: 'order_reward',
+                  description: `Нараховано за замовлення #${orderDoc.id}`,
+                  orderId: orderDoc.id,
+                  createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                  status: 'completed'
+                });
+
+                // 5. Update order with cashback info
+                console.log(`🪙 Updating order with cashback info...`);
+                await orderDoc.ref.update({
+                  cashbackAwarded: earnedCashback,
+                  cashbackPercent: cashbackPercent,
+                  cashbackCreditedAt: admin.firestore.FieldValue.serverTimestamp()
+                });
+
+                console.log(`✅ Cashback credited successfully: ${earnedCashback} грн to ${normalizedPhone}`);
+              }
+            }
+          }
+        }
+      } catch (cashbackError) {
+        console.error('❌ Error crediting cashback (non-blocking):', getSafeErrorMessage(cashbackError));
+      }
+
       // TRIGGER KEYCRM ORDER SYNC
       await syncToKeyCRM(orderDoc.id);
 
@@ -515,6 +612,23 @@ exports.handleMonoWebhook = functions.https.onRequest(async (req, res) => {
       await orderDoc.ref.update({
         'payment.status': 'failure',
         'payment.statusLabel': 'Помилка оплати'
+      });
+    } else if (status === 'reversed') {
+      // ============================================
+      // TODO: FUTURE ENHANCEMENT - Handle Order Cancellation
+      // ============================================
+      // When an order is cancelled/reversed, cashback should be debited
+      // Implementation steps:
+      // 1. Check if cashback was awarded (orderData.cashbackAwarded)
+      // 2. Deduct from user's cashbackBalance (if balance is sufficient)
+      // 3. Create transaction record with type: 'order_cancellation'
+      // 4. Update order status to 'cancelled'
+      console.log('⚠️ Order reversed - cashback reversal not yet implemented');
+      
+      await orderDoc.ref.update({
+        'payment.status': 'reversed',
+        'payment.statusLabel': 'Скасовано',
+        'status': 'cancelled'
       });
     }
     res.status(200).send('OK');
