@@ -13,10 +13,17 @@ import {
     serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
+// 🪙 Cashback Config - Global State Listener
+import { initCashbackListener, onCashbackStateChange } from './cashback-config.js';
+
 // Track when page was loaded for time_to_cart analytics
 const pageLoadTime = Date.now();
 
 console.log('🛒 Storefront module loaded');
+
+// Initialize cashback config listener
+console.log('🪙 [Storefront] Initializing cashback config listener...');
+initCashbackListener();
 
 // ============================================
 // 🚀 PERFORMANCE DIAGNOSTICS & CACHING SYSTEM
@@ -169,6 +176,8 @@ function renderSpiciness(level = 0) {
 // ============================================
 function createProductCard(product, productId) {
     const img = product.images?.[0] || product.image || 'https://placehold.co/300x300?text=Латяо';
+    const spiciness = product.spiciness || 0;  // 🆕 Fixed: Define spiciness variable
+    const isHot = product.isHot || false;     // 🆕 Fixed: Define isHot variable
 
     const generatedSku = `LT-${new Date().getFullYear()}-${productId.substring(0, 4).toUpperCase()}`;
     const sku = product.sku || product.code || generatedSku; // Get SKU or generate fallback
@@ -194,6 +203,29 @@ function createProductCard(product, productId) {
                     ${renderSpiciness(spiciness)}
                     <span class="text-xs text-gray-500">${product.weight || ''}</span>
                 </div>
+                
+                <!-- 🪙 TASK: Cashback Badge - Exact Design Match -->
+                ${(() => {
+                    const cashbackPercent = window.cashbackPercent || 0;
+                    const isEnabled = window.cashbackEnabled !== false;
+                    if (!isEnabled || cashbackPercent <= 0) return '';
+                    
+                    // TASK 3: Calculate cashback from product price
+                    const cashbackAmount = Math.floor(product.price * (cashbackPercent / 100));
+                    
+                    if (cashbackAmount <= 0) return '';
+                    
+                    return `
+                        <div class="mb-3 flex items-center justify-start gap-2 px-2 py-1" style="background-color: #FFF9E6; border: 1px solid #FFD700; border-radius: 8px; width: fit-content; max-width: 100%;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink: 0;">
+                                <circle cx="12" cy="12" r="10" fill="#E67E22" stroke="#D48806" stroke-width="1.5"/>
+                                <text x="12" y="16" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="12" font-weight="bold">₴</text>
+                            </svg>
+                            <span style="color: #5C4033; font-size: 12px; font-weight: 500; line-height: 1;">Кешбек: +${cashbackAmount} грн</span>
+                        </div>
+                    `;
+                })()}
+                
                 <div class="flex items-center justify-between">
                     <div class="text-xl font-bold text-spicy">₴${product.price}</div>
                     <button 
@@ -237,6 +269,29 @@ function createHorizontalProductCard(product, productId) {
                     <div class="flex items-center justify-between mb-3">
                         ${renderSpiciness(spiciness)}
                     </div>
+                    
+                    <!-- 🪙 TASK: Cashback Badge - Exact Design Match (Horizontal Card) -->
+                    ${(() => {
+                        const cashbackPercent = window.cashbackPercent || 0;
+                        const isEnabled = window.cashbackEnabled !== false;
+                        if (!isEnabled || cashbackPercent <= 0) return '';
+                        
+                        // TASK 3: Calculate cashback from product price
+                        const cashbackAmount = Math.floor(product.price * (cashbackPercent / 100));
+                        
+                        if (cashbackAmount <= 0) return '';
+                        
+                        return `
+                            <div class="mb-3 flex items-center justify-start gap-2 px-2 py-1" style="background-color: #FFF9E6; border: 1px solid #FFD700; border-radius: 8px; width: fit-content; max-width: 100%;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink: 0;">
+                                    <circle cx="12" cy="12" r="10" fill="#E67E22" stroke="#D48806" stroke-width="1.5"/>
+                                    <text x="12" y="16" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="12" font-weight="bold">₴</text>
+                                </svg>
+                                <span style="color: #5C4033; font-size: 12px; font-weight: 500; line-height: 1;">Кешбек: +${cashbackAmount} грн</span>
+                            </div>
+                        `;
+                    })()}
+                    
                     <div class="flex items-center justify-between">
                         <div class="text-xl font-bold text-spicy">₴${product.price}</div>
                         <button 
