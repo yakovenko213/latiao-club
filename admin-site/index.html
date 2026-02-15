@@ -4656,6 +4656,14 @@
               </div>
               <div class="flex items-center gap-3">
                 <button 
+                  id="mass-sms-campaign-btn"
+                  class="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 transition-all duration-200 hover:scale-105 active:scale-95"
+                  title="Відправити SMS всім клієнтам"
+                >
+                  <i data-lucide="send" class="w-5 h-5"></i>
+                  <span>🚀 Масова розсилка всім</span>
+                </button>
+                <button 
                   id="backfill-cashback-orders"
                   class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 text-white font-semibold rounded-xl shadow-lg shadow-purple-200 transition-all duration-200 hover:scale-105 active:scale-95"
                   title="Нарахувати кешбек для замовлень без нарахування"
@@ -4939,6 +4947,44 @@
               <p class="text-sm text-gray-600 mb-1">Отримувач:</p>
               <p class="font-bold text-gray-900 text-lg" id="sms-modal-client-name">-</p>
               <p class="text-sm text-gray-600 mt-1" id="sms-modal-client-phone">-</p>
+              <div class="mt-3 pt-3 border-t border-blue-200">
+                <p class="text-xs text-gray-600">Поточний баланс:</p>
+                <p class="text-lg font-bold text-blue-600" id="sms-modal-client-balance">0 грн</p>
+              </div>
+            </div>
+
+            <!-- Balance Warning (hidden by default) -->
+            <div id="sms-balance-warning" class="hidden bg-yellow-50 border border-yellow-200 rounded-xl p-3 flex items-start gap-3">
+              <i data-lucide="alert-triangle" class="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5"></i>
+              <p class="text-xs text-yellow-800"><strong>Увага:</strong> баланс клієнта 0 грн</p>
+            </div>
+
+            <!-- Placeholder Badges -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                Плейсхолдери (натисніть для вставки):
+              </label>
+              <div class="flex items-center gap-2 flex-wrap">
+                <button 
+                  type="button"
+                  onclick="insertSmsPlaceholder('[NAME]')"
+                  class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg text-sm transition-all inline-flex items-center gap-1.5 border border-gray-300"
+                >
+                  <i data-lucide="user" class="w-3.5 h-3.5"></i>
+                  [NAME]
+                </button>
+                <button 
+                  type="button"
+                  onclick="insertSmsPlaceholder('[CASHBACK_BALANCE]')"
+                  class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg text-sm transition-all inline-flex items-center gap-1.5 border border-gray-300"
+                >
+                  <i data-lucide="coins" class="w-3.5 h-3.5"></i>
+                  [CASHBACK_BALANCE]
+                </button>
+              </div>
+              <p class="text-xs text-gray-500 mt-2">
+                [NAME] - Ім'я клієнта | [CASHBACK_BALANCE] - Баланс кешбеку
+              </p>
             </div>
 
             <!-- Message Textarea -->
@@ -4950,10 +4996,23 @@
                 id="sms-message-text" 
                 rows="4" 
                 maxlength="670"
-                placeholder="Введіть текст SMS..."
+                placeholder="Приклад: Привіт, [NAME]! На вашому рахунку [CASHBACK_BALANCE] грн кешбеку..."
                 oninput="updateSmsCharCounter()"
                 class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
               ></textarea>
+            </div>
+
+            <!-- Live Preview -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                Попередній перегляд:
+              </label>
+              <div 
+                id="sms-preview-text" 
+                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 min-h-[80px] whitespace-pre-wrap"
+              >
+                <span class="text-gray-400 italic">Введіть повідомлення...</span>
+              </div>
             </div>
 
             <!-- Character Counter -->
@@ -5153,6 +5212,157 @@
             >
               <i data-lucide="check" class="w-5 h-5"></i>
               <span>Закрити</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============================================ -->
+      <!-- MASS SMS CAMPAIGN MODAL -->
+      <!-- ============================================ -->
+      <div id="mass-sms-campaign-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden">
+          
+          <!-- Modal Header -->
+          <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                <i data-lucide="send" class="w-6 h-6"></i>
+                <span>🚀 Масова розсилка всім клієнтам</span>
+              </h3>
+              <button onclick="closeMassSmsModal()" class="text-white/80 hover:text-white transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Modal Body -->
+          <div class="p-6 space-y-4">
+            
+            <!-- Warning Alert -->
+            <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-start gap-3">
+              <i data-lucide="alert-triangle" class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5"></i>
+              <div class="text-sm text-yellow-800">
+                <p class="font-semibold">Увага!</p>
+                <p class="text-yellow-700" id="mass-sms-warning">Повідомлення буде надіслано ВСІМ клієнтам (кількість: <span id="mass-sms-clients-count" class="font-bold">0</span>)</p>
+              </div>
+            </div>
+
+            <!-- Placeholder Badges -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                Плейсхолдери (натисніть для вставки):
+              </label>
+              <div class="flex items-center gap-2 flex-wrap">
+                <button 
+                  type="button"
+                  onclick="insertPlaceholder('[NAME]')"
+                  class="px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 font-semibold rounded-lg text-sm transition-all inline-flex items-center gap-1"
+                >
+                  <i data-lucide="user" class="w-3 h-3"></i>
+                  [NAME]
+                </button>
+                <button 
+                  type="button"
+                  onclick="insertPlaceholder('[CASHBACK_BALANCE]')"
+                  class="px-3 py-1.5 bg-green-100 hover:bg-green-200 text-green-700 font-semibold rounded-lg text-sm transition-all inline-flex items-center gap-1"
+                >
+                  <i data-lucide="coins" class="w-3 h-3"></i>
+                  [CASHBACK_BALANCE]
+                </button>
+              </div>
+              <p class="text-xs text-gray-500 mt-2">
+                [NAME] - Ім'я клієнта | [CASHBACK_BALANCE] - Баланс кешбеку (грн)
+              </p>
+            </div>
+
+            <!-- Message Textarea -->
+            <div>
+              <label for="mass-sms-message-text" class="block text-sm font-semibold text-gray-700 mb-2">
+                Шаблон повідомлення <span class="text-red-500">*</span>
+              </label>
+              <textarea 
+                id="mass-sms-message-text" 
+                rows="6" 
+                maxlength="670"
+                placeholder="Приклад: Привіт, [NAME]! На вашому рахунку [CASHBACK_BALANCE] грн кешбеку. Використайте їх при наступному замовленні!"
+                oninput="updateMassSmsCharCounter()"
+                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none font-mono text-sm"
+              ></textarea>
+            </div>
+
+            <!-- Character Counter -->
+            <div class="flex items-center justify-between text-sm">
+              <div class="flex items-center gap-2">
+                <span class="text-gray-500">Символів:</span>
+                <span id="mass-sms-char-count" class="font-semibold text-gray-700">0</span>
+                <span class="text-gray-400">/</span>
+                <span class="text-gray-500">670</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-gray-500">SMS:</span>
+                <span id="mass-sms-parts-count" class="font-semibold text-blue-600">0</span>
+              </div>
+            </div>
+
+            <!-- Progress Bar (hidden initially) -->
+            <div id="mass-sms-progress-container" class="hidden space-y-3">
+              <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <div class="text-center mb-3">
+                  <p class="text-lg font-semibold text-gray-700" id="mass-sms-status-text">Відправка повідомлень...</p>
+                  <p class="text-sm text-gray-600 mt-1" id="mass-sms-progress-text">Надіслано 0 із 0...</p>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                  <div 
+                    id="mass-sms-progress-bar" 
+                    class="bg-gradient-to-r from-blue-500 to-indigo-600 h-3 rounded-full transition-all duration-300 ease-out"
+                    style="width: 0%"
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Results Summary (hidden initially) -->
+            <div id="mass-sms-results" class="hidden space-y-4">
+              <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+                <div class="flex items-center gap-3 mb-3">
+                  <i data-lucide="check-circle" class="w-6 h-6 text-green-600"></i>
+                  <h4 class="font-bold text-green-800">Розсилка завершена!</h4>
+                </div>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                  <div class="bg-white rounded-lg p-3">
+                    <p class="text-gray-600">Успішно:</p>
+                    <p class="text-2xl font-bold text-green-600" id="mass-sms-success-count">0</p>
+                  </div>
+                  <div class="bg-white rounded-lg p-3">
+                    <p class="text-gray-600">Помилок:</p>
+                    <p class="text-2xl font-bold text-red-600" id="mass-sms-error-count">0</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex gap-3">
+            <button 
+              id="mass-sms-cancel-btn"
+              onclick="closeMassSmsModal()"
+              class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-100 transition-all"
+            >
+              Скасувати
+            </button>
+            <button 
+              id="mass-sms-send-btn"
+              onclick="confirmMassSms()"
+              class="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-2"
+            >
+              <i data-lucide="send" class="w-5 h-5"></i>
+              <span>Розпочати розсилку</span>
             </button>
           </div>
 
@@ -18813,7 +19023,7 @@
     let currentClientForSms = null;
     
     /**
-     * Update SMS character counter
+     * Update SMS character counter and live preview
      */
     window.updateSmsCharCounter = function() {
       const textarea = document.getElementById('sms-message-text');
@@ -18821,11 +19031,29 @@
       const charLimit = document.getElementById('sms-char-limit');
       const partsCount = document.getElementById('sms-parts-count');
       const encodingBadge = document.getElementById('sms-encoding-badge');
+      const previewEl = document.getElementById('sms-preview-text');
       
       if (!textarea) return;
       
       const text = textarea.value;
       const length = text.length;
+      
+      // Update live preview with replaced placeholders
+      if (previewEl && currentClientForSms) {
+        if (text.trim() === '') {
+          previewEl.innerHTML = '<span class="text-gray-400 italic">Введіть повідомлення...</span>';
+        } else {
+          // Replace placeholders for preview
+          const clientName = currentClientForSms.fullName || currentClientForSms.name || 'Клієнт';
+          const cashbackBalance = Math.floor(currentClientForSms.cashbackBalance || currentClientForSms.currentBalance || 0);
+          
+          let previewText = text
+            .replace(/\[NAME\]/g, clientName)
+            .replace(/\[CASHBACK_BALANCE\]/g, `${cashbackBalance} грн`);
+          
+          previewEl.textContent = previewText;
+        }
+      }
       
       // Detect Cyrillic characters
       const hasCyrillic = /[а-яА-ЯіІїЇєЄґҐ]/.test(text);
@@ -18868,17 +19096,58 @@
     /**
      * Open SMS sending modal
      */
-    window.openSmsModal = function(client) {
+    window.openSmsModal = async function(client) {
       console.log('📱 [SMS] Opening modal for:', client.fullName);
+      
+      // Fetch latest client data from Firestore to ensure accuracy
+      try {
+        const userRef = doc(db, 'users', client.phone);
+        const userDoc = await getDoc(userRef);
+        
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          // Update client object with fresh data
+          client = {
+            ...client,
+            fullName: userData.fullName || userData.name || client.fullName,
+            name: userData.fullName || userData.name || client.fullName,
+            cashbackBalance: Number(userData.cashbackBalance || 0),
+            currentBalance: Number(userData.cashbackBalance || 0)
+          };
+          console.log('📱 [SMS] Fresh data loaded from Firestore:', client);
+        } else {
+          console.warn('⚠️ [SMS] User document not found, using cached data');
+          // Ensure cashbackBalance exists
+          client.cashbackBalance = client.cashbackBalance || client.currentBalance || 0;
+        }
+      } catch (error) {
+        console.error('❌ [SMS] Error fetching fresh data:', error);
+        // Use cached data as fallback
+        client.cashbackBalance = client.cashbackBalance || client.currentBalance || 0;
+      }
       
       currentClientForSms = client;
       
       // Populate modal
-      document.getElementById('sms-modal-title').textContent = `Надіслати SMS для ${client.fullName}`;
-      document.getElementById('sms-modal-client-name').textContent = client.fullName;
+      document.getElementById('sms-modal-title').textContent = `Надіслати SMS для ${client.fullName || client.name}`;
+      document.getElementById('sms-modal-client-name').textContent = client.fullName || client.name;
       document.getElementById('sms-modal-client-phone').textContent = client.phone;
       
-      // Clear textarea
+      // Display cashback balance
+      const balance = client.cashbackBalance || 0;
+      document.getElementById('sms-modal-client-balance').textContent = `${Math.floor(balance)} грн`;
+      
+      // Show/hide warning if balance is 0
+      const warningEl = document.getElementById('sms-balance-warning');
+      if (warningEl) {
+        if (balance === 0) {
+          warningEl.classList.remove('hidden');
+        } else {
+          warningEl.classList.add('hidden');
+        }
+      }
+      
+      // Clear textarea and preview
       document.getElementById('sms-message-text').value = '';
       updateSmsCharCounter();
       
@@ -18910,6 +19179,30 @@
         document.body.style.overflow = '';
       }
       currentClientForSms = null;
+    };
+    
+    /**
+     * Insert placeholder into SMS textarea at cursor position
+     */
+    window.insertSmsPlaceholder = function(placeholder) {
+      const textarea = document.getElementById('sms-message-text');
+      if (!textarea) return;
+      
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = textarea.value;
+      
+      // Insert placeholder at cursor position
+      const newText = text.substring(0, start) + placeholder + text.substring(end);
+      textarea.value = newText;
+      
+      // Set cursor after placeholder
+      const newCursorPos = start + placeholder.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+      textarea.focus();
+      
+      // Update character counter and preview
+      updateSmsCharCounter();
     };
     
     /**
@@ -19029,19 +19322,36 @@
         return;
       }
       
-      const messageText = document.getElementById('sms-message-text').value.trim();
+      const messageTemplate = document.getElementById('sms-message-text').value.trim();
       
       // Validate message
-      if (!messageText) {
+      if (!messageTemplate) {
         alert('Будь ласка, введіть текст повідомлення');
         document.getElementById('sms-message-text').focus();
         return;
       }
       
-      if (messageText.length > 670) {
+      if (messageTemplate.length > 670) {
         alert('Повідомлення занадто довге (максимум 670 символів)');
         return;
       }
+      
+      // Replace placeholders with actual client data
+      const clientName = currentClientForSms.fullName || currentClientForSms.name || 'Клієнт';
+      const cashbackBalance = Math.floor(currentClientForSms.cashbackBalance || currentClientForSms.currentBalance || 0);
+      
+      // Create final message with replacements
+      let finalMessage = messageTemplate
+        .replace(/\[NAME\]/g, clientName)
+        .replace(/\[CASHBACK_BALANCE\]/g, `${cashbackBalance} грн`);
+      
+      // 🔍 CRUCIAL: Log final message for verification
+      console.log('='.repeat(60));
+      console.log('📤 [SMS Send] Client:', clientName);
+      console.log('💰 [SMS Send] Balance:', cashbackBalance, 'грн');
+      console.log('📝 [SMS Send] Template:', messageTemplate);
+      console.log('✅ [SMS Send] Final SMS Text:', finalMessage);
+      console.log('='.repeat(60));
       
       // Disable send button
       const sendBtn = document.getElementById('confirm-send-sms');
@@ -19051,8 +19361,8 @@
       }
       
       try {
-        // Send SMS
-        const result = await sendRealSMS(currentClientForSms.phone, messageText);
+        // Send SMS with replaced message
+        const result = await sendRealSMS(currentClientForSms.phone, finalMessage);
         
         console.log('✅ [SMS] Sent successfully:', result);
         
@@ -19061,9 +19371,9 @@
           const logsRef = collection(db, 'logs', 'sms_history', 'messages');
           await addDoc(logsRef, {
             recipientPhone: currentClientForSms.phone,
-            recipientName: currentClientForSms.fullName,
-            messageText: messageText,
-            messageLength: messageText.length,
+            recipientName: currentClientForSms.fullName || currentClientForSms.name,
+            messageText: finalMessage,
+            messageLength: finalMessage.length,
             sentAt: serverTimestamp(),
             sentBy: 'admin',
             status: 'sent',
@@ -19093,6 +19403,282 @@
         }
       }
     };
+    
+    // ============================================
+    // 📢 MASS SMS CAMPAIGN MODULE
+    // ============================================
+    
+    /**
+     * Open mass SMS campaign modal
+     */
+    window.openMassSmsModal = function() {
+      console.log('📢 [Mass SMS] Opening mass campaign modal...');
+      
+      // Get total clients count
+      const clientsCount = allCashbackClients ? allCashbackClients.length : 0;
+      
+      // Update warning label
+      const countEl = document.getElementById('mass-sms-clients-count');
+      if (countEl) {
+        countEl.textContent = clientsCount;
+      }
+      
+      // Clear inputs
+      document.getElementById('mass-sms-message-text').value = '';
+      updateMassSmsCharCounter();
+      
+      // Hide progress and results
+      document.getElementById('mass-sms-progress-container').classList.add('hidden');
+      document.getElementById('mass-sms-results').classList.add('hidden');
+      
+      // Show send button
+      document.getElementById('mass-sms-send-btn').classList.remove('hidden');
+      document.getElementById('mass-sms-cancel-btn').textContent = 'Скасувати';
+      
+      // Show modal
+      const modal = document.getElementById('mass-sms-campaign-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      }
+      
+      // Reinit icons
+      lucide.createIcons();
+    };
+    
+    /**
+     * Close mass SMS campaign modal
+     */
+    window.closeMassSmsModal = function() {
+      const modal = document.getElementById('mass-sms-campaign-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+    };
+    
+    /**
+     * Insert placeholder into textarea
+     */
+    window.insertPlaceholder = function(placeholder) {
+      const textarea = document.getElementById('mass-sms-message-text');
+      if (!textarea) return;
+      
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = textarea.value;
+      
+      // Insert placeholder at cursor position
+      const newText = text.substring(0, start) + placeholder + text.substring(end);
+      textarea.value = newText;
+      
+      // Set cursor after placeholder
+      const newCursorPos = start + placeholder.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+      textarea.focus();
+      
+      // Update character counter
+      updateMassSmsCharCounter();
+    };
+    
+    /**
+     * Update mass SMS character counter
+     */
+    window.updateMassSmsCharCounter = function() {
+      const textarea = document.getElementById('mass-sms-message-text');
+      const charCount = document.getElementById('mass-sms-char-count');
+      const partsCount = document.getElementById('mass-sms-parts-count');
+      
+      if (!textarea) return;
+      
+      const text = textarea.value;
+      const length = text.length;
+      
+      // Detect Cyrillic characters
+      const hasCyrillic = /[а-яА-ЯіІїЇєЄґҐ]/.test(text);
+      
+      // SMS limits
+      const singleLimit = hasCyrillic ? 70 : 160;
+      const multipartLimit = hasCyrillic ? 67 : 153;
+      
+      // Calculate number of SMS parts
+      let parts = 1;
+      if (length > singleLimit) {
+        parts = Math.ceil(length / multipartLimit);
+      } else if (length === 0) {
+        parts = 0;
+      }
+      
+      // Update UI
+      if (charCount) charCount.textContent = length;
+      if (partsCount) partsCount.textContent = parts;
+    };
+    
+    /**
+     * Personalize message for a specific user
+     */
+    function personalizeMessage(template, user) {
+      let message = template;
+      
+      // Replace [NAME] with user's name
+      const userName = user.fullName || user.name || 'Клієнт';
+      message = message.replace(/\[NAME\]/g, userName);
+      
+      // Replace [CASHBACK_BALANCE] with user's balance
+      const balance = Math.floor(user.currentBalance || user.cashbackBalance || 0);
+      message = message.replace(/\[CASHBACK_BALANCE\]/g, balance);
+      
+      return message;
+    }
+    
+    /**
+     * Confirm and start mass SMS campaign
+     */
+    window.confirmMassSms = async function() {
+      const messageTemplate = document.getElementById('mass-sms-message-text').value.trim();
+      
+      // Validate message
+      if (!messageTemplate) {
+        alert('Будь ласка, введіть текст повідомлення');
+        document.getElementById('mass-sms-message-text').focus();
+        return;
+      }
+      
+      if (messageTemplate.length > 670) {
+        alert('Повідомлення занадто довге (максимум 670 символів)');
+        return;
+      }
+      
+      // Get all clients
+      if (!allCashbackClients || allCashbackClients.length === 0) {
+        alert('Немає клієнтів для розсилки');
+        return;
+      }
+      
+      // Final confirmation
+      const clientsCount = allCashbackClients.length;
+      const confirmMessage = `Ви впевнені, що хочете відправити SMS всім ${clientsCount} клієнтам?\n\nЦе може коштувати ${clientsCount} SMS кредитів.`;
+      if (!confirm(confirmMessage)) {
+        return;
+      }
+      
+      // Hide send button, show progress
+      document.getElementById('mass-sms-send-btn').classList.add('hidden');
+      document.getElementById('mass-sms-progress-container').classList.remove('hidden');
+      document.getElementById('mass-sms-results').classList.add('hidden');
+      
+      // Update cancel button text
+      document.getElementById('mass-sms-cancel-btn').textContent = 'Закрити';
+      
+      // Start sending
+      await sendMassSms(messageTemplate);
+    };
+    
+    /**
+     * Send mass SMS to all clients with progress tracking
+     */
+    async function sendMassSms(messageTemplate) {
+      console.log('📢 [Mass SMS] Starting mass campaign...');
+      console.log('📢 [Mass SMS] Template:', messageTemplate);
+      console.log('📢 [Mass SMS] Total clients:', allCashbackClients.length);
+      
+      const totalClients = allCashbackClients.length;
+      let successCount = 0;
+      let errorCount = 0;
+      
+      // Update progress UI
+      const statusText = document.getElementById('mass-sms-status-text');
+      const progressText = document.getElementById('mass-sms-progress-text');
+      const progressBar = document.getElementById('mass-sms-progress-bar');
+      
+      // Process each client with delay to avoid rate limiting
+      for (let i = 0; i < totalClients; i++) {
+        const client = allCashbackClients[i];
+        const currentIndex = i + 1;
+        
+        // Update progress
+        if (statusText) statusText.textContent = `Відправка повідомлень... (${client.fullName})`;
+        if (progressText) progressText.textContent = `Надіслано ${currentIndex} із ${totalClients}...`;
+        if (progressBar) progressBar.style.width = `${(currentIndex / totalClients) * 100}%`;
+        
+        try {
+          // Personalize message for this client
+          const personalizedMessage = personalizeMessage(messageTemplate, client);
+          
+          console.log(`📤 [Mass SMS] Sending to ${client.fullName} (${client.phone})`);
+          console.log(`📤 [Mass SMS] Message: ${personalizedMessage}`);
+          
+          // Send SMS
+          await sendRealSMS(client.phone, personalizedMessage);
+          
+          successCount++;
+          console.log(`✅ [Mass SMS] Success (${successCount}/${currentIndex})`);
+          
+          // Log to Firestore
+          try {
+            const logsRef = collection(db, 'logs', 'sms_history', 'messages');
+            await addDoc(logsRef, {
+              recipientPhone: client.phone,
+              recipientName: client.fullName,
+              messageText: personalizedMessage,
+              messageLength: personalizedMessage.length,
+              sentAt: serverTimestamp(),
+              sentBy: 'admin',
+              campaign: 'mass_cashback_campaign',
+              status: 'sent'
+            });
+          } catch (logError) {
+            console.warn('⚠️ [Mass SMS] Failed to log to Firestore:', logError);
+          }
+          
+          // Add delay to avoid rate limiting (100ms between requests)
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+        } catch (error) {
+          errorCount++;
+          console.error(`❌ [Mass SMS] Failed for ${client.fullName}:`, error.message);
+          
+          // Log error to Firestore
+          try {
+            const logsRef = collection(db, 'logs', 'sms_history', 'messages');
+            await addDoc(logsRef, {
+              recipientPhone: client.phone,
+              recipientName: client.fullName,
+              messageText: personalizeMessage(messageTemplate, client),
+              sentAt: serverTimestamp(),
+              sentBy: 'admin',
+              campaign: 'mass_cashback_campaign',
+              status: 'failed',
+              error: error.message
+            });
+          } catch (logError) {
+            console.warn('⚠️ [Mass SMS] Failed to log error to Firestore:', logError);
+          }
+          
+          // Continue with next client even if one fails
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+      
+      // Campaign complete
+      console.log('🎉 [Mass SMS] Campaign complete!');
+      console.log('📊 [Mass SMS] Success:', successCount);
+      console.log('📊 [Mass SMS] Errors:', errorCount);
+      
+      // Hide progress, show results
+      document.getElementById('mass-sms-progress-container').classList.add('hidden');
+      document.getElementById('mass-sms-results').classList.remove('hidden');
+      
+      // Update results
+      document.getElementById('mass-sms-success-count').textContent = successCount;
+      document.getElementById('mass-sms-error-count').textContent = errorCount;
+      
+      // Reinit icons
+      lucide.createIcons();
+      
+      // Show success toast
+      showToast(`📢 Розсилка завершена! Успішно: ${successCount}, Помилок: ${errorCount}`, 'success');
+    }
     
     /**
      * Process manual cashback credit
@@ -19335,6 +19921,13 @@
         console.log('✅ [Debit Cashback] Confirm button listener attached');
       }
       
+      // Mass SMS Campaign button
+      const massSmsBtn = document.getElementById('mass-sms-campaign-btn');
+      if (massSmsBtn) {
+        massSmsBtn.addEventListener('click', openMassSmsModal);
+        console.log('✅ [Mass SMS] Campaign button listener attached');
+      }
+      
       // Close credit modal on backdrop click
       const modal = document.getElementById('manual-cashback-modal');
       if (modal) {
@@ -19355,6 +19948,16 @@
         });
       }
       
+      // Close mass SMS modal on backdrop click
+      const massSmsModal = document.getElementById('mass-sms-campaign-modal');
+      if (massSmsModal) {
+        massSmsModal.addEventListener('click', (e) => {
+          if (e.target === massSmsModal) {
+            closeMassSmsModal();
+          }
+        });
+      }
+      
       // Close modals on Escape key
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
@@ -19365,6 +19968,10 @@
           const debitModal = document.getElementById('debit-cashback-modal');
           if (debitModal && !debitModal.classList.contains('hidden')) {
             closeDebitCashbackModal();
+          }
+          const massSmsModal = document.getElementById('mass-sms-campaign-modal');
+          if (massSmsModal && !massSmsModal.classList.contains('hidden')) {
+            closeMassSmsModal();
           }
         }
       });
