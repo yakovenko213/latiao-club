@@ -642,6 +642,69 @@
     }
     
     // ============================================
+    // GOOGLE ANALYTICS PURCHASE TRACKING
+    // ============================================
+    function trackGoogleAnalyticsPurchase(orderData, orderId) {
+      console.log('📊 === GOOGLE ANALYTICS PURCHASE TRACKING ===');
+      
+      // Check if this order has already been tracked to prevent duplicates
+      const trackingKey = `ga_purchase_tracked_${orderId}`;
+      const alreadyTracked = sessionStorage.getItem(trackingKey);
+      
+      if (alreadyTracked) {
+        console.log('⚠️ Purchase already tracked for this order. Skipping to prevent duplicate.');
+        console.log('📊 Order ID:', orderId);
+        return;
+      }
+      
+      // Validate gtag exists
+      if (typeof gtag !== 'function') {
+        console.error('❌ gtag is not defined. Cannot track purchase.');
+        return;
+      }
+      
+      // Extract order details for tracking
+      const orderSummary = orderData.summary || {};
+      const finalPrice = Number(orderSummary.total) || 0;
+      const items = orderData.items || [];
+      
+      console.log('📊 Tracking purchase with data:', {
+        transaction_id: orderId,
+        value: finalPrice,
+        currency: 'UAH',
+        items_count: items.length
+      });
+      
+      // Track purchase event with real order data
+      try {
+        gtag('event', 'purchase', {
+          transaction_id: orderId, // Real order ID from Firestore
+          value: finalPrice,        // Final price after discounts/cashback
+          currency: 'UAH',
+          items: items.map(item => ({
+            item_id: item.id || item.productId || 'unknown',
+            item_name: item.name || 'Unknown Product',
+            price: Number(item.price) || 0,
+            quantity: Number(item.quantity) || 1
+          }))
+        });
+        
+        // Mark as tracked in sessionStorage (survives page refresh)
+        sessionStorage.setItem(trackingKey, 'true');
+        
+        console.log('✅ Purchase event successfully sent to Google Analytics');
+        console.log('📊 Transaction ID:', orderId);
+        console.log('📊 Value:', finalPrice, 'UAH');
+        console.log('📊 Items:', items.length);
+        
+      } catch (error) {
+        console.error('❌ Error tracking purchase:', error);
+      }
+      
+      console.log('📊 === TRACKING COMPLETE ===');
+    }
+    
+    // ============================================
     // RETRY LOGIC FOR FIRESTORE FETCHING
     // ============================================
     async function fetchOrderWithRetry(orderId, maxRetries = 3, delayMs = 1000) {
@@ -1125,6 +1188,12 @@
       localStorage.removeItem('latiao_cart');
       
       console.log('✅ Thank you page rendered successfully!');
+      
+      // ============================================
+      // 📊 TRACK PURCHASE IN GOOGLE ANALYTICS
+      // ============================================
+      // Fire the purchase event AFTER order is successfully loaded and rendered
+      trackGoogleAnalyticsPurchase(orderData, orderId);
     }
 
     // ============================================
