@@ -749,6 +749,389 @@
       0%, 100% { opacity: 0.5; }
       50% { opacity: 0.7; }
     }
+
+    /* ============================================ */
+    /* CASHBACK CLIENTS - MODERN REDESIGN */
+    /* ============================================ */
+    
+    /* Desktop Table Styles */
+    #cashback-clients-content table {
+      font-family: 'Inter', sans-serif;
+    }
+    
+    #cashback-clients-content thead th {
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 1.25rem 1.5rem;
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border-bottom: 2px solid #fbbf24;
+    }
+    
+    #cashback-clients-tbody tr {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    #cashback-clients-tbody tr:hover {
+      background: linear-gradient(90deg, #fffbeb 0%, #fef3c7 100%) !important;
+      transform: scale(1.005);
+      box-shadow: 0 2px 8px rgba(251, 191, 36, 0.15);
+    }
+    
+    #cashback-clients-tbody td {
+      padding: 1.25rem 1.5rem;
+    }
+    
+    /* Status Badges with Icons */
+    .cashback-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.5rem 1rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+    
+    .cashback-badge-balance {
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+      color: #065f46;
+      border: 1px solid #6ee7b7;
+    }
+    
+    .cashback-badge-used {
+      background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+    
+    .cashback-badge-earned {
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      color: #1e40af;
+      border: 1px solid #93c5fd;
+    }
+    
+    /* Client Name Styling - No Avatar */
+    .client-name-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    
+    .client-name-primary {
+      font-weight: 700;
+      font-size: 1rem;
+      color: #111827;
+      line-height: 1.25;
+    }
+    
+    .client-phone-secondary {
+      font-size: 0.875rem;
+      color: #6b7280;
+      line-height: 1.25;
+    }
+    
+    /* Progress Bar for Cashback Usage */
+    .cashback-progress-wrapper {
+      width: 100%;
+      height: 6px;
+      background: #e5e7eb;
+      border-radius: 9999px;
+      overflow: hidden;
+      margin-top: 0.5rem;
+    }
+    
+    .cashback-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+      border-radius: 9999px;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+    }
+    
+    /* Modern Icon-Only Action Buttons (Desktop) */
+    .cashback-action-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.5rem;
+      height: 2.5rem;
+      padding: 0;
+      border-radius: 0.625rem;
+      font-weight: 600;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+      border: 2px solid transparent;
+    }
+    
+    .cashback-action-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .cashback-action-btn:active {
+      transform: translateY(-1px);
+    }
+    
+    .cashback-action-btn-credit {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+    
+    .cashback-action-btn-credit:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    }
+    
+    .cashback-action-btn-debit {
+      background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    }
+    
+    .cashback-action-btn-debit:hover {
+      background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+    }
+    
+    .cashback-action-btn-sms {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    }
+    
+    .cashback-action-btn-sms:hover {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    }
+    
+    /* Tooltip for Icon Buttons */
+    .btn-tooltip {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-8px);
+      background: #1f2937;
+      color: white;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 50;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    
+    .btn-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: #1f2937;
+    }
+    
+    .cashback-action-btn:hover .btn-tooltip {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-4px);
+    }
+    
+    /* Icon Animations */
+    @keyframes bounce-icon {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+    
+    .cashback-action-btn:hover svg {
+      animation: bounce-icon 0.6s ease-in-out;
+    }
+    
+    /* ============================================ */
+    /* MOBILE CARD VIEW - RESPONSIVE DESIGN */
+    /* ============================================ */
+    
+    .cashback-client-card {
+      display: none; /* Hidden by default on desktop */
+    }
+    
+    @media (max-width: 767px) {
+      /* Hide desktop table on mobile */
+      #cashback-clients-content .overflow-x-auto {
+        display: none !important;
+      }
+      
+      /* Show card view */
+      .cashback-client-card {
+        display: block !important;
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        transition: all 0.2s;
+      }
+      
+      .cashback-client-card:active {
+        transform: scale(0.98);
+      }
+      
+      /* Card Header */
+      .card-header {
+        margin-bottom: 1rem;
+        padding-bottom: 0.875rem;
+      }
+      
+      .card-client-info h3 {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: #111827;
+        line-height: 1.4;
+      }
+      
+      .card-client-info p {
+        font-size: 0.875rem;
+        color: #6b7280;
+        line-height: 1.4;
+      }
+      
+      /* Card Stats Grid */
+      .card-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+      }
+      
+      .card-stat-item {
+        background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+        padding: 0.875rem;
+        border-radius: 0.75rem;
+        border: 1px solid #e5e7eb;
+      }
+      
+      .card-stat-label {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.375rem;
+      }
+      
+      .card-stat-value {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: #111827;
+      }
+      
+      .card-stat-value.positive {
+        color: #059669;
+      }
+      
+      .card-stat-value.negative {
+        color: #dc2626;
+      }
+      
+      .card-stat-value.highlight {
+        color: #d97706;
+        font-size: 1.25rem;
+      }
+      
+      /* Card Actions - Touch-Friendly Mobile Buttons */
+      .card-actions {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.625rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 2px solid #f3f4f6;
+      }
+      
+      .card-action-btn {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.875rem 1rem;
+        min-height: 3.5rem;
+        border-radius: 0.875rem;
+        font-weight: 700;
+        font-size: 0.813rem;
+        transition: all 0.2s;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        letter-spacing: 0.025em;
+      }
+      
+      .card-action-btn:active {
+        transform: scale(0.96);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+      }
+      
+      .card-action-btn svg {
+        stroke-width: 2.5;
+        flex-shrink: 0;
+      }
+      
+      /* Progress Bar in Card */
+      .card-progress-section {
+        margin-top: 1rem;
+        padding: 0.875rem;
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border-radius: 0.75rem;
+        border: 1px solid #fbbf24;
+      }
+      
+      .card-progress-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #78350f;
+        margin-bottom: 0.5rem;
+      }
+      
+      /* Search Bar Mobile Optimization */
+      @media (max-width: 767px) {
+        #cashback-clients-search {
+          font-size: 1rem; /* Prevent zoom on iOS */
+        }
+        
+        #view-cashback-clients.view {
+          padding: 1rem !important;
+        }
+      }
+    }
+    
+    /* Tablet adjustments */
+    @media (min-width: 768px) and (max-width: 1024px) {
+      #cashback-clients-tbody td {
+        padding: 1rem 0.75rem;
+        font-size: 0.875rem;
+      }
+      
+      .cashback-action-btn {
+        width: 2.25rem;
+        height: 2.25rem;
+      }
+    }
+    
+    /* Desktop - Hide tooltip on small screens */
+    @media (max-width: 767px) {
+      .btn-tooltip {
+        display: none;
+      }
+    }
+    
+    /* Column Header Icons */
+    .column-header-icon {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
   </style>
 </head>
 
@@ -4646,53 +5029,54 @@
           
           <!-- Header -->
           <div class="mb-8">
-            <div class="flex items-center justify-between mb-4">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between mb-4 gap-4">
               <div>
-                <h2 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                <h2 class="text-2xl lg:text-3xl font-bold text-gray-900 flex items-center gap-3">
                   <span>👥</span>
                   Клієнти з кешбеком
                 </h2>
-                <p class="text-gray-600 mt-2">Керуйте балансами та нараховуйте бонуси вручну</p>
+                <p class="text-gray-600 mt-2 text-sm lg:text-base">Керуйте балансами та нараховуйте бонуси вручну</p>
               </div>
-              <div class="flex items-center gap-3">
+              <div class="flex items-center gap-2 lg:gap-3 flex-wrap">
                 <button 
                   id="mass-sms-campaign-btn"
-                  class="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 transition-all duration-200 hover:scale-105 active:scale-95"
+                  class="flex items-center gap-2 px-3 lg:px-5 py-2 lg:py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 transition-all duration-200 hover:scale-105 active:scale-95"
                   title="Відправити SMS всім клієнтам"
                 >
-                  <i data-lucide="send" class="w-5 h-5"></i>
-                  <span>🚀 Масова розсилка всім</span>
+                  <i data-lucide="send" class="w-4 h-4 lg:w-5 lg:h-5"></i>
+                  <span class="hidden lg:inline">🚀 Масова розсилка всім</span>
+                  <span class="lg:hidden text-xs">SMS</span>
                 </button>
                 <button 
                   id="backfill-cashback-orders"
-                  class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 text-white font-semibold rounded-xl shadow-lg shadow-purple-200 transition-all duration-200 hover:scale-105 active:scale-95"
+                  class="flex items-center gap-1.5 lg:gap-2 px-2.5 lg:px-4 py-2 lg:py-2.5 bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 text-white font-semibold rounded-xl shadow-lg shadow-purple-200 transition-all duration-200 hover:scale-105 active:scale-95"
                   title="Нарахувати кешбек для замовлень без нарахування"
                 >
                   <i data-lucide="coins" class="w-4 h-4"></i>
-                  <span>Нарахувати кешбек</span>
+                  <span class="hidden lg:inline">Нарахувати кешбек</span>
                 </button>
                 <button 
                   id="sync-all-cashback"
-                  class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-lg shadow-green-200 transition-all duration-200 hover:scale-105 active:scale-95"
+                  class="flex items-center gap-1.5 lg:gap-2 px-2.5 lg:px-4 py-2 lg:py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-lg shadow-green-200 transition-all duration-200 hover:scale-105 active:scale-95"
                   title="Перерахувати статистику кешбеку з усіх замовлень"
                 >
                   <i data-lucide="database" class="w-4 h-4"></i>
-                  <span>Синхронізація</span>
+                  <span class="hidden lg:inline">Синхронізація</span>
                 </button>
                 <button 
                   id="audit-cashback-limit"
-                  class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold rounded-xl shadow-lg shadow-orange-200 transition-all duration-200 hover:scale-105 active:scale-95"
+                  class="flex items-center gap-1.5 lg:gap-2 px-2.5 lg:px-4 py-2 lg:py-2.5 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold rounded-xl shadow-lg shadow-orange-200 transition-all duration-200 hover:scale-105 active:scale-95"
                   title="Перерахувати кешбек за новими правилами з урахуванням ліміту"
                 >
                   <i data-lucide="calculator" class="w-4 h-4"></i>
-                  <span>Перерахувати (з лімітом)</span>
+                  <span class="hidden lg:inline">Перерахувати (з лімітом)</span>
                 </button>
                 <button 
                   id="refresh-cashback-clients"
-                  class="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl shadow-lg shadow-amber-200 transition-all duration-200 hover:scale-105 active:scale-95"
+                  class="flex items-center gap-1.5 lg:gap-2 px-2.5 lg:px-4 py-2 lg:py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl shadow-lg shadow-amber-200 transition-all duration-200 hover:scale-105 active:scale-95"
                 >
                   <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                  <span>Оновити</span>
+                  <span class="hidden lg:inline">Оновити</span>
                 </button>
               </div>
             </div>
@@ -4703,7 +5087,7 @@
                 type="text" 
                 id="cashback-clients-search" 
                 placeholder="Пошук за іменем або телефоном..." 
-                class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                class="w-full px-4 py-3 pl-12 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all text-base"
               >
               <i data-lucide="search" class="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
             </div>
@@ -4730,19 +5114,53 @@
               <table class="w-full">
                 <thead class="bg-gradient-to-r from-amber-50 to-yellow-50 border-b border-yellow-100">
                   <tr>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">ПІБ клієнта</th>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Телефон</th>
-                    <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">К-сть замовлень</th>
-                    <th class="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Нараховано</th>
-                    <th class="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Використано</th>
-                    <th class="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Баланс</th>
-                    <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Дії</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      <span class="column-header-icon">
+                        <i data-lucide="user" class="w-4 h-4"></i>
+                        Клієнт
+                      </span>
+                    </th>
+                    <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      <span class="column-header-icon">
+                        <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                        Замовлення
+                      </span>
+                    </th>
+                    <th class="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      <span class="column-header-icon">
+                        <i data-lucide="trending-up" class="w-4 h-4"></i>
+                        Нараховано
+                      </span>
+                    </th>
+                    <th class="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      <span class="column-header-icon">
+                        <i data-lucide="trending-down" class="w-4 h-4"></i>
+                        Використано
+                      </span>
+                    </th>
+                    <th class="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      <span class="column-header-icon">
+                        <i data-lucide="coins" class="w-4 h-4"></i>
+                        Баланс
+                      </span>
+                    </th>
+                    <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      <span class="column-header-icon">
+                        <i data-lucide="settings" class="w-4 h-4"></i>
+                        Дії
+                      </span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody id="cashback-clients-tbody" class="divide-y divide-gray-200">
                   <!-- Rows will be dynamically inserted here -->
                 </tbody>
               </table>
+            </div>
+            
+            <!-- Mobile Card Container (hidden on desktop) -->
+            <div id="cashback-clients-cards" class="hidden">
+              <!-- Cards will be dynamically inserted here for mobile -->
             </div>
           </div>
 
@@ -18837,18 +19255,25 @@
     };
     
     /**
-     * Display clients in the table
+     * Display clients in both table and card views
+     * REDESIGNED: Modern UI with mobile card view and progress bars
      */
     function displayCashbackClients(clients) {
       console.log('📋 [Display Clients] Rendering', clients.length, 'clients');
       
       const tbody = document.getElementById('cashback-clients-tbody');
+      const cardsContainer = document.getElementById('cashback-clients-cards');
+      
       if (!tbody) {
         console.error('❌ [Display Clients] tbody element not found!');
         return;
       }
       
       tbody.innerHTML = '';
+      if (cardsContainer) {
+        cardsContainer.innerHTML = '';
+        cardsContainer.classList.remove('hidden');
+      }
       
       if (clients.length === 0) {
         console.log('⚠️ [Display Clients] No clients to display');
@@ -18856,67 +19281,85 @@
       }
       
       clients.forEach((client, index) => {
+        // Calculate usage percentage for progress bar
+        const usagePercentage = client.totalAwarded > 0 
+          ? Math.min((client.totalSpent / client.totalAwarded) * 100, 100)
+          : 0;
+        
+        const balanceColor = client.currentBalance > 0 ? 'text-green-600' : 'text-gray-600';
+        const clientDataEncoded = encodeURIComponent(JSON.stringify(client));
+        
+        // ============================================
+        // DESKTOP TABLE ROW with Enhanced Styling
+        // ============================================
         const row = document.createElement('tr');
         row.className = 'hover:bg-amber-50 transition-colors';
         
-        const balanceColor = client.currentBalance > 0 ? 'text-green-600' : 'text-gray-600';
-        
-        // Escape special characters in JSON for onclick
-        const clientJson = JSON.stringify(client).replace(/'/g, "&apos;").replace(/"/g, '&quot;');
-        
         row.innerHTML = `
           <td class="px-6 py-4">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center text-white font-bold shadow-lg">
-                ${client.fullName.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <p class="font-semibold text-gray-900">${client.fullName}</p>
-              </div>
+            <div class="client-name-cell">
+              <span class="client-name-primary">${client.fullName}</span>
+              <span class="client-phone-secondary">${client.phone}</span>
             </div>
           </td>
-          <td class="px-6 py-4">
-            <p class="text-sm text-gray-600">${client.phone}</p>
-          </td>
           <td class="px-6 py-4 text-center">
-            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
-              ${client.ordersCount} замовл.
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-blue-100 text-blue-700">
+              <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i>
+              ${client.ordersCount}
             </span>
           </td>
           <td class="px-6 py-4 text-right">
-            <p class="font-semibold text-green-600">+${client.totalAwarded.toFixed(0)} грн</p>
+            <span class="cashback-badge cashback-badge-earned">
+              <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+              +${client.totalAwarded.toFixed(0)} грн
+            </span>
           </td>
           <td class="px-6 py-4 text-right">
-            <p class="font-semibold text-red-600">-${client.totalSpent.toFixed(0)} грн</p>
+            <div class="flex flex-col items-end">
+              <span class="cashback-badge cashback-badge-used">
+                <i data-lucide="trending-down" class="w-3.5 h-3.5"></i>
+                -${client.totalSpent.toFixed(0)} грн
+              </span>
+              ${client.totalAwarded > 0 ? `
+                <div class="cashback-progress-wrapper mt-2" style="width: 80px;">
+                  <div class="cashback-progress-bar" style="width: ${usagePercentage}%;"></div>
+                </div>
+                <span class="text-xs text-gray-500 mt-1">${usagePercentage.toFixed(0)}% використано</span>
+              ` : ''}
+            </div>
           </td>
           <td class="px-6 py-4 text-right">
-            <p class="text-lg font-bold ${balanceColor}">${client.currentBalance.toFixed(0)} грн</p>
+            <span class="cashback-badge cashback-badge-balance">
+              <i data-lucide="coins" class="w-4 h-4"></i>
+              ${client.currentBalance.toFixed(0)} грн
+            </span>
           </td>
           <td class="px-6 py-4 text-center">
-            <div class="flex items-center justify-center gap-2">
+            <div class="flex items-center justify-center gap-3">
               <button 
-                onclick="openManualCashbackModal(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(client))}')))"
-                class="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transition-all hover:scale-105 active:scale-95"
+                onclick="openManualCashbackModal(JSON.parse(decodeURIComponent('${clientDataEncoded}')))"
+                class="cashback-action-btn cashback-action-btn-credit text-white"
                 title="Нарахувати кешбек"
               >
-                <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                <span>Нарахувати</span>
+                <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                <span class="btn-tooltip">Нарахувати</span>
               </button>
               <button 
-                onclick="openDebitCashbackModal(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(client))}')))"
-                class="inline-flex items-center gap-2 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transition-all hover:scale-105 active:scale-95"
+                onclick="openDebitCashbackModal(JSON.parse(decodeURIComponent('${clientDataEncoded}')))"
+                class="cashback-action-btn cashback-action-btn-debit text-white"
                 title="Списати кешбек"
               >
-                <i data-lucide="minus-circle" class="w-4 h-4"></i>
-                <span>Списати</span>
+                <i data-lucide="minus-circle" class="w-5 h-5"></i>
+                <span class="btn-tooltip">Списати</span>
               </button>
+              <div class="h-6 w-px bg-gray-300 mx-1"></div>
               <button 
-                onclick="openSmsModal(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(client))}')))"
-                class="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transition-all hover:scale-105 active:scale-95"
+                onclick="openSmsModal(JSON.parse(decodeURIComponent('${clientDataEncoded}')))"
+                class="cashback-action-btn cashback-action-btn-sms text-white"
                 title="Надіслати SMS"
               >
-                <i data-lucide="message-square" class="w-4 h-4"></i>
-                <span>SMS</span>
+                <i data-lucide="message-square" class="w-5 h-5"></i>
+                <span class="btn-tooltip">Надіслати SMS</span>
               </button>
             </div>
           </td>
@@ -18924,14 +19367,108 @@
         
         tbody.appendChild(row);
         
+        // ============================================
+        // MOBILE CARD VIEW (shown below 768px)
+        // ============================================
+        if (cardsContainer) {
+          const card = document.createElement('div');
+          card.className = 'cashback-client-card';
+          
+          card.innerHTML = `
+            <!-- Card Header -->
+            <div class="card-header border-b border-gray-200 pb-3 mb-3">
+              <div class="card-client-info">
+                <h3 class="text-lg font-bold text-gray-900 mb-1">${client.fullName}</h3>
+                <p class="text-sm text-gray-500">${client.phone}</p>
+              </div>
+            </div>
+            
+            <!-- Stats Grid -->
+            <div class="card-stats-grid">
+              <div class="card-stat-item">
+                <div class="card-stat-label">
+                  <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i>
+                  <span>Замовлення</span>
+                </div>
+                <div class="card-stat-value">${client.ordersCount}</div>
+              </div>
+              
+              <div class="card-stat-item">
+                <div class="card-stat-label">
+                  <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+                  <span>Нараховано</span>
+                </div>
+                <div class="card-stat-value positive">+${client.totalAwarded.toFixed(0)} грн</div>
+              </div>
+              
+              <div class="card-stat-item">
+                <div class="card-stat-label">
+                  <i data-lucide="trending-down" class="w-3.5 h-3.5"></i>
+                  <span>Використано</span>
+                </div>
+                <div class="card-stat-value negative">-${client.totalSpent.toFixed(0)} грн</div>
+              </div>
+              
+              <div class="card-stat-item">
+                <div class="card-stat-label">
+                  <i data-lucide="coins" class="w-3.5 h-3.5"></i>
+                  <span>Баланс</span>
+                </div>
+                <div class="card-stat-value highlight">${client.currentBalance.toFixed(0)} грн</div>
+              </div>
+            </div>
+            
+            <!-- Progress Bar Section -->
+            ${client.totalAwarded > 0 ? `
+              <div class="card-progress-section">
+                <div class="card-progress-label">
+                  <span>Використання кешбеку</span>
+                  <span>${usagePercentage.toFixed(0)}%</span>
+                </div>
+                <div class="cashback-progress-wrapper">
+                  <div class="cashback-progress-bar" style="width: ${usagePercentage}%;"></div>
+                </div>
+              </div>
+            ` : ''}
+            
+            <!-- Actions -->
+            <div class="card-actions">
+              <button 
+                onclick="openManualCashbackModal(JSON.parse(decodeURIComponent('${clientDataEncoded}')))"
+                class="card-action-btn bg-gradient-to-br from-emerald-500 to-green-600 text-white"
+              >
+                <i data-lucide="plus-circle" class="w-6 h-6"></i>
+                <span>➕ Додати</span>
+              </button>
+              <button 
+                onclick="openDebitCashbackModal(JSON.parse(decodeURIComponent('${clientDataEncoded}')))"
+                class="card-action-btn bg-gradient-to-br from-orange-500 to-red-500 text-white"
+              >
+                <i data-lucide="minus-circle" class="w-6 h-6"></i>
+                <span>➖ Списати</span>
+              </button>
+              <button 
+                onclick="openSmsModal(JSON.parse(decodeURIComponent('${clientDataEncoded}')))"
+                class="card-action-btn bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
+                style="grid-column: 1 / -1;"
+              >
+                <i data-lucide="send" class="w-6 h-6"></i>
+                <span>📩 Надіслати SMS</span>
+              </button>
+            </div>
+          `;
+          
+          cardsContainer.appendChild(card);
+        }
+        
         if (index === 0) {
-          console.log('📋 [Display Clients] First row rendered:', client.fullName);
+          console.log('📋 [Display Clients] First row/card rendered:', client.fullName);
         }
       });
       
-      console.log('✅ [Display Clients] All', clients.length, 'rows rendered successfully');
+      console.log('✅ [Display Clients] All', clients.length, 'rows and cards rendered successfully');
       
-      // Reinit icons for the new rows
+      // Reinit icons for the new elements
       lucide.createIcons();
     }
     
