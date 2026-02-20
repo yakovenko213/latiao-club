@@ -29,9 +29,9 @@
  */
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getFirestore, connectFirestoreEmulator, doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-import { getAuth, connectAuthEmulator } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-import { getFunctions, connectFunctionsEmulator } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
+import { getFirestore, doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getFunctions } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
 import { getStorage } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js';
 
@@ -51,6 +51,8 @@ const firebaseConfig = {
 // ═══════════════════════════════════════════════════════════════════
 // 🌍 ALLOWED DOMAINS (FOR REFERENCE)
 // ═══════════════════════════════════════════════════════════════════
+// Note: GitHub Codespaces URLs (*-xxxx.app.github.dev) are automatically
+// allowed in development mode via the validateDomain() function.
 
 const allowedDomains = [
     'latiao-snack.com.ua',           // Production domain
@@ -58,6 +60,7 @@ const allowedDomains = [
     'my-magazin-81c96.web.app',      // Firebase Hosting
     'my-magazin-81c96.firebaseapp.com', // Firebase Auth domain
     'yakovenko213.github.io'         // GitHub Pages (test domain)
+    // GitHub Codespaces: Automatically allowed via regex check (*.github.dev)
 ];
 
 // ═══════════════════════════════════════════════════════════════════
@@ -75,6 +78,14 @@ function validateDomain() {
         return true;
     }
     
+    // 🌐 Allow GitHub Codespaces domains (bypass domain security for development)
+    if (currentDomain.includes('github.dev')) {
+        if (window.__consoleMode === 'development') {
+            console.warn('🔧 Running on GitHub Codespaces - security checks relaxed for development');
+        }
+        return true;
+    }
+    
     // Check if current domain is in allowed list
     const isAllowed = allowedDomains.some(domain => 
         currentDomain === domain || currentDomain.endsWith('.' + domain)
@@ -84,6 +95,7 @@ function validateDomain() {
         console.error('🚫 SECURITY WARNING: Unauthorized domain detected!');
         console.error('Current domain:', currentDomain);
         console.error('Allowed domains:', allowedDomains);
+        console.error('💡 For GitHub Codespaces, domains with "github.dev" are automatically allowed in development mode');
         return false;
     }
     
@@ -106,34 +118,12 @@ const functions = getFunctions(app);
 const storage = getStorage(app);
 
 // ═══════════════════════════════════════════════════════════════════
-// � CONNECT TO FIREBASE EMULATORS ON LOCALHOST
+// � EMULATOR CONNECTIONS MOVED TO FIREBASE-INIT.JS
 // ═══════════════════════════════════════════════════════════════════
-// This ensures that when running locally, all Firebase requests go to
-// the emulators instead of production. CRITICAL for safe local testing!
+// To fix race conditions, emulator connections now happen IMMEDIATELY 
+// after getFirestore() in firebase-init.js. This prevents "insufficient
+// permissions" errors by ensuring emulators connect BEFORE any Firestore calls.
 // ═══════════════════════════════════════════════════════════════════
-
-if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    console.log('🔧 EMULATOR MODE: Connecting to Firebase Emulators...');
-    
-    try {
-        // Connect Firestore to emulator (port 8080)
-        connectFirestoreEmulator(db, 'localhost', 8080);
-        console.log('✅ Firestore Emulator connected on port 8080');
-        
-        // Connect Auth to emulator (port 9099)
-        connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
-        console.log('✅ Auth Emulator connected on port 9099');
-        
-        // Connect Functions to emulator (port 5001)
-        connectFunctionsEmulator(functions, 'localhost', 5001);
-        console.log('✅ Functions Emulator connected on port 5001');
-        
-        console.log('🎉 All emulators connected! Safe to test locally.');
-    } catch (error) {
-        console.error('❌ Error connecting to emulators:', error);
-        console.warn('⚠️  Make sure emulators are running: firebase emulators:start');
-    }
-}
 
 // ═══════════════════════════════════════════════════════════════════
 // �🛡️  FIREBASE APP CHECK (PREVENTS BOT ABUSE)

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Firebase Race Condition Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .test-container {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .test-step {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+        }
+        .status-icon {
+            font-size: 24px;
+            margin-right: 15px;
+            min-width: 30px;
+        }
+        .success { color: #4CAF50; }
+        .warning { color: #FF9800; }
+        .error { color: #F44336; }
+        .info { color: #2196F3; }
+        .pending { color: #9E9E9E; }
+        
+        .logs {
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Firebase Race Condition Fix Test</h1>
+        <p>Цей тест перевіряє чи усунута race condition між emulator connection та Firestore calls.</p>
+        
+        <div class="test-step">
+            <span id="step1-icon" class="status-icon pending">⏳</span>
+            <span><strong>Step 1:</strong> Firebase script loading</span>
+        </div>
+        
+        <div class="test-step">
+            <span id="step2-icon" class="status-icon pending">⏳</span>
+            <span><strong>Step 2:</strong> Emulator connection (early)</span>
+        </div>
+        
+        <div class="test-step">
+            <span id="step3-icon" class="status-icon pending">⏳</span>
+            <span><strong>Step 3:</strong> window.firestoreInitialized flag</span>
+        </div>
+        
+        <div class="test-step">
+            <span id="step4-icon" class="status-icon pending">⏳</span>
+            <span><strong>Step 4:</strong> firebase-ready event</span>
+        </div>
+        
+        <div class="test-step">
+            <span id="step5-icon" class="status-icon pending">⏳</span>
+            <span><strong>Step 5:</strong> Firestore operation test</span>
+        </div>
+        
+        <button id="run-test" onclick="runEmulatorTest()">🚀 Run Test</button>
+        <button onclick="clearLogs()">🗑️ Clear Logs</button>
+        
+        <div id="test-logs" class="logs"></div>
+    </div>
+
+    <!-- Load Firebase Init Script -->
+    <script type="module" src="./js/firebase-init.js"></script>
+
+    <script>
+        let testLogs = [];
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            testLogs.push(logEntry);
+            
+            const logsDiv = document.getElementById('test-logs');
+            logsDiv.innerHTML = testLogs.join('\n');
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+            
+            console.log(logEntry);
+        }
+        
+        function updateStep(stepNum, status, icon) {
+            const statusIcon = document.getElementById(`step${stepNum}-icon`);
+            statusIcon.textContent = icon;
+            statusIcon.className = `status-icon ${status}`;
+        }
+        
+        function clearLogs() {
+            testLogs = [];
+            document.getElementById('test-logs').innerHTML = '';
+        }
+        
+        async function runEmulatorTest() {
+            const runButton = document.getElementById('run-test');
+            runButton.disabled = true;
+            runButton.textContent = '🧪 Testing...';
+            
+            try {
+                addLog('🧪 Starting Firebase race condition test...');
+                
+                // Step 1: Check if Firebase script is loading
+                addLog('📋 Step 1: Checking Firebase script loading...');
+                if (typeof window.firestoreInitialized !== 'undefined') {
+                    updateStep(1, 'success', '✅');
+                    addLog('✅ Firebase script loaded successfully');
+                } else {
+                    updateStep(1, 'error', '❌');
+                    addLog('❌ Firebase script not loaded', 'error');
+                    return;
+                }
+                
+                // Step 2: Check emulator detection
+                addLog('🔍 Step 2: Checking emulator environment detection...');
+                const hostname = window.location.hostname;
+                const isCodespace = hostname.includes('github.dev');
+                const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+                
+                if (isCodespace || isLocalhost) {
+                    updateStep(2, 'success', '✅');
+                    const envType = isCodespace ? 'Codespaces' : 'Localhost';
+                    addLog(`✅ Emulator environment detected: ${envType}`);
+                } else {
+                    updateStep(2, 'warning', '⚠️');
+                    addLog(`⚠️ Not in emulator environment: ${hostname}`, 'warning');
+                }
+                
+                // Step 3: Check global flag
+                addLog('🎯 Step 3: Waiting for firestoreInitialized flag...');
+                await waitForCondition(() => window.firestoreInitialized === true, 10000);
+                updateStep(3, 'success', '✅');
+                addLog('✅ window.firestoreInitialized = true');
+                
+                // Step 4: Wait for firebase-ready event
+                addLog('📡 Step 4: Waiting for firebase-ready event...');
+                const firebaseReadyPromise = new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        reject(new Error('firebase-ready event timeout'));
+                    }, 15000);
+                    
+                    window.addEventListener('firebase-ready', (event) => {
+                        clearTimeout(timeout);
+                        resolve(event.detail);
+                    }, { once: true });
+                });
+                
+                const firebaseDetail = await firebaseReadyPromise;
+                updateStep(4, 'success', '✅');
+                addLog(`✅ firebase-ready event received: ${JSON.stringify(firebaseDetail)}`);
+                
+                // Step 5: Test Firestore operation
+                addLog('🧪 Step 5: Testing Firestore operation...');
+                if (!window.firebaseInit || !window.firebaseInit.db) {
+                    throw new Error('window.firebaseInit.db not available');
+                }
+                
+                const { db, collection, doc, setDoc, getDoc } = window.firebaseInit;
+                
+                // Create test document
+                const testDocRef = doc(db, 'raceConditionTest', 'testDoc');
+                await setDoc(testDocRef, { 
+                    timestamp: Date.now(),
+                    test: 'race-condition-fix',
+                    success: true
+                });
+                
+                // Read test document
+                const docSnap = await getDoc(testDocRef);
+                if (docSnap.exists()) {
+                    updateStep(5, 'success', '✅');
+                    addLog('✅ Firestore operation successful - no "insufficient permissions" error!');
+                    addLog(`📄 Test document data: ${JSON.stringify(docSnap.data())}`);
+                } else {
+                    throw new Error('Test document not found');
+                }
+                
+                addLog('🎉 All tests passed! Race condition fixed successfully.');
+                
+            } catch (error) {
+                addLog(`❌ Test failed: ${error.message}`, 'error');
+                updateStep(5, 'error', '❌');
+            } finally {
+                runButton.disabled = false;
+                runButton.textContent = '🚀 Run Test';
+            }
+        }
+        
+        function waitForCondition(conditionFn, timeoutMs) {
+            return new Promise((resolve, reject) => {
+                const startTime = Date.now();
+                
+                function check() {
+                    if (conditionFn()) {
+                        resolve(true);
+                    } else if (Date.now() - startTime >= timeoutMs) {
+                        reject(new Error(`Condition timeout after ${timeoutMs}ms`));
+                    } else {
+                        setTimeout(check, 100);
+                    }
+                }
+                
+                check();
+            });
+        }
+        
+        // Auto-run test after page load
+        document.addEventListener('DOMContentLoaded', () => {
+            addLog('🔧 Page loaded, waiting 2 seconds before starting test...');
+            setTimeout(runEmulatorTest, 2000);
+        });
+    </script>
+</body>
+</html>

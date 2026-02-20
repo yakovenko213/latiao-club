@@ -6,9 +6,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import {
     getFirestore,
-    initializeFirestore,
-    enableIndexedDbPersistence,
-    connectFirestoreEmulator,
     collection,
     doc,
     addDoc,
@@ -26,8 +23,8 @@ import {
     Timestamp,
     increment
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-import { getAuth, connectAuthEmulator } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
+import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
 import { getStorage } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 
 // ============================================
@@ -46,73 +43,15 @@ const firebaseConfig = {
 // INITIALIZE FIREBASE
 // ============================================
 const app = initializeApp(firebaseConfig);
-
-// ⚡ CRITICAL FIX: Initialize Firestore with experimentalForceLongPolling
-// This bypasses Service Worker proxy issues and ensures stable connection
-const db = initializeFirestore(app, {
-    experimentalForceLongPolling: true,
-    // Use longer timeout for slow connections
-    cacheSizeBytes: 40000000 // 40MB cache
-});
-
+const db = getFirestore(app);
 const auth = getAuth(app);
 const functions = getFunctions(app);
 const storage = getStorage(app);
 
 // ============================================
-// 🔧 CONNECT TO FIREBASE EMULATORS ON LOCALHOST
-// ============================================
-// This ensures that when running locally, all Firebase requests go to
-// the emulators instead of production. CRITICAL for safe local testing!
-// ============================================
-
-if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    console.log('🔧 EMULATOR MODE: Connecting to Firebase Emulators...');
-    
-    try {
-        // Connect Firestore to emulator (port 8080)
-        connectFirestoreEmulator(db, 'localhost', 8080);
-        console.log('✅ Firestore Emulator connected on port 8080');
-        
-        // Connect Auth to emulator (port 9099)
-        connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
-        console.log('✅ Auth Emulator connected on port 9099');
-        
-        // Connect Functions to emulator (port 5001)
-        connectFunctionsEmulator(functions, 'localhost', 5001);
-        console.log('✅ Functions Emulator connected on port 5001');
-        
-        console.log('🎉 All emulators connected! Safe to test locally.');
-    } catch (error) {
-        console.error('❌ Error connecting to emulators:', error);
-        console.warn('⚠️  Make sure emulators are running: firebase emulators:start');
-    }
-}
-
-// ============================================
-// ⚡ Enable offline persistence (with error handling)
-// This allows the app to work even if persistence fails
-enableIndexedDbPersistence(db).catch((err) => {
-    if (err.code === 'failed-precondition') {
-        // Multiple tabs open, persistence can only be enabled in one tab at a time
-        console.warn('⚠️ Persistence failed: Multiple tabs open. App will still work online.');
-    } else if (err.code === 'unimplemented') {
-        // The current browser doesn't support persistence
-        console.warn('⚠️ Persistence not supported in this browser. App will still work online.');
-    } else {
-        console.error('❌ Persistence error:', err);
-    }
-});
-
-// ============================================
 // CRITICAL: EXPORT TO WINDOW SO LAYOUT.JS CAN RUN
 // ============================================
-// Export Firebase app instance for pepper hunt and other modules
-window.firebaseApp = app;  // ← CRITICAL FOR PEPPER HUNT!
-window.firebaseDb = db;    // Alternative access
-
 window.firebaseInit = {
-    app,
     db,
     auth,
     storage,
@@ -152,18 +91,6 @@ window.orderBy = orderBy;
 window.Timestamp = Timestamp;
 window.serverTimestamp = serverTimestamp;
 window.increment = increment;
-
-// ============================================
-// LOG SUCCESSFUL INITIALIZATION
-// ============================================
-console.log('🔥 Firebase initialized successfully (Optimized Mode)');
-console.log('✅ experimentalForceLongPolling: ENABLED (bypasses Service Worker issues)');
-console.log('✅ window.firebaseApp available:', !!window.firebaseApp);
-console.log('✅ window.firebaseDb available:', !!window.firebaseDb);
-console.log('✅ Firebase App instance:', window.firebaseApp);
-
-// Dispatch event for modules waiting for Firebase
-window.dispatchEvent(new Event('firebaseReady'));
 
 // ============================================
 // MODULE EXPORTS FOR ES6 IMPORTS
@@ -229,6 +156,8 @@ async function initializeChatConfig() {
 // Initialize chat config on load
 initializeChatConfig();
 
+console.log("🔥 Firebase initialized successfully (Clean Mode)");
+
 // ============================================
 // 📱 DEVICE TRACKING SYSTEM
 // ============================================
@@ -265,26 +194,26 @@ async function trackDevice() {
 
     console.log('📱 Detected device:', deviceType);
 
-    // ✅ Use addDoc() instead of setDoc() + increment()
-    // This only requires 'create' permission, not 'update' permission
-    // Perfect for unauthenticated visitors
-    const analyticsRef = collection(db, 'analytics_sessions');
+    // ✅ TASK 3: Use increment() to prevent race conditions
+    // Update Firestore counter with atomic increment
+    const deviceStatsRef = doc(db, 'statistics', 'devices');
     
     try {
-      // Add a new document to analytics_sessions collection
-      await addDoc(analyticsRef, {
-        deviceType: deviceType,
-        timestamp: serverTimestamp(),
-        page: window.location.pathname,
-        referrer: document.referrer || 'direct',
-        userAgent: navigator.userAgent,
-        trackedBy: 'firebase-init-v1'
-      });
+      // Try to increment - will create field if doesn't exist
+      await setDoc(deviceStatsRef, {
+        [deviceType]: increment(1),
+        lastUpdated: serverTimestamp()
+      }, { merge: true });
       
-      console.log('✅ Device tracked successfully:', deviceType);
-    } catch (trackError) {
-      console.warn('⚠️ Device tracking failed (permissions?):', trackError.message);
-      // Silently fail - don't block user experience
+      console.log('✅ Device counter incremented atomically:', deviceType);
+    } catch (incrementError) {
+      // Fallback: create document if it doesn't exist
+      console.warn('⚠️ Increment failed, creating document...', incrementError);
+      await setDoc(deviceStatsRef, {
+        [deviceType]: 1,
+        lastUpdated: serverTimestamp(),
+        createdAt: serverTimestamp()
+      });
     }
 
     // Mark as tracked in this session

@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Firebase Codespaces Emulator Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .status-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+        }
+        .status-icon {
+            font-size: 24px;
+            margin-right: 10px;
+            min-width: 30px;
+        }
+        .success { color: #4CAF50; }
+        .warning { color: #FF9800; }
+        .error { color: #F44336; }
+        .info { color: #2196F3; }
+        
+        .code-block {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            border-left: 4px solid #4CAF50;
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        .logs {
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Firebase Codespaces Emulator Test</h1>
+        <p>Цей інструмент допоможе перевірити налаштування Firebase емуляторів в GitHub Codespaces</p>
+        
+        <div class="section">
+            <h2>🌐 Environment Detection</h2>
+            <div id="environment-status"></div>
+        </div>
+        
+        <div class="section">
+            <h2>🔧 Firebase Configuration</h2>
+            <div id="firebase-status"></div>
+            <button onclick="testFirebaseConnection()">🧪 Test Firebase Connection</button>
+            <button onclick="testEmulatorConnection()">🔌 Test Emulator Connection</button>
+            <div id="firebase-logs" class="logs" style="display: none;"></div>
+        </div>
+        
+        <div class="section">
+            <h2>📊 Connection URLs</h2>
+            <div id="urls-status"></div>
+        </div>
+        
+        <div class="section">
+            <h2>🐛 Debug Information</h2>
+            <div id="debug-info"></div>
+            <button onclick="copyDebugInfo()">📋 Copy Debug Info</button>
+        </div>
+        
+        <div class="section">
+            <h2>📚 Quick Setup</h2>
+            <div class="code-block">
+# 1. Start Firebase emulators
+firebase emulators:start --host 0.0.0.0
+
+# 2. Start frontend server (in another terminal)
+cd public-site && python3 -m http.server 5000
+
+# 3. Open your Codespaces URL
+https://your-codespace-5000.app.github.dev
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let firebaseApp = null;
+        let db = null;
+        let auth = null;
+        let functions = null;
+        let logMessages = [];
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            logMessages.push(`[${timestamp}] ${message}`);
+            
+            const logsDiv = document.getElementById('firebase-logs');
+            if (logsDiv.style.display === 'block') {
+                updateLogDisplay();
+            }
+        }
+        
+        function updateLogDisplay() {
+            const logsDiv = document.getElementById('firebase-logs');
+            logsDiv.innerHTML = logMessages.slice(-20).join('\n'); // Show last 20 messages
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+        
+        function showLogs() {
+            const logsDiv = document.getElementById('firebase-logs');
+            logsDiv.style.display = logsDiv.style.display === 'block' ? 'none' : 'block';
+            if (logsDiv.style.display === 'block') {
+                updateLogDisplay();
+            }
+        }
+        
+        function createStatusItem(icon, text, type = 'info') {
+            return `
+                <div class="status-item">
+                    <span class="status-icon ${type}">${icon}</span>
+                    <span>${text}</span>
+                </div>
+            `;
+        }
+        
+        function detectEnvironment() {
+            const hostname = window.location.hostname;
+            const protocol = window.location.protocol;
+            const port = window.location.port;
+            const fullUrl = window.location.href;
+            
+            let environmentHtml = '';
+            
+            // Environment detection
+            if (hostname.includes('github.dev')) {
+                environmentHtml += createStatusItem('✅', `GitHub Codespaces detected: ${hostname}`, 'success');
+                
+                // Build expected URLs
+                const baseName = hostname.replace('-5000', '');
+                const firestoreUrl = `https://${baseName}-8080`;
+                const authUrl = `https://${baseName}-9099`;
+                const functionsUrl = `https://${baseName}-5001`;
+                
+                environmentHtml += createStatusItem('🔗', `Expected Firestore URL: ${firestoreUrl}`, 'info');
+                environmentHtml += createStatusItem('🔑', `Expected Auth URL: ${authUrl}`, 'info');
+                environmentHtml += createStatusItem('⚡', `Expected Functions URL: ${functionsUrl}`, 'info');
+                
+                // Set global variables for testing
+                window.expectedEmulatorUrls = {
+                    firestore: firestoreUrl,
+                    auth: authUrl,
+                    functions: functionsUrl
+                };
+                
+            } else if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                environmentHtml += createStatusItem('🏠', 'Localhost detected', 'success');
+                environmentHtml += createStatusItem('🔗', 'Using standard localhost emulator URLs', 'info');
+                
+            } else {
+                environmentHtml += createStatusItem('❓', `Unknown environment: ${hostname}`, 'warning');
+            }
+            
+            environmentHtml += createStatusItem('🌐', `Full URL: ${fullUrl}`, 'info');
+            environmentHtml += createStatusItem('🔒', `Protocol: ${protocol}`, 'info');
+            
+            document.getElementById('environment-status').innerHTML = environmentHtml;
+        }
+        
+        function checkFirebaseStatus() {
+            let statusHtml = '';
+            
+            // Check if Firebase scripts are loaded
+            if (typeof firebase !== 'undefined') {
+                statusHtml += createStatusItem('✅', 'Firebase SDK loaded', 'success');
+                
+                // Check Firebase app
+                try {
+                    const apps = firebase.apps;
+                    if (apps && apps.length > 0) {
+                        statusHtml += createStatusItem('✅', `Firebase app initialized (${apps.length} apps)`, 'success');
+                    } else {
+                        statusHtml += createStatusItem('❌', 'Firebase app not initialized', 'error');
+                    }
+                } catch (error) {
+                    statusHtml += createStatusItem('❌', `Firebase app error: ${error.message}`, 'error');
+                }
+                
+            } else {
+                statusHtml += createStatusItem('❌', 'Firebase SDK not loaded', 'error');
+                statusHtml += createStatusItem('💡', 'Make sure to include Firebase scripts', 'warning');
+            }
+            
+            // Check Firebase config
+            if (typeof window.firebaseConfig !== 'undefined') {
+                statusHtml += createStatusItem('✅', 'Firebase config found', 'success');
+            } else {
+                statusHtml += createStatusItem('❌', 'Firebase config not found', 'error');
+            }
+            
+            // Check domain validation
+            if (typeof validateDomain === 'function') {
+                try {
+                    const isValid = validateDomain();
+                    if (isValid) {
+                        statusHtml += createStatusItem('✅', 'Domain validation passed', 'success');
+                    } else {
+                        statusHtml += createStatusItem('❌', 'Domain validation failed', 'error');
+                    }
+                } catch (error) {
+                    statusHtml += createStatusItem('❌', `Domain validation error: ${error.message}`, 'error');
+                }
+            }
+            
+            document.getElementById('firebase-status').innerHTML = statusHtml;
+        }
+        
+        async function testFirebaseConnection() {
+            addLog('🧪 Starting Firebase connection test...');
+            const logsDiv = document.getElementById('firebase-logs');
+            logsDiv.style.display = 'block';
+            
+            try {
+                // Enable development console mode
+                window.__consoleMode = 'development';
+                addLog('🔧 Development mode enabled');
+                
+                // Load Firebase config
+                addLog('📋 Loading Firebase configuration...');
+                
+                // This would normally load your cashback-config.js
+                const configScript = document.createElement('script');
+                configScript.src = './js/cashback-config.js';
+                configScript.onload = () => {
+                    addLog('✅ Firebase config script loaded');
+                    continueFirebaseTest();
+                };
+                configScript.onerror = (error) => {
+                    addLog(`❌ Failed to load Firebase config: ${error}`, 'error');
+                };
+                
+                document.head.appendChild(configScript);
+                
+            } catch (error) {
+                addLog(`❌ Firebase connection test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function continueFirebaseTest() {
+            addLog('🔍 Testing Firebase services...');
+            
+            // Test Firestore
+            if (typeof db !== 'undefined' && db) {
+                addLog('✅ Firestore instance available');
+                testFirestore();
+            } else {
+                addLog('❌ Firestore instance not available', 'error');
+            }
+            
+            // Test Auth
+            if (typeof auth !== 'undefined' && auth) {
+                addLog('✅ Auth instance available');
+            } else {
+                addLog('❌ Auth instance not available', 'error');
+            }
+        }
+        
+        async function testFirestore() {
+            try {
+                addLog('🔍 Testing Firestore connection...');
+                
+                // Simple connectivity test
+                const testDoc = doc(db, 'test', 'connection');
+                await setDoc(testDoc, { 
+                    timestamp: Date.now(),
+                    test: 'codespaces-emulator-test' 
+                });
+                
+                addLog('✅ Firestore write test successful');
+                
+                // Read test
+                const docSnap = await getDoc(testDoc);
+                if (docSnap.exists()) {
+                    addLog('✅ Firestore read test successful');
+                } else {
+                    addLog('⚠️ Firestore read test: document not found', 'warning');
+                }
+                
+            } catch (error) {
+                addLog(`❌ Firestore test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testEmulatorConnection() {
+            addLog('🔌 Testing emulator connections...');
+            const logsDiv = document.getElementById('firebase-logs');
+            logsDiv.style.display = 'block';
+            
+            if (!window.expectedEmulatorUrls) {
+                addLog('❌ No emulator URLs detected - not in Codespaces?', 'error');
+                return;
+            }
+            
+            const urls = window.expectedEmulatorUrls;
+            
+            // Test each emulator URL
+            for (const [service, url] of Object.entries(urls)) {
+                try {
+                    addLog(`🔍 Testing ${service} emulator: ${url}`);
+                    
+                    const response = await fetch(url, {
+                        method: 'HEAD',
+                        mode: 'no-cors'
+                    });
+                    
+                    addLog(`✅ ${service} emulator is accessible`, 'success');
+                    
+                } catch (error) {
+                    addLog(`❌ ${service} emulator connection failed: ${error.message}`, 'error');
+                }
+            }
+        }
+        
+        function generateDebugInfo() {
+            const info = {
+                timestamp: new Date().toISOString(),
+                environment: {
+                    hostname: window.location.hostname,
+                    href: window.location.href,
+                    userAgent: navigator.userAgent,
+                    isCodespace: window.location.hostname.includes('github.dev')
+                },
+                firebase: {
+                    sdkLoaded: typeof firebase !== 'undefined',
+                    configAvailable: typeof window.firebaseConfig !== 'undefined',
+                    apps: typeof firebase !== 'undefined' ? firebase.apps.length : 0
+                },
+                emulators: window.expectedEmulatorUrls || null,
+                logs: logMessages.slice(-10) // Last 10 log messages
+            };
+            
+            document.getElementById('debug-info').innerHTML = 
+                '<pre style="font-size: 11px; overflow-x: auto;">' + 
+                JSON.stringify(info, null, 2) + 
+                '</pre>';
+            
+            return info;
+        }
+        
+        function copyDebugInfo() {
+            const info = generateDebugInfo();
+            navigator.clipboard.writeText(JSON.stringify(info, null, 2))
+                .then(() => {
+                    addLog('📋 Debug info copied to clipboard');
+                })
+                .catch(() => {
+                    addLog('❌ Failed to copy debug info', 'error');
+                });
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            detectEnvironment();
+            checkFirebaseStatus();
+            generateDebugInfo();
+            
+            // Auto-refresh status every 10 seconds
+            setInterval(checkFirebaseStatus, 10000);
+        });
+    </script>
+</body>
+</html>
