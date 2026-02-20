@@ -8,6 +8,7 @@ import {
     getFirestore,
     initializeFirestore,
     enableIndexedDbPersistence,
+    connectFirestoreEmulator,
     collection, 
     doc, 
     addDoc, 
@@ -27,9 +28,9 @@ import {
     arrayRemove,
     increment
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
-import { getStorage } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+import { getAuth, connectAuthEmulator } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
+import { getStorage, connectStorageEmulator } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 
 // ============================================
 // FIREBASE CONFIG
@@ -58,6 +59,43 @@ const db = initializeFirestore(app, {
 const auth = getAuth(app);
 const functions = getFunctions(app);
 const storage = getStorage(app);
+
+// ============================================
+// 🔥 CONNECT TO LOCAL EMULATORS (DEV MODE)
+// ============================================
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    console.log('🔧 ADMIN firebase-init.js: Connecting to Firebase Emulators...');
+    
+    try {
+        connectFirestoreEmulator(db, '127.0.0.1', 8080);
+        console.log('✅ ADMIN: Firestore Emulator connected (127.0.0.1:8080)');
+    } catch (error) {
+        console.warn('⚠️ Firestore Emulator error:', error.message);
+    }
+    
+    try {
+        connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+        console.log('✅ ADMIN: Auth Emulator connected (127.0.0.1:9099)');
+    } catch (error) {
+        console.warn('⚠️ Auth Emulator error:', error.message);
+    }
+    
+    try {
+        connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+        console.log('✅ ADMIN: Functions Emulator connected (127.0.0.1:5001)');
+    } catch (error) {
+        console.warn('⚠️ Functions Emulator error:', error.message);
+    }
+    
+    try {
+        connectStorageEmulator(storage, '127.0.0.1', 9199);
+        console.log('✅ ADMIN: Storage Emulator connected (127.0.0.1:9199)');
+    } catch (error) {
+        console.warn('⚠️ Storage Emulator error:', error.message);
+    }
+    
+    console.log('🎯 ADMIN using LOCAL emulators at http://localhost:4000');
+}
 
 // ⚡ Enable offline persistence (with error handling)
 enableIndexedDbPersistence(db).catch((err) => {

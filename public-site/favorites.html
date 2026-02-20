@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Мої улюблені товари | LATIAO SNACK</title>
+
+  <!-- Google Tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-KE8MZNKEYH"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-KE8MZNKEYH');
+    gtag('config', 'AW-17389864689');
+  </script>
+
+  <!-- ⚡ CONSOLE SILENCER - Must be first to catch all logs -->
+  <script src="./js/console-silencer.js"></script>
+
+  <!-- 🔀 DOMAIN REDIRECT - Redirect Firebase domains to primary domain -->
+  <script src="./js/domain-redirect.js"></script>
+
+  <!-- ⚡ PERFORMANCE: Priority Loading for Critical Resources -->
+  <link rel="modulepreload" href="./js/layout.js" as="script" fetchpriority="high">
+
+  <!-- 🎯 SEO: Dynamic Canonical Tag -->
+  <script>
+    (function() {
+      'use strict';
+      const PRODUCTION_DOMAIN = 'latiao-snack.com.ua';
+      const canonicalUrl = `https://${PRODUCTION_DOMAIN}/favorites.html`;
+      const link = document.createElement('link');
+      link.rel = 'canonical';
+      link.href = canonicalUrl;
+      document.head.appendChild(link);
+    })();
+  </script>
+
+  <!-- Skeleton Loader for instant render -->
+  <style id="skeleton-loader">
+    @keyframes shimmer {
+      0% {
+        background-position: 200% 0;
+      }
+
+      100% {
+        background-position: -200% 0;
+      }
+    }
+
+    .page-skeleton {
+      min-height: 100vh;
+      background: #fff;
+    }
+
+    .skeleton-bar {
+      height: 20px;
+      background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+
+    .content-loaded .page-skeleton {
+      display: none;
+    }
+  </style>
+
+  <script>
+    // Show content immediately when DOM ready
+    document.addEventListener('DOMContentLoaded', () => {
+      document.body.classList.add('content-loaded');
+    });
+  </script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            spicy: '#ff6b00',
+            'spicy-orange': '#ff6b00',
+            'flame-red': '#e53e3e',
+            orange: {
+              500: '#ff6b00',
+              600: '#e55f00',
+              100: '#fff3e8'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Dark Mode Module -->
+  <script src="./js/dark-mode.js"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    
+    * { font-family: 'Inter', sans-serif; }
+    html { scroll-behavior: smooth; }
+    
+    /* Loading spinner */
+    .loading-spinner {
+      border: 3px solid #f3f4f6;
+      border-top: 3px solid #ff6b00;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Product card animation */
+    @keyframes fadeSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .product-card {
+      animation: fadeSlideUp 0.6s ease-out forwards;
+    }
+
+    /* Favorites Button Styles */
+    .favorite-btn {
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      min-width: 40px;
+      min-height: 40px;
+    }
+
+    .favorite-btn i {
+      transition: color 0.2s ease, fill 0.2s ease;
+    }
+
+    .favorite-btn.favorite-active i,
+    .favorite-btn.favorite-active svg {
+      color: #ef4444 !important;
+      fill: #ef4444 !important;
+    }
+
+    /* Pop animation when removing from favorites */
+    @keyframes favoritePopOut {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(0.9);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .favorite-pop-out {
+      animation: favoritePopOut 0.3s ease-out;
+    }
+
+    /* Remove animation */
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+        transform: scale(1);
+      }
+      to {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+    }
+
+    .removing {
+      animation: fadeOut 0.3s ease-out forwards;
+    }
+
+    /* Sync Tab Styles */
+    .sync-tab {
+      background: transparent;
+      color: #6b7280;
+      border: none;
+    }
+
+    .sync-tab.active {
+      background: linear-gradient(135deg, #ff6b00 0%, #e53e3e 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
+    }
+
+    .sync-tab:not(.active):hover {
+      background: rgba(255, 107, 0, 0.1);
+      color: #ff6b00;
+    }
+  </style>
+</head>
+
+<body class="bg-white text-gray-900 min-h-screen">
+
+  <!-- Layout.js will automatically load Header, Mobile Menu, Cart, Toast here -->
+
+  <main class="pt-20">
+    <!-- Hero Section -->
+    <section class="relative overflow-hidden py-8 md:py-12 px-4">
+      <div class="max-w-7xl mx-auto relative z-10">
+        <nav class="mb-6">
+          <ol class="flex items-center gap-2 text-sm text-gray-500">
+            <li><a href="index.html" class="hover:text-orange-500 transition-colors">Головна</a></li>
+            <li>/</li>
+            <li class="text-orange-500 font-medium">Обране</li>
+          </ol>
+        </nav>
+
+        <div class="flex items-center gap-3 mb-2">
+          <h1 class="text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900">
+            Мої улюблені товари
+          </h1>
+          <span class="text-3xl md:text-4xl">❤️</span>
+        </div>
+        <p class="text-lg md:text-xl text-gray-600 max-w-2xl">
+          Ваша персональна колекція обраних смаколиків
+        </p>
+      </div>
+    </section>
+
+    <!-- Loading State -->
+    <div id="loading-state" class="flex justify-center items-center py-20">
+      <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Empty State (Hidden by default) -->
+    <div id="empty-state" class="hidden max-w-2xl mx-auto px-4 py-16 text-center">
+      <div class="bg-white rounded-3xl shadow-lg p-8 md:p-12">
+        <div class="text-6xl md:text-7xl mb-6">💔</div>
+        <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+          Ваш список обраного порожній
+        </h2>
+        <p class="text-gray-600 mb-8 text-lg">
+          Додайте товари до обраного, щоб легко знайти їх пізніше
+        </p>
+        <a href="index.html#shop" 
+           class="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-2xl hover:shadow-lg transition-all transform hover:scale-105 active:scale-95">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+          </svg>
+          <span>Перейти до покупок</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Products Grid -->
+    <section id="products-section" class="hidden px-4 pb-16">
+      <div class="max-w-7xl mx-auto">
+        
+        <!-- Cloud Sync Container -->
+        <div class="mb-8 bg-gradient-to-br from-orange-50 to-red-50 backdrop-blur-xl rounded-3xl shadow-xl border border-white/50 overflow-hidden">
+          <div class="p-6 md:p-8">
+            <!-- Info Banner -->
+            <div class="mb-6 flex items-start gap-3 bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-orange-200/50">
+              <svg class="w-6 h-6 text-orange-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <div>
+                <h3 class="font-bold text-gray-900 mb-1">Синхронізація з хмарою</h3>
+                <p class="text-sm text-gray-700">Товари у браузері можуть зникнути. Зафіксуйте свій список за номером телефону, щоб не загубити його.</p>
+              </div>
+            </div>
+
+            <!-- Smart Toggle Tabs -->
+            <div class="flex gap-2 mb-6 bg-white/70 backdrop-blur-sm p-1.5 rounded-2xl">
+              <button 
+                id="tab-save"
+                onclick="switchSyncTab('save')"
+                class="sync-tab active flex-1 px-6 py-3 rounded-xl font-bold text-sm md:text-base transition-all duration-300 flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+                <span>Зберегти</span>
+              </button>
+              <button 
+                id="tab-restore"
+                onclick="switchSyncTab('restore')"
+                class="sync-tab flex-1 px-6 py-3 rounded-xl font-bold text-sm md:text-base transition-all duration-300 flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
+                </svg>
+                <span>Відновити</span>
+              </button>
+            </div>
+
+            <!-- Save Form -->
+            <div id="save-form" class="sync-form">
+              <div class="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-white/50">
+                <h4 class="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <span class="text-2xl">💾</span>
+                  Зберегти список у хмарі
+                </h4>
+                <p class="text-sm text-gray-600 mb-4">Введіть свій номер телефону, щоб зберегти обране</p>
+                <div class="flex flex-col sm:flex-row gap-3">
+                  <input 
+                    type="tel"
+                    id="save-phone"
+                    placeholder="+380 XX XXX XX XX"
+                    class="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 outline-none transition-all text-lg"
+                    maxlength="19"
+                  />
+                  <button 
+                    id="save-btn"
+                    onclick="saveFavoritesToCloud()"
+                    class="px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-xl hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 whitespace-nowrap">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    <span>Зберегти</span>
+                  </button>
+                </div>
+                <div id="save-message" class="mt-3 hidden"></div>
+              </div>
+            </div>
+
+            <!-- Restore Form -->
+            <div id="restore-form" class="sync-form hidden">
+              <div class="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-white/50">
+                <h4 class="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <span class="text-2xl">🔄</span>
+                  Відновити список з хмари
+                </h4>
+                <p class="text-sm text-gray-600 mb-4">Введіть номер, за яким збережено обране</p>
+                <div class="flex flex-col sm:flex-row gap-3">
+                  <input 
+                    type="tel"
+                    id="restore-phone"
+                    placeholder="+380 XX XXX XX XX"
+                    class="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 outline-none transition-all text-lg"
+                    maxlength="19"
+                  />
+                  <button 
+                    id="restore-btn"
+                    onclick="restoreFavoritesFromCloud()"
+                    class="px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 whitespace-nowrap">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    <span>Відновити</span>
+                  </button>
+                </div>
+                <div id="restore-message" class="mt-3 hidden"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-6 flex items-center justify-between">
+          <p class="text-gray-600">
+            Знайдено: <span class="text-orange-500 font-bold" id="products-count">0</span>
+          </p>
+          <button 
+            onclick="clearAllFavorites()"
+            class="text-sm text-red-500 hover:text-red-600 font-medium flex items-center gap-2 hover:underline transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+            Очистити все
+          </button>
+        </div>
+        <div id="favorites-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
+          <!-- Products will be rendered here -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer Placeholder - dynamically rendered via layout.js -->
+  <div id="footer-placeholder"></div>
+
+  <!-- Firebase & Layout -->
+  <script type="module" src="./js/maintenance-check.js"></script>
+  <script type="module" src="./js/firebase-init.js"></script>
+  <script src="./js/visitor-tracker.js"></script>
+  <script type="module" src="./js/layout.js"></script>
+
+  <!-- Favorites Page Logic -->
+  <script type="module" src="./js/favorites.js"></script>
+
+  <!-- Service Worker Registration -->
+  <script src="./js/sw-register.js"></script>
+
+  <!-- Live Chat Widget -->
+  <script type="module" src="./js/chat-widget.js"></script>
+</body>
+
+</html>

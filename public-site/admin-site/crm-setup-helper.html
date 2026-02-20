@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<!-- Google Analytics (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-KE8MZNKEYH"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-KE8MZNKEYH');
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Setup Helper</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+        .step {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .step-number {
+            background: #8b5cf6;
+            color: white;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 0.75rem;
+        }
+        .copy-btn {
+            background: #06b6d4;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+        .copy-btn:hover {
+            background: #0891b2;
+        }
+        .success {
+            background: #d1fae5;
+            border-color: #10b981;
+            color: #065f46;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-xl p-8 mb-8 shadow-lg">
+            <h1 class="text-3xl font-bold mb-2">🎯 CRM Module Setup Helper</h1>
+            <p class="text-purple-100">Quick setup scripts for your Kanban board</p>
+        </div>
+
+        <!-- Step 1 -->
+        <div class="step">
+            <h2 class="text-xl font-bold mb-4 flex items-center">
+                <span class="step-number">1</span>
+                Initialize CRM Columns
+            </h2>
+            <p class="text-gray-600 mb-4">
+                Create default columns for your sales funnel. Run this in the browser console on your <strong>Admin Panel</strong>.
+            </p>
+            <div class="code-block" id="step1-code">
+(async function setupCRMColumns() {
+    if (!window.firebaseInit?.db) {
+        alert('❌ Please run this on the admin panel with Firebase initialized');
+        return;
+    }
+    
+    const { db, collection, setDoc, doc } = window.firebaseInit;
+    
+    const columns = [
+        { id: 'new_lead', name: 'Новий лід', description: 'Нові покинуті кошики', color: '#3b82f6', order: 0 },
+        { id: 'contacted', name: 'Контакт встановлено', description: 'Зв\'язалися з клієнтом', color: '#8b5cf6', order: 1 },
+        { id: 'negotiation', name: 'Переговори', description: 'Активні переговори', color: '#f59e0b', order: 2 },
+        { id: 'ready_to_order', name: 'Готовий замовити', description: 'Клієнт готовий', color: '#06b6d4', order: 3 },
+        { id: 'converted', name: 'Конверсія', description: 'Замовлення створено', color: '#10b981', order: 4 }
+    ];
+    
+    for (const col of columns) {
+        await setDoc(doc(collection(db, 'crm_columns'), col.id), {
+            name: col.name,
+            description: col.description,
+            color: col.color,
+            order: col.order,
+            created_at: new Date()
+        });
+        console.log(`✅ ${col.name}`);
+    }
+    
+    alert('✅ Setup complete! Navigate to: Незавершені замовлення → CRM');
+})();
+            </div>
+            <button class="copy-btn" onclick="copyCode('step1-code')">📋 Copy Script</button>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step">
+            <h2 class="text-xl font-bold mb-4 flex items-center">
+                <span class="step-number">2</span>
+                Assign Carts to Columns
+            </h2>
+            <p class="text-gray-600 mb-4">
+                Add <code>crm_status</code> to existing abandoned carts to populate the board.
+            </p>
+            <div class="code-block" id="step2-code">
+(async function assignCartsToColumns() {
+    if (!window.firebaseInit?.db) {
+        alert('❌ Please run this on the admin panel');
+        return;
+    }
+    
+    const { db, collection, getDocs, updateDoc, doc } = window.firebaseInit;
+    
+    const cartsRef = collection(db, 'abandoned_carts');
+    const snapshot = await getDocs(cartsRef);
+    
+    const columnIds = ['new_lead', 'contacted', 'negotiation', 'ready_to_order', 'converted'];
+    
+    let count = 0;
+    for (const cartDoc of snapshot.docs) {
+        const randomColumn = columnIds[Math.floor(Math.random() * columnIds.length)];
+        
+        await updateDoc(doc(db, 'abandoned_carts', cartDoc.id), {
+            crm_status: randomColumn
+        });
+        
+        count++;
+    }
+    
+    alert(`✅ Assigned ${count} carts to CRM columns. Refresh the CRM tab!`);
+})();
+            </div>
+            <button class="copy-btn" onclick="copyCode('step2-code')">📋 Copy Script</button>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step">
+            <h2 class="text-xl font-bold mb-4 flex items-center">
+                <span class="step-number">3</span>
+                Get Column Statistics
+            </h2>
+            <p class="text-gray-600 mb-4">
+                View statistics for each column (cards count and total value).
+            </p>
+            <div class="code-block" id="step3-code">
+(async function getColumnStats() {
+    if (!window.firebaseInit?.db) {
+        alert('❌ Please run this on the admin panel');
+        return;
+    }
+    
+    const { db, collection, getDocs, query, where } = window.firebaseInit;
+    
+    const columnsSnapshot = await getDocs(collection(db, 'crm_columns'));
+    
+    console.log('📊 CRM Column Statistics:');
+    console.log('═'.repeat(50));
+    
+    for (const col of columnsSnapshot.docs) {
+        const colData = col.data();
+        
+        const cartsQuery = query(
+            collection(db, 'abandoned_carts'),
+            where('crm_status', '==', col.id)
+        );
+        const cartsSnapshot = await getDocs(cartsQuery);
+        
+        const total = cartsSnapshot.docs.reduce((sum, cart) => {
+            return sum + (parseFloat(cart.data().total) || 0);
+        }, 0);
+        
+        console.log(`${colData.name}: ${cartsSnapshot.size} cards | ${total.toFixed(0)} ₴`);
+    }
+    
+    console.log('═'.repeat(50));
+    alert('✅ Check console for detailed statistics');
+})();
+            </div>
+            <button class="copy-btn" onclick="copyCode('step3-code')">📋 Copy Script</button>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="step">
+            <h2 class="text-xl font-bold mb-4 flex items-center">
+                <span class="step-number">4</span>
+                Calculate Conversion Rate
+            </h2>
+            <p class="text-gray-600 mb-4">
+                Calculate the conversion rate from abandoned carts to orders.
+            </p>
+            <div class="code-block" id="step4-code">
+(async function getConversionRate() {
+    if (!window.firebaseInit?.db) {
+        alert('❌ Please run this on the admin panel');
+        return;
+    }
+    
+    const { db, collection, getDocs, query, where } = window.firebaseInit;
+    
+    const allCartsQuery = query(
+        collection(db, 'abandoned_carts'),
+        where('crm_status', '!=', null)
+    );
+    const allCarts = await getDocs(allCartsQuery);
+    
+    const convertedQuery = query(
+        collection(db, 'abandoned_carts'),
+        where('crm_status', '==', 'converted')
+    );
+    const converted = await getDocs(convertedQuery);
+    
+    const rate = (converted.size / allCarts.size) * 100;
+    
+    console.log('📊 Conversion Rate Analysis:');
+    console.log('═'.repeat(50));
+    console.log(`Total Carts in CRM: ${allCarts.size}`);
+    console.log(`Converted: ${converted.size}`);
+    console.log(`Conversion Rate: ${rate.toFixed(1)}%`);
+    console.log('═'.repeat(50));
+    
+    alert(`📊 Conversion Rate: ${rate.toFixed(1)}%\nTotal: ${allCarts.size} | Converted: ${converted.size}`);
+})();
+            </div>
+            <button class="copy-btn" onclick="copyCode('step4-code')">📋 Copy Script</button>
+        </div>
+
+        <!-- Instructions -->
+        <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
+            <h3 class="text-lg font-bold text-blue-900 mb-3">📝 How to Use</h3>
+            <ol class="space-y-2 text-blue-800">
+                <li><strong>1.</strong> Open your Admin Panel in the browser</li>
+                <li><strong>2.</strong> Press <code>F12</code> to open Developer Tools</li>
+                <li><strong>3.</strong> Go to the <strong>Console</strong> tab</li>
+                <li><strong>4.</strong> Click "Copy Script" above</li>
+                <li><strong>5.</strong> Paste in console and press Enter</li>
+                <li><strong>6.</strong> Navigate to: <strong>Незавершені замовлення → CRM</strong></li>
+            </ol>
+        </div>
+
+        <div class="mt-8 text-center text-gray-600">
+            <p>Made with 💜 for Latiao Club Admin Panel</p>
+            <p class="text-sm mt-2">Need help? Check the console for detailed logs.</p>
+        </div>
+    </div>
+
+    <script>
+        function copyCode(elementId) {
+            const codeBlock = document.getElementById(elementId);
+            const text = codeBlock.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                btn.style.background = '#10b981';
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#06b6d4';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

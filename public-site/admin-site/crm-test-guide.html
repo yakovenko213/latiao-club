@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<!-- Google Analytics (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-KE8MZNKEYH"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-KE8MZNKEYH');
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Automation Test Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .test-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s;
+        }
+        .test-card:hover {
+            border-color: #8b5cf6;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+        }
+        .step-badge {
+            background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+            color: white;
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.25rem;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+        .success-box {
+            background: #d1fae5;
+            border: 2px solid #10b981;
+            color: #065f46;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+        }
+        .code-box {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            margin: 0.5rem 0;
+        }
+        .card-preview {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            max-width: 300px;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-5xl mx-auto">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500 text-white rounded-xl p-8 mb-8 shadow-2xl">
+            <h1 class="text-4xl font-bold mb-3 flex items-center gap-3">
+                <i data-lucide="zap" class="w-10 h-10"></i>
+                CRM Automation Test Guide
+            </h1>
+            <p class="text-purple-100 text-lg">Step-by-step testing for real-time cart tracking</p>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="bg-white p-6 rounded-xl border-2 border-green-200">
+                <div class="text-green-600 text-3xl font-bold mb-2">✅</div>
+                <div class="text-sm text-gray-600 mb-1">Status</div>
+                <div class="text-xl font-bold text-gray-900">Deployed</div>
+            </div>
+            <div class="bg-white p-6 rounded-xl border-2 border-blue-200">
+                <div class="text-blue-600 text-3xl font-bold mb-2">🔄</div>
+                <div class="text-sm text-gray-600 mb-1">Mode</div>
+                <div class="text-xl font-bold text-gray-900">Real-time</div>
+            </div>
+            <div class="bg-white p-6 rounded-xl border-2 border-purple-200">
+                <div class="text-purple-600 text-3xl font-bold mb-2">🎯</div>
+                <div class="text-sm text-gray-600 mb-1">Default Status</div>
+                <div class="text-xl font-bold text-gray-900">new_lead</div>
+            </div>
+        </div>
+
+        <!-- Test 1: Create Cart -->
+        <div class="test-card">
+            <div class="flex items-start gap-4 mb-4">
+                <span class="step-badge">1</span>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Create Abandoned Cart</h2>
+                    <p class="text-gray-600">Test that new carts are saved with CRM status automatically</p>
+                </div>
+            </div>
+
+            <div class="ml-16">
+                <h3 class="font-bold text-gray-900 mb-2">Steps:</h3>
+                <ol class="space-y-2 text-gray-700 mb-4">
+                    <li class="flex items-start gap-2">
+                        <span class="text-purple-600 font-bold">1.</span>
+                        <span>Open: <a href="https://my-magazin-81c96.web.app" target="_blank" class="text-blue-600 underline">https://my-magazin-81c96.web.app</a></span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-purple-600 font-bold">2.</span>
+                        <span>Add some products to cart (any items)</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-purple-600 font-bold">3.</span>
+                        <span>Click "Оформити замовлення" button</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-purple-600 font-bold">4.</span>
+                        <span>Fill the checkout form:</span>
+                    </li>
+                </ol>
+
+                <div class="bg-gray-50 border border-gray-300 rounded-lg p-4 mb-4">
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <strong>ПІБ:</strong> Тест Автоматизації
+                        </div>
+                        <div>
+                            <strong>Телефон:</strong> +380991234567
+                        </div>
+                        <div>
+                            <strong>Telegram:</strong> @test_crm
+                        </div>
+                        <div>
+                            <strong>Коментар:</strong> Тестуємо CRM
+                        </div>
+                    </div>
+                </div>
+
+                <ol start="5" class="space-y-2 text-gray-700 mb-4">
+                    <li class="flex items-start gap-2">
+                        <span class="text-purple-600 font-bold">5.</span>
+                        <span>Wait 2-3 seconds (auto-save will trigger)</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-purple-600 font-bold">6.</span>
+                        <span>Open browser console (F12) and check logs</span>
+                    </li>
+                </ol>
+
+                <div class="success-box">
+                    <div class="font-bold mb-2">✅ Expected Result:</div>
+                    <ul class="space-y-1 text-sm">
+                        <li>• Console shows: "✅ Abandoned cart saved to Firestore"</li>
+                        <li>• Cart document created in Firestore</li>
+                        <li>• Has <code>crm_status: "new_lead"</code></li>
+                        <li>• Has <code>created_at</code> and <code>updated_at</code> timestamps</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test 2: View in CRM -->
+        <div class="test-card">
+            <div class="flex items-start gap-4 mb-4">
+                <span class="step-badge">2</span>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">View Cart in CRM</h2>
+                    <p class="text-gray-600">Verify the cart appears automatically in the Kanban board</p>
+                </div>
+            </div>
+
+            <div class="ml-16">
+                <h3 class="font-bold text-gray-900 mb-2">Steps:</h3>
+                <ol class="space-y-2 text-gray-700 mb-4">
+                    <li class="flex items-start gap-2">
+                        <span class="text-purple-600 font-bold">1.</span>
+                        <span>Open: <a href="https://admin-store-latio.web.app" target="_blank" class="text-blue-600 underline">https://admin-store-latio.web.app</a></span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-purple-600 font-bold">2.</span>
+                        <span>Login with admin credentials</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-purple-600 font-bold">3.</span>
+                        <span>Navigate: <strong>Незавершені замовлення → CRM</strong></span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-purple-600 font-bold">4.</span>
+                        <span>Look for the "Новий лід" column</span>
+                    </li>
+                </ol>
+
+                <div class="success-box">
+                    <div class="font-bold mb-2">✅ Expected Result:</div>
+                    <ul class="space-y-1 text-sm">
+                        <li>• Card appears in "Новий лід" column</li>
+                        <li>• Shows "Тест Автоматизації"</li>
+                        <li>• Shows "+380991234567"</li>
+                        <li>• Shows "@test_crm" with Telegram badge</li>
+                        <li>• Shows "щойно" or "X хв тому"</li>
+                        <li>• Shows total amount</li>
+                    </ul>
+                </div>
+
+                <h3 class="font-bold text-gray-900 mb-2 mt-4">Card Preview:</h3>
+                <div class="card-preview">
+                    <div class="flex items-start justify-between mb-3">
+                        <div>
+                            <div class="font-bold text-sm mb-1">Тест Автоматизації</div>
+                            <div class="text-xs text-gray-600 flex items-center gap-1 mb-1">
+                                <i data-lucide="phone" class="w-3 h-3"></i>
+                                <span>+380991234567</span>
+                            </div>
+                            <div class="inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                <i data-lucide="send" class="w-3 h-3"></i>
+                                <span>@test_crm</span>
+                            </div>
+                        </div>
+                        <button class="p-1 hover:bg-gray-100 rounded">
+                            <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    <div class="space-y-1 mb-3 text-xs text-gray-600">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="shopping-bag" class="w-3 h-3"></i>
+                            <span>3 товари</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="clock" class="w-3 h-3"></i>
+                            <span>щойно</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between pt-3 border-t">
+                        <span class="font-bold text-lg">1250 ₴</span>
+                        <div class="flex gap-1">
+                            <button class="px-3 py-1 bg-green-500 text-white text-xs rounded">✓</button>
+                            <button class="px-3 py-1 bg-blue-500 text-white text-xs rounded">💬</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test 3: Real-time Update -->
+        <div class="test-card">
+            <div class="flex items-start gap-4 mb-4">
+                <span class="step-badge">3</span>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Test Real-time Sync</h2>
+                    <p class="text-gray-600">Verify instant updates without page refresh</p>
+                </div>
+            </div>
+
+            <div class="ml-16">
+                <h3 class="font-bold text-gray-900 mb-2">Setup:</h3>
+                <div class="bg-yellow-50 border border-yellow-300 rounded-lg p-4 mb-4">
+                    <div class="font-bold mb-2">Open 2 Browser Windows:</div>
+                    <ul class="space-y-2 text-sm">
+                        <li><strong>Window 1:</strong> Admin CRM Board (https://admin-store-latio.web.app)</li>
+                        <li><strong>Window 2:</strong> Public Checkout (https://my-magazin-81c96.web.app)</li>
+                    </ul>
+                </div>
+
+                <h3 class="font-bold text-gray-900 mb-2">Steps:</h3>
+                <ol class="space-y-2 text-gray-700 mb-4">
+                    <li class="flex items-start gap-2">
+                        <span class="text-purple-600 font-bold">1.</span>
+                        <span><strong>Window 1:</strong> Navigate to CRM tab and keep it visible</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-purple-600 font-bold">2.</span>
+                        <span><strong>Window 2:</strong> Fill checkout form with new data</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-purple-600 font-bold">3.</span>
+                        <span><strong>Window 2:</strong> Change phone to: +380997654321</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-purple-600 font-bold">4.</span>
+                        <span>Wait 2-3 seconds for auto-save</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-purple-600 font-bold">5.</span>
+                        <span><strong>Window 1:</strong> Watch CRM board</span>
+                    </li>
+                </ol>
+
+                <div class="success-box">
+                    <div class="font-bold mb-2">✅ Expected Result:</div>
+                    <ul class="space-y-1 text-sm">
+                        <li>• <strong>Window 1 updates automatically</strong></li>
+                        <li>• New card appears with phone +380997654321</li>
+                        <li>• NO page refresh needed</li>
+                        <li>• Time shows "щойно"</li>
+                        <li>• Console shows: "🔄 Real-time update: Cart data changed"</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test 4: Drag & Drop -->
+        <div class="test-card">
+            <div class="flex items-start gap-4 mb-4">
+                <span class="step-badge">4</span>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Test Drag & Drop</h2>
+                    <p class="text-gray-600">Move card through sales pipeline</p>
+                </div>
+            </div>
+
+            <div class="ml-16">
+                <h3 class="font-bold text-gray-900 mb-2">Steps:</h3>
+                <ol class="space-y-2 text-gray-700 mb-4">
+                    <li class="flex items-start gap-2">
+                        <span class="text-purple-600 font-bold">1.</span>
+                        <span>In CRM board, find your test card in "Новий лід"</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-purple-600 font-bold">2.</span>
+                        <span>Drag the card to "Контакт встановлено" column</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-purple-600 font-bold">3.</span>
+                        <span>Check console (F12) for update logs</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-purple-600 font-bold">4.</span>
+                        <span>Refresh the page</span>
+                    </li>
+                </ol>
+
+                <div class="success-box">
+                    <div class="font-bold mb-2">✅ Expected Result:</div>
+                    <ul class="space-y-1 text-sm">
+                        <li>• Card moves smoothly to new column</li>
+                        <li>• Console shows: "✅ Статус картки оновлено"</li>
+                        <li>• After refresh, card stays in new column</li>
+                        <li>• Firestore document updated with new <code>crm_status</code></li>
+                        <li>• <code>updated_at</code> timestamp refreshed</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Verification Checklist -->
+        <div class="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl p-6 mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <i data-lucide="check-circle" class="w-7 h-7 text-green-600"></i>
+                Verification Checklist
+            </h2>
+            <div class="space-y-2">
+                <label class="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" class="w-5 h-5 text-green-600 rounded">
+                    <span>Carts saved with <code>crm_status: "new_lead"</code></span>
+                </label>
+                <label class="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" class="w-5 h-5 text-green-600 rounded">
+                    <span>Cards appear in CRM instantly (no refresh)</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" class="w-5 h-5 text-green-600 rounded">
+                    <span>Customer name displayed correctly</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" class="w-5 h-5 text-green-600 rounded">
+                    <span>Phone number displayed correctly</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" class="w-5 h-5 text-green-600 rounded">
+                    <span>Telegram badge shows when provided</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" class="w-5 h-5 text-green-600 rounded">
+                    <span>Time ago formatting works (щойно, X хв тому)</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" class="w-5 h-5 text-green-600 rounded">
+                    <span>Drag & drop updates Firestore</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" class="w-5 h-5 text-green-600 rounded">
+                    <span>"Create Order" button works</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" class="w-5 h-5 text-green-600 rounded">
+                    <span>"SMS" button works</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" class="w-5 h-5 text-green-600 rounded">
+                    <span>Real-time sync working (no refresh needed)</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="bg-blue-50 border-2 border-blue-300 rounded-xl p-6">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">🔗 Quick Links</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <a href="https://my-magazin-81c96.web.app" target="_blank" 
+                   class="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-gray-50 transition">
+                    <i data-lucide="shopping-cart" class="w-5 h-5 text-blue-600"></i>
+                    <span class="font-semibold">Public Website</span>
+                </a>
+                <a href="https://admin-store-latio.web.app" target="_blank" 
+                   class="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-gray-50 transition">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 text-purple-600"></i>
+                    <span class="font-semibold">Admin Panel</span>
+                </a>
+                <a href="https://console.firebase.google.com/project/my-magazin-81c96/firestore" target="_blank" 
+                   class="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-gray-50 transition">
+                    <i data-lucide="database" class="w-5 h-5 text-orange-600"></i>
+                    <span class="font-semibold">Firestore Console</span>
+                </a>
+                <a href="https://console.firebase.google.com/project/my-magazin-81c96/firestore/indexes" target="_blank" 
+                   class="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-gray-50 transition">
+                    <i data-lucide="list" class="w-5 h-5 text-green-600"></i>
+                    <span class="font-semibold">Index Status</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="mt-8 text-center text-gray-600">
+            <p class="text-lg">🎉 <strong>Your CRM is now fully automated!</strong></p>
+            <p class="text-sm mt-2">Every abandoned cart will appear instantly in your Kanban board.</p>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<!-- Google Analytics (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-KE8MZNKEYH"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-KE8MZNKEYH');
+</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔧 Дедуплікація Клієнтів - Migration Tool</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="/shared/phone-utils.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    * { font-family: 'Inter', sans-serif; }
+    .log-entry { animation: slideIn 0.2s ease-out; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-6">
+  <div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+      <div class="flex items-center gap-4">
+        <div class="w-14 h-14 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center">
+          <i data-lucide="users" class="w-8 h-8 text-white"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">🔧 Дедуплікація Клієнтів</h1>
+          <p class="text-gray-500">Міграційний інструмент для об'єднання дублікатів за номером телефону</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Warning -->
+    <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
+      <div class="flex items-start gap-3">
+        <i data-lucide="alert-triangle" class="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0"></i>
+        <div>
+          <p class="font-semibold text-yellow-800">⚠️ Важливо! Зробіть резервну копію бази даних перед запуском!</p>
+          <p class="text-sm text-yellow-700 mt-1">Ця операція об'єднає всі профілі клієнтів з однаковими номерами телефонів. Рекомендуємо спочатку запустити аналіз.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white rounded-xl p-4 shadow">
+        <p class="text-sm text-gray-500">Всього клієнтів</p>
+        <p class="text-2xl font-bold text-gray-900" id="stat-total">-</p>
+      </div>
+      <div class="bg-white rounded-xl p-4 shadow">
+        <p class="text-sm text-gray-500">Груп дублікатів</p>
+        <p class="text-2xl font-bold text-orange-600" id="stat-duplicate-groups">-</p>
+      </div>
+      <div class="bg-white rounded-xl p-4 shadow">
+        <p class="text-sm text-gray-500">Дублікатів</p>
+        <p class="text-2xl font-bold text-red-600" id="stat-duplicates">-</p>
+      </div>
+      <div class="bg-white rounded-xl p-4 shadow">
+        <p class="text-sm text-gray-500">Після міграції</p>
+        <p class="text-2xl font-bold text-green-600" id="stat-after">-</p>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+      <div class="flex flex-wrap gap-4">
+        <button onclick="analyzeCustomers()" id="btn-analyze" 
+                class="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+          <i data-lucide="search" class="w-5 h-5"></i>
+          <span>1. Проаналізувати дублікати</span>
+        </button>
+        
+        <button onclick="runMigration()" id="btn-migrate" disabled
+                class="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+          <i data-lucide="git-merge" class="w-5 h-5"></i>
+          <span>2. Запустити міграцію</span>
+        </button>
+        
+        <button onclick="clearLogs()" 
+                class="flex items-center gap-2 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition">
+          <i data-lucide="trash-2" class="w-5 h-5"></i>
+          <span>Очистити логи</span>
+        </button>
+      </div>
+      
+      <!-- Progress Bar -->
+      <div id="progress-container" class="hidden mt-6">
+        <div class="flex justify-between text-sm text-gray-600 mb-2">
+          <span id="progress-label">Обробка...</span>
+          <span id="progress-percent">0%</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2.5">
+          <div id="progress-bar" class="bg-purple-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Duplicate Groups Preview -->
+    <div id="duplicates-preview" class="hidden bg-white rounded-xl shadow-lg p-6 mb-6">
+      <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
+        <i data-lucide="users" class="w-5 h-5 text-orange-500"></i>
+        Знайдені групи дублікатів
+      </h3>
+      <div id="duplicates-list" class="space-y-4 max-h-96 overflow-y-auto">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+
+    <!-- Log Output -->
+    <div class="bg-gray-900 rounded-xl shadow-lg p-4">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-white flex items-center gap-2">
+          <i data-lucide="terminal" class="w-5 h-5 text-green-400"></i>
+          Лог виконання
+        </h3>
+        <span class="text-xs text-gray-400" id="log-time"></span>
+      </div>
+      <div id="log-output" class="h-64 overflow-y-auto text-sm font-mono space-y-1">
+        <p class="text-gray-400">Готово до роботи. Натисніть «Проаналізувати дублікати» для початку.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { 
+      getFirestore, collection, doc, getDocs, getDoc, setDoc, deleteDoc, 
+      query, where, orderBy, writeBatch, serverTimestamp, increment, arrayUnion 
+    } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyQvItRyL4IKl9NmEItswwPOEiKAbWkMw",
+      authDomain: "my-magazin-81c96.firebaseapp.com",
+      projectId: "my-magazin-81c96",
+      storageBucket: "my-magazin-81c96.firebasestorage.app",
+      messagingSenderId: "129061757346",
+      appId: "1:129061757346:web:3e7bc5838cc5f7bda992fb"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // Global state
+    let duplicateGroups = [];
+    let allCustomers = [];
+
+    // Wait for PhoneUtils to load
+    function waitForPhoneUtils() {
+      return new Promise(resolve => {
+        const check = () => {
+          if (window.PhoneUtils) resolve();
+          else setTimeout(check, 100);
+        };
+        check();
+      });
+    }
+
+    // Check auth
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        log('❌ Не авторизовано! Увійдіть в адмін панель.', 'error');
+        document.getElementById('btn-analyze').disabled = true;
+      } else {
+        log('✅ Авторизовано як: ' + user.email, 'success');
+      }
+    });
+
+    // Logging
+    function log(message, type = 'info') {
+      const container = document.getElementById('log-output');
+      const colors = {
+        info: 'text-gray-300',
+        success: 'text-green-400',
+        warning: 'text-yellow-400',
+        error: 'text-red-400',
+        highlight: 'text-purple-400 font-semibold'
+      };
+      const time = new Date().toLocaleTimeString('uk-UA');
+      const p = document.createElement('p');
+      p.className = `log-entry ${colors[type] || colors.info}`;
+      p.innerHTML = `<span class="text-gray-500">[${time}]</span> ${message}`;
+      container.appendChild(p);
+      container.scrollTop = container.scrollHeight;
+      document.getElementById('log-time').textContent = time;
+    }
+
+    function clearLogs() {
+      document.getElementById('log-output').innerHTML = '<p class="text-gray-400">Логи очищено.</p>';
+    }
+
+    function updateProgress(current, total, label = 'Обробка...') {
+      const percent = Math.round((current / total) * 100);
+      document.getElementById('progress-label').textContent = label;
+      document.getElementById('progress-percent').textContent = `${percent}%`;
+      document.getElementById('progress-bar').style.width = `${percent}%`;
+    }
+
+    function showProgress(show) {
+      document.getElementById('progress-container').classList.toggle('hidden', !show);
+    }
+
+    // ============================================
+    // ANALYZE CUSTOMERS
+    // ============================================
+    async function analyzeCustomers() {
+      const btn = document.getElementById('btn-analyze');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div><span>Аналіз...</span>';
+      
+      showProgress(true);
+      duplicateGroups = [];
+      
+      try {
+        await waitForPhoneUtils();
+        log('📊 Початок аналізу дублікатів...', 'highlight');
+        
+        // 1. Fetch all customers from 'customers' collection
+        log('📥 Завантаження клієнтів з Firestore...');
+        const customersRef = collection(db, 'customers');
+        const snapshot = await getDocs(customersRef);
+        
+        allCustomers = snapshot.docs.map(doc => ({
+          docId: doc.id,
+          ...doc.data()
+        }));
+        
+        log(`✅ Завантажено ${allCustomers.length} клієнтів`);
+        document.getElementById('stat-total').textContent = allCustomers.length;
+        
+        if (allCustomers.length === 0) {
+          log('ℹ️ Клієнтів не знайдено в колекції customers', 'warning');
+          showProgress(false);
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="search" class="w-5 h-5"></i><span>1. Проаналізувати дублікати</span>';
+          lucide.createIcons();
+          return;
+        }
+        
+        // 2. Group by normalized phone
+        log('🔄 Групування за нормалізованими телефонами...');
+        const phoneGroups = new Map();
+        
+        allCustomers.forEach((customer, index) => {
+          const rawPhone = customer.phone || customer.docId || '';
+          const normalizedPhone = window.PhoneUtils.normalizePhone(rawPhone);
+          
+          updateProgress(index + 1, allCustomers.length, 'Нормалізація телефонів...');
+          
+          if (normalizedPhone) {
+            if (!phoneGroups.has(normalizedPhone)) {
+              phoneGroups.set(normalizedPhone, []);
+            }
+            phoneGroups.get(normalizedPhone).push(customer);
+          } else {
+            log(`⚠️ Не вдалось нормалізувати: ${rawPhone} (ID: ${customer.docId})`, 'warning');
+          }
+        });
+        
+        // 3. Find duplicates (groups with >1 customer)
+        let totalDuplicates = 0;
+        phoneGroups.forEach((customers, phone) => {
+          if (customers.length > 1) {
+            duplicateGroups.push({
+              normalizedPhone: phone,
+              customers: customers
+            });
+            totalDuplicates += customers.length - 1; // All but the master
+          }
+        });
+        
+        // 4. Update stats
+        document.getElementById('stat-duplicate-groups').textContent = duplicateGroups.length;
+        document.getElementById('stat-duplicates').textContent = totalDuplicates;
+        document.getElementById('stat-after').textContent = allCustomers.length - totalDuplicates;
+        
+        // 5. Log results
+        if (duplicateGroups.length === 0) {
+          log('✅ Дублікатів не знайдено! База даних чиста.', 'success');
+        } else {
+          log(`⚠️ Знайдено ${duplicateGroups.length} груп дублікатів (${totalDuplicates} зайвих записів)`, 'warning');
+          
+          // Enable migration button
+          document.getElementById('btn-migrate').disabled = false;
+          
+          // Show preview
+          renderDuplicatesPreview();
+        }
+        
+        showProgress(false);
+        
+      } catch (error) {
+        log(`❌ Помилка аналізу: ${error.message}`, 'error');
+        console.error(error);
+      }
+      
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="search" class="w-5 h-5"></i><span>1. Проаналізувати дублікати</span>';
+      lucide.createIcons();
+    }
+    
+    // Render preview of duplicates
+    function renderDuplicatesPreview() {
+      const container = document.getElementById('duplicates-list');
+      const preview = document.getElementById('duplicates-preview');
+      preview.classList.remove('hidden');
+      
+      let html = '';
+      duplicateGroups.slice(0, 10).forEach((group, i) => {
+        const display = window.PhoneUtils.formatPhoneDisplay(group.normalizedPhone);
+        html += `
+          <div class="border border-gray-200 rounded-lg p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="px-2 py-1 bg-orange-100 text-orange-800 text-xs font-semibold rounded">Група ${i + 1}</span>
+              <span class="font-mono text-sm text-gray-600">${display}</span>
+              <span class="text-xs text-gray-400">(${group.customers.length} записів)</span>
+            </div>
+            <div class="space-y-1 text-sm">
+              ${group.customers.map((c, idx) => `
+                <div class="flex items-center gap-2 ${idx === 0 ? 'text-green-700 font-medium' : 'text-gray-500'}">
+                  ${idx === 0 ? '👑' : '→'} <span>${c.fullName || 'Без імені'}</span>
+                  <span class="text-xs text-gray-400">ID: ${c.docId.slice(0, 12)}...</span>
+                  <span class="text-xs">${c.ordersCount || 0} замовлень, ${c.totalSpent || 0} ₴</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      });
+      
+      if (duplicateGroups.length > 10) {
+        html += `<p class="text-center text-gray-500 text-sm py-2">...і ще ${duplicateGroups.length - 10} груп</p>`;
+      }
+      
+      container.innerHTML = html;
+    }
+
+    // ============================================
+    // RUN MIGRATION
+    // ============================================
+    async function runMigration() {
+      if (duplicateGroups.length === 0) {
+        log('ℹ️ Нема дублікатів для міграції', 'warning');
+        return;
+      }
+      
+      if (!confirm(`⚠️ УВАГА!\n\nВи впевнені що хочете об'єднати ${duplicateGroups.length} груп дублікатів?\n\nЦю операцію неможливо скасувати!\n\nПереконайтесь що у вас є резервна копія бази даних.`)) {
+        log('🚫 Міграцію скасовано користувачем', 'warning');
+        return;
+      }
+      
+      const btn = document.getElementById('btn-migrate');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div><span>Міграція...</span>';
+      
+      showProgress(true);
+      let merged = 0;
+      let deleted = 0;
+      let errors = 0;
+      
+      try {
+        log('🚀 Початок міграції...', 'highlight');
+        
+        for (let i = 0; i < duplicateGroups.length; i++) {
+          const group = duplicateGroups[i];
+          updateProgress(i + 1, duplicateGroups.length, `Обробка групи ${i + 1}/${duplicateGroups.length}`);
+          
+          try {
+            await mergeCustomerGroup(group);
+            merged++;
+            deleted += group.customers.length - 1;
+            log(`✅ Група ${group.normalizedPhone}: ${group.customers.length} → 1`, 'success');
+          } catch (error) {
+            errors++;
+            log(`❌ Помилка групи ${group.normalizedPhone}: ${error.message}`, 'error');
+          }
+          
+          // Small delay to avoid rate limiting
+          await new Promise(r => setTimeout(r, 100));
+        }
+        
+        log('', 'info');
+        log('════════════════════════════════════════', 'highlight');
+        log(`✅ МІГРАЦІЯ ЗАВЕРШЕНА!`, 'success');
+        log(`📊 Об'єднано груп: ${merged}`, 'success');
+        log(`🗑️ Видалено дублікатів: ${deleted}`, 'success');
+        if (errors > 0) {
+          log(`⚠️ Помилок: ${errors}`, 'warning');
+        }
+        log('════════════════════════════════════════', 'highlight');
+        
+        // Update stats
+        document.getElementById('stat-duplicates').textContent = '0';
+        document.getElementById('stat-duplicate-groups').textContent = '0';
+        
+        // Hide preview
+        document.getElementById('duplicates-preview').classList.add('hidden');
+        
+      } catch (error) {
+        log(`❌ Критична помилка: ${error.message}`, 'error');
+        console.error(error);
+      }
+      
+      showProgress(false);
+      btn.disabled = true;
+      btn.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5"></i><span>Готово!</span>';
+      lucide.createIcons();
+    }
+
+    // Merge a single group of duplicates
+    async function mergeCustomerGroup(group) {
+      const { normalizedPhone, customers } = group;
+      
+      // Sort: keep the one with most orders as master, or oldest
+      customers.sort((a, b) => {
+        const ordersA = a.ordersCount || 0;
+        const ordersB = b.ordersCount || 0;
+        if (ordersA !== ordersB) return ordersB - ordersA; // Most orders first
+        
+        // If equal, prefer the one with data
+        return (a.createdAt || 0) - (b.createdAt || 0);
+      });
+      
+      const master = customers[0];
+      const duplicates = customers.slice(1);
+      
+      // Aggregate data from all duplicates into master
+      let totalOrders = master.ordersCount || 0;
+      let totalSpent = master.totalSpent || 0;
+      let allOrderIds = [...(master.orderHistory || master.orderIds || [])];
+      let fullName = master.fullName || '';
+      let email = master.email || '';
+      
+      duplicates.forEach(dup => {
+        totalOrders += (dup.ordersCount || 0);
+        totalSpent += (dup.totalSpent || 0);
+        
+        // Merge order histories
+        const dupOrderIds = dup.orderHistory || dup.orderIds || [];
+        dupOrderIds.forEach(id => {
+          if (!allOrderIds.includes(id)) {
+            allOrderIds.push(id);
+          }
+        });
+        
+        // Take name/email if master doesn't have it
+        if (!fullName && dup.fullName) fullName = dup.fullName;
+        if (!email && dup.email) email = dup.email;
+      });
+      
+      // Create/update the master profile with normalized phone as ID
+      const masterRef = doc(db, 'customers', normalizedPhone);
+      const masterData = {
+        phone: normalizedPhone,
+        phoneDisplay: window.PhoneUtils.formatPhoneDisplay(normalizedPhone),
+        fullName: fullName || master.fullName || '',
+        email: email || master.email || '',
+        ordersCount: totalOrders,
+        totalSpent: totalSpent,
+        orderHistory: allOrderIds,
+        // Preserve dates
+        firstOrderDate: master.firstOrderDate || master.createdAt || serverTimestamp(),
+        createdAt: master.createdAt || serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        // Migration metadata
+        _migrated: true,
+        _migratedAt: serverTimestamp(),
+        _mergedFrom: customers.map(c => c.docId)
+      };
+      
+      await setDoc(masterRef, masterData);
+      
+      // Delete all old documents (including master if it had wrong ID)
+      for (const customer of customers) {
+        if (customer.docId !== normalizedPhone) {
+          const oldRef = doc(db, 'customers', customer.docId);
+          await deleteDoc(oldRef);
+        }
+      }
+    }
+
+    // Make functions globally accessible
+    window.analyzeCustomers = analyzeCustomers;
+    window.runMigration = runMigration;
+    window.clearLogs = clearLogs;
+
+    // Init Lucide icons
+    lucide.createIcons();
+  </script>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Створення Тестового Адміна</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-orange-50 to-red-50 min-h-screen flex items-center justify-center p-4">
+  
+  <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+    <div class="text-center mb-6">
+      <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <span class="text-3xl">🔐</span>
+      </div>
+      <h1 class="text-2xl font-bold text-gray-900 mb-2">Створення Адміністратора</h1>
+      <p class="text-sm text-gray-600">Для локальних тестів Firebase Emulator</p>
+    </div>
+
+    <div id="status" class="hidden mb-4 p-4 rounded-lg"></div>
+
+    <form onsubmit="createUser(event)" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+        <input 
+          type="email" 
+          id="email" 
+          value="admin@latiao.com"
+          class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
+          required
+        >
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Пароль</label>
+        <input 
+          type="password" 
+          id="password" 
+          value="admin123456"
+          class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
+          required
+        >
+      </div>
+
+      <button 
+        type="submit"
+        id="submit-btn"
+        class="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-3 rounded-lg transition shadow-lg hover:shadow-xl"
+      >
+        Створити Користувача
+      </button>
+    </form>
+
+    <div class="mt-6 p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+      <p class="text-xs text-blue-800 font-medium mb-2">ℹ️ Важливо:</p>
+      <ul class="text-xs text-blue-700 space-y-1">
+        <li>• Firebase Emulators повинні бути запущені</li>
+        <li>• Відкрийте цей файл через: <code class="bg-blue-100 px-1 rounded">http://127.0.0.1:5000/seed-admin-user.html</code></li>
+        <li>• Після створення увійдіть в адмін-панель</li>
+      </ul>
+    </div>
+
+    <div class="mt-4 text-center">
+      <a href="/admin-site/" class="text-sm text-orange-600 hover:text-orange-700 font-medium">
+        → Перейти до Адмін-панелі
+      </a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { 
+      getAuth, 
+      createUserWithEmailAndPassword,
+      connectAuthEmulator 
+    } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyQvItRyL4IKl9NmEItswwPOEiKAbWkMw",
+      authDomain: "my-magazin-81c96.firebaseapp.com",
+      projectId: "my-magazin-81c96",
+      storageBucket: "my-magazin-81c96.firebasestorage.app",
+      messagingSenderId: "129061757346",
+      appId: "1:129061757346:web:3e7bc5838cc5f7bda992fb"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Connect to Auth Emulator
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+      try {
+        connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+        console.log('✅ Connected to Auth Emulator');
+      } catch (error) {
+        console.warn('⚠️ Auth Emulator connection:', error.message);
+      }
+    }
+
+    window.createUser = async function(event) {
+      event.preventDefault();
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const statusDiv = document.getElementById('status');
+      const submitBtn = document.getElementById('submit-btn');
+
+      statusDiv.classList.remove('hidden', 'bg-green-50', 'bg-red-50', 'text-green-700', 'text-red-700', 'border-green-200', 'border-red-200');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Створення...';
+
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        
+        statusDiv.classList.add('bg-green-50', 'text-green-700', 'border-2', 'border-green-200');
+        statusDiv.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="text-xl">✅</span>
+            <div>
+              <p class="font-bold">Користувача створено успішно!</p>
+              <p class="text-sm mt-1">UID: ${userCredential.user.uid}</p>
+              <p class="text-xs mt-2 text-green-600">Використовуйтеці дані для входу в адмін-панель</p>
+            </div>
+          </div>
+        `;
+        statusDiv.classList.remove('hidden');
+
+        console.log('✅ User created:', userCredential.user);
+
+      } catch (error) {
+        let errorMessage = 'Помилка створення користувача';
+        
+        if (error.code === 'auth/email-already-in-use') {
+          errorMessage = 'Користувач з таким email вже існує! Можете входити.';
+        } else if (error.code === 'auth/weak-password') {
+          errorMessage = 'Пароль занадто слабкий (мінімум 6 символів)';
+        } else if (error.code === 'auth/invalid-email') {
+          errorMessage = 'Невірний формат email';
+        }
+
+        statusDiv.classList.add('bg-red-50', 'text-red-700', 'border-2', 'border-red-200');
+        statusDiv.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="text-xl">❌</span>
+            <div>
+              <p class="font-bold">${errorMessage}</p>
+              <p class="text-xs mt-1">${error.code}</p>
+            </div>
+          </div>
+        `;
+        statusDiv.classList.remove('hidden');
+
+        console.error('❌ Error:', error);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Створити Користувача';
+      }
+    };
+  </script>
+
+</body>
+</html>

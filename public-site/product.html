@@ -91,6 +91,7 @@
   </script>
 
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -198,6 +199,38 @@
     .card-lift:hover {
       transform: translateY(-4px);
       box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    /* Favorite Button Animations */
+    @keyframes heartPop {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.25);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .heart-pop {
+      animation: heartPop 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Favorite active state - target both i and svg elements */
+    #favorite-btn.is-favorite i,
+    #favorite-btn.is-favorite svg {
+      color: #ef4444 !important;
+      fill: #ef4444 !important;
+      stroke: #ef4444 !important;
+    }
+
+    /* Ensure icon is always visible */
+    #favorite-btn i,
+    #favorite-btn svg {
+      display: block !important;
+      opacity: 1 !important;
     }
 
     .press-scale {
@@ -684,6 +717,17 @@
             <img id="main-image" src="https://placehold.co/600x600/fff3e8/ff6b00?text=Latiao" alt="Product"
               class="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
               onerror="this.src='https://placehold.co/600x600/fff3e8/ff6b00?text=Latiao'" />
+            
+            <!-- Favorite Button -->
+            <button 
+              id="favorite-btn"
+              onclick="event.stopPropagation(); window.toggleProductFavorite && window.toggleProductFavorite()"
+              class="absolute top-4 right-4 z-20 w-11 h-11 flex items-center justify-center bg-white/80 backdrop-blur-md hover:bg-white/95 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 active:scale-90"
+              aria-label="Додати в обране"
+              style="-webkit-tap-highlight-color: transparent;"
+            >
+              <i data-lucide="heart" class="w-6 h-6 text-gray-600 fill-none"></i>
+            </button>
           </div>
 
           <!-- Navigation Arrows -->
@@ -1154,6 +1198,121 @@
     let suggestedProduct = null // For upsell bundle
     let quantity = 1
     let maxStock = 0
+    let currentProductId = null // For favorites
+
+    // ============================================
+    // FAVORITES FUNCTIONALITY
+    // ============================================
+    const FAVORITES_KEY = 'latiao_favorites';
+
+    // Get all favorites from localStorage
+    function getFavorites() {
+      try {
+        const favorites = localStorage.getItem(FAVORITES_KEY);
+        return favorites ? JSON.parse(favorites) : [];
+      } catch (error) {
+        console.error('Error reading favorites:', error);
+        return [];
+      }
+    }
+
+    // Save favorites to localStorage
+    function saveFavorites(favorites) {
+      try {
+        localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+        // Update favorites counter in header
+        if (window.updateFavoritesCounter) {
+          window.updateFavoritesCounter();
+        }
+      } catch (error) {
+        console.error('Error saving favorites:', error);
+      }
+    }
+
+    // Check if product is in favorites
+    function isProductFavorite(productId) {
+      const favorites = getFavorites();
+      return favorites.includes(productId);
+    }
+
+    // Update heart UI based on favorite status
+    function updateHeartUI(isFavorite) {
+      const btn = document.getElementById('favorite-btn');
+      const icon = btn?.querySelector('[data-lucide]');
+      
+      if (!btn || !icon) {
+        console.warn('Heart button or icon not found');
+        return;
+      }
+
+      if (isFavorite) {
+        btn.classList.add('is-favorite');
+        icon.classList.remove('fill-none');
+        icon.classList.add('fill-current');
+      } else {
+        btn.classList.remove('is-favorite');
+        icon.classList.remove('fill-current');
+        icon.classList.add('fill-none');
+      }
+
+      // CRITICAL: Re-init Lucide icons after class changes
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    }
+
+    // Toggle favorite status
+    window.toggleProductFavorite = function() {
+      if (!currentProductId) {
+        console.warn('No product ID available');
+        return;
+      }
+
+      const favorites = getFavorites();
+      const index = favorites.indexOf(currentProductId);
+      const btn = document.getElementById('favorite-btn');
+
+      if (index > -1) {
+        // Remove from favorites
+        favorites.splice(index, 1);
+        updateHeartUI(false);
+        console.log('❤️ Removed from favorites:', currentProductId);
+      } else {
+        // Add to favorites
+        favorites.push(currentProductId);
+        updateHeartUI(true);
+        
+        // Trigger pop animation
+        if (btn) {
+          btn.classList.add('heart-pop');
+          setTimeout(() => btn.classList.remove('heart-pop'), 400);
+        }
+        
+        console.log('❤️ Added to favorites:', currentProductId);
+      }
+
+      saveFavorites(favorites);
+    }
+
+    // Initialize favorite state on page load
+    function initFavoriteButton() {
+      if (!currentProductId) {
+        console.warn('Cannot initialize favorite button: no product ID');
+        return;
+      }
+      
+      // Force Lucide to render the icon first
+      if (typeof lucide !== 'undefined') {
+        console.log('🎨 Initializing Lucide icons for favorite button');
+        lucide.createIcons();
+      }
+      
+      // Then update the state
+      const isFavorite = isProductFavorite(currentProductId);
+      updateHeartUI(isFavorite);
+      
+      console.log('❤️ Favorite button initialized. Is favorite:', isFavorite);
+    }
 
     // ============================================
     // TIME TRACKING: Time to Add to Cart
@@ -1266,6 +1425,7 @@
         }
 
         currentProduct = { id: productSnap.id, ...productSnap.data() }
+        currentProductId = productSnap.id // Store for favorites
 
         // Check if product is hidden
         if (currentProduct.isVisible === false) {
@@ -1286,6 +1446,16 @@
 
         // Populate UI
         populateProductData(currentProduct)
+        
+        // Force Lucide to scan for icons on the page
+        if (typeof lucide !== 'undefined') {
+          lucide.createIcons();
+        }
+        
+        // Initialize favorite button state (with a small delay to ensure DOM is ready)
+        setTimeout(() => {
+          initFavoriteButton();
+        }, 100);
 
         // Load recommended products
         await loadRecommendedProducts(currentProduct.category)

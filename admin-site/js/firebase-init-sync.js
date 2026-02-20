@@ -13,6 +13,7 @@
         getFirestore,
         initializeFirestore,
         enableIndexedDbPersistence,
+        connectFirestoreEmulator,
         collection, 
         doc, 
         addDoc, 
@@ -33,9 +34,9 @@
         increment
     } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
     
-    const { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
-    const { getFunctions } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js');
-    const { getStorage } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js');
+    const { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, connectAuthEmulator } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+    const { getFunctions, connectFunctionsEmulator } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js');
+    const { getStorage, connectStorageEmulator } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js');
 
     // Firebase config
     const firebaseConfig = {
@@ -60,6 +61,43 @@
     const auth = getAuth(app);
     const functions = getFunctions(app);
     const storage = getStorage(app);
+
+    // ============================================
+    // 🔥 CONNECT TO LOCAL EMULATORS (DEV MODE)
+    // ============================================
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        console.log('🔧 ADMIN firebase-init-sync.js: Connecting to Firebase Emulators...');
+        
+        try {
+            connectFirestoreEmulator(db, '127.0.0.1', 8080);
+            console.log('✅ SYNC: Firestore Emulator connected (127.0.0.1:8080)');
+        } catch (error) {
+            console.warn('⚠️ Firestore Emulator error:', error.message);
+        }
+        
+        try {
+            connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+            console.log('✅ SYNC: Auth Emulator connected (127.0.0.1:9099)');
+        } catch (error) {
+            console.warn('⚠️ Auth Emulator error:', error.message);
+        }
+        
+        try {
+            connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+            console.log('✅ SYNC: Functions Emulator connected (127.0.0.1:5001)');
+        } catch (error) {
+            console.warn('⚠️ Functions Emulator error:', error.message);
+        }
+        
+        try {
+            connectStorageEmulator(storage, '127.0.0.1', 9199);
+            console.log('✅ SYNC: Storage Emulator connected (127.0.0.1:9199)');
+        } catch (error) {
+            console.warn('⚠️ Storage Emulator error:', error.message);
+        }
+        
+        console.log('🎯 SYNC using LOCAL emulators at http://localhost:4000');
+    }
 
     // ⚡ Enable offline persistence (with error handling)
     enableIndexedDbPersistence(db).catch((err) => {

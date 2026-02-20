@@ -389,6 +389,13 @@ const headerTemplate = `
         
         <!-- Action Buttons (Right side) -->
         <div class="flex items-center gap-1 sm:gap-2 ml-2">
+          <!-- Favorites Button: Hidden on mobile, visible on desktop (lg+) -->
+          <a href="/favorites.html" id="favorites-btn" class="hidden lg:flex relative p-2 hover:bg-orange-50 rounded-full text-gray-700 hover:text-orange-500 transition-colors cursor-pointer" aria-label="Favorites">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+            </svg>
+            <span id="favorites-badge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center hidden">0</span>
+          </a>
           <!-- Account Icon: Hidden on mobile, visible on desktop (lg+) -->
           <a href="./login.html" id="user-profile-btn" class="hidden lg:flex relative p-2 hover:bg-orange-50 rounded-full text-gray-700 hover:text-orange-500 transition-colors cursor-pointer" aria-label="User profile">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -445,6 +452,20 @@ const headerTemplate = `
               <circle cx="12" cy="7" r="4"/>
             </svg>
             <span class="font-semibold">Особистий кабінет</span>
+          </a>
+        </div>
+
+        <!-- Favorites Section -->
+        <div class="pt-4 border-t border-gray-100">
+          <a href="/favorites.html" onclick="window.closeSideMenu()" id="mobile-favorites-link" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-orange-50 transition-colors group relative">
+            <svg class="w-6 h-6 text-red-500" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+            </svg>
+            <div class="flex-1">
+              <p class="font-semibold text-gray-900 group-hover:text-orange-600 transition-colors">Мої улюблені</p>
+              <p class="text-xs text-gray-500">Обрані товари</p>
+            </div>
+            <span id="mobile-favorites-badge" class="hidden w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">0</span>
           </a>
         </div>
 
@@ -869,6 +890,66 @@ function updateBadges() {
     } else {
       badge.classList.add('hidden');
     }
+  }
+}
+
+// Update favorites badge
+function updateFavoritesBadge() {
+  try {
+    const favorites = localStorage.getItem('latiao_favorites');
+    const count = favorites ? JSON.parse(favorites).length : 0;
+    
+    const desktopBadge = document.getElementById('favorites-badge');
+    const mobileBadge = document.getElementById('mobile-favorites-badge');
+    
+    [desktopBadge, mobileBadge].forEach(badge => {
+      if (badge) {
+        badge.textContent = count;
+        if (count > 0) {
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error updating favorites badge:', error);
+  }
+}
+
+// Expose globally for favorites.js
+window.updateFavoritesCounter = updateFavoritesBadge;
+
+// Highlight active page in mobile menu
+function highlightActivePage() {
+  try {
+    const currentPath = window.location.pathname;
+    const currentPage = currentPath.split('/').pop() || 'index.html';
+    
+    // Highlight favorites link if on favorites page
+    const favoritesLink = document.getElementById('mobile-favorites-link');
+    if (favoritesLink && (currentPage === 'favorites.html' || currentPath.includes('/favorites.html'))) {
+      favoritesLink.classList.add('bg-orange-50');
+      favoritesLink.classList.add('border-2');
+      favoritesLink.classList.add('border-orange-200');
+      const textElement = favoritesLink.querySelector('p.font-semibold');
+      if (textElement) {
+        textElement.classList.add('text-orange-600');
+        textElement.classList.remove('text-gray-900');
+      }
+    }
+    
+    // Add active state for other menu items
+    document.querySelectorAll('.mobile-menu-link').forEach(link => {
+      const href = link.getAttribute('href');
+      if (href && (href === currentPage || href === `/${currentPage}` || currentPath.includes(href))) {
+        link.classList.add('bg-orange-50');
+        link.classList.add('border-2');
+        link.classList.add('border-orange-200');
+      }
+    });
+  } catch (error) {
+    console.warn('⚠️ Error highlighting active page:', error);
   }
 }
 
@@ -2266,6 +2347,20 @@ export function loadLayout() {
   document.body.setAttribute('data-layout-loaded', 'true');
 
   console.log('✅ Layout HTML вставлено');
+  
+  // Verify mobile menu was injected
+  const mobileMenuCheck = document.getElementById('mobile-menu');
+  const favoritesLinkCheck = document.getElementById('mobile-favorites-link');
+  if (mobileMenuCheck) {
+    console.log('✅ Mobile menu успішно створено');
+  } else {
+    console.error('❌ Mobile menu НЕ знайдено!');
+  }
+  if (favoritesLinkCheck) {
+    console.log('✅ Favorites link у mobile menu знайдено');
+  } else {
+    console.warn('⚠️ Favorites link у mobile menu НЕ знайдено');
+  }
 
   // Initialize Lucide icons if available
   if (typeof lucide !== 'undefined') {
@@ -2276,6 +2371,7 @@ export function loadLayout() {
   // Render cart and update badges
   renderCart();
   updateBadges();
+  updateFavoritesBadge();
 
   // Render footer if placeholder exists
   renderFooter();
@@ -2296,6 +2392,9 @@ export function loadLayout() {
         window.closeSideMenu();
       });
     });
+
+    // Highlight active page in mobile menu
+    highlightActivePage();
 
     // Re-init Lucide icons after small delay to ensure all DOM is ready
     if (typeof lucide !== 'undefined') {

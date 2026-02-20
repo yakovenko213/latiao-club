@@ -61,6 +61,54 @@ const auth = getAuth(app);
 const functions = getFunctions(app);
 const storage = getStorage(app);
 
+// ============================================
+// 🔥 CONNECT TO LOCAL EMULATORS (DEV MODE)
+// ============================================
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    console.log('🔧 DEVELOPMENT MODE: Connecting to Firebase Emulators...');
+    
+    // Import emulator connection functions
+    import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')
+        .then(({ connectFirestoreEmulator }) => {
+            try {
+                connectFirestoreEmulator(db, '127.0.0.1', 8080);
+                console.log('✅ Connected to Firestore Emulator: 127.0.0.1:8080');
+            } catch (error) {
+                console.warn('⚠️ Firestore Emulator already connected or error:', error.message);
+            }
+        });
+    
+    import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js')
+        .then(({ connectAuthEmulator }) => {
+            try {
+                connectAuthEmulator(auth, 'http://127.0.0.1:9099');
+                console.log('✅ Connected to Auth Emulator: 127.0.0.1:9099');
+            } catch (error) {
+                console.warn('⚠️ Auth Emulator already connected or error:', error.message);
+            }
+        });
+    
+    import('https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js')
+        .then(({ connectFunctionsEmulator }) => {
+            try {
+                connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+                console.log('✅ Connected to Functions Emulator: 127.0.0.1:5001');
+            } catch (error) {
+                console.warn('⚠️ Functions Emulator already connected or error:', error.message);
+            }
+        });
+    
+    import('https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js')
+        .then(({ connectStorageEmulator }) => {
+            try {
+                connectStorageEmulator(storage, '127.0.0.1', 9199);
+                console.log('✅ Connected to Storage Emulator: 127.0.0.1:9199');
+            } catch (error) {
+                console.warn('⚠️ Storage Emulator already connected or error:', error.message);
+            }
+        });
+}
+
 // ⚡ CRITICAL: Enable persistence BEFORE any queries
 // This allows instant loading from IndexedDB cache
 let persistenceEnabled = false;

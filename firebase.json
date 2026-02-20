@@ -10,8 +10,7 @@
         "**/.*",
         "**/node_modules/**",
         "admin.html",
-        "admin-*.html",
-        "admin-site/**"
+        "admin-*.html"
       ],
       "headers": [
         {
@@ -76,6 +75,10 @@
         }
       ],
       "rewrites": [
+        {
+          "source": "/admin-site/**",
+          "destination": "/admin-site/index.html"
+        },
         {
           "source": "/google_feed.xml",
           "function": "getGoogleFeed"

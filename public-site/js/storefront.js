@@ -172,18 +172,29 @@ function createProductCard(product, productId) {
 
     const generatedSku = `LT-${new Date().getFullYear()}-${productId.substring(0, 4).toUpperCase()}`;
     const sku = product.sku || product.code || generatedSku; // Get SKU or generate fallback
-
+    const spiciness = product.spiciness || 1;
+    const isHot = product.isHot || false;
 
     return `
         <div class="card-hover bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm fade-in group relative">
             ${isHot ? '<div class="absolute top-3 left-3 z-10 bg-fire text-white text-xs font-bold px-2 py-1 rounded-full">🔥 ХІТ</div>' : ''}
             <a href="product.html?id=${productId}" class="block">
-                <div class="aspect-square overflow-hidden bg-gray-50">
+                <div class="aspect-square overflow-hidden bg-gray-50 relative">
                     <img src="${img}" 
                          alt="${product.name}" 
                          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                          loading="lazy"
                          onerror="this.src='https://placehold.co/300x300?text=Латяо'">
+                    
+                    <!-- Favorite Button -->
+                    <button 
+                        onclick="event.preventDefault(); event.stopPropagation(); window.toggleFavorite && window.toggleFavorite(event, '${productId}')"
+                        data-favorite-id="${productId}"
+                        class="favorite-btn absolute top-2 right-2 w-9 h-9 flex items-center justify-center bg-white/70 backdrop-blur-sm hover:bg-white/90 rounded-full shadow-md hover:shadow-lg transition-all duration-200 hover:scale-110 active:scale-95 z-10"
+                        aria-label="Додати в обране"
+                    >
+                        <i data-lucide="heart" class="w-4 h-4 text-gray-500"></i>
+                    </button>
                 </div>
             </a>
             <div class="p-4">
@@ -222,12 +233,22 @@ function createHorizontalProductCard(product, productId) {
             <div class="card-hover bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm group relative h-full">
                 <div class="absolute top-3 left-3 z-10 bg-fire text-white text-xs font-bold px-2 py-1 rounded-full fire-accent">🔥 ХІТ</div>
                 <a href="product.html?id=${productId}" class="block">
-                    <div class="aspect-square overflow-hidden bg-gray-50">
+                    <div class="aspect-square overflow-hidden bg-gray-50 relative">
                         <img src="${img}" 
                              alt="${product.name}" 
                              class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                              loading="lazy"
                              onerror="this.src='https://placehold.co/300x300?text=Латяо'">
+                        
+                        <!-- Favorite Button -->
+                        <button 
+                            onclick="event.preventDefault(); event.stopPropagation(); window.toggleFavorite && window.toggleFavorite(event, '${productId}')"
+                            data-favorite-id="${productId}"
+                            class="favorite-btn absolute top-2 right-2 w-9 h-9 flex items-center justify-center bg-white/70 backdrop-blur-sm hover:bg-white/90 rounded-full shadow-md hover:shadow-lg transition-all duration-200 hover:scale-110 active:scale-95 z-10"
+                            aria-label="Додати в обране"
+                        >
+                            <i data-lucide="heart" class="w-4 h-4 text-gray-500"></i>
+                        </button>
                     </div>
                 </a>
                 <div class="p-4">

@@ -7885,7 +7885,8 @@
       getAuth,
       signInWithEmailAndPassword,
       onAuthStateChanged,
-      signOut
+      signOut,
+      connectAuthEmulator
     } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js'
     import {
       getFirestore,
@@ -7907,17 +7908,20 @@
       arrayUnion,
       arrayRemove,
       deleteField,
-      increment
+      increment,
+      connectFirestoreEmulator
     } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
     import {
       getStorage,
       ref,
       uploadBytes,
-      getDownloadURL
+      getDownloadURL,
+      connectStorageEmulator
     } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js'
     import {
       getFunctions,
-      httpsCallable
+      httpsCallable,
+      connectFunctionsEmulator
     } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js'
 
     const firebaseConfig = {
@@ -7934,6 +7938,45 @@
     const db = getFirestore(app)
     const storage = getStorage(app)
     const functions = getFunctions(app)
+
+    // ============================================
+    // 🔥 CONNECT TO LOCAL EMULATORS (DEV MODE)
+    // ============================================
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+      console.log('🔧 DEVELOPMENT MODE: Connecting Admin Panel to Firebase Emulators...');
+      
+      try {
+        connectFirestoreEmulator(db, '127.0.0.1', 8080);
+        console.log('✅ Admin: Connected to Firestore Emulator (127.0.0.1:8080)');
+      } catch (error) {
+        console.warn('⚠️ Firestore Emulator connection failed (may already be connected):', error.message);
+      }
+      
+      try {
+        connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+        console.log('✅ Admin: Connected to Auth Emulator (127.0.0.1:9099)');
+      } catch (error) {
+        console.warn('⚠️ Auth Emulator connection failed (may already be connected):', error.message);
+      }
+      
+      try {
+        connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+        console.log('✅ Admin: Connected to Functions Emulator (127.0.0.1:5001)');
+      } catch (error) {
+        console.warn('⚠️ Functions Emulator connection failed (may already be connected):', error.message);
+      }
+      
+      try {
+        connectStorageEmulator(storage, '127.0.0.1', 9199);
+        console.log('✅ Admin: Connected to Storage Emulator (127.0.0.1:9199)');
+      } catch (error) {
+        console.warn('⚠️ Storage Emulator connection failed (may already be connected):', error.message);
+      }
+      
+      console.log('🎯 Admin Panel now using LOCAL Firebase Emulators at http://localhost:4000');
+    } else {
+      console.log('🌍 PRODUCTION MODE: Using live Firebase');
+    }
 
     // Make Firebase functions available globally for window functions
     window.db = db
