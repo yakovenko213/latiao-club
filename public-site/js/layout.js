@@ -566,48 +566,6 @@ const headerTemplate = `
       object-fit: contain;
     }
     
-    /* Share Cart Tooltip */
-    .share-tooltip {
-      animation: tooltipFadeIn 0.2s ease-out;
-    }
-    
-    @keyframes tooltipFadeIn {
-      from {
-        opacity: 0;
-        transform: translateX(-50%) translateY(5px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-      }
-    }
-    
-    /* Share Modal Animation */
-    #share-cart-modal.show {
-      display: flex !important;
-      animation: modalFadeIn 0.3s ease-out;
-    }
-    
-    #share-cart-modal.show > div {
-      animation: modalSlideIn 0.3s ease-out;
-    }
-    
-    @keyframes modalFadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    
-    @keyframes modalSlideIn {
-      from {
-        opacity: 0;
-        transform: scale(0.95) translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-      }
-    }
-    
     /* Staggered Cart Item Animation */
     @keyframes cartItemFadeIn {
       from {
@@ -733,72 +691,18 @@ const headerTemplate = `
           </span>
         </button>
         
-        <!-- Share Cart Link - Bottom -->
-        <div class="mt-3 flex items-center justify-center">
-          <button onclick="window.showShareCartModal()" class="text-[10px] font-medium text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <circle cx="18" cy="5" r="3"></circle>
-              <circle cx="6" cy="12" r="3"></circle>
-              <circle cx="18" cy="19" r="3"></circle>
-              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-            </svg>
-            Поділитися кошиком
-          </button>
+        <!-- Upsell Section (Force-Integrated) -->
+        <div id="upsell-container" class="mt-4 p-3 bg-orange-50 rounded-xl border border-orange-100">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-[10px] font-bold text-orange-600 uppercase tracking-wider">🔥 Спеціальна пропозиція</span>
+            <span id="upsell-timer" class="text-xs font-mono text-red-500 font-bold">15:00</span>
+          </div>
+          <div id="upsell-list" class="space-y-2"></div>
         </div>
       </div>
     </footer>
   </div>
-  
-  <!-- Share Cart Modal -->
-  <div id="share-cart-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);">
-    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 transform transition-all" onclick="event.stopPropagation()">
-      <!-- Header -->
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-xl font-bold text-gray-900">Поділитися кошиком з друзями</h3>
-        <button onclick="window.closeShareModal()" class="p-2 rounded-full hover:bg-gray-100 transition-colors">
-          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
-      </div>
-      
-      <!-- Description -->
-      <p class="text-sm text-gray-600 mb-4">
-        Скопіюйте посилання та надішліть друзям. Вони зможуть додати товари до кошика та оформити замовлення разом з вами!
-      </p>
-      
-      <!-- Link Input -->
-      <div class="relative mb-4">
-        <input 
-          id="share-link-input" 
-          type="text" 
-          readonly 
-          value="" 
-          class="w-full px-4 py-3 pr-24 border-2 border-gray-200 rounded-2xl text-sm font-mono bg-gray-50 focus:outline-none focus:border-primary transition-colors"
-        />
-        <button 
-          id="copy-link-btn"
-          onclick="window.copyShareLink()" 
-          class="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 bg-gradient-to-r from-spicy to-orange-500 text-white font-semibold text-xs rounded-xl hover:shadow-lg transition-all flex items-center gap-1"
-        >
-          <svg id="copy-icon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-          </svg>
-          <span id="copy-text">Копіювати</span>
-        </button>
-      </div>
-      
-      <!-- Success Message -->
-      <div id="copy-success" class="hidden bg-green-50 border border-green-200 rounded-2xl p-3 flex items-center gap-2 text-sm text-green-700">
-        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-        </svg>
-        <span>Посилання скопійовано! Тепер можете поділитися з друзями.</span>
-      </div>
-    </div>
-  </div>
+
 `;
 
 // ============================================
@@ -1203,6 +1107,7 @@ function renderCart() {
   }).join('');
 
   updateCartUI();
+  initUpsell();
 }
 
 // Update cart UI (totals, delivery progress, etc.)
@@ -2793,166 +2698,221 @@ async function loadFooterDynamicContent() {
 }
 
 // ============================================
-// SHARE CART FUNCTIONALITY
+// UPSELL SECTION LOGIC
 // ============================================
 
 /**
- * Toggle share tooltip visibility
+ * Initialize and manage upsell section with timer and products
  */
-window.toggleShareTooltip = function() {
-  const tooltip = document.getElementById('share-tooltip');
-  if (tooltip) {
-    tooltip.classList.toggle('hidden');
+async function initUpsell() {
+  console.log('🚀 initUpsell called');
+  const container = document.getElementById('upsell-container');
+  const listEl = document.getElementById('upsell-list');
+  const timerEl = document.getElementById('upsell-timer');
+  
+  if (!container || !listEl || !timerEl) {
+    console.warn('⚠️ Upsell elements not found:', { container: !!container, listEl: !!listEl, timerEl: !!timerEl });
+    return;
   }
-};
-
-/**
- * Show share cart modal
- */
-window.showShareCartModal = async function() {
-  if (window.cart.length === 0) {
-    alert('Кошик порожній! Додайте товари перед тим, як ділитися.');
+  console.log('✅ Upsell elements found');
+  
+  // Hide if cart is empty
+  if (!window.cart || window.cart.length === 0) {
+    console.log('ℹ️ Cart is empty, hiding upsell');
+    container.classList.add('hidden');
+    return;
+  }
+  console.log('✅ Cart has', window.cart.length, 'items');
+  
+  // Step 1: Timer management with localStorage
+  let endTime = localStorage.getItem('upsell_end');
+  const now = Date.now();
+  
+  if (!endTime || parseInt(endTime) < now) {
+    // Create new 15-minute timer
+    endTime = now + (15 * 60 * 1000);
+    localStorage.setItem('upsell_end', endTime.toString());
+  }
+  
+  // Step 2: Fetch random products not in cart
+  console.log('📦 Fetching upsell products...');
+  const upsellProducts = await getUpsellProducts();
+  console.log('📦 Got', upsellProducts.length, 'upsell products');
+  
+  if (upsellProducts.length === 0) {
+    console.warn('⚠️ No upsell products available');
+    container.classList.add('hidden');
     return;
   }
   
+  // Step 3: Render products with -8% discount
+  console.log('🎨 Rendering upsell products...');
+  renderUpsellProducts(upsellProducts, listEl);
+  
+  // Show container
+  container.classList.remove('hidden');
+  console.log('✅ Upsell container shown');
+  
+  // Step 4: Start countdown timer
+  startUpsellTimer(endTime, timerEl, container);
+  console.log('⏰ Timer started');
+}
+
+/**
+ * Fetch 2 random products that are NOT in the current cart
+ */
+async function getUpsellProducts() {
   try {
-    // Hide tooltip if open
-    const tooltip = document.getElementById('share-tooltip');
-    if (tooltip) {
-      tooltip.classList.add('hidden');
+    if (!window.firebaseInit) {
+      console.warn('⚠️ Firebase not initialized for upsell');
+      return [];
     }
     
-    // Generate unique cart ID
-    const cartId = crypto.randomUUID();
+    const { db, collection, getDocs, query, where, limit } = window.firebaseInit;
     
-    // Save to Firestore
-    const { db, collection, doc, setDoc, serverTimestamp } = window.firebaseInit || {};
+    // Get active products with stock
+    const productsRef = collection(db, 'products');
+    const productsQuery = query(
+      productsRef,
+      where('isActive', '==', true),
+      where('stock', '>', 0),
+      limit(20) // Get 20 to have enough for random selection
+    );
     
-    if (!db || !setDoc) {
-      console.error('Firebase not initialized');
-      alert('Помилка ініціалізації. Спробуйте ще раз.');
+    const snapshot = await getDocs(productsQuery);
+    const allProducts = [];
+    
+    snapshot.forEach(doc => {
+      allProducts.push({ id: doc.id, ...doc.data() });
+    });
+    
+    if (allProducts.length === 0) return [];
+    
+    // Filter out products already in cart
+    const cartIds = new Set(window.cart.map(item => item.id));
+    const available = allProducts.filter(p => !cartIds.has(p.id));
+    
+    if (available.length === 0) return [];
+    
+    // Shuffle and return 2 random products
+    const shuffled = available.sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 2);
+    
+  } catch (error) {
+    console.error('❌ Error fetching upsell products:', error);
+    return [];
+  }
+}
+
+/**
+ * Render upsell products with -8% discount
+ */
+function renderUpsellProducts(products, container) {
+  const html = products.map(product => {
+    const originalPrice = product.price || 0;
+    const discountedPrice = Math.round(originalPrice * 0.92); // -8% discount
+    const imageUrl = product.imageUrl || product.image || 'https://placehold.co/60x60/fff3e8/ff6b00?text=Latiao';
+    const productName = (product.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    
+    return `
+      <div class="bg-white rounded-lg border border-orange-200 p-2 flex items-center gap-2 hover:shadow-md transition-all duration-200">
+        <div class="w-10 h-10 flex-shrink-0 bg-orange-50 rounded-md overflow-hidden">
+          <img src="${imageUrl}" alt="${product.name}" class="w-full h-full object-cover">
+        </div>
+        <div class="flex-1 min-w-0">
+          <h4 class="text-xs font-semibold text-gray-900 line-clamp-1">${product.name}</h4>
+          <div class="flex items-baseline gap-1.5 mt-0.5">
+            <span class="text-[10px] text-gray-400 line-through">${originalPrice} ₴</span>
+            <span class="text-sm font-extrabold text-orange-600">${discountedPrice} ₴</span>
+            <span class="text-[9px] font-bold text-green-600 bg-green-50 px-1 rounded">-8%</span>
+          </div>
+        </div>
+        <button 
+          onclick="window.addUpsellToCart('${product.id}', '${productName}', '${imageUrl}', ${discountedPrice}, '${product.sku || ''}', ${product.stock || 999}, ${product.spiciness || 0})"
+          class="flex-shrink-0 w-7 h-7 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-full flex items-center justify-center hover:from-orange-600 hover:to-orange-700 active:scale-90 transition-all duration-150 shadow-sm"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+          </svg>
+        </button>
+      </div>
+    `;
+  }).join('');
+  
+  container.innerHTML = html;
+}
+
+/**
+ * Start countdown timer and hide section when expired
+ */
+function startUpsellTimer(endTime, timerEl, container) {
+  // Clear any existing interval
+  if (window.upsellTimerInterval) {
+    clearInterval(window.upsellTimerInterval);
+  }
+  
+  function updateTimer() {
+    const remaining = parseInt(endTime) - Date.now();
+    
+    if (remaining <= 0) {
+      // Timer expired - hide container
+      container.style.transition = 'opacity 0.4s';
+      container.style.opacity = '0';
+      setTimeout(() => {
+        container.classList.add('hidden');
+        container.style.opacity = '1';
+      }, 400);
+      
+      clearInterval(window.upsellTimerInterval);
+      localStorage.removeItem('upsell_end');
       return;
     }
     
-    const cartRef = doc(db, 'shared_carts', cartId);
-    await setDoc(cartRef, {
-      items: window.cart,
-      createdAt: serverTimestamp(),
-      lastUpdatedAt: serverTimestamp(),
-      itemCount: window.cart.length
-    });
-    
-    // Generate shareable URL
-    const shareUrl = `${window.location.origin}/cart-full.html?cartId=${cartId}`;
-    
-    // Update modal input
-    const input = document.getElementById('share-link-input');
-    if (input) {
-      input.value = shareUrl;
-    }
-    
-    // Show modal
-    const modal = document.getElementById('share-cart-modal');
-    if (modal) {
-      modal.classList.add('show');
-      
-      // Close on background click
-      modal.onclick = function(e) {
-        if (e.target === modal) {
-          window.closeShareModal();
-        }
-      };
-    }
-    
-  } catch (error) {
-    console.error('Error sharing cart:', error);
-    alert('Помилка при створенні посилання. Спробуйте ще раз.');
+    // Update timer display (MM:SS)
+    const minutes = Math.floor(remaining / 60000);
+    const seconds = Math.floor((remaining % 60000) / 1000);
+    timerEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
   }
-};
+  
+  // Update immediately
+  updateTimer();
+  
+  // Update every second
+  window.upsellTimerInterval = setInterval(updateTimer, 1000);
+}
 
 /**
- * Close share cart modal
+ * Add upsell product to cart with discounted price
  */
-window.closeShareModal = function() {
-  const modal = document.getElementById('share-cart-modal');
-  if (modal) {
-    modal.classList.remove('show');
+window.addUpsellToCart = function(productId, name, image, price, sku, stock, spiciness) {
+  // Check if already in cart
+  const existingIndex = window.cart.findIndex(item => item.id === productId);
+  
+  if (existingIndex !== -1) {
+    window.showToast('Товар вже в кошику', 'info');
+    return;
   }
   
-  // Reset success message
-  const successMsg = document.getElementById('copy-success');
-  if (successMsg) {
-    successMsg.classList.add('hidden');
-  }
+  // Add to cart with discounted price
+  const cartItem = {
+    id: productId,
+    sku: sku,
+    name: name,
+    price: price,
+    image: image,
+    imageUrl: image,
+    stock: stock,
+    spiciness: spiciness,
+    quantity: 1,
+    isUpsell: true
+  };
   
-  // Reset copy button
-  const copyText = document.getElementById('copy-text');
-  const copyIcon = document.getElementById('copy-icon');
-  if (copyText) copyText.textContent = 'Копіювати';
-  if (copyIcon) {
-    copyIcon.innerHTML = '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>';
-  }
+  window.cart.push(cartItem);
+  saveCart();
+  renderCart(); // This will re-trigger initUpsell() and refresh the upsell list
+  
+  window.showToast(`${name} додано зі знижкою -8%!`, 'success');
 };
-
-/**
- * Copy share link to clipboard
- */
-window.copyShareLink = async function() {
-  const input = document.getElementById('share-link-input');
-  const copyText = document.getElementById('copy-text');
-  const copyIcon = document.getElementById('copy-icon');
-  const successMsg = document.getElementById('copy-success');
-  
-  if (!input) return;
-  
-  try {
-    // Copy to clipboard
-    await navigator.clipboard.writeText(input.value);
-    
-    // Update button state
-    if (copyText) copyText.textContent = 'Готово!';
-    if (copyIcon) {
-      copyIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>';
-    }
-    
-    // Show success message
-    if (successMsg) {
-      successMsg.classList.remove('hidden');
-    }
-    
-    // Reset button after 2 seconds
-    setTimeout(() => {
-      if (copyText) copyText.textContent = 'Копіювати';
-      if (copyIcon) {
-        copyIcon.innerHTML = '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>';
-      }
-    }, 2000);
-    
-  } catch (error) {
-    console.error('Error copying to clipboard:', error);
-    alert('Помилка при копіюванні. Виділіть текст вручну.');
-  }
-};
-
-// Close tooltip when clicking outside
-document.addEventListener('click', function(event) {
-  const tooltip = document.getElementById('share-tooltip');
-  const infoIcon = document.querySelector('.share-info-icon');
-  
-  if (tooltip && infoIcon && !infoIcon.contains(event.target)) {
-    tooltip.classList.add('hidden');
-  }
-});
-
-// Close modal on ESC key
-document.addEventListener('keydown', function(event) {
-  if (event.key === 'Escape') {
-    const modal = document.getElementById('share-cart-modal');
-    if (modal && modal.classList.contains('show')) {
-      window.closeShareModal();
-    }
-  }
-});
 
 // ============================================
 // AUTO-LOAD LAYOUT + START SESSION TRACKING
