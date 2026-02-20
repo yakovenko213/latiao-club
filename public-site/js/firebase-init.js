@@ -64,7 +64,9 @@ const storage = getStorage(app);
 // ============================================
 // 🔥 CONNECT TO LOCAL EMULATORS (DEV MODE)
 // ============================================
-if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+
+if (!isProduction) {
     console.log('🔧 DEVELOPMENT MODE: Connecting to Firebase Emulators...');
     
     // Import emulator connection functions
@@ -107,6 +109,11 @@ if (window.location.hostname === 'localhost' || window.location.hostname === '12
                 console.warn('⚠️ Storage Emulator already connected or error:', error.message);
             }
         });
+} else {
+    console.log('🚀 PRODUCTION MODE - Public Site');
+    console.log('📍 Domain:', window.location.hostname);
+    console.log('🔥 Firebase Project:', firebaseConfig.projectId);
+    console.log('✅ Connected to Cloud Firestore (Production)');
 }
 
 // ⚡ CRITICAL: Enable persistence BEFORE any queries

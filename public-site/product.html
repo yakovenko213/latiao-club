@@ -1182,7 +1182,7 @@
     // Maintenance check is already handled by script tag above
     // No need to import it again here
     import { db } from './js/firebase-init.js'
-    import { doc, getDoc, collection, query, where, getDocs, limit, addDoc, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
+    import { doc, getDoc, collection, query, where, getDocs, limit, addDoc, serverTimestamp, setDoc, increment } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
     
     // 🎯 Simple Same-Category Recommendations  
     import { getPersonalizedRecommendations, trackProductView, trackCartAdd, getUserType } from './js/personalized-recommendations.js'
@@ -1263,6 +1263,8 @@
 
     // Toggle favorite status
     window.toggleProductFavorite = function() {
+      console.log('❤️ Heart clicked for product ID:', currentProductId);
+      
       if (!currentProductId) {
         console.warn('No product ID available');
         return;
@@ -1288,7 +1290,42 @@
           setTimeout(() => btn.classList.remove('heart-pop'), 400);
         }
         
-        console.log('❤️ Added to favorites:', currentProductId);
+        console.log('➕ Added to favorites, localStorage updated');
+        
+        // 📊 TRACK ANALYTICS: Record favorite action in background
+        // Force immediate sync to Firestore
+        (async () => {
+          try {
+            if (!currentProduct) {
+              console.error('❌ currentProduct not available');
+              return;
+            }
+            
+            const analyticsData = {
+              productId: currentProductId,
+              title: currentProduct.name || currentProduct.title || 'Unknown',
+              price: parseFloat(currentProduct.price) || 0,
+              image: (currentProduct.images && currentProduct.images[0]) || currentProduct.image || '',
+              sku: currentProduct.sku || currentProductId,
+              addedCount: increment(1),
+              lastAddedAt: serverTimestamp()
+            };
+            
+            console.log('📊 Syncing to analytics_favorites:', analyticsData);
+            
+            const analyticsRef = doc(db, 'analytics_favorites', currentProductId);
+            await setDoc(analyticsRef, analyticsData, { merge: true });
+            
+            console.log('✅ Analytics synced successfully!');
+          } catch (err) {
+            console.error('❌ Analytics sync failed:', err);
+            console.error('Error details:', {
+              code: err.code,
+              message: err.message,
+              stack: err.stack
+            });
+          }
+        })();
       }
 
       saveFavorites(favorites);
@@ -1312,6 +1349,49 @@
       updateHeartUI(isFavorite);
       
       console.log('❤️ Favorite button initialized. Is favorite:', isFavorite);
+    }
+
+    // ============================================
+    // 📊 FAVORITES ANALYTICS TRACKING
+    // ============================================
+    
+    /**
+     * Track when a product is added to favorites
+     * Runs silently in background without affecting user experience
+     */
+    async function trackProductFavoriteAnalytics(productId) {
+      try {
+        if (!currentProduct) {
+          console.warn('⚠️ Current product not loaded for analytics');
+          return;
+        }
+        
+        const title = currentProduct.name || currentProduct.title || 'Unknown Product';
+        const price = parseFloat(currentProduct.price) || 0;
+        const image = (currentProduct.images && currentProduct.images[0]) || currentProduct.image || currentProduct.imageUrl || '';
+        const sku = currentProduct.sku || productId;
+        
+        console.log('📊 Tracking favorite:', { productId, title, price });
+        
+        // Reference to analytics_favorites collection (db already imported at top)
+        const analyticsRef = doc(db, 'analytics_favorites', productId);
+        
+        // Increment or create document
+        await setDoc(analyticsRef, {
+          productId: productId,
+          title: title,
+          price: price,
+          image: image,
+          sku: sku,
+          addedCount: increment(1),
+          lastAddedAt: serverTimestamp()
+        }, { merge: true }); // merge:true ensures we increment existing or create new
+        
+        console.log('✅ Favorite analytics tracked successfully');
+      } catch (error) {
+        // Silent fail - don't disrupt user experience
+        console.warn('⚠️ Could not track favorite analytics:', error.message);
+      }
     }
 
     // ============================================

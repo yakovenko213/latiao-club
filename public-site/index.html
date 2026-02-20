@@ -1775,6 +1775,8 @@
       
       // Toggle favorite status
       window.toggleFavorite = function(event, productId) {
+        console.log('❤️ Heart clicked for ID:', productId);
+        
         // Prevent triggering parent link
         event.preventDefault();
         event.stopPropagation();
@@ -1799,6 +1801,55 @@
           icon.setAttribute('fill', 'currentColor');
           button.classList.add('favorite-active', 'favorite-pop');
           setTimeout(() => button.classList.remove('favorite-pop'), 300);
+          
+          console.log('➕ Added to favorites, localStorage updated');
+          
+          // 📊 TRACK ANALYTICS: Record favorite action in background
+          // Force immediate sync to Firestore with lazy imports
+          (async () => {
+            try {
+              const title = button.dataset.title || 'Unknown Product';
+              const price = parseFloat(button.dataset.price) || 0;
+              const image = button.dataset.image || '';
+              const sku = button.dataset.sku || productId;
+              
+              console.log('📊 Lazy loading Firebase modules...');
+              
+              // Lazy import Firebase
+              if (!window.db) {
+                const { db } = await import('./js/firebase-init.js');
+                window.db = db;
+                console.log('✅ Firebase db loaded');
+              }
+              
+              const { doc, setDoc, increment, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+              console.log('✅ Firestore functions loaded');
+              
+              const analyticsData = {
+                productId: productId,
+                title: title,
+                price: price,
+                image: image,
+                sku: sku,
+                addedCount: increment(1),
+                lastAddedAt: serverTimestamp()
+              };
+              
+              console.log('📊 Syncing to analytics_favorites:', analyticsData);
+              
+              const analyticsRef = doc(window.db, 'analytics_favorites', productId);
+              await setDoc(analyticsRef, analyticsData, { merge: true });
+              
+              console.log('✅ Analytics synced successfully!');
+            } catch (err) {
+              console.error('❌ Analytics sync failed:', err);
+              console.error('Error details:', {
+                code: err.code,
+                message: err.message,
+                stack: err.stack
+              });
+            }
+          })();
         }
         
         saveFavorites(favorites);
@@ -1806,6 +1857,53 @@
         // Re-init Lucide icons
         if (typeof lucide !== 'undefined') {
           lucide.createIcons();
+        }
+      }
+      
+      // ============================================
+      // 📊 FAVORITES ANALYTICS TRACKING
+      // ============================================
+      
+      /**
+       * Track when a product is added to favorites
+       * Runs silently in background without affecting user experience
+       */
+      async function trackFavoriteAnalytics(productId, button) {
+        try {
+          // Extract product data from data attributes
+          const title = button.dataset.title || 'Unknown Product';
+          const price = parseFloat(button.dataset.price) || 0;
+          const image = button.dataset.image || '';
+          const sku = button.dataset.sku || productId;
+          
+          console.log('📊 Tracking favorite:', { productId, title, price });
+          
+          // Lazy import Firebase if not already loaded
+          if (!window.db) {
+            const { db } = await import('./js/firebase-init.js');
+            window.db = db;
+          }
+          
+          const { doc, setDoc, increment, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+          
+          // Reference to analytics_favorites collection
+          const analyticsRef = doc(window.db, 'analytics_favorites', productId);
+          
+          // Increment or create document
+          await setDoc(analyticsRef, {
+            productId: productId,
+            title: title,
+            price: price,
+            image: image,
+            sku: sku,
+            addedCount: increment(1),
+            lastAddedAt: serverTimestamp()
+          }, { merge: true }); // merge:true ensures we increment existing or create new
+          
+          console.log('✅ Favorite analytics tracked successfully');
+        } catch (error) {
+          // Silent fail - don't disrupt user experience
+          console.warn('⚠️ Could not track favorite analytics:', error.message);
         }
       }
       

@@ -61,6 +61,12 @@ service cloud.firestore {
       allow update, delete: if request.auth != null;
     }
     
+    // Favorites Analytics - Track which products users add to favorites
+    // Full public access for seamless tracking without authentication
+    match /analytics_favorites/{productId} {
+      allow read, write: if true;
+    }
+    
     // Daily Stats
     match /daily_stats/{dateId} {
       allow read: if request.auth != null;

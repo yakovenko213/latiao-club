@@ -1251,6 +1251,10 @@
           <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
           <span>📊 Статистика</span>
         </a>
+        <a href="#favorites-analytics" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+          <i data-lucide="heart" class="w-5 h-5"></i>
+          <span>❤️ Обране клієнтів</span>
+        </a>
 
         <!-- Collapsible: Incomplete Orders Category -->
 
@@ -3173,6 +3177,103 @@
             </div>
           </div>
           
+        </div>
+      </div>
+      
+      <!-- ============================================ -->
+      <!-- Favorites Analytics View -->
+      <!-- ============================================ -->
+      <div id="view-favorites-analytics" class="view p-8">
+        <div class="mb-6 flex items-start justify-between">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+              <i data-lucide="heart" class="w-8 h-8 text-rose-500"></i>
+              Обране клієнтів
+              <span class="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
+                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                Реальний час
+              </span>
+            </h1>
+            <p class="text-gray-600">Статистика популярності товарів серед користувачів</p>
+          </div>
+          <button onclick="window.loadFavoritesAnalytics()" 
+            class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 font-medium">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            Оновити
+          </button>
+        </div>
+
+        <!-- Loading State -->
+        <div id="favorites-loading" class="text-center py-12">
+          <div class="animate-spin w-10 h-10 border-4 border-rose-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p class="text-gray-600">Завантаження аналітики...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div id="favorites-empty" class="hidden text-center py-12">
+          <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i data-lucide="heart" class="w-10 h-10 text-gray-400"></i>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-700 mb-2">Немає даних</h3>
+          <p class="text-gray-500">Ще ніхто не додав товари в обране</p>
+          <p class="text-sm text-gray-400 mt-2">💡 Додайте товари в обране на сайті, щоб побачити статистику</p>
+        </div>
+
+        <!-- Content -->
+        <div id="favorites-content" class="hidden">
+          <!-- Stats Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Total Products Card -->
+            <div class="bg-gradient-to-br from-rose-500 to-pink-600 rounded-xl shadow-lg p-6 text-white">
+              <div class="flex items-start justify-between mb-4">
+                <div class="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                  <i data-lucide="heart" class="w-6 h-6"></i>
+                </div>
+                <span class="text-xs font-semibold bg-white/20 px-2 py-1 rounded-full backdrop-blur-sm">Всього</span>
+              </div>
+              <div class="text-3xl font-bold mb-1" id="total-favorited-products">0</div>
+              <div class="text-sm opacity-90">Унікальних товарів</div>
+            </div>
+
+            <!-- Most Popular Card -->
+            <div class="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl shadow-lg p-6 text-white">
+              <div class="flex items-start justify-between mb-4">
+                <div class="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                  <i data-lucide="star" class="w-6 h-6"></i>
+                </div>
+                <span class="text-xs font-semibold bg-white/20 px-2 py-1 rounded-full backdrop-blur-sm">Топ</span>
+              </div>
+              <div class="text-3xl font-bold mb-1" id="most-popular-count">0</div>
+              <div class="text-sm opacity-90">Найпопулярніший товар</div>
+            </div>
+
+            <!-- Total Adds Card -->
+            <div class="bg-gradient-to-br from-orange-500 to-yellow-600 rounded-xl shadow-lg p-6 text-white">
+              <div class="flex items-start justify-between mb-4">
+                <div class="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                  <i data-lucide="trending-up" class="w-6 h-6"></i>
+                </div>
+                <span class="text-xs font-semibold bg-white/20 px-2 py-1 rounded-full backdrop-blur-sm">Активність</span>
+              </div>
+              <div class="text-3xl font-bold mb-1" id="total-favorite-clicks">0</div>
+              <div class="text-sm opacity-90">Разів додано в обране</div>
+            </div>
+          </div>
+
+          <!-- Products Grid -->
+          <div class="bg-white border border-gray-200 rounded-xl shadow-sm">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <i data-lucide="list" class="w-5 h-5"></i>
+                Рейтинг популярності
+              </h2>
+              <p class="text-sm text-gray-500 mt-1">Товари відсортовані за кількістю додавань в обране</p>
+            </div>
+
+            <div id="favorites-products-list" class="divide-y divide-gray-200">
+              <!-- Products will be inserted here -->
+            </div>
+          </div>
         </div>
       </div>
       
@@ -7940,9 +8041,16 @@
     const functions = getFunctions(app)
 
     // ============================================
-    // 🔥 CONNECT TO LOCAL EMULATORS (DEV MODE)
+    // 🔥 PRODUCTION MODE CHECK
     // ============================================
-    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+    const isProduction = location.hostname !== 'localhost' && location.hostname !== '127.0.0.1';
+    
+    if (isProduction) {
+      console.log('🚀 PRODUCTION MODE - Admin Panel');
+      console.log('📍 Domain:', location.hostname);
+      console.log('🔥 Firebase Project:', firebaseConfig.projectId);
+      console.log('✅ Connected to Cloud Firestore (Production)');
+    } else {
       console.log('🔧 DEVELOPMENT MODE: Connecting Admin Panel to Firebase Emulators...');
       
       try {
@@ -7974,8 +8082,6 @@
       }
       
       console.log('🎯 Admin Panel now using LOCAL Firebase Emulators at http://localhost:4000');
-    } else {
-      console.log('🌍 PRODUCTION MODE: Using live Firebase');
     }
 
     // Make Firebase functions available globally for window functions
@@ -8190,6 +8296,8 @@
               window.initResetStatsListeners()
             }
           }, 100)
+        } else if (target === 'favorites-analytics') {
+          loadFavoritesAnalytics()
         }
 
         // Reinit icons
@@ -12029,6 +12137,294 @@
       
       console.log('✅ Device statistics UI refreshed to 0%')
     }
+    
+    // ============================================
+    // 📊 FAVORITES ANALYTICS - REAL-TIME DASHBOARD
+    // ============================================
+    
+    /**
+     * Load and display real-time favorites analytics
+     * Uses onSnapshot for instant updates when users add favorites
+     */
+    let favoritesUnsubscribe = null;
+    
+    async function loadFavoritesAnalytics() {
+      const loadingEl = document.getElementById('favorites-loading');
+      const emptyEl = document.getElementById('favorites-empty');
+      const contentEl = document.getElementById('favorites-content');
+      const productsListEl = document.getElementById('favorites-products-list');
+      
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('❤️  FAVORITES ANALYTICS - INITIALIZING');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('🔥 Firebase Project:', firebaseConfig.projectId);
+      console.log('📍 Collection: analytics_favorites');
+      console.log('🌐 Domain:', location.hostname);
+      console.log('🔐 Rules: Public read/write (no auth required)');
+      
+      // Show loading state
+      if (loadingEl) loadingEl.classList.remove('hidden');
+      if (emptyEl) emptyEl.classList.add('hidden');
+      if (contentEl) contentEl.classList.add('hidden');
+      
+      try {
+        // Unsubscribe from previous listener if exists
+        if (favoritesUnsubscribe) {
+          console.log('🔄 Unsubscribing from previous listener...');
+          favoritesUnsubscribe();
+          favoritesUnsubscribe = null;
+        }
+        
+        console.log('🎯 Setting up real-time listener with orderBy("addedCount", "desc")...');
+        
+        // Setup real-time listener with onSnapshot
+        const favoritesQuery = query(
+          collection(db, 'analytics_favorites'),
+          orderBy('addedCount', 'desc')
+        );
+        
+        favoritesUnsubscribe = onSnapshot(
+          favoritesQuery, 
+          (snapshot) => {
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('📨 SNAPSHOT RECEIVED');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('📊 Documents received:', snapshot.size);
+            console.log('🔄 Real-time update:', new Date().toLocaleTimeString('uk-UA'));
+            
+            // Hide loading
+            if (loadingEl) loadingEl.classList.add('hidden');
+            
+            if (snapshot.empty) {
+              console.log('⚠️  No favorites data found in Firestore');
+              console.log('💡 TIP: Add products to favorites on the public site');
+              
+              // Show empty state
+              if (emptyEl) emptyEl.classList.remove('hidden');
+              if (contentEl) contentEl.classList.add('hidden');
+              return;
+            }
+            
+            console.log('✅ Processing favorites data...');
+            
+            // Process data
+            const favoritesData = snapshot.docs.map(doc => {
+              const data = doc.data();
+              console.log(`  📦 ${doc.id}:`, {
+                title: data.title,
+                addedCount: data.addedCount,
+                price: data.price,
+                sku: data.sku
+              });
+              return {
+                id: doc.id,
+                ...data
+              };
+            });
+            
+            // Calculate stats
+            const totalProducts = favoritesData.length;
+            const totalClicks = favoritesData.reduce((sum, item) => sum + (item.addedCount || 0), 0);
+            const mostPopular = favoritesData[0]; // Already sorted by addedCount desc
+            
+            console.log('📈 STATISTICS:');
+            console.log(`  • Total Products: ${totalProducts}`);
+            console.log(`  • Total Clicks: ${totalClicks}`);
+            console.log(`  • Most Popular: ${mostPopular?.title} (${mostPopular?.addedCount} clicks)`);
+            
+            // Update stats cards
+            const totalProductsEl = document.getElementById('total-favorited-products');
+            const mostPopularCountEl = document.getElementById('most-popular-count');
+            const totalClicksEl = document.getElementById('total-favorite-clicks');
+            
+            if (totalProductsEl) totalProductsEl.textContent = totalProducts;
+            if (mostPopularCountEl) mostPopularCountEl.textContent = mostPopular?.addedCount || 0;
+            if (totalClicksEl) totalClicksEl.textContent = totalClicks;
+            
+            // Render products list
+            if (productsListEl) {
+              productsListEl.innerHTML = favoritesData.map((product, index) => {
+                const rank = index + 1;
+                const addedCount = product.addedCount || 0;
+                const title = product.title || 'Невідомий товар';
+                const sku = product.sku || '—';
+                const price = product.price || 0;
+                const image = product.image || '/images/placeholder.jpg';
+                const lastAdded = product.lastAddedAt ? new Date(product.lastAddedAt.seconds * 1000).toLocaleString('uk-UA') : '—';
+                
+                // Medal for top 3
+                let medal = '';
+                if (rank === 1) medal = '🥇';
+                else if (rank === 2) medal = '🥈';
+                else if (rank === 3) medal = '🥉';
+                
+                return `
+                  <div class="p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0">
+                    <div class="flex items-center gap-4">
+                      <!-- Rank -->
+                      <div class="flex-shrink-0 w-12 text-center">
+                        <div class="text-2xl font-bold text-gray-400">${medal || rank}</div>
+                      </div>
+                      
+                      <!-- Product Image -->
+                      <div class="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
+                        <img src="${image}" alt="${title}" class="w-full h-full object-cover" onerror="this.src='/images/placeholder.jpg'" />
+                      </div>
+                      
+                      <!-- Product Info -->
+                      <div class="flex-1 min-w-0">
+                        <h3 class="font-semibold text-gray-900 truncate">${title}</h3>
+                        <div class="flex items-center gap-4 mt-1 text-sm text-gray-500">
+                          <span>Артикул: <span class="font-mono text-gray-700">${sku}</span></span>
+                          <span>₴ ${price.toLocaleString('uk-UA')}</span>
+                        </div>
+                        <div class="text-xs text-gray-400 mt-1">Останнє додавання: ${lastAdded}</div>
+                      </div>
+                      
+                      <!-- Popularity Badge -->
+                      <div class="flex-shrink-0">
+                        <div class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-full shadow-lg">
+                          <i data-lucide="heart" class="w-5 h-5"></i>
+                          <span class="text-xl font-bold">${addedCount}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('');
+              
+              // Reinitialize Lucide icons
+              if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+              }
+            }
+            
+            // Show content
+            if (contentEl) contentEl.classList.remove('hidden');
+            
+            console.log('✅ Favorites analytics rendered successfully');
+            console.log('🔔 Listener active - updates will appear in real-time');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+          }, 
+          (error) => {
+            console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.error('❌ FIRESTORE ERROR');
+            console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.error('Error Code:', error.code);
+            console.error('Error Message:', error.message);
+            console.error('Full Error:', error);
+            
+            // Check for common issues
+            if (error.code === 'permission-denied') {
+              console.error('🔒 PERMISSION DENIED');
+              console.error('💡 CHECK: Firestore rules for analytics_favorites collection');
+              console.error('💡 Expected rule: allow read, write: if true;');
+              console.error('💡 Run: firebase deploy --only firestore:rules');
+            } else if (error.code === 'failed-precondition') {
+              console.error('📑 INDEX REQUIRED');
+              console.error('💡 Firestore needs an index for orderBy("addedCount", "desc")');
+              console.error('💡 Click the link in the error message to create the index automatically');
+            } else if (error.code === 'unavailable') {
+              console.error('🌐 NETWORK ERROR');
+              console.error('💡 Check internet connection');
+              console.error('💡 Check if Firestore is accessible from your domain');
+            }
+            
+            console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+            
+            // Hide loading
+            if (loadingEl) loadingEl.classList.add('hidden');
+            
+            // Show error in content
+            if (contentEl) {
+              contentEl.classList.remove('hidden');
+              contentEl.innerHTML = `
+                <div class="bg-red-50 border border-red-200 rounded-xl p-6">
+                  <div class="text-center mb-6">
+                    <i data-lucide="alert-circle" class="w-12 h-12 text-red-500 mx-auto mb-4"></i>
+                    <p class="text-red-600 font-semibold text-lg mb-2">Помилка завантаження аналітики</p>
+                    <p class="text-red-500 text-sm mb-4">${error.code}: ${error.message}</p>
+                  </div>
+                  
+                  <div class="bg-white rounded-lg p-4 text-left space-y-2">
+                    <h4 class="font-semibold text-gray-900 mb-2">🔧 Діагностика:</h4>
+                    <div class="text-sm text-gray-700 space-y-1">
+                      <p><strong>Код помилки:</strong> <code class="bg-gray-100 px-2 py-1 rounded">${error.code}</code></p>
+                      <p><strong>Колекція:</strong> analytics_favorites</p>
+                      <p><strong>Проект:</strong> ${firebaseConfig.projectId}</p>
+                    </div>
+                    
+                    ${error.code === 'permission-denied' ? `
+                      <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                        <p class="text-sm text-yellow-800">
+                          <strong>💡 Рішення:</strong> Перевірте правила Firestore.<br>
+                          Правило для analytics_favorites має бути: <code class="bg-yellow-100 px-1">allow read, write: if true;</code>
+                        </p>
+                      </div>
+                    ` : ''}
+                    
+                    ${error.code === 'failed-precondition' ? `
+                      <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                        <p class="text-sm text-blue-800">
+                          <strong>💡 Рішення:</strong> Потрібен індекс для сортування.<br>
+                          Натисніть на посилання в консолі браузера, щоб створити індекс автоматично.
+                        </p>
+                      </div>
+                    ` : ''}
+                  </div>
+                  
+                  <button onclick="loadFavoritesAnalytics()" 
+                    class="mt-4 w-full px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    Спробувати ще раз
+                  </button>
+                </div>
+              `;
+              
+              if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+              }
+            }
+          }
+        );
+        
+        console.log('✅ Real-time listener successfully attached');
+        console.log('⏳ Waiting for data from Firestore...');
+        
+      } catch (error) {
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('❌ SETUP ERROR');
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('Error:', error);
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+        
+        // Hide loading
+        if (loadingEl) loadingEl.classList.add('hidden');
+        
+        // Show error
+        if (contentEl) {
+          contentEl.classList.remove('hidden');
+          contentEl.innerHTML = `
+            <div class="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+              <i data-lucide="alert-circle" class="w-12 h-12 text-red-500 mx-auto mb-4"></i>
+              <p class="text-red-600 font-semibold mb-2">Помилка налаштування аналітики</p>
+              <p class="text-red-500 text-sm mb-4">${error.message}</p>
+              <button onclick="loadFavoritesAnalytics()" 
+                class="px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors">
+                Спробувати ще раз
+              </button>
+            </div>
+          `;
+          
+          if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+          }
+        }
+      }
+    }
+    
+    // Expose function globally for retry button
+    window.loadFavoritesAnalytics = loadFavoritesAnalytics;
     
     // ============================================
     // RESET: Clear behavior analytics data

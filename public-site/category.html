@@ -573,7 +573,7 @@
 
     // Import Firebase - use same pattern as storefront.js for consistency
     import { db } from './js/firebase-init.js'
-    import { collection, query, where, getDocs, getDocsFromCache, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
+    import { collection, query, where, getDocs, getDocsFromCache, limit, doc, setDoc, increment, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
 
     // Import View Tracker for analytics
     import './js/view-tracker.js'
@@ -652,6 +652,8 @@
     
     // Toggle favorite status
     window.toggleFavorite = function(event, productId) {
+      console.log('❤️ Heart clicked for ID:', productId);
+      
       // Prevent triggering parent link
       event.preventDefault();
       event.stopPropagation();
@@ -675,6 +677,44 @@
         icon.setAttribute('fill', 'currentColor');
         button.classList.add('favorite-active', 'favorite-pop');
         setTimeout(() => button.classList.remove('favorite-pop'), 300);
+        
+        console.log('➕ Added to favorites, localStorage updated');
+        
+        // 📊 TRACK ANALYTICS: Record favorite action in background
+        // Force immediate sync to Firestore
+        (async () => {
+          try {
+            const product = allProducts.find(p => p.id === productId);
+            if (!product) {
+              console.error('❌ Product not found in allProducts:', productId);
+              return;
+            }
+            
+            const analyticsData = {
+              productId: productId,
+              title: product.name || product.title || 'Unknown',
+              price: parseFloat(product.price) || 0,
+              image: (product.images && product.images[0]) || product.image || '',
+              sku: product.sku || productId,
+              addedCount: increment(1),
+              lastAddedAt: serverTimestamp()
+            };
+            
+            console.log('📊 Syncing to analytics_favorites:', analyticsData);
+            
+            const analyticsRef = doc(db, 'analytics_favorites', productId);
+            await setDoc(analyticsRef, analyticsData, { merge: true });
+            
+            console.log('✅ Analytics synced successfully!');
+          } catch (err) {
+            console.error('❌ Analytics sync failed:', err);
+            console.error('Error details:', {
+              code: err.code,
+              message: err.message,
+              stack: err.stack
+            });
+          }
+        })();
       }
       
       saveFavorites(favorites);
@@ -685,6 +725,52 @@
       }
     }
     
+    // ============================================
+    // 📊 FAVORITES ANALYTICS TRACKING
+    // ============================================
+    
+    /**
+     * Track when a product is added to favorites
+     * Runs silently in background without affecting user experience
+     */
+    async function trackFavoriteAnalytics(productId, button) {
+      try {
+        // Find product in allProducts array
+        const product = allProducts.find(p => p.id === productId);
+        
+        if (!product) {
+          console.warn('⚠️ Product not found for analytics:', productId);
+          return;
+        }
+        
+        const title = product.name || product.title || 'Unknown Product';
+        const price = parseFloat(product.price) || 0;
+        const image = (product.images && product.images[0]) || product.image || product.imageUrl || '';
+        const sku = product.sku || productId;
+        
+        console.log('📊 Tracking favorite:', { productId, title, price });
+        
+        // Reference to analytics_favorites collection (db already imported at top)
+        const analyticsRef = doc(db, 'analytics_favorites', productId);
+        
+        // Increment or create document
+        await setDoc(analyticsRef, {
+          productId: productId,
+          title: title,
+          price: price,
+          image: image,
+          sku: sku,
+          addedCount: increment(1),
+          lastAddedAt: serverTimestamp()
+        }, { merge: true }); // merge:true ensures we increment existing or create new
+        
+        console.log('✅ Favorite analytics tracked successfully');
+      } catch (error) {
+        // Silent fail - don't disrupt user experience
+        console.warn('⚠️ Could not track favorite analytics:', error.message);
+      }
+    }
+
     // Initialize favorites on page load
     function initFavorites() {
       const favorites = getFavorites();
