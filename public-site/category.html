@@ -513,7 +513,7 @@
 
     // Import Firebase - use same pattern as storefront.js for consistency
     import { db } from './js/firebase-init.js'
-    import { collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
+    import { collection, query, where, getDocs, getDocsFromCache, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
 
     // Import View Tracker for analytics
     import './js/view-tracker.js'
@@ -637,6 +637,21 @@
       const signal = currentAbortController.signal
 
       try {
+        // ⚡ CRITICAL: Wait for Firebase persistence to be ready
+        if (!window.firestoreInitialized) {
+          console.log('⏳ Waiting for Firestore persistence...');
+          let waitCount = 0;
+          while (!window.firestoreInitialized && waitCount < 30) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            waitCount++;
+          }
+          if (!window.firestoreInitialized) {
+            console.warn('⚠️ Firestore persistence timeout - proceeding anyway');
+          } else {
+            console.log('✅ Firestore persistence ready');
+          }
+        }
+
         // ⚡ STEP 1: Check IndexedDB cache for INSTANT rendering
         // ⚡ FIX: Defensive check for productCache existence (race condition protection)
         let cached = null;
@@ -684,16 +699,19 @@
           showSkeleton()
         }
 
-        // ⚡ STEP 2: Fetch fresh data with timeout protection
+        // ⚡ STEP 2: Fetch fresh data with timeout protection and smart cache fallback
+        // For categories with 52 items, use limit(20) for instant first load
+        const initialLimit = 20;
+        
         const fetchPromise = Promise.all([
           getDocs(query(collection(db, 'categories'), where('slug', '==', categorySlug))),
-          getDocs(query(collection(db, 'products'), where('categories', 'array-contains', categorySlug))),
-          getDocs(query(collection(db, 'products'), where('category', '==', categorySlug)))
+          getDocs(query(collection(db, 'products'), where('categories', 'array-contains', categorySlug), limit(initialLimit))),
+          getDocs(query(collection(db, 'products'), where('category', '==', categorySlug), limit(initialLimit)))
         ])
 
-        // ⚡ FIX: Increase timeout to 10 seconds for slow 3G/EDGE connections
+        // ⚡ FIX: Increase timeout to 15 seconds for Codespaces proxy latency
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout: З\'єднання занадто повільне')), 10000)
+          setTimeout(() => reject(new Error('Timeout: З\'єднання занадто повільне')), 15000)
         )
 
         let catSnap, newFormatSnap, oldFormatSnap
@@ -701,12 +719,29 @@
         try {
           [catSnap, newFormatSnap, oldFormatSnap] = await Promise.race([fetchPromise, timeoutPromise])
         } catch (timeoutError) {
-          if (usedCache) {
-            // Keep showing cached data on timeout
-            console.warn('⏱️ Fetch timed out - keeping cached data')
-            return
+          console.error('❌ Network timeout - attempting cache fallback');
+          
+          // ⚡ SMART FALLBACK: Try to get data from IndexedDB cache
+          try {
+            console.log('🔄 Attempting getDocsFromCache fallback...');
+            const cacheResults = await Promise.all([
+              getDocsFromCache(query(collection(db, 'categories'), where('slug', '==', categorySlug))),
+              getDocsFromCache(query(collection(db, 'products'), where('categories', 'array-contains', categorySlug))),
+              getDocsFromCache(query(collection(db, 'products'), where('category', '==', categorySlug)))
+            ]);
+            
+            [catSnap, newFormatSnap, oldFormatSnap] = cacheResults;
+            console.log('✅ Successfully loaded from IndexedDB cache');
+          } catch (cacheError) {
+            console.error('❌ Cache fallback also failed:', cacheError);
+            
+            if (usedCache) {
+              // Keep showing cached HTML data on complete failure
+              console.warn('⏱️ Fetch failed - keeping cached HTML data');
+              return
+            }
+            throw timeoutError
           }
-          throw timeoutError
         }
 
         // Check if request was aborted
@@ -787,6 +822,53 @@
           filteredProducts = [...allProducts]
           renderProducts(filteredProducts)
           console.log('✅ Дані оновлено')
+        }
+
+        // ⚡ PROGRESSIVE LOADING: Fetch remaining products in background
+        // If we got exactly 20 products (limit), there might be more
+        const totalFetched = newFormatSnap.size + oldFormatSnap.size;
+        if (totalFetched >= initialLimit) {
+          console.log('📦 Fetching remaining products in background...');
+          
+          // Fetch all products without limit (in background, non-blocking)
+          setTimeout(async () => {
+            try {
+              const [moreNewFormat, moreOldFormat] = await Promise.all([
+                getDocs(query(collection(db, 'products'), where('categories', 'array-contains', categorySlug))),
+                getDocs(query(collection(db, 'products'), where('category', '==', categorySlug)))
+              ]);
+              
+              const moreNewProducts = moreNewFormat.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+              const moreOldProducts = moreOldFormat.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+              
+              // Merge and deduplicate
+              const moreProductMap = new Map();
+              moreNewProducts.concat(moreOldProducts).forEach(p => moreProductMap.set(p.id, p));
+              const allMoreProducts = Array.from(moreProductMap.values())
+                .filter(p => p.isVisible !== false);
+              
+              // Only update if we got more products than before
+              if (allMoreProducts.length > allProducts.length) {
+                allProducts = allMoreProducts;
+                allProducts.sort((a, b) => (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999));
+                filteredProducts = [...allProducts];
+                renderProducts(filteredProducts);
+                console.log(`✅ Loaded ${allMoreProducts.length} total products`);
+                
+                // Update cache with full product list
+                if (window.productCache && typeof window.productCache.setCached === 'function') {
+                  window.productCache.setCached(categorySlug, categoryData, allProducts).catch(err => {
+                    console.warn('⚠️ Failed to update cache:', err);
+                  });
+                }
+              }
+            } catch (moreError) {
+              console.warn('⚠️ Background fetch failed:', moreError.message);
+              // Not critical - user already has the first 20 products
+            }
+          }, 500); // Small delay to prioritize initial render
+        } else {
+          console.log(`✅ All ${totalFetched} products loaded`);
         }
 
       } catch (err) {

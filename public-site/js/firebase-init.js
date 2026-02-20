@@ -6,6 +6,11 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import {
     getFirestore,
+    initializeFirestore,
+    terminate,
+    enableIndexedDbPersistence,
+    getDocsFromCache,
+    CACHE_SIZE_UNLIMITED,
     collection,
     doc,
     addDoc,
@@ -43,10 +48,41 @@ const firebaseConfig = {
 // INITIALIZE FIREBASE
 // ============================================
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+
+// ⚡ CRITICAL FIX: Force Long Polling for Codespaces proxy stability
+// WebSockets fail over proxies - Long Polling is much more reliable
+const db = initializeFirestore(app, {
+    experimentalForceLongPolling: true,
+    useFetchStreams: false,
+    cacheSizeBytes: CACHE_SIZE_UNLIMITED  // Keep products in local memory
+});
+
 const auth = getAuth(app);
 const functions = getFunctions(app);
 const storage = getStorage(app);
+
+// ⚡ CRITICAL: Enable persistence BEFORE any queries
+// This allows instant loading from IndexedDB cache
+let persistenceEnabled = false;
+window.firestoreInitialized = false;
+
+enableIndexedDbPersistence(db)
+  .then(() => {
+    persistenceEnabled = true;
+    window.firestoreInitialized = true;
+    console.log('✅ IndexedDB persistence enabled - cache ready');
+  })
+  .catch((err) => {
+    if (err.code === 'failed-precondition') {
+      console.warn('⚠️ Persistence failed: Multiple tabs open');
+    } else if (err.code === 'unimplemented') {
+      console.warn('⚠️ Persistence not available in this browser');
+    } else {
+      console.error('❌ Persistence error:', err);
+    }
+    // Still mark as initialized even if persistence fails
+    window.firestoreInitialized = true;
+  });
 
 // ============================================
 // CRITICAL: EXPORT TO WINDOW SO LAYOUT.JS CAN RUN
@@ -62,6 +98,7 @@ window.firebaseInit = {
     setDoc,
     getDoc,
     getDocs,
+    getDocsFromCache,
     updateDoc,
     deleteDoc,
     onSnapshot,
@@ -84,9 +121,11 @@ window.addDoc = addDoc;
 window.setDoc = setDoc;
 window.getDoc = getDoc;
 window.getDocs = getDocs;
+window.getDocsFromCache = getDocsFromCache;
 window.updateDoc = updateDoc;
 window.onSnapshot = onSnapshot;
 window.query = query;
+window.where = where;
 window.orderBy = orderBy;
 window.Timestamp = Timestamp;
 window.serverTimestamp = serverTimestamp;
@@ -106,6 +145,7 @@ export {
     setDoc,
     getDoc,
     getDocs,
+    getDocsFromCache,
     updateDoc,
     deleteDoc,
     onSnapshot,
