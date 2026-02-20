@@ -565,54 +565,133 @@ const headerTemplate = `
     .mobile-menu-link img {
       object-fit: contain;
     }
+    
+    /* Share Cart Tooltip */
+    .share-tooltip {
+      animation: tooltipFadeIn 0.2s ease-out;
+    }
+    
+    @keyframes tooltipFadeIn {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(5px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
+    
+    /* Share Modal Animation */
+    #share-cart-modal.show {
+      display: flex !important;
+      animation: modalFadeIn 0.3s ease-out;
+    }
+    
+    #share-cart-modal.show > div {
+      animation: modalSlideIn 0.3s ease-out;
+    }
+    
+    @keyframes modalFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95) translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+    
+    /* Staggered Cart Item Animation */
+    @keyframes cartItemFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .cart-item-enter {
+      animation: cartItemFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      opacity: 0;
+    }
+    
+    /* Price Update Animation */
+    @keyframes priceUpdate {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    
+    .price-update {
+      animation: priceUpdate 0.3s ease-out;
+    }
+    
+    /* Empty State Fade */
+    #empty-state {
+      transition: opacity 0.3s ease-in-out;
+    }
+    
+    #cart-items {
+      transition: opacity 0.3s ease-in-out;
+    }
   </style>
 
   <!-- Cart Overlay -->
-  <div id="cart-overlay" onclick="window.closeCart()" class="fixed inset-0 bg-black/50 z-[80] pointer-events-none hidden opacity-0 transition-opacity duration-300"></div>
+  <div id="cart-overlay" onclick="window.closeCart()" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] pointer-events-none hidden opacity-0 transition-all duration-300"></div>
 
   <!-- Cart Sidebar -->
-  <div id="cart-sidebar" class="fixed top-0 right-0 h-full w-full md:w-[500px] bg-white shadow-2xl z-[85] pointer-events-none transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+  <div id="cart-sidebar" class="fixed top-0 right-0 h-full w-full md:w-[500px] bg-white shadow-2xl z-[85] pointer-events-none transform translate-x-full transition-all duration-500 flex flex-col" style="transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);">
     <header class="sticky top-0 bg-white z-40 px-5 py-4 border-b border-gray-100">
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-2xl font-extrabold text-gray-900">Кошик</h1>
-          <p class="text-sm text-gray-500 mt-0.5">Перевір замовлення перед оформленням</p>
+          <h1 class="text-xl font-bold text-gray-900">Кошик</h1>
+          <p class="text-xs text-gray-500 mt-0.5">Перевір замовлення перед оформленням</p>
         </div>
-        <button onclick="window.closeCart()" class="close-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button onclick="window.closeCart()" class="text-gray-400 hover:text-gray-600 transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
           </svg>
         </button>
       </div>
     </header>
-    <main class="flex-1 overflow-y-auto pb-56">
+    <main class="flex-1 overflow-y-auto pb-48">
       <div class="px-5 pt-4 space-y-3">
-        <div id="min-order-notice" class="bg-red-50 border border-red-100 rounded-2xl px-4 py-3 flex items-center gap-3 hidden">
-          <span class="text-xl">⚠️</span>
-          <p class="text-sm font-medium text-red-700">Мінімальна сума замовлення — 100 грн</p>
+        <div id="min-order-notice" class="bg-red-50 border border-red-100 rounded-xl px-3 py-2 flex items-center gap-2 hidden">
+          <span class="text-base">⚠️</span>
+          <p class="text-xs font-medium text-red-700">Мінімальна сума замовлення — 100 грн</p>
         </div>
-        <div class="bg-green-50 border border-green-100 rounded-2xl px-4 py-3 flex items-center gap-3">
-          <span class="text-xl">🚚</span>
-          <p class="text-sm font-medium text-green-700">Безкоштовна доставка від 1 100 грн</p>
+        <div class="bg-green-50 border border-green-100 rounded-xl px-3 py-2 flex items-center gap-2">
+          <span class="text-base">🚚</span>
+          <p class="text-xs font-medium text-green-700">Безкоштовна доставка від 1 100 грн</p>
         </div>
-        <div id="delivery-progress" class="bg-orange-50 border border-orange-100 rounded-2xl p-4 hidden">
-          <div class="flex items-center justify-between mb-2">
-            <p id="delivery-text" class="text-sm font-semibold text-gray-700"></p>
-            <span id="delivery-amount" class="text-sm font-bold text-spicy"></span>
+        <div id="delivery-progress" class="bg-orange-50 border border-orange-100 rounded-xl p-3 hidden">
+          <div class="flex items-center justify-between mb-1.5">
+            <p id="delivery-text" class="text-xs font-semibold text-gray-700"></p>
+            <span id="delivery-amount" class="text-xs font-bold text-spicy"></span>
           </div>
-          <div class="h-3 bg-orange-100 rounded-full overflow-hidden">
-            <div id="delivery-bar" class="progress-bar-fill h-full bg-gradient-to-r from-spicy to-yellow-500 rounded-full" style="width: 0%"></div>
+          <div class="h-1.5 bg-orange-100 rounded-full overflow-hidden">
+            <div id="delivery-bar" class="progress-bar-fill h-full bg-gradient-to-r from-spicy to-yellow-500 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
           </div>
         </div>
       </div>
-      <div id="cart-items" class="px-5 pt-4 space-y-4 hidden"></div>
-      <div id="empty-state" class="px-5 py-16 text-center">
-        <div class="w-24 h-24 mx-auto mb-6 bg-orange-50 rounded-full flex items-center justify-center">
+      <div id="cart-items" class="px-5 pt-4 pb-4 space-y-3 hidden"></div>
+      <div id="empty-state" class="px-5 py-16 text-center opacity-0">
+        <div class="w-24 h-24 mx-auto mb-6 bg-orange-50 rounded-full flex items-center justify-center transition-transform duration-300 hover:scale-110">
           <span class="text-5xl">🛍️</span>
         </div>
         <h2 class="text-xl font-bold text-gray-900 mb-2">Ваш кошик порожній</h2>
         <p class="text-gray-500 mb-6">Додайте смачні снеки до кошика</p>
-        <button onclick="window.closeCart(); window.location.href='index.html#shop'" class="btn-press inline-flex items-center gap-2 bg-gradient-to-r from-spicy to-orange-500 text-white font-semibold px-6 py-3 rounded-2xl shadow-lg shadow-orange-200">
+        <button onclick="window.closeCart(); window.location.href='index.html#shop'" class="btn-press inline-flex items-center gap-2 bg-gradient-to-r from-spicy to-orange-500 text-white font-semibold px-6 py-3 rounded-2xl shadow-lg shadow-orange-200 active:scale-95 transition-transform">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
           </svg>
@@ -620,28 +699,105 @@ const headerTemplate = `
         </button>
       </div>
     </main>
-    <footer id="cart-summary" class="sticky bottom-0 bg-white border-t border-gray-100 shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.1)] rounded-t-3xl z-40 hidden">
+    <footer id="cart-summary" class="sticky bottom-0 bg-white border-t border-gray-100 shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.1)] z-40 hidden">
       <div class="px-5 py-4">
-        <div class="space-y-2 mb-4">
+        <div class="space-y-2 mb-3">
           <div class="flex justify-between text-sm">
-            <span class="text-gray-500"><span id="items-count">0</span> товарів</span>
-            <span id="subtotal" class="font-medium text-gray-700">0 грн</span>
+            <span class="text-gray-600"><span id="items-count">0</span> товарів</span>
+            <span id="subtotal" class="font-extrabold text-orange-600 transition-all duration-300">0 грн</span>
           </div>
           <div class="flex justify-between text-sm">
-            <span class="text-gray-500">Доставка</span>
-            <span id="delivery-cost" class="font-medium text-gray-700">Від 70 грн</span>
-          </div>
-          <div class="h-px bg-gray-100 my-2"></div>
-          <div class="flex justify-between">
-            <span class="font-bold text-gray-900">Разом</span>
-            <span id="total" class="text-xl font-extrabold text-spicy">0 грн</span>
+            <span class="text-gray-600">Доставка</span>
+            <span id="delivery-cost" class="font-semibold text-gray-600 transition-all duration-300">Від 70 грн</span>
           </div>
         </div>
-        <button id="checkout-btn" onclick="window.checkout()" disabled class="btn-press w-full py-4 rounded-2xl font-bold text-lg transition-all duration-300 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed bg-gradient-to-r from-spicy to-orange-500 text-white shadow-lg shadow-orange-200">
-          Оформити замовлення
+        
+        <!-- Yellow Cashback Badge -->
+        <div id="cart-cashback-badge" class="bg-amber-50 border border-amber-100 rounded-xl py-1.5 px-3 mb-2 hidden">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-1.5">
+              <svg class="w-4 h-4 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
+              </svg>
+              <span class="text-xs font-medium text-amber-900">Ваш кешбек за це замовлення:</span>
+            </div>
+            <span id="cart-cashback-value" class="text-xs font-bold text-amber-600">+0 грн</span>
+          </div>
+        </div>
+        
+        <!-- Integrated Total Button -->
+        <button id="checkout-btn" onclick="window.checkout()" disabled class="btn-press w-full rounded-xl font-bold text-sm transition-all duration-300 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg hover:from-orange-600 hover:to-orange-700 hover:shadow-xl active:scale-98 py-3.5">
+          <span class="flex justify-between w-full px-4">
+            <span>Оформити замовлення</span>
+            <span id="checkout-total" class="transition-all duration-300">0 грн</span>
+          </span>
         </button>
+        
+        <!-- Share Cart Link - Bottom -->
+        <div class="mt-3 flex items-center justify-center">
+          <button onclick="window.showShareCartModal()" class="text-[10px] font-medium text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+            Поділитися кошиком
+          </button>
+        </div>
       </div>
     </footer>
+  </div>
+  
+  <!-- Share Cart Modal -->
+  <div id="share-cart-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 transform transition-all" onclick="event.stopPropagation()">
+      <!-- Header -->
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-bold text-gray-900">Поділитися кошиком з друзями</h3>
+        <button onclick="window.closeShareModal()" class="p-2 rounded-full hover:bg-gray-100 transition-colors">
+          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Description -->
+      <p class="text-sm text-gray-600 mb-4">
+        Скопіюйте посилання та надішліть друзям. Вони зможуть додати товари до кошика та оформити замовлення разом з вами!
+      </p>
+      
+      <!-- Link Input -->
+      <div class="relative mb-4">
+        <input 
+          id="share-link-input" 
+          type="text" 
+          readonly 
+          value="" 
+          class="w-full px-4 py-3 pr-24 border-2 border-gray-200 rounded-2xl text-sm font-mono bg-gray-50 focus:outline-none focus:border-primary transition-colors"
+        />
+        <button 
+          id="copy-link-btn"
+          onclick="window.copyShareLink()" 
+          class="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 bg-gradient-to-r from-spicy to-orange-500 text-white font-semibold text-xs rounded-xl hover:shadow-lg transition-all flex items-center gap-1"
+        >
+          <svg id="copy-icon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span id="copy-text">Копіювати</span>
+        </button>
+      </div>
+      
+      <!-- Success Message -->
+      <div id="copy-success" class="hidden bg-green-50 border border-green-200 rounded-2xl p-3 flex items-center gap-2 text-sm text-green-700">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+        <span>Посилання скопійовано! Тепер можете поділитися з друзями.</span>
+      </div>
+    </div>
   </div>
 `;
 
@@ -956,21 +1112,55 @@ function highlightActivePage() {
 // Render cart UI
 function renderCart() {
   const container = document.getElementById('cart-items');
+  const emptyState = document.getElementById('empty-state');
+  const cartSummary = document.getElementById('cart-summary');
+  const deliveryProgress = document.getElementById('delivery-progress');
+  
   if (!container) return;
 
   if (window.cart.length === 0) {
     container.innerHTML = '';
-    document.getElementById('empty-state')?.classList.remove('hidden');
-    document.getElementById('cart-items')?.classList.add('hidden');
-    document.getElementById('cart-summary')?.classList.add('hidden');
-    document.getElementById('delivery-progress')?.classList.add('hidden');
+    // Smooth cross-fade to empty state (skip animation if cart-items was already hidden)
+    const isInitialEmpty = container.classList.contains('hidden');
+    
+    if (isInitialEmpty) {
+      // First load with empty cart - show immediately
+      container.classList.add('hidden');
+      cartSummary?.classList.add('hidden');
+      deliveryProgress?.classList.add('hidden');
+      emptyState?.classList.remove('hidden');
+      emptyState?.classList.add('opacity-100');
+    } else {
+      // Transition from full cart to empty
+      if (container) container.classList.add('opacity-0');
+      setTimeout(() => {
+        container.classList.add('hidden');
+        cartSummary?.classList.add('hidden');
+        deliveryProgress?.classList.add('hidden');
+        emptyState?.classList.remove('hidden');
+        setTimeout(() => emptyState?.classList.add('opacity-100'), 50);
+      }, 300);
+    }
     return;
   }
 
-  document.getElementById('empty-state')?.classList.add('hidden');
-  document.getElementById('cart-items')?.classList.remove('hidden');
-  document.getElementById('cart-summary')?.classList.remove('hidden');
-  document.getElementById('delivery-progress')?.classList.remove('hidden');
+  // Smooth cross-fade from empty state to cart items
+  if (emptyState && !emptyState.classList.contains('hidden')) {
+    emptyState.classList.remove('opacity-100');
+    emptyState.classList.add('opacity-0');
+    setTimeout(() => {
+      emptyState.classList.add('hidden');
+      container.classList.remove('hidden', 'opacity-0');
+      cartSummary?.classList.remove('hidden');
+      deliveryProgress?.classList.remove('hidden');
+      setTimeout(() => container.classList.add('opacity-100'), 50);
+    }, 300);
+  } else {
+    container.classList.remove('hidden', 'opacity-0');
+    container.classList.add('opacity-100');
+    cartSummary?.classList.remove('hidden');
+    deliveryProgress?.classList.remove('hidden');
+  }
 
   container.innerHTML = window.cart.map((item, cartIndex) => {
     const qty = item.quantity || item.qty || 1;
@@ -981,41 +1171,30 @@ function renderCart() {
     const isLowStock = stock <= 5 && stock > 0;
 
     return `
-      <div class="cart-item-enter card-hover bg-white border border-gray-100 rounded-3xl p-4 shadow-sm ${isGift ? 'border-green-200 bg-green-50/30' : ''}" data-cart-index="${cartIndex}">
-        ${isGift ? '<div class="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">🎁 Подарунок</div>' : ''}
+      <div class="cart-item-enter bg-white border-b border-gray-100 p-2 last:border-b-0 hover:bg-gray-50 transition-all duration-200" data-cart-index="${cartIndex}" style="animation-delay: ${cartIndex * 50}ms;">
         <div class="flex gap-4">
-          <div class="w-20 h-20 flex-shrink-0 bg-orange-50 rounded-2xl overflow-hidden ${isGift ? 'ring-2 ring-green-400' : ''}">
+          <div class="w-16 h-16 flex-shrink-0 bg-orange-50 rounded-lg overflow-hidden ${isGift ? 'ring-2 ring-green-400' : ''} transition-transform duration-200 hover:scale-105">
             <img src="${imageUrl}" alt="${item.name}" class="w-full h-full object-cover">
           </div>
           <div class="flex-1 min-w-0">
-            <div class="flex items-start justify-between gap-2">
-              <div class="flex-1 min-w-0">
-                <h3 class="font-bold text-gray-900 line-clamp-2 break-words">${item.name}</h3>
-                ${isGift ? '<p class="text-xs text-green-600 font-semibold mt-0.5">🎁 Подарунок від Latiao Snack</p>' : `<p class="text-xs mt-0.5">${renderSpiciness(item.spiciness)}</p>`}
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <h3 class="text-sm font-semibold text-gray-900 line-clamp-2">${item.name}</h3>
+              <p class="item-price w-20 text-right text-sm font-extrabold flex-shrink-0 transition-all duration-300 ${isGift ? 'text-green-600' : 'text-orange-600'}">${isGift ? 'Безкоштовно' : (item.price * qty) + ' ₴'}</p>
+            </div>
+            ${isGift ? '<p class="text-[10px] text-green-600 font-semibold mb-1">🎁 Подарунок від Latiao Snack</p>' : `<p class="text-[10px] text-gray-500 mb-1">${renderSpiciness(item.spiciness)}</p>`}
+            <div class="flex items-center justify-between">
+              ${!isGift ? `
+              <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+                <button onclick="window.updateQtyByIndex(${cartIndex}, -1)" class="qty-btn w-7 h-7 rounded-md bg-white flex items-center justify-center text-xs font-bold text-gray-600 hover:bg-gray-50 active:scale-90 transition-all duration-150">−</button>
+                <span class="qty-display w-7 text-center text-xs font-bold text-gray-900 transition-all duration-300">${qty}</span>
+                <button onclick="window.updateQtyByIndex(${cartIndex}, 1)" ${isAtLimit ? 'disabled' : ''} class="qty-btn w-7 h-7 rounded-md bg-white flex items-center justify-center text-xs font-bold text-gray-600 hover:bg-gray-50 active:scale-90 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed">+</button>
               </div>
-              <button onclick="window.removeItemByIndex(${cartIndex})" class="btn-press flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors">
+              ` : '<div></div>'}
+              <button onclick="window.removeItemByIndex(${cartIndex})" class="btn-press text-gray-400 hover:text-red-500 active:scale-90 transition-all duration-150">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                 </svg>
               </button>
-            </div>
-            <div class="flex items-center justify-between mt-3">
-              ${!isGift ? `
-              <div class="flex flex-col gap-1">
-                <div class="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
-                  <button onclick="window.updateQtyByIndex(${cartIndex}, -1)" class="qty-btn w-8 h-8 rounded-lg bg-white flex items-center justify-center font-bold text-gray-600 shadow-sm hover:bg-gray-50 transition-colors">−</button>
-                  <span class="w-8 text-center font-bold text-gray-900">${qty}</span>
-                  <button onclick="window.updateQtyByIndex(${cartIndex}, 1)" ${isAtLimit ? 'disabled' : ''} class="qty-btn w-8 h-8 rounded-lg bg-white flex items-center justify-center font-bold text-gray-600 shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">+</button>
-                </div>
-                ${isAtLimit ? `<p class="text-[10px] text-red-600 font-medium">Максимум: ${stock} шт</p>` : isLowStock ? `<p class="text-[10px] text-orange-600 font-medium">Залишилось: ${stock} шт</p>` : ''}
-              </div>
-              ` : `
-              <div class="text-sm text-green-600 font-semibold">Безкоштовно</div>
-              `}
-              <div class="text-right">
-                <p class="text-lg font-extrabold ${isGift ? 'text-green-600' : 'text-spicy'}">${isGift ? '0 грн' : (item.price * qty) + ' грн'}</p>
-                ${qty > 1 && !isGift ? `<p class="text-xs text-gray-400">${item.price} грн/шт</p>` : ''}
-              </div>
             </div>
           </div>
         </div>
@@ -1083,8 +1262,38 @@ function updateCartUI() {
     }
   }
 
-  // Update checkout button
+  // Update yellow cashback badge
+  const cashbackBadge = document.getElementById('cart-cashback-badge');
+  const cashbackValue = document.getElementById('cart-cashback-value');
+  
+  if (cashbackBadge && cashbackValue) {
+    // Check if cashback is enabled and cart has items
+    const cashbackEnabled = window.cashbackEnabled !== false; // Default true if not set
+    const hasItems = window.cart.length > 0;
+    
+    if (cashbackEnabled && hasItems && total > 0) {
+      // Calculate cashback
+      const cashbackPercent = window.cashbackPercent || 8; // Default 8%
+      let cashback = Math.floor(total * (cashbackPercent / 100));
+      
+      // Apply max earn limit if set
+      if (window.cashbackMaxEarnLimit && cashback > window.cashbackMaxEarnLimit) {
+        cashback = window.cashbackMaxEarnLimit;
+      }
+      
+      // Update display
+      cashbackValue.textContent = `+${cashback} грн`;
+      cashbackBadge.classList.remove('hidden');
+    } else {
+      // Hide if disabled or cart empty
+      cashbackBadge.classList.add('hidden');
+    }
+  }
+
+  // Update checkout button with integrated total
   const checkoutBtn = document.getElementById('checkout-btn');
+  const checkoutTotal = document.getElementById('checkout-total');
+  
   if (checkoutBtn) {
     if (window.cart.length === 0 || total < 100) {
       checkoutBtn.disabled = true;
@@ -1092,6 +1301,45 @@ function updateCartUI() {
       checkoutBtn.disabled = false;
     }
   }
+  
+  if (checkoutTotal) {
+    checkoutTotal.textContent = `${total} грн`;
+  }
+}
+
+// Animate price changes for smooth visual feedback
+function animatePriceChanges() {
+  // Animate all item prices
+  const itemPrices = document.querySelectorAll('.item-price');
+  itemPrices.forEach(price => {
+    price.classList.remove('price-update');
+    void price.offsetWidth; // Trigger reflow
+    price.classList.add('price-update');
+  });
+  
+  // Animate subtotal
+  const subtotal = document.getElementById('subtotal');
+  if (subtotal) {
+    subtotal.classList.remove('price-update');
+    void subtotal.offsetWidth;
+    subtotal.classList.add('price-update');
+  }
+  
+  // Animate checkout total
+  const checkoutTotal = document.getElementById('checkout-total');
+  if (checkoutTotal) {
+    checkoutTotal.classList.remove('price-update');
+    void checkoutTotal.offsetWidth;
+    checkoutTotal.classList.add('price-update');
+  }
+  
+  // Animate quantity displays
+  const qtyDisplays = document.querySelectorAll('.qty-display');
+  qtyDisplays.forEach(qty => {
+    qty.classList.remove('price-update');
+    void qty.offsetWidth;
+    qty.classList.add('price-update');
+  });
 }
 
 // ============================================
@@ -1495,6 +1743,9 @@ window.updateQtyByIndex = async function (cartIndex, delta) {
 
   saveCart();
   renderCart();
+  
+  // Trigger smooth price animations
+  setTimeout(() => animatePriceChanges(), 50);
 };
 
 // Remove item from cart (LEGACY - kept for backward compatibility)
@@ -2540,6 +2791,168 @@ async function loadFooterDynamicContent() {
     console.error('❌ Error loading footer dynamic content:', error);
   }
 }
+
+// ============================================
+// SHARE CART FUNCTIONALITY
+// ============================================
+
+/**
+ * Toggle share tooltip visibility
+ */
+window.toggleShareTooltip = function() {
+  const tooltip = document.getElementById('share-tooltip');
+  if (tooltip) {
+    tooltip.classList.toggle('hidden');
+  }
+};
+
+/**
+ * Show share cart modal
+ */
+window.showShareCartModal = async function() {
+  if (window.cart.length === 0) {
+    alert('Кошик порожній! Додайте товари перед тим, як ділитися.');
+    return;
+  }
+  
+  try {
+    // Hide tooltip if open
+    const tooltip = document.getElementById('share-tooltip');
+    if (tooltip) {
+      tooltip.classList.add('hidden');
+    }
+    
+    // Generate unique cart ID
+    const cartId = crypto.randomUUID();
+    
+    // Save to Firestore
+    const { db, collection, doc, setDoc, serverTimestamp } = window.firebaseInit || {};
+    
+    if (!db || !setDoc) {
+      console.error('Firebase not initialized');
+      alert('Помилка ініціалізації. Спробуйте ще раз.');
+      return;
+    }
+    
+    const cartRef = doc(db, 'shared_carts', cartId);
+    await setDoc(cartRef, {
+      items: window.cart,
+      createdAt: serverTimestamp(),
+      lastUpdatedAt: serverTimestamp(),
+      itemCount: window.cart.length
+    });
+    
+    // Generate shareable URL
+    const shareUrl = `${window.location.origin}/cart-full.html?cartId=${cartId}`;
+    
+    // Update modal input
+    const input = document.getElementById('share-link-input');
+    if (input) {
+      input.value = shareUrl;
+    }
+    
+    // Show modal
+    const modal = document.getElementById('share-cart-modal');
+    if (modal) {
+      modal.classList.add('show');
+      
+      // Close on background click
+      modal.onclick = function(e) {
+        if (e.target === modal) {
+          window.closeShareModal();
+        }
+      };
+    }
+    
+  } catch (error) {
+    console.error('Error sharing cart:', error);
+    alert('Помилка при створенні посилання. Спробуйте ще раз.');
+  }
+};
+
+/**
+ * Close share cart modal
+ */
+window.closeShareModal = function() {
+  const modal = document.getElementById('share-cart-modal');
+  if (modal) {
+    modal.classList.remove('show');
+  }
+  
+  // Reset success message
+  const successMsg = document.getElementById('copy-success');
+  if (successMsg) {
+    successMsg.classList.add('hidden');
+  }
+  
+  // Reset copy button
+  const copyText = document.getElementById('copy-text');
+  const copyIcon = document.getElementById('copy-icon');
+  if (copyText) copyText.textContent = 'Копіювати';
+  if (copyIcon) {
+    copyIcon.innerHTML = '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>';
+  }
+};
+
+/**
+ * Copy share link to clipboard
+ */
+window.copyShareLink = async function() {
+  const input = document.getElementById('share-link-input');
+  const copyText = document.getElementById('copy-text');
+  const copyIcon = document.getElementById('copy-icon');
+  const successMsg = document.getElementById('copy-success');
+  
+  if (!input) return;
+  
+  try {
+    // Copy to clipboard
+    await navigator.clipboard.writeText(input.value);
+    
+    // Update button state
+    if (copyText) copyText.textContent = 'Готово!';
+    if (copyIcon) {
+      copyIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>';
+    }
+    
+    // Show success message
+    if (successMsg) {
+      successMsg.classList.remove('hidden');
+    }
+    
+    // Reset button after 2 seconds
+    setTimeout(() => {
+      if (copyText) copyText.textContent = 'Копіювати';
+      if (copyIcon) {
+        copyIcon.innerHTML = '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>';
+      }
+    }, 2000);
+    
+  } catch (error) {
+    console.error('Error copying to clipboard:', error);
+    alert('Помилка при копіюванні. Виділіть текст вручну.');
+  }
+};
+
+// Close tooltip when clicking outside
+document.addEventListener('click', function(event) {
+  const tooltip = document.getElementById('share-tooltip');
+  const infoIcon = document.querySelector('.share-info-icon');
+  
+  if (tooltip && infoIcon && !infoIcon.contains(event.target)) {
+    tooltip.classList.add('hidden');
+  }
+});
+
+// Close modal on ESC key
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') {
+    const modal = document.getElementById('share-cart-modal');
+    if (modal && modal.classList.contains('show')) {
+      window.closeShareModal();
+    }
+  }
+});
 
 // ============================================
 // AUTO-LOAD LAYOUT + START SESSION TRACKING

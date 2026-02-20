@@ -67,6 +67,12 @@ service cloud.firestore {
       allow read, write: if true;
     }
     
+    // Shared Carts - Collaborative shopping with shareable links
+    // Anyone with the cart ID (link) can read and update the cart
+    match /shared_carts/{cartId} {
+      allow read, write: if true;
+    }
+    
     // Daily Stats
     match /daily_stats/{dateId} {
       allow read: if request.auth != null;

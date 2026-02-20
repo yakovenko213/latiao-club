@@ -279,11 +279,22 @@
           <h1 class="text-2xl font-extrabold text-gray-900">Кошик</h1>
           <p class="text-sm text-gray-500 mt-0.5">Перевір замовлення перед оформленням</p>
         </div>
-        <button onclick="closeCart()" class="close-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
+        <div class="flex items-center gap-2">
+          <button onclick="shareCart()" class="btn-press w-10 h-10 rounded-full bg-gradient-to-r from-primary to-yellow-500 flex items-center justify-center text-white hover:shadow-lg transition-shadow" title="Поділитися кошиком">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+          </button>
+          <button onclick="closeCart()" class="close-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </header>
 
@@ -343,7 +354,8 @@
 
     </main>
 
-    <!-- Sticky Bottom Summary -->\n    <footer id="cart-summary" class="fixed bottom-0 left-0 right-0 md:left-1/2 md:-translate-x-1/2 md:max-w-lg bg-white border-t border-gray-100 shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.1)] rounded-t-3xl z-40">
+    <!-- Sticky Bottom Summary -->
+    <footer id="cart-summary" class="fixed bottom-0 left-0 right-0 md:left-1/2 md:-translate-x-1/2 md:max-w-lg bg-white border-t border-gray-100 shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.1)] rounded-t-3xl z-40">
       <div class="px-5 py-4">
         <!-- Summary Details -->
         <div class="space-y-2 mb-4">
@@ -402,10 +414,10 @@
   <!-- Quick Add Upsell Logic -->
   <script type="module">
     import { db } from './js/firebase-init.js';
-    import { collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    import { collection, query, where, getDocs, doc, setDoc, getDoc, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
     
     // Import global cashback config listener
-    import { initCashbackListener, onCashbackStateChange } from './js/cashback-config.js';
+    import { onCashbackStateChange } from './js/firebase-config.js';
     
     // ── Upsell Configuration ──────────────────────────────────
     let currentUpsellProduct = null;
@@ -421,39 +433,23 @@
     
     // ✅ Task 2: Wait for Firebase to be fully initialized
     async function waitForFirebase(maxAttempts = 100) {
-      console.error('🔥 [Upsell] Waiting for Firebase initialization...');
-      console.error('🔥 [Upsell] db object exists:', typeof db);
-      console.error('🔥 [Upsell] db value:', db);
-      
       for (let i = 0; i < maxAttempts; i++) {
         if (db && typeof db === 'object') {
-          console.error('✅ [Upsell] Firebase DB ready after', i + 1, 'attempts!');
           return true;
         }
         await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // Log every 10 attempts
-        if ((i + 1) % 10 === 0) {
-          console.error(`⏳ [Upsell] Still waiting... attempt ${i + 1}/${maxAttempts}`);
-        }
       }
-      console.error('❌ [Upsell] Firebase DB not initialized after', maxAttempts * 100, 'ms');
-      console.error('❌ [Upsell] Final db value:', db);
       return false;
     }
     
     // Import upsell display helper
     async function shouldShowUpsells(pageName) {
       try {
-        console.error('🔍 [Upsell] Checking settings/upsellDisplayConfig...');
         const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
         const settingsDoc = await getDoc(doc(db, 'settings', 'upsellDisplayConfig'));
         
-        console.error('📄 [Upsell] Settings document exists:', settingsDoc.exists());
-        
         if (settingsDoc.exists()) {
           const settings = settingsDoc.data();
-          console.error('📋 [Upsell] Admin settings loaded:', settings);
           const pageMap = {
             'productPage': 'showOnProductPage',
             'cart': 'showOnCart',
@@ -461,80 +457,42 @@
             'thankYou': 'showOnThankYou'
           };
           const fieldName = pageMap[pageName];
-          const shouldShow = settings[fieldName] === true;
-          console.error(`✅ [Upsell] Field "${fieldName}" value:`, settings[fieldName]);
-          console.error(`✅ [Upsell] ${pageName} upsell enabled:`, shouldShow);
-          return shouldShow;
+          return settings[fieldName] === true;
         }
         
-        console.error('⚠️ [Upsell] Settings document not found, defaulting to false');
         return false;
       } catch (error) {
         console.error('❌ [Upsell] Error checking upsell settings:', error);
-        console.error('❌ [Upsell] Error details:', error.message, error.stack);
         return false;
       }
     }
 
-    // Initialize Quick Add Upsell (3-4 products from different categories)
+    // Initialize Quick Add Upsell
     async function initCartQuickAddUpsell() {
       try {
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.error('🚀 [Upsell] STARTING CART UPSELL INITIALIZATION');
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        
-        // ✅ Task 2: Wait for Firebase to be ready
         const firebaseReady = await waitForFirebase();
         if (!firebaseReady) {
-          console.error('❌ [Upsell] Cannot initialize - Firebase not ready');
-          const container = document.getElementById('upsell-cart-container');
-          if (container) {
-            container.classList.add('hidden');
-            container.style.display = 'none';
-          }
+          hideUpsell();
           return;
         }
         
-        // ✅ Task 3: Check admin setting from settings/upsellDisplayConfig
-        console.error('🔍 [Upsell] Checking admin toggle...');
         const shouldShow = await shouldShowUpsells('cart');
-        console.error('🎯 [Upsell] shouldShowUpsells result:', shouldShow);
         
         if (!shouldShow) {
-          console.error('🚫 [Upsell] Cart upsells disabled by admin (showOnCart: false)');
-          const container = document.getElementById('upsell-cart-container');
-          if (container) {
-            container.classList.add('hidden');
-            container.style.display = 'none';
-          }
+          hideUpsell();
           return;
         }
-        
-        console.error('✅ [Upsell] Admin check passed! showOnCart: true');
 
-        // Get current cart items
         const cartData = localStorage.getItem('latiao_cart');
         const cart = cartData ? JSON.parse(cartData) : [];
-        console.error('🛒 [Upsell] Cart items:', cart.length);
         
-        // ✅ Task 4: If cart is empty, hide upsell section
         if (cart.length === 0) {
-          console.log('📭 [Upsell] Cart is empty - hiding upsell section');
-          const container = document.getElementById('upsell-cart-container');
-          if (container) {
-            container.classList.add('hidden');
-            container.style.display = 'none'; // ✅ Task 4: Explicit display none
-          }
+          hideUpsell();
           return;
         }
 
         const cartProductIds = cart.map(item => item.id);
-        console.error('📋 [Upsell] Products in cart:', cartProductIds);
 
-        // ✅ Task 3: Fetch random products from 'products' collection
-        console.error('🔍 [Upsell] Fetching random products from categories...');
-        console.error('🔍 [Upsell] Query filters: stock > 0, isActive == true');
-        
         const productsQuery = query(
           collection(db, 'products'),
           where('stock', '>', 0),
@@ -542,19 +500,12 @@
         );
         
         const snapshot = await getDocs(productsQuery);
-        console.error('📦 [Upsell] Total active products found:', snapshot.size);
         
         if (snapshot.empty) {
-          console.warn('⚠️ [Upsell] No products available in database');
-          const container = document.getElementById('upsell-cart-container');
-          if (container) {
-            container.classList.add('hidden');
-            container.style.display = 'none'; // ✅ Task 4: Hide empty container
-          }
+          hideUpsell();
           return;
         }
 
-        // Filter: Exclude products already in cart
         const availableProducts = [];
         snapshot.forEach(doc => {
           const product = { id: doc.id, ...doc.data() };
@@ -562,52 +513,25 @@
             availableProducts.push(product);
           }
         });
-
-        console.log('✅ [Upsell] Available products after filtering cart:', availableProducts.length);
-        console.log('📊 [Upsell] Task 3: Products retrieved:', availableProducts.map(p => ({
-          id: p.id,
-          name: p.name,
-          image: p.image,
-          price: p.price,
-          stock: p.stock,
-          category: p.category || p.categories
-        })));
         
-        // ✅ Task 4: If no products meet criteria, hide container
         if (availableProducts.length === 0) {
-          console.warn('⚠️ [Upsell] All products already in cart or unavailable');
-          const container = document.getElementById('upsell-cart-container');
-          if (container) {
-            container.classList.add('hidden');
-            container.style.display = 'none'; // ✅ Task 4: display: none fallback
-          }
+          hideUpsell();
           return;
         }
 
-        // ✅ Group products by category for diversity
-        console.log('🗂️  [Upsell] Grouping products by category...');
         const productsByCategory = {};
         availableProducts.forEach(product => {
-          // Get category from 'category' field or first item in 'categories' array
           const category = product.category || (product.categories && product.categories[0]) || 'other';
           if (!productsByCategory[category]) {
             productsByCategory[category] = [];
           }
           productsByCategory[category].push(product);
         });
-        
-        console.log('📂 [Upsell] Products grouped by categories:', Object.keys(productsByCategory).map(cat => 
-          `${cat}: ${productsByCategory[cat].length} products`
-        ));
 
-        // ✅ Select 3-4 random products from different categories
         const selectedProducts = [];
         const categories = Object.keys(productsByCategory);
         const targetCount = Math.min(4, availableProducts.length);
         
-        console.log(`🎯 [Upsell] Selecting ${targetCount} products from ${categories.length} categories...`);
-        
-        // Shuffle categories for randomness
         const shuffledCategories = categories.sort(() => Math.random() - 0.5);
         
         let categoryIndex = 0;
@@ -616,15 +540,11 @@
           const categoryProducts = productsByCategory[category];
           
           if (categoryProducts && categoryProducts.length > 0) {
-            // Pick random product from this category
             const randomIndex = Math.floor(Math.random() * categoryProducts.length);
             const product = categoryProducts[randomIndex];
             
-            // Check if not already selected
             if (!selectedProducts.find(p => p.id === product.id)) {
               selectedProducts.push(product);
-              console.log(`  ✓ Selected from ${category}:`, product.name);
-              // Remove from pool to avoid duplicates
               categoryProducts.splice(randomIndex, 1);
             }
           }
@@ -632,10 +552,6 @@
           categoryIndex++;
         }
 
-        console.log('✅ [Upsell] Final selected products:', selectedProducts.length);
-        console.log('📋 [Upsell] Products:', selectedProducts.map(p => p.name));
-
-        // ✅ Apply 5% discount for Cart Upsell
         const discount = 5;
         const productsWithPrices = selectedProducts.map(product => ({
           ...product,
@@ -643,109 +559,55 @@
           discountedPrice: Math.round(product.price * (1 - discount / 100))
         }));
 
-        // ✅ Task 2: Render UI (Single Product)
-        console.error('🎨 [Upsell] Rendering single upsell product...');
         if (productsWithPrices.length > 0) {
-          console.error('✅ [Upsell] Have', productsWithPrices.length, 'products, rendering first one');
           renderSingleUpsell(productsWithPrices[0]);
         } else {
-          console.error('⚠️ [Upsell] No products to render');
           hideUpsell();
         }
-        console.error('✅ [Upsell] INITIALIZATION COMPLETE');
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
       } catch (error) {
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.error('❌ [Upsell] FATAL ERROR in initCartQuickAddUpsell:');
-        console.error('Error message:', error.message);
-        console.error('Error stack:', error.stack);
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        
-        // ✅ Task 4: Hide container on error
-        const container = document.getElementById('upsell-cart-container');
-        if (container) {
-          container.classList.add('hidden');
-          container.style.display = 'none';
-        }
+        console.error('❌ [Upsell] Error in initCartQuickAddUpsell:', error);
+        hideUpsell();
       }
     }
 
-    // ✅ Render Single Upsell Product (New Horizontal Layout)
+    // ✅ Render Single Upsell Product
     function renderSingleUpsell(product) {
-      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.error('🎨 [Upsell] RENDERING SINGLE UPSELL PRODUCT');
-      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      
-      // ✅ Task 2: Get container by correct ID
       const container = document.getElementById('upsell-cart-container');
-      console.error('📍 [Upsell] Container element found:', !!container);
-      console.error('📍 [Upsell] Container ID used: upsell-cart-container');
       
-      if (!container) {
-        console.error('❌ [Upsell] Container #upsell-cart-container not found in DOM!');
-        return;
-      }
+      if (!container) return;
       
       if (!product) {
-        console.error('⚠️ [Upsell] No product provided');
         hideUpsell();
         return;
       }
       
-      console.error('📦 [Upsell] Product to display:', {
-        id: product.id,
-        name: product.name,
-        originalPrice: product.originalPrice,
-        discountedPrice: product.discountedPrice,
-        image: product.image ? product.image.substring(0, 50) + '...' : 'NO IMAGE',
-        spiciness: product.spiciness || 0
-      });
-      
-      // Save current product for handleUpsellAdd()
       currentUpsellProduct = product;
       
-      // Random heading
       const heading = UPSELL_HEADINGS[Math.floor(Math.random() * UPSELL_HEADINGS.length)];
-      console.error('📝 [Upsell] Selected heading:', heading);
       
-      // ✅ Task 2: Clear container before adding content
-      console.error('🧹 [Upsell] Clearing container...');
       container.innerHTML = '';
       
-      // Calculate discount percentage
       const hasDiscount = product.originalPrice && product.originalPrice !== product.discountedPrice;
       let discountPercent = 0;
       if (hasDiscount) {
         discountPercent = Math.round(((product.originalPrice - product.discountedPrice) / product.originalPrice) * 100);
       }
       
-      // Spiciness string
       const spicinessString = product.spiciness && product.spiciness > 0 
         ? '🌶️'.repeat(product.spiciness) 
         : '';
       
-      // Check if already in cart
       const cartData = localStorage.getItem('latiao_cart');
       const cart = cartData ? JSON.parse(cartData) : [];
       const alreadyInCart = cart.some(item => item.id === product.id);
       
-      console.error('🔍 [Upsell] Product already in cart:', alreadyInCart);
-      console.error('🔨 [Upsell] Building HTML with template literals...');
-      
-      // ✅ Task 4: Build HTML using template literals with REAL data
       const htmlContent = `
         <div class="rounded-2xl border border-orange-100 bg-orange-50/50 p-4">
-          
-          <!-- Selling line -->
           <p class="text-xs font-semibold text-gray-500 tracking-wide uppercase mb-3">
             ${heading}
           </p>
-
-          <!-- Card content: horizontal layout -->
           <div class="flex items-center gap-4">
-            
-            <!-- Product image -->
             <div class="relative w-20 h-20 flex-shrink-0 overflow-hidden rounded-xl bg-white shadow-sm">
               <img 
                 src="${product.image}" 
@@ -761,20 +623,14 @@
               </span>
               ` : ''}
             </div>
-
-            <!-- Info -->
             <div class="flex-1 min-w-0">
               <h4 class="text-sm font-bold text-gray-900 truncate">${product.name}</h4>
               ${spicinessString ? `<p class="mt-0.5 text-xs">${spicinessString}</p>` : ''}
-              
-              <!-- Prices -->
               <div class="mt-1 flex items-baseline gap-2">
                 <span class="text-base font-extrabold" style="color: #ff6b00;">${product.discountedPrice || product.price} грн</span>
                 ${hasDiscount ? `<span class="text-xs text-gray-400 line-through">${product.originalPrice} грн</span>` : ''}
               </div>
             </div>
-
-            <!-- Add button -->
             <button 
               id="upsell-add-btn"
               onclick="handleUpsellAdd()"
@@ -794,60 +650,30 @@
                 `}
               </span>
             </button>
-
           </div>
         </div>
       `;
       
-      console.error('✍️ [Upsell] Rendering products into UI...');
-      console.error('📦 [Upsell] HTML length:', htmlContent.length, 'characters');
-      
-      // ✅ Task 4: Inject HTML into container
       container.innerHTML = htmlContent;
-      
-      // ✅ Task 3: Force visibility
-      console.error('👁️ [Upsell] FORCING VISIBILITY NOW...');
-      console.error('👁️ [Upsell] Container classes BEFORE:', container.className);
-      console.error('👁️ [Upsell] Container display BEFORE:', container.style.display);
-      
       container.classList.remove('hidden');
       container.style.display = 'block';
-      
-      console.error('👁️ [Upsell] Container classes AFTER:', container.className);
-      console.error('👁️ [Upsell] Container display AFTER:', container.style.display);
-      console.error('👁️ [Upsell] Container offsetHeight:', container.offsetHeight);
-      console.error('👁️ [Upsell] Container offsetWidth:', container.offsetWidth);
-      
-      console.error('✅ [Upsell] Single product rendered successfully');
-      console.error('✅ [Upsell] RENDERING COMPLETE');
-      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     }
 
-    // ✅ Handle Upsell Add Click
+    // ✅ Handle Upsell Add Click — exposed globally
     window.handleUpsellAdd = function() {
-      console.error('🔘 [Upsell] Add button clicked!');
-      
-      if (!currentUpsellProduct) {
-        console.error('⚠️ [Upsell] No current product to add');
-        return;
-      }
+      if (!currentUpsellProduct) return;
       
       const product = currentUpsellProduct;
       const addBtn = document.getElementById('upsell-add-btn');
       
-      console.error('🛒 [Upsell] Adding product to cart:', product.name);
-      console.error('🔍 [Upsell] Button element found:', !!addBtn);
-      
-      // Get current cart
       const cartData = localStorage.getItem('latiao_cart');
       const cart = cartData ? JSON.parse(cartData) : [];
       
-      // Check if already in cart
       const existingItem = cart.find(item => item.id === product.id);
       
       if (existingItem) {
         existingItem.quantity += 1;
-        if (typeof showToast === 'function') showToast('✓ Кількість оновлено');
+        if (typeof window.showToast === 'function') window.showToast('✓ Кількість оновлено');
       } else {
         cart.push({
           id: product.id,
@@ -858,89 +684,73 @@
           stock: product.stock || 99,
           quantity: 1
         });
-        if (typeof showToast === 'function') showToast('✓ Додано до кошика');
+        if (typeof window.showToast === 'function') window.showToast('✓ Додано до кошика');
       }
       
-      // Save cart
       localStorage.setItem('latiao_cart', JSON.stringify(cart));
       
-      // Update button state
       if (addBtn) {
-        setUpsellButtonAdded(addBtn);
+        addBtn.disabled = true;
+        addBtn.classList.add('upsell-added');
+        addBtn.style.backgroundColor = '#dcfce7';
+        addBtn.innerHTML = '<span class="flex items-center gap-1">' +
+          '<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+          '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>' +
+          '</svg>' +
+          '<span>Додано</span>' +
+          '</span>';
       }
       
-      // Reload cart display
-      if (typeof loadCart === 'function') {
-        loadCart();
+      if (typeof window.loadCart === 'function') {
+        window.loadCart();
       }
-      
-      console.log('✅ [Upsell] Product added successfully');
     };
     
-    // ✅ Button State Helpers
-    function setUpsellButtonAdded(btn) {
-      btn.disabled = true;
-      btn.classList.add('upsell-added');
-      btn.style.backgroundColor = '#dcfce7';
-      btn.innerHTML = '<span class="flex items-center gap-1">' +
-        '<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
-        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>' +
-        '</svg>' +
-        '<span>Додано</span>' +
-        '</span>';
-    }
-    
-    function resetUpsellButton(btn) {
-      btn.disabled = false;
-      btn.classList.remove('upsell-added');
-      btn.style.backgroundColor = '#ff6b00';
-      btn.innerHTML = '<span class="flex items-center gap-1">' +
-        '<span>+</span>' +
-        '<span class="whitespace-nowrap">Додати</span>' +
-        '</span>';
-    }
-    
-    // ✅ Hide Upsell Container
     function hideUpsell() {
       const container = document.getElementById('upsell-cart-container');
       if (container) {
-        console.error('🙈 [Upsell] Hiding upsell container');
         container.classList.add('hidden');
         container.style.display = 'none';
       }
     }
 
-    // Initialize on page load
     document.addEventListener('DOMContentLoaded', () => {
-      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.error('🎬 [Upsell] DOMContentLoaded event fired');
-      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      
-      // Increased delay to ensure Firebase is fully ready
       setTimeout(() => {
-        console.error('⏰ [Upsell] Timeout completed, starting initialization...');
         initCartQuickAddUpsell();
-      }, 1500); // Increased from 500ms to 1500ms
+      }, 1500);
     });
     
-    // Backup initialization on full page load (if cart loads after DOMContentLoaded)
     window.addEventListener('load', () => {
-      console.error('🌐 [Upsell] Window load event fired (backup trigger)');
-      
-      // Check if upsell already visible
       const container = document.getElementById('upsell-cart-container');
       if (container && container.classList.contains('hidden')) {
-        console.error('🔄 [Upsell] Container still hidden, re-triggering initialization...');
         setTimeout(() => {
           initCartQuickAddUpsell();
         }, 500);
-      } else if (container && !container.classList.contains('hidden')) {
-        console.error('✅ [Upsell] Container already visible, skipping backup init');
       }
     });
   </script>
 
-  <script>
+  <!-- ============================================
+       🛒 MAIN CART SCRIPT (type="module" — fixes Firebase access)
+       ============================================ -->
+  <script type="module">
+    // ✅ FIX: Import Firebase as module so shareCart() and all Firestore functions work
+    import { db } from './js/firebase-init.js';
+    import { doc, setDoc, getDoc, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    import { onCashbackStateChange } from './js/firebase-config.js';
+
+    // ✅ Expose all functions used by onclick="" attributes in HTML
+    window.shareCart = shareCart;
+    window.closeCart = closeCart;
+    window.goShopping = goShopping;
+    window.checkout = checkout;
+    window.removeItem = removeItem;
+    window.removeItemByIndex = removeItemByIndex;
+    window.updateQty = updateQty;
+    window.updateQtyByIndex = updateQtyByIndex;
+    window.showToast = showToast;
+    window.loadCart = loadCart;
+
     // Demo Products
     const DEMO_PRODUCTS = [
       {
@@ -979,6 +789,7 @@
 
     // Cart State
     let cart = [];
+    let currentSharedCartId = null;
 
     // Load cart from localStorage
     function loadCart() {
@@ -986,7 +797,6 @@
       if (saved) {
         cart = JSON.parse(saved);
       } else {
-        // Initialize with demo items
         cart = [
           { ...DEMO_PRODUCTS[0], quantity: 2 },
           { ...DEMO_PRODUCTS[1], quantity: 1 },
@@ -998,8 +808,127 @@
     }
 
     // Save cart to localStorage
-    function saveCart() {
+    async function saveCart() {
       localStorage.setItem('latiao_cart', JSON.stringify(cart));
+      
+      if (currentSharedCartId) {
+        try {
+          const cartRef = doc(db, 'shared_carts', currentSharedCartId);
+          await setDoc(cartRef, {
+            items: cart,
+            lastUpdatedAt: serverTimestamp(),
+            itemCount: cart.length
+          }, { merge: true });
+        } catch (error) {
+          console.error('❌ [Share] Error syncing to Firestore:', error);
+        }
+      }
+    }
+
+    // ============================================
+    // 🔗 SHARE CART FUNCTIONALITY
+    // ============================================
+    
+    async function shareCart() {
+      try {
+        if (cart.length === 0) {
+          showToast('Кошик порожній! Додайте товари перед тим, як ділитися.', 'warning');
+          return;
+        }
+        
+        const cartId = crypto.randomUUID();
+        
+        const cartRef = doc(db, 'shared_carts', cartId);
+        await setDoc(cartRef, {
+          items: cart,
+          createdAt: serverTimestamp(),
+          lastUpdatedAt: serverTimestamp(),
+          itemCount: cart.length
+        });
+        
+        const shareUrl = `${window.location.origin}${window.location.pathname}?cartId=${cartId}`;
+        
+        await navigator.clipboard.writeText(shareUrl);
+        
+        showToast('🔗 Посилання скопійовано! Поділіться ним з друзями.', 'success');
+        
+      } catch (error) {
+        console.error('❌ [Share] Error sharing cart:', error);
+        showToast('Помилка при створенні посилання. Спробуйте ще раз.', 'error');
+      }
+    }
+    
+    // Load shared cart from URL parameter
+    async function loadSharedCart() {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const cartId = urlParams.get('cartId');
+        
+        if (!cartId) return false;
+        
+        const cartRef = doc(db, 'shared_carts', cartId);
+        const cartSnap = await getDoc(cartRef);
+        
+        if (!cartSnap.exists()) {
+          showToast('Кошик не знайдено. Можливо, посилання застаріло.', 'warning');
+          return false;
+        }
+        
+        const sharedCart = cartSnap.data();
+        
+        currentSharedCartId = cartId;
+        
+        const localCart = cart.slice();
+        const mergedCart = [...localCart];
+        
+        sharedCart.items.forEach(sharedItem => {
+          const existingIndex = mergedCart.findIndex(item => item.sku === sharedItem.sku);
+          if (existingIndex >= 0) {
+            mergedCart[existingIndex].quantity += sharedItem.quantity;
+          } else {
+            mergedCart.push(sharedItem);
+          }
+        });
+        
+        cart = mergedCart;
+        await saveCart();
+        renderCart();
+        
+        showToast(`✅ Додано ${sharedCart.items.length} товарів з кошика друга!`, 'success');
+        
+        setupRealtimeCollaboration(cartId);
+        
+        return true;
+      } catch (error) {
+        console.error('❌ [Share] Error loading shared cart:', error);
+        showToast('Помилка при завантаженні кошика.', 'error');
+        return false;
+      }
+    }
+    
+    // Setup real-time collaboration for shared cart
+    let isUpdatingFromSnapshot = false;
+    
+    function setupRealtimeCollaboration(cartId) {
+      const cartRef = doc(db, 'shared_carts', cartId);
+      
+      onSnapshot(cartRef, (snapshot) => {
+        if (!snapshot.exists()) return;
+        
+        if (isUpdatingFromSnapshot) return;
+        
+        const sharedCart = snapshot.data();
+        
+        isUpdatingFromSnapshot = true;
+        cart = sharedCart.items;
+        localStorage.setItem('latiao_cart', JSON.stringify(cart));
+        renderCart();
+        isUpdatingFromSnapshot = false;
+        
+        showToast('🔄 Кошик оновлено іншим користувачем!', 'info');
+      }, (error) => {
+        console.error('❌ [Share] Real-time listener error:', error);
+      });
     }
 
     // Calculate totals
@@ -1015,15 +944,10 @@
     // 🪙 TOGGLE CASHBACK UI ELEMENTS
     // ============================================
     function toggleCashbackUI(isEnabled) {
-      console.log('🎨 [Cart] toggleCashbackUI called:', isEnabled ? 'SHOW' : 'HIDE');
-      
-      // Get all cashback elements
       const cashbackBadgeCart = document.getElementById('cashback-badge-cart');
       const cashbackSummaryBadge = document.getElementById('cashback-summary-badge');
       
       if (isEnabled) {
-        // ✅ SHOW: Remove hidden class
-        console.log('👁️ [Cart] Showing cashback badges...');
         if (cashbackBadgeCart) {
           cashbackBadgeCart.classList.remove('hidden');
           cashbackBadgeCart.style.display = '';
@@ -1033,8 +957,6 @@
           cashbackSummaryBadge.style.display = '';
         }
       } else {
-        // 🙈 HIDE: Add hidden class and force display none
-        console.log('🙈 [Cart] Hiding cashback badges...');
         if (cashbackBadgeCart) {
           cashbackBadgeCart.classList.add('hidden');
           cashbackBadgeCart.style.display = 'none';
@@ -1044,8 +966,6 @@
           cashbackSummaryBadge.style.display = 'none';
         }
       }
-      
-      console.log('✅ [Cart] toggleCashbackUI completed');
     }
 
     // Update UI
@@ -1053,13 +973,8 @@
       const total = calculateTotal();
       const itemsCount = calculateItemsCount();
       
-      // Get dynamic cashback percentage (default 8% if not set)
       const cashbackPercent = (window.cashbackPercent || 8) / 100;
       
-      // Debug logging (can be removed in production)
-      console.log(`📊 Cart Update: ${itemsCount} items, Total: ${total} грн, Cashback: ${Math.floor(total * cashbackPercent)} грн (${window.cashbackPercent || 8}%)`);
-      
-      // Update summary with null checks
       const itemsCountEl = document.getElementById('items-count');
       const subtotalEl = document.getElementById('subtotal');
       const totalEl = document.getElementById('total');
@@ -1069,93 +984,42 @@
       if (totalEl) totalEl.textContent = `${total} грн`;
       
       // ============================================
-      // 🪙 UPDATE CASHBACK (dynamic % of cart total)
+      // 🪙 UPDATE CASHBACK
       // ============================================
-      // ✅ Task: Check if cashback is enabled globally
-      const isCashbackEnabled = window.cashbackEnabled !== false; // default true
+      const isCashbackEnabled = window.cashbackEnabled !== false;
       
       if (isCashbackEnabled) {
-        // Calculate cashback value once with dynamic percentage
         const potentialCashback = Math.floor(total * cashbackPercent);
         const maxEarnLimit = window.cashbackMaxEarnLimit || 0;
         const calculatedCashback = (maxEarnLimit > 0) ? Math.min(potentialCashback, maxEarnLimit) : potentialCashback;
         
-        // 🐛 DEBUG: Детальна інформація про кешбек
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log('🐛 [CASHBACK DEBUG]');
-        console.log('1️⃣ Total:', total, 'грн');
-        console.log('2️⃣ Potential cashback:', potentialCashback, 'грн', `(${window.cashbackPercent || 8}%)`);
-        console.log('3️⃣ Max earn limit:', maxEarnLimit > 0 ? maxEarnLimit + ' грн' : 'немає');
-        console.log('4️⃣ Final cashback:', calculatedCashback, 'грн');
-        console.log('5️⃣ Element total-cart-cashback:', document.getElementById('total-cart-cashback'));
-        console.log('6️⃣ Element cashback-summary-badge:', document.getElementById('cashback-summary-badge'));
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        
-        // Task 1: Update cart cashback amount (main badge)
         const cashbackAmountEl = document.getElementById('cart-cashback-amount');
-        if (cashbackAmountEl) {
-          cashbackAmountEl.textContent = calculatedCashback;
-          console.log(`✅ Updated cart-cashback-amount: ${calculatedCashback}`);
-        } else {
-          console.warn('⚠️ Element cart-cashback-amount not found');
-        }
+        if (cashbackAmountEl) cashbackAmountEl.textContent = calculatedCashback;
         
-        // Task 2: Update Total Cashback Summary Badge (new placement)
         const totalCashbackEl = document.getElementById('total-cart-cashback');
-        if (totalCashbackEl) {
-          totalCashbackEl.textContent = calculatedCashback;
-          console.log(`✅ Updated total-cart-cashback: ${calculatedCashback}`);
-        } else {
-          console.warn('⚠️ Element total-cart-cashback not found');
-        }
+        if (totalCashbackEl) totalCashbackEl.textContent = calculatedCashback;
         
-        // Task 3: Force visibility based on cart state
         const cashbackBadge = document.getElementById('cashback-badge-cart');
         const cashbackSummaryBadge = document.getElementById('cashback-summary-badge');
         
         if (cart.length === 0) {
-          // Hide both badges when cart is empty
-          if (cashbackBadge) {
-            cashbackBadge.classList.add('hidden');
-            console.log('🙈 Hidden cashback-badge-cart (cart empty)');
-          }
-          if (cashbackSummaryBadge) {
-            cashbackSummaryBadge.classList.add('hidden');
-            console.log('🙈 Hidden cashback-summary-badge (cart empty)');
-          }
+          if (cashbackBadge) cashbackBadge.classList.add('hidden');
+          if (cashbackSummaryBadge) cashbackSummaryBadge.classList.add('hidden');
         } else {
-          // Show badges when cart has items
           if (cashbackBadge) {
             cashbackBadge.classList.remove('hidden');
-            cashbackBadge.style.display = ''; // Clear any inline styles
-            console.log('👁️ Showing cashback-badge-cart (cart has items)');
-          } else {
-            console.warn('⚠️ Element cashback-badge-cart not found');
+            cashbackBadge.style.display = '';
           }
           if (cashbackSummaryBadge) {
             cashbackSummaryBadge.classList.remove('hidden');
-            cashbackSummaryBadge.style.display = ''; // Clear any inline styles
-            console.log('👁️ Showing cashback-summary-badge (cart has items)');
-          } else {
-            console.warn('⚠️ Element cashback-summary-badge not found');
+            cashbackSummaryBadge.style.display = '';
           }
         }
       } else {
-        // ⛔ Cashback DISABLED by admin - hide all badges
-        console.log('🚫 [CASHBACK] Cashback disabled by admin toggle');
         const cashbackBadge = document.getElementById('cashback-badge-cart');
         const cashbackSummaryBadge = document.getElementById('cashback-summary-badge');
-        
-        if (cashbackBadge) {
-          cashbackBadge.classList.add('hidden');
-          cashbackBadge.style.display = 'none';
-          console.log('🙈 Forced hide: cashback-badge-cart');
-        }
-        if (cashbackSummaryBadge) {
-          cashbackSummaryBadge.classList.add('hidden');
-          cashbackSummaryBadge.style.display = 'none';
-          console.log('🙈 Forced hide: cashback-summary-badge');
-        }
+        if (cashbackBadge) { cashbackBadge.classList.add('hidden'); cashbackBadge.style.display = 'none'; }
+        if (cashbackSummaryBadge) { cashbackSummaryBadge.classList.add('hidden'); cashbackSummaryBadge.style.display = 'none'; }
       }
       
       // Update delivery cost
@@ -1305,7 +1169,6 @@
       const product = DEMO_PRODUCTS.find(p => p.id === productId);
       if (!product) return;
       
-      // REFINED LOGIC: Check by ID + isGift status
       const productIsGift = product.isGift === true;
       const existingItem = cart.find(item => 
         item.id === productId &&
@@ -1323,7 +1186,7 @@
         cart.push({ 
           ...product, 
           quantity: 1,
-          isGift: productIsGift // Ensure boolean
+          isGift: productIsGift
         });
         showToast(`${product.name} додано до кошика`);
       }
@@ -1337,7 +1200,6 @@
       const item = cart.find(i => i.id === productId);
       if (!item) return;
       
-      // Animate out
       const element = document.querySelector(`[data-id="${productId}"]`);
       if (element) {
         element.classList.remove('cart-item-enter');
@@ -1352,7 +1214,7 @@
       }
     }
     
-    // Remove item by cart index (NEW)
+    // Remove item by cart index
     function removeItemByIndex(cartIndex) {
       if (cartIndex < 0 || cartIndex >= cart.length) return;
       
@@ -1377,7 +1239,6 @@
       const item = cart.find(i => i.id === productId);
       if (!item) return;
       
-      // Заборонити зміну кількості подарунків
       if (item.isGift === true) {
         showToast('Кількість подарунків не можна змінити', 'warning');
         return;
@@ -1400,13 +1261,12 @@
       renderCart();
     }
     
-    // Update quantity by index (NEW)
+    // Update quantity by index
     function updateQtyByIndex(cartIndex, delta) {
       if (cartIndex < 0 || cartIndex >= cart.length) return;
       
       const item = cart[cartIndex];
       
-      // Заборонити зміну кількості подарунків
       if (item.isGift === true) {
         showToast('Кількість подарунків не можна змінити', 'warning');
         return;
@@ -1471,41 +1331,26 @@
     }
 
     // Initialize
-    document.addEventListener('DOMContentLoaded', () => {
-      loadCart();
+    document.addEventListener('DOMContentLoaded', async () => {
+      const loadedShared = await loadSharedCart();
       
-      // Register cashback state change listener
+      if (!loadedShared) {
+        loadCart();
+      }
+      
       onCashbackStateChange((isEnabled, cashbackPercent) => {
-        console.log('🔄 [Cart] Cashback state changed:', { 
-          enabled: isEnabled, 
-          percent: cashbackPercent 
-        });
-        
-        // ⚡ Toggle UI elements visibility
         toggleCashbackUI(isEnabled);
-        
-        // Re-render cart to update calculations
         updateUI();
       });
       
-      // Additional safety check: Force badges to show if cart has items
+      // Safety check: force badges visible if cashback enabled and cart not empty
       setTimeout(() => {
-        const cart = JSON.parse(localStorage.getItem('latiao_cart') || '[]');
-        if (cart.length > 0) {
+        const savedCart = JSON.parse(localStorage.getItem('latiao_cart') || '[]');
+        if (savedCart.length > 0 && window.cashbackEnabled !== false) {
           const summaryBadge = document.getElementById('cashback-summary-badge');
           const cartBadge = document.getElementById('cashback-badge-cart');
-          
-          // Only show if cashback is enabled
-          if (window.cashbackEnabled !== false) {
-            if (summaryBadge) {
-              summaryBadge.classList.remove('hidden');
-              console.log('🔧 Safety check: Forced cashback-summary-badge visible');
-            }
-            if (cartBadge) {
-              cartBadge.classList.remove('hidden');
-              console.log('🔧 Safety check: Forced cashback-badge-cart visible');
-            }
-          }
+          if (summaryBadge) summaryBadge.classList.remove('hidden');
+          if (cartBadge) cartBadge.classList.remove('hidden');
         }
       }, 100);
     });
