@@ -602,6 +602,29 @@ const headerTemplate = `
     #cart-items {
       transition: opacity 0.3s ease-in-out;
     }
+    
+    /* Special Offer Scrollbar */
+    .scrollbar-thin {
+      scrollbar-width: thin;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar {
+      height: 6px;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: #fff3e8;
+      border-radius: 3px;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: #fb923c;
+      border-radius: 3px;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+      background: #f97316;
+    }
   </style>
 
   <!-- Cart Overlay -->
@@ -690,15 +713,6 @@ const headerTemplate = `
             <span id="checkout-total" class="transition-all duration-300">0 грн</span>
           </span>
         </button>
-        
-        <!-- Upsell Section (Force-Integrated) -->
-        <div id="upsell-container" class="mt-4 p-3 bg-orange-50 rounded-xl border border-orange-100">
-          <div class="flex justify-between items-center mb-2">
-            <span class="text-[10px] font-bold text-orange-600 uppercase tracking-wider">🔥 Спеціальна пропозиція</span>
-            <span id="upsell-timer" class="text-xs font-mono text-red-500 font-bold">15:00</span>
-          </div>
-          <div id="upsell-list" class="space-y-2"></div>
-        </div>
       </div>
     </footer>
   </div>
@@ -1107,7 +1121,6 @@ function renderCart() {
   }).join('');
 
   updateCartUI();
-  initUpsell();
 }
 
 // Update cart UI (totals, delivery progress, etc.)
@@ -2697,222 +2710,6 @@ async function loadFooterDynamicContent() {
   }
 }
 
-// ============================================
-// UPSELL SECTION LOGIC
-// ============================================
-
-/**
- * Initialize and manage upsell section with timer and products
- */
-async function initUpsell() {
-  console.log('🚀 initUpsell called');
-  const container = document.getElementById('upsell-container');
-  const listEl = document.getElementById('upsell-list');
-  const timerEl = document.getElementById('upsell-timer');
-  
-  if (!container || !listEl || !timerEl) {
-    console.warn('⚠️ Upsell elements not found:', { container: !!container, listEl: !!listEl, timerEl: !!timerEl });
-    return;
-  }
-  console.log('✅ Upsell elements found');
-  
-  // Hide if cart is empty
-  if (!window.cart || window.cart.length === 0) {
-    console.log('ℹ️ Cart is empty, hiding upsell');
-    container.classList.add('hidden');
-    return;
-  }
-  console.log('✅ Cart has', window.cart.length, 'items');
-  
-  // Step 1: Timer management with localStorage
-  let endTime = localStorage.getItem('upsell_end');
-  const now = Date.now();
-  
-  if (!endTime || parseInt(endTime) < now) {
-    // Create new 15-minute timer
-    endTime = now + (15 * 60 * 1000);
-    localStorage.setItem('upsell_end', endTime.toString());
-  }
-  
-  // Step 2: Fetch random products not in cart
-  console.log('📦 Fetching upsell products...');
-  const upsellProducts = await getUpsellProducts();
-  console.log('📦 Got', upsellProducts.length, 'upsell products');
-  
-  if (upsellProducts.length === 0) {
-    console.warn('⚠️ No upsell products available');
-    container.classList.add('hidden');
-    return;
-  }
-  
-  // Step 3: Render products with -8% discount
-  console.log('🎨 Rendering upsell products...');
-  renderUpsellProducts(upsellProducts, listEl);
-  
-  // Show container
-  container.classList.remove('hidden');
-  console.log('✅ Upsell container shown');
-  
-  // Step 4: Start countdown timer
-  startUpsellTimer(endTime, timerEl, container);
-  console.log('⏰ Timer started');
-}
-
-/**
- * Fetch 2 random products that are NOT in the current cart
- */
-async function getUpsellProducts() {
-  try {
-    if (!window.firebaseInit) {
-      console.warn('⚠️ Firebase not initialized for upsell');
-      return [];
-    }
-    
-    const { db, collection, getDocs, query, where, limit } = window.firebaseInit;
-    
-    // Get active products with stock
-    const productsRef = collection(db, 'products');
-    const productsQuery = query(
-      productsRef,
-      where('isActive', '==', true),
-      where('stock', '>', 0),
-      limit(20) // Get 20 to have enough for random selection
-    );
-    
-    const snapshot = await getDocs(productsQuery);
-    const allProducts = [];
-    
-    snapshot.forEach(doc => {
-      allProducts.push({ id: doc.id, ...doc.data() });
-    });
-    
-    if (allProducts.length === 0) return [];
-    
-    // Filter out products already in cart
-    const cartIds = new Set(window.cart.map(item => item.id));
-    const available = allProducts.filter(p => !cartIds.has(p.id));
-    
-    if (available.length === 0) return [];
-    
-    // Shuffle and return 2 random products
-    const shuffled = available.sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 2);
-    
-  } catch (error) {
-    console.error('❌ Error fetching upsell products:', error);
-    return [];
-  }
-}
-
-/**
- * Render upsell products with -8% discount
- */
-function renderUpsellProducts(products, container) {
-  const html = products.map(product => {
-    const originalPrice = product.price || 0;
-    const discountedPrice = Math.round(originalPrice * 0.92); // -8% discount
-    const imageUrl = product.imageUrl || product.image || 'https://placehold.co/60x60/fff3e8/ff6b00?text=Latiao';
-    const productName = (product.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-    
-    return `
-      <div class="bg-white rounded-lg border border-orange-200 p-2 flex items-center gap-2 hover:shadow-md transition-all duration-200">
-        <div class="w-10 h-10 flex-shrink-0 bg-orange-50 rounded-md overflow-hidden">
-          <img src="${imageUrl}" alt="${product.name}" class="w-full h-full object-cover">
-        </div>
-        <div class="flex-1 min-w-0">
-          <h4 class="text-xs font-semibold text-gray-900 line-clamp-1">${product.name}</h4>
-          <div class="flex items-baseline gap-1.5 mt-0.5">
-            <span class="text-[10px] text-gray-400 line-through">${originalPrice} ₴</span>
-            <span class="text-sm font-extrabold text-orange-600">${discountedPrice} ₴</span>
-            <span class="text-[9px] font-bold text-green-600 bg-green-50 px-1 rounded">-8%</span>
-          </div>
-        </div>
-        <button 
-          onclick="window.addUpsellToCart('${product.id}', '${productName}', '${imageUrl}', ${discountedPrice}, '${product.sku || ''}', ${product.stock || 999}, ${product.spiciness || 0})"
-          class="flex-shrink-0 w-7 h-7 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-full flex items-center justify-center hover:from-orange-600 hover:to-orange-700 active:scale-90 transition-all duration-150 shadow-sm"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-          </svg>
-        </button>
-      </div>
-    `;
-  }).join('');
-  
-  container.innerHTML = html;
-}
-
-/**
- * Start countdown timer and hide section when expired
- */
-function startUpsellTimer(endTime, timerEl, container) {
-  // Clear any existing interval
-  if (window.upsellTimerInterval) {
-    clearInterval(window.upsellTimerInterval);
-  }
-  
-  function updateTimer() {
-    const remaining = parseInt(endTime) - Date.now();
-    
-    if (remaining <= 0) {
-      // Timer expired - hide container
-      container.style.transition = 'opacity 0.4s';
-      container.style.opacity = '0';
-      setTimeout(() => {
-        container.classList.add('hidden');
-        container.style.opacity = '1';
-      }, 400);
-      
-      clearInterval(window.upsellTimerInterval);
-      localStorage.removeItem('upsell_end');
-      return;
-    }
-    
-    // Update timer display (MM:SS)
-    const minutes = Math.floor(remaining / 60000);
-    const seconds = Math.floor((remaining % 60000) / 1000);
-    timerEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  }
-  
-  // Update immediately
-  updateTimer();
-  
-  // Update every second
-  window.upsellTimerInterval = setInterval(updateTimer, 1000);
-}
-
-/**
- * Add upsell product to cart with discounted price
- */
-window.addUpsellToCart = function(productId, name, image, price, sku, stock, spiciness) {
-  // Check if already in cart
-  const existingIndex = window.cart.findIndex(item => item.id === productId);
-  
-  if (existingIndex !== -1) {
-    window.showToast('Товар вже в кошику', 'info');
-    return;
-  }
-  
-  // Add to cart with discounted price
-  const cartItem = {
-    id: productId,
-    sku: sku,
-    name: name,
-    price: price,
-    image: image,
-    imageUrl: image,
-    stock: stock,
-    spiciness: spiciness,
-    quantity: 1,
-    isUpsell: true
-  };
-  
-  window.cart.push(cartItem);
-  saveCart();
-  renderCart(); // This will re-trigger initUpsell() and refresh the upsell list
-  
-  window.showToast(`${name} додано зі знижкою -8%!`, 'success');
-};
 
 // ============================================
 // AUTO-LOAD LAYOUT + START SESSION TRACKING
