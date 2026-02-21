@@ -751,83 +751,160 @@
     }
 
     /* ============================================ */
-    /* CASHBACK CLIENTS - MODERN REDESIGN */
+    /* ============================================ */
+    /* CASHBACK CLIENTS - EXCEL-STYLE SPREADSHEET */
     /* ============================================ */
     
-    /* Desktop Table Styles */
+    /* Excel-Style Table Container */
+    #cashback-clients-content {
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    }
+    
     #cashback-clients-content table {
-      font-family: 'Inter', sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
+    
+    /* Sticky Header with Excel-style */
+    #cashback-clients-content thead {
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
     
     #cashback-clients-content thead th {
+      background: #f8fafc;
       font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.75rem;
       letter-spacing: 0.05em;
-      padding: 1.25rem 1.5rem;
-      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-      border-bottom: 2px solid #fbbf24;
+      padding: 0.75rem 1rem;
+      border: 1px solid #e2e8f0;
+      border-top: none;
+      color: #475569;
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
     }
     
+    /* Sortable column hover */
+    #cashback-clients-content thead th.sortable:hover {
+      background: #f1f5f9;
+    }
+    
+    /* Sort icons */
+    .sort-icon {
+      display: inline-flex;
+      flex-direction: column;
+      margin-left: 0.25rem;
+      opacity: 0.3;
+    }
+    
+    .sort-icon svg {
+      width: 12px;
+      height: 12px;
+    }
+    
+    th.sort-active .sort-icon {
+      opacity: 1;
+    }
+    
+    /* Zebra striping */
     #cashback-clients-tbody tr {
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: background-color 0.15s ease;
+    }
+    
+    #cashback-clients-tbody tr:nth-child(even) {
+      background-color: #f8fafc;
     }
     
     #cashback-clients-tbody tr:hover {
-      background: linear-gradient(90deg, #fffbeb 0%, #fef3c7 100%) !important;
-      transform: scale(1.005);
-      box-shadow: 0 2px 8px rgba(251, 191, 36, 0.15);
+      background-color: #eff6ff !important;
     }
     
+    /* Excel-style cells */
     #cashback-clients-tbody td {
-      padding: 1.25rem 1.5rem;
+      padding: 0.625rem 1rem;
+      border: 1px solid #e2e8f0;
+      font-size: 0.875rem;
+      vertical-align: middle;
     }
     
-    /* Status Badges with Icons */
-    .cashback-badge {
+    /* Monospaced numbers for alignment */
+    .money-cell {
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Courier New', monospace;
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-align: right;
+      white-space: nowrap;
+    }
+    
+    .money-positive {
+      color: #16a34a;
+    }
+    
+    .money-negative {
+      color: #dc2626;
+    }
+    
+    .money-neutral {
+      color: #64748b;
+    }
+    
+    .money-high {
+      color: #16a34a;
+      font-weight: 700;
+    }
+    
+    /* Compact badges */
+    .cashback-compact-badge {
       display: inline-flex;
       align-items: center;
-      gap: 0.375rem;
-      padding: 0.5rem 1rem;
-      border-radius: 9999px;
+      gap: 0.25rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.375rem;
       font-weight: 600;
-      font-size: 0.875rem;
-      transition: all 0.2s;
+      font-size: 0.75rem;
+      font-family: 'SF Mono', monospace;
     }
     
-    .cashback-badge-balance {
-      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-      color: #065f46;
-      border: 1px solid #6ee7b7;
+    .badge-balance-high {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #86efac;
     }
     
-    .cashback-badge-used {
-      background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-      color: #991b1b;
-      border: 1px solid #fca5a5;
+    .badge-balance-medium {
+      background: #fef3c7;
+      color: #854d0e;
+      border: 1px solid #fde047;
     }
     
-    .cashback-badge-earned {
-      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-      color: #1e40af;
-      border: 1px solid #93c5fd;
+    .badge-balance-low {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #cbd5e1;
     }
     
-    /* Client Name Styling - No Avatar */
+    /* Client Name Styling - Compact */
     .client-name-cell {
       display: flex;
       flex-direction: column;
-      gap: 0.25rem;
+      gap: 0.125rem;
     }
     
     .client-name-primary {
-      font-weight: 700;
-      font-size: 1rem;
-      color: #111827;
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: #1e293b;
       line-height: 1.25;
     }
     
     .client-phone-secondary {
-      font-size: 0.875rem;
-      color: #6b7280;
+      font-size: 0.75rem;
+      color: #64748b;
+      font-family: 'SF Mono', monospace;
       line-height: 1.25;
     }
     
@@ -849,54 +926,194 @@
       box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
     }
     
-    /* Modern Icon-Only Action Buttons (Desktop) */
+    /* Compact Action Buttons */
     .cashback-action-btn {
       position: relative;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 2.5rem;
-      height: 2.5rem;
+      width: 2rem;
+      height: 2rem;
       padding: 0;
-      border-radius: 0.625rem;
+      border-radius: 0.375rem;
       font-weight: 600;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-      border: 2px solid transparent;
+      transition: all 0.15s ease;
+      border: 1px solid transparent;
     }
     
     .cashback-action-btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-      border-color: rgba(255, 255, 255, 0.5);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     }
     
     .cashback-action-btn:active {
-      transform: translateY(-1px);
+      transform: translateY(0);
+    }
+    
+    .cashback-action-btn-edit {
+      background: #3b82f6;
+      color: white;
+    }
+    
+    .cashback-action-btn-edit:hover {
+      background: #2563eb;
     }
     
     .cashback-action-btn-credit {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      background: #10b981;
     }
     
     .cashback-action-btn-credit:hover {
-      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      background: #059669;
     }
     
     .cashback-action-btn-debit {
-      background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+      background: #f97316;
     }
     
     .cashback-action-btn-debit:hover {
-      background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+      background: #ea580c;
     }
     
-    .cashback-action-btn-sms {
-      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    /* Transaction History - Clickable Cells */
+    .transaction-clickable {
+      cursor: pointer;
+      border-bottom: 1px dashed #94a3b8;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
     }
     
-    .cashback-action-btn-sms:hover {
-      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    .transaction-clickable:hover {
+      border-bottom-color: #3b82f6;
+      color: #3b82f6;
+    }
+    
+    .transaction-icon {
+      opacity: 0.5;
+      transition: opacity 0.2s ease;
+      font-size: 0.75rem;
+    }
+    
+    .transaction-clickable:hover .transaction-icon {
+      opacity: 1;
+    }
+    
+    /* Transaction History Table */
+    .history-table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.875rem;
+    }
+    
+    .history-table th {
+      background: #f8fafc;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #e2e8f0;
+      font-weight: 600;
+      text-align: left;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: #475569;
+    }
+    
+    .history-table td {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #e2e8f0;
+      vertical-align: middle;
+    }
+    
+    .history-table tbody tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+    
+    .history-table tbody tr:hover {
+      background-color: #eff6ff;
+    }
+    
+    .history-badge-earned {
+      background: #dcfce7;
+      color: #166534;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.375rem;
+      font-weight: 600;
+      font-size: 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    
+    .history-badge-spent {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.375rem;
+      font-weight: 600;
+      font-size: 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    
+    .history-badge-manual {
+      background: #dbeafe;
+      color: #1e40af;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.375rem;
+      font-weight: 600;
+      font-size: 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    
+    /* Pagination */
+    .pagination-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem;
+      border-top: 1px solid #e2e8f0;
+      background: #f8fafc;
+    }
+    
+    .pagination-info {
+      font-size: 0.875rem;
+      color: #64748b;
+    }
+    
+    .pagination-buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .pagination-btn {
+      padding: 0.5rem 1rem;
+      border: 1px solid #e2e8f0;
+      background: white;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    
+    .pagination-btn:hover:not(:disabled) {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+    
+    .pagination-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .pagination-btn.active {
+      background: #3b82f6;
+      color: white;
+      border-color: #3b82f6;
     }
     
     /* Tooltip for Icon Buttons */
@@ -1426,11 +1643,13 @@
                 <i data-lucide="trending-up" class="w-6 h-6 text-green-600"></i>
 
               </div>
-              <span class="text-xs text-green-600 font-semibold">+12.5%</span>
+              <span id="dashboard-revenue-change" class="text-xs text-green-600 font-semibold">...</span>
 
             </div>
 
-            <h3 class="text-2xl font-bold text-gray-900">₴24,580</h3>
+            <h3 id="dashboard-revenue" class="text-2xl font-bold text-gray-900">
+              <div class="inline-block animate-spin w-5 h-5 border-2 border-green-600 border-t-transparent rounded-full"></div>
+            </h3>
 
             <p class="text-sm text-gray-600 mt-1">Виручка за день</p>
 
@@ -1444,11 +1663,13 @@
                 <i data-lucide="shopping-cart" class="w-6 h-6 text-blue-600"></i>
 
               </div>
-              <span class="text-xs text-blue-600 font-semibold">+5</span>
+              <span id="dashboard-orders-change" class="text-xs text-blue-600 font-semibold">...</span>
 
             </div>
 
-            <h3 class="text-2xl font-bold text-gray-900">48</h3>
+            <h3 id="dashboard-orders" class="text-2xl font-bold text-gray-900">
+              <div class="inline-block animate-spin w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+            </h3>
 
             <p class="text-sm text-gray-600 mt-1">Нові замовлення</p>
 
@@ -1462,11 +1683,13 @@
                 <i data-lucide="users" class="w-6 h-6 text-purple-600"></i>
 
               </div>
-              <span class="text-xs text-purple-600 font-semibold">+8</span>
+              <span id="dashboard-clients-change" class="text-xs text-purple-600 font-semibold">...</span>
 
             </div>
 
-            <h3 class="text-2xl font-bold text-gray-900">1,234</h3>
+            <h3 id="dashboard-clients" class="text-2xl font-bold text-gray-900">
+              <div class="inline-block animate-spin w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full"></div>
+            </h3>
 
             <p class="text-sm text-gray-600 mt-1">Клієнти</p>
 
@@ -1480,11 +1703,13 @@
                 <i data-lucide="package" class="w-6 h-6 text-orange-600"></i>
 
               </div>
-              <span class="text-xs text-red-600 font-semibold">-3</span>
+              <span id="dashboard-products-change" class="text-xs text-orange-600 font-semibold">...</span>
 
             </div>
 
-            <h3 class="text-2xl font-bold text-gray-900">156</h3>
+            <h3 id="dashboard-products" class="text-2xl font-bold text-gray-900">
+              <div class="inline-block animate-spin w-5 h-5 border-2 border-orange-600 border-t-transparent rounded-full"></div>
+            </h3>
 
             <p class="text-sm text-gray-600 mt-1">Товарів на складі</p>
 
@@ -5210,53 +5435,74 @@
           </div>
 
           <!-- Clients Table -->
-          <div id="cashback-clients-content" class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div id="cashback-clients-content" class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
               <table class="w-full">
-                <thead class="bg-gradient-to-r from-amber-50 to-yellow-50 border-b border-yellow-100">
+                <thead>
                   <tr>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      <span class="column-header-icon">
-                        <i data-lucide="user" class="w-4 h-4"></i>
-                        Клієнт
-                      </span>
+                    <th class="sortable text-left" data-sort="fullName" onclick="sortClientsTable('fullName')">
+                      <div class="flex items-center gap-1">
+                        <i data-lucide="user" class="w-3.5 h-3.5"></i>
+                        <span>Клієнт</span>
+                        <span class="sort-icon">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" /></svg>
+                        </span>
+                      </div>
                     </th>
-                    <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      <span class="column-header-icon">
-                        <i data-lucide="shopping-bag" class="w-4 h-4"></i>
-                        Замовлення
-                      </span>
+                    <th class="text-center">
+                      <div class="flex items-center justify-center gap-1">
+                        <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i>
+                        <span>Замовлення</span>
+                      </div>
                     </th>
-                    <th class="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      <span class="column-header-icon">
-                        <i data-lucide="trending-up" class="w-4 h-4"></i>
-                        Нараховано
-                      </span>
+                    <th class="text-right">
+                      <div class="flex items-center justify-end gap-1">
+                        <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+                        <span>Нараховано</span>
+                      </div>
                     </th>
-                    <th class="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      <span class="column-header-icon">
-                        <i data-lucide="trending-down" class="w-4 h-4"></i>
-                        Використано
-                      </span>
+                    <th class="text-right">
+                      <div class="flex items-center justify-end gap-1">
+                        <i data-lucide="trending-down" class="w-3.5 h-3.5"></i>
+                        <span>Використано</span>
+                      </div>
                     </th>
-                    <th class="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      <span class="column-header-icon">
-                        <i data-lucide="coins" class="w-4 h-4"></i>
-                        Баланс
-                      </span>
+                    <th class="sortable text-right" data-sort="currentBalance" onclick="sortClientsTable('currentBalance')">
+                      <div class="flex items-center justify-end gap-1">
+                        <i data-lucide="coins" class="w-3.5 h-3.5"></i>
+                        <span>Баланс</span>
+                        <span class="sort-icon">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" /></svg>
+                        </span>
+                      </div>
                     </th>
-                    <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      <span class="column-header-icon">
-                        <i data-lucide="settings" class="w-4 h-4"></i>
-                        Дії
-                      </span>
+                    <th class="text-center">
+                      <div class="flex items-center justify-center gap-1">
+                        <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+                        <span>Дії</span>
+                      </div>
                     </th>
                   </tr>
                 </thead>
-                <tbody id="cashback-clients-tbody" class="divide-y divide-gray-200">
+                <tbody id="cashback-clients-tbody">
                   <!-- Rows will be dynamically inserted here -->
                 </tbody>
               </table>
+            </div>
+            
+            <!-- Pagination -->
+            <div id="cashback-clients-pagination" class="pagination-container hidden">
+              <div class="pagination-info">
+                Показано <span id="pagination-showing">1-20</span> з <span id="pagination-total">0</span> клієнтів
+              </div>
+              <div class="pagination-buttons">
+                <button id="pagination-prev" class="pagination-btn" onclick="changePage(-1)">
+                  ← Попередня
+                </button>
+                <button id="pagination-next" class="pagination-btn" onclick="changePage(1)">
+                  Наступна →
+                </button>
+              </div>
             </div>
             
             <!-- Mobile Card Container (hidden on desktop) -->
@@ -5882,6 +6128,99 @@
             >
               <i data-lucide="send" class="w-5 h-5"></i>
               <span>Розпочати розсилку</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Transaction History Modal -->
+      <div id="transaction-history-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden animate-fade-in">
+          
+          <!-- Modal Header -->
+          <div id="history-modal-header" class="bg-gradient-to-r from-purple-500 to-indigo-600 px-6 py-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                <i data-lucide="clock" class="w-6 h-6"></i>
+                <span id="history-modal-title">Історія транзакцій</span>
+              </h3>
+              <button onclick="closeTransactionHistoryModal()" class="text-white/80 hover:text-white transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Modal Body -->
+          <div class="p-6">
+            
+            <!-- Client Info Bar -->
+            <div class="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-xl p-4 mb-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-600">Клієнт:</p>
+                  <p class="font-bold text-gray-900 text-lg" id="history-client-name">-</p>
+                  <p class="text-sm text-gray-600" id="history-client-phone">-</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-xs text-gray-600">Тип історії:</p>
+                  <p class="text-lg font-bold" id="history-type-badge">-</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="history-loading" class="hidden text-center py-12">
+              <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-purple-500 border-t-transparent"></div>
+              <p class="mt-4 text-gray-600 font-medium">Завантаження історії...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div id="history-empty" class="hidden text-center py-12">
+              <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              <p class="text-lg font-semibold text-gray-700 mb-2">Історія транзакцій порожня</p>
+              <p class="text-sm text-gray-500">Ще немає жодних транзакцій для цього клієнта</p>
+            </div>
+
+            <!-- History Table -->
+            <div id="history-content" class="hidden overflow-x-auto">
+              <table class="history-table">
+                <thead>
+                  <tr>
+                    <th style="width: 140px;">Дата</th>
+                    <th>Опис</th>
+                    <th style="width: 130px;" class="text-right">Сума</th>
+                  </tr>
+                </thead>
+                <tbody id="history-tbody">
+                  <!-- Rows will be inserted here -->
+                </tbody>
+              </table>
+              
+              <!-- Summary Stats -->
+              <div class="mt-4 grid grid-cols-2 gap-3">
+                <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <p class="text-xs text-gray-600 mb-1">Всього нараховано:</p>
+                  <p class="text-xl font-bold text-green-600" id="history-total-earned">0 грн</p>
+                </div>
+                <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p class="text-xs text-gray-600 mb-1">Всього використано:</p>
+                  <p class="text-xl font-bold text-red-600" id="history-total-spent">0 грн</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
+            <button 
+              onclick="closeTransactionHistoryModal()"
+              class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-xl transition-all"
+            >
+              Закрити
             </button>
           </div>
 
@@ -8122,6 +8461,11 @@
         loginView.classList.add('hidden')
         appView.classList.remove('hidden')
         lucide.createIcons()
+
+        // Load dashboard stats FIRST (quick overview)
+        if (typeof loadDashboardStats === 'function') {
+          await loadDashboardStats()
+        }
 
         // Load review settings first (needed for Smart Sending time validation)
         if (typeof loadReviewSettings === 'function') {
@@ -13197,6 +13541,197 @@
     // END STATISTICS DASHBOARD
     // ============================================
 
+    // ============================================
+    // DASHBOARD STATS - REAL-TIME DATA FETCHING
+    // ============================================
+    
+    /**
+     * Load and populate dashboard statistics with REAL Firestore data
+     * Fetches ALL orders without date restrictions for comprehensive analytics
+     */
+    async function loadDashboardStats() {
+      console.log('📊 [DASHBOARD] Starting data fetch...');
+      
+      try {
+        // STEP 1: Fetch ALL orders from Firestore (no filters)
+        console.log('📊 [DASHBOARD] Fetching all orders from Firestore...');
+        const ordersRef = collection(db, 'orders');
+        const ordersSnapshot = await getDocs(ordersRef);
+        
+        console.log(`📊 [DASHBOARD] Total orders fetched: ${ordersSnapshot.docs.length}`);
+        
+        if (ordersSnapshot.empty) {
+          console.warn('⚠️ [DASHBOARD] No orders found in database');
+          document.getElementById('dashboard-revenue').textContent = '₴0';
+          document.getElementById('dashboard-orders').textContent = '0';
+          document.getElementById('dashboard-clients').textContent = '0';
+          document.getElementById('dashboard-products').textContent = '0';
+          return;
+        }
+        
+        // STEP 2: Parse orders with robust timestamp handling
+        const allOrders = [];
+        ordersSnapshot.forEach((doc) => {
+          const data = doc.data();
+          
+          // Fix timestamp parsing - handle Firestore Timestamp and string dates
+          let orderDate = null;
+          if (data.createdAt) {
+            if (data.createdAt.toDate) {
+              // Firestore Timestamp object
+              orderDate = data.createdAt.toDate();
+            } else if (typeof data.createdAt === 'string') {
+              // String date
+              orderDate = new Date(data.createdAt);
+            } else if (data.createdAt instanceof Date) {
+              // Native Date object
+              orderDate = data.createdAt;
+            }
+          }
+          
+          // Fallback: use current date if parsing failed
+          if (!orderDate || isNaN(orderDate.getTime())) {
+            console.warn(`⚠️ [DASHBOARD] Invalid date for order ${doc.id}, using fallback`);
+            orderDate = new Date();
+          }
+          
+          allOrders.push({
+            id: doc.id,
+            ...data,
+            parsedDate: orderDate
+          });
+        });
+        
+        // Log sample order for debugging
+        if (allOrders.length > 0) {
+          console.log('📊 [DASHBOARD] Sample order:', {
+            id: allOrders[0].id,
+            createdAt: allOrders[0].createdAt,
+            parsedDate: allOrders[0].parsedDate,
+            status: allOrders[0].status,
+            total: allOrders[0].total
+          });
+        }
+        
+        // STEP 3: Calculate today's stats
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+        const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+        
+        console.log('📊 [DASHBOARD] Today range:', {
+          start: todayStart.toLocaleString('uk-UA'),
+          end: todayEnd.toLocaleString('uk-UA')
+        });
+        
+        const todayOrders = allOrders.filter(order => {
+          const orderTime = order.parsedDate.getTime();
+          return orderTime >= todayStart.getTime() && orderTime <= todayEnd.getTime();
+        });
+        
+        console.log(`📊 [DASHBOARD] Today's orders: ${todayOrders.length}`);
+        
+        // Calculate today's revenue (sum of all order totals)
+        let todayRevenue = 0;
+        todayOrders.forEach(order => {
+          const total = parseFloat(order.total) || 0;
+          todayRevenue += total;
+        });
+        
+        console.log(`📊 [DASHBOARD] Today's revenue: ₴${todayRevenue.toFixed(0)}`);
+        
+        // STEP 4: Count unique clients (by phone)
+        const uniquePhones = new Set();
+        allOrders.forEach(order => {
+          if (order.customer?.phone) {
+            uniquePhones.add(order.customer.phone);
+          } else if (order.phone) {
+            uniquePhones.add(order.phone);
+          }
+        });
+        
+        console.log(`📊 [DASHBOARD] Unique clients: ${uniquePhones.size}`);
+        
+        // STEP 5: Fetch products count
+        console.log('📊 [DASHBOARD] Fetching products...');
+        const productsRef = collection(db, 'products');
+        const productsSnapshot = await getDocs(productsRef);
+        const productsCount = productsSnapshot.docs.length;
+        
+        console.log(`📊 [DASHBOARD] Total products: ${productsCount}`);
+        
+        // STEP 6: Update UI with real data
+        document.getElementById('dashboard-revenue').textContent = `₴${todayRevenue.toFixed(0)}`;
+        document.getElementById('dashboard-orders').textContent = todayOrders.length;
+        document.getElementById('dashboard-clients').textContent = uniquePhones.size;
+        document.getElementById('dashboard-products').textContent = productsCount;
+        
+        // Update change indicators (compare to yesterday)
+        const yesterdayStart = new Date(todayStart);
+        yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+        const yesterdayEnd = new Date(todayEnd);
+        yesterdayEnd.setDate(yesterdayEnd.getDate() - 1);
+        
+        const yesterdayOrders = allOrders.filter(order => {
+          const orderTime = order.parsedDate.getTime();
+          return orderTime >= yesterdayStart.getTime() && orderTime <= yesterdayEnd.getTime();
+        });
+        
+        let yesterdayRevenue = 0;
+        yesterdayOrders.forEach(order => {
+          const total = parseFloat(order.total) || 0;
+          yesterdayRevenue += total;
+        });
+        
+        // Calculate percentage changes
+        const revenueChange = yesterdayRevenue > 0 
+          ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue * 100).toFixed(1)
+          : todayRevenue > 0 ? '+100.0' : '0.0';
+        
+        const ordersChange = yesterdayOrders.length > 0
+          ? (todayOrders.length - yesterdayOrders.length)
+          : todayOrders.length;
+        
+        // Update change badges
+        const revenueChangeEl = document.getElementById('dashboard-revenue-change');
+        if (parseFloat(revenueChange) >= 0) {
+          revenueChangeEl.textContent = `+${revenueChange}%`;
+          revenueChangeEl.className = 'text-xs text-green-600 font-semibold';
+        } else {
+          revenueChangeEl.textContent = `${revenueChange}%`;
+          revenueChangeEl.className = 'text-xs text-red-600 font-semibold';
+        }
+        
+        const ordersChangeEl = document.getElementById('dashboard-orders-change');
+        if (ordersChange >= 0) {
+          ordersChangeEl.textContent = `+${ordersChange}`;
+          ordersChangeEl.className = 'text-xs text-blue-600 font-semibold';
+        } else {
+          ordersChangeEl.textContent = `${ordersChange}`;
+          ordersChangeEl.className = 'text-xs text-red-600 font-semibold';
+        }
+        
+        // Clients and products change indicators (static for now)
+        document.getElementById('dashboard-clients-change').textContent = '📈';
+        document.getElementById('dashboard-products-change').textContent = '📦';
+        
+        console.log('✅ [DASHBOARD] Stats updated successfully!');
+        
+      } catch (error) {
+        console.error('❌ [DASHBOARD] Error fetching stats:', error);
+        document.getElementById('dashboard-revenue').textContent = 'Помилка';
+        document.getElementById('dashboard-orders').textContent = 'Помилка';
+        document.getElementById('dashboard-clients').textContent = 'Помилка';
+        document.getElementById('dashboard-products').textContent = 'Помилка';
+      }
+    }
+    
+    // Make function globally accessible
+    window.loadDashboardStats = loadDashboardStats;
+    
+    // ============================================
+    // END DASHBOARD STATS
+    // ============================================
+
     // Load orders function - now just triggers the real-time listener
     async function loadOrders() {
       const list = document.getElementById('orders-list')
@@ -15100,15 +15635,396 @@
       }
       
       try {
-        // Update Firestore - TTN + Auto-set status to 'shipped'
-        await updateDoc(doc(db, 'orders', orderId), {
+        // ============================================
+        // STEP 1: Fetch current order to check previous state
+        // ============================================
+        const orderRef = doc(db, 'orders', orderId)
+        const orderSnap = await getDoc(orderRef)
+        
+        if (!orderSnap.exists()) {
+          throw new Error('Замовлення не знайдено')
+        }
+        
+        const orderData = orderSnap.data()
+        const previousTTN = orderData.ttn || orderData.trackingNumber || ''
+        
+        // Check if cashback already credited (multiple field checks)
+        const isCashbackAlreadyCredited = orderData.isCashbackCredited || 
+                                          (orderData.cashbackAwarded && orderData.cashbackAwarded > 0) ||
+                                          false
+        
+        // Get order total from nested paths (exact structure from Firestore)
+        const orderTotal = parseFloat(orderData.summary?.total) || 
+                          parseFloat(orderData.payment?.amount) || 
+                          parseFloat(orderData.totalAmount) || 
+                          0
+        
+        // Log which field was used for the total
+        let totalSource = 'none';
+        if (orderData.summary?.total) totalSource = 'summary.total';
+        else if (orderData.payment?.amount) totalSource = 'payment.amount';
+        else if (orderData.totalAmount) totalSource = 'totalAmount';
+        
+        // Get customer phone from userId field (not nested in customer object)
+        const customerPhone = orderData.userId || orderData.customer?.phone || orderData.phone || null
+        
+        console.log('� [Cashback] Checking TTN change for order:', orderId)
+        console.log('👤 [Cashback] User ID from order:', customerPhone)
+        console.log('💰 [Cashback] Order Total found:', orderTotal, 'from source:', totalSource)
+        console.log('📦 [Cashback] Previous TTN:', previousTTN || '(empty)')
+        console.log('📦 [Cashback] New TTN:', ttn)
+        console.log('✅ [Cashback] Already credited?', isCashbackAlreadyCredited)
+        
+        console.log('💰 [Cashback] Full Order Data Summary:', {
+          orderId,
+          previousTTN,
+          newTTN: ttn,
+          isCashbackAlreadyCredited,
+          orderTotal,
+          totalSource,
+          customerPhone,
+          orderData: {
+            summaryTotal: orderData.summary?.total,
+            paymentAmount: orderData.payment?.amount,
+            totalAmount: orderData.totalAmount,
+            userId: orderData.userId,
+            cashbackAwarded: orderData.cashbackAwarded
+          }
+        })
+        
+        // Check if TTN is being added (was empty, now has value)
+        const isTTNBeingAdded = !previousTTN && ttn
+        console.log('🔄 [Cashback] Is TTN being added?', isTTNBeingAdded)
+        
+        // ============================================
+        // STEP 2: Update order with TTN and status
+        // ============================================
+        await updateDoc(orderRef, {
           ttn: ttn,
           deliveryService: deliveryService,
           status: 'shipped', // AUTO-SET when TTN is saved
           ttnUpdatedAt: serverTimestamp()
         })
         
-        // Update current TTN display
+        // ============================================
+        // STEP 3: Credit Cashback (if conditions met)
+        // ============================================
+        let cashbackCredited = false
+        let cashbackAmount = 0
+        let wasUserCreated = false  // Track if we created a new user profile
+        
+        // Variables for success toast (must be declared outside try block)
+        let verifiedOldBalance = 0
+        let verifiedNewBalance = 0
+        let verifiedTransactionId = ''
+        
+        if (isTTNBeingAdded && !isCashbackAlreadyCredited && customerPhone && orderTotal > 0) {
+          console.log('💰 [Cashback] Triggering automatic cashback crediting...')
+          
+          try {
+            // Fetch cashback percentage from settings
+            let cashbackPercentage = 8 // Default 8%
+            try {
+              const cashbackConfigDoc = await getDoc(doc(db, 'settings', 'cashback_config'))
+              if (cashbackConfigDoc.exists()) {
+                cashbackPercentage = cashbackConfigDoc.data().percentage || 8
+              }
+            } catch (settingsError) {
+              console.warn('⚠️ [Cashback] Could not fetch settings, using default 8%:', settingsError)
+            }
+            
+            // Calculate cashback amount
+            cashbackAmount = Math.round(orderTotal * (cashbackPercentage / 100))
+            
+            console.log('💰 [Cashback] Calculated:', {
+              orderTotal,
+              percentage: cashbackPercentage,
+              amount: cashbackAmount
+            })
+            
+            // ============================================
+            // DATABASE WRITES - STEP 1: Find or Create User & Update Balance
+            // ============================================
+            console.log('💾 [Cashback] STEP 1: Fail-Safe User Lookup/Creation')
+            
+            // Extract customer info from order
+            const customerInfo = {
+              userId: customerPhone,
+              fullName: orderData.customer?.fullName || orderData.customer?.name || 'Unknown Customer',
+              phone: orderData.customer?.phone || customerPhone,
+              email: orderData.customer?.email || null
+            }
+            
+            // Normalize phone (remove spaces, dashes, etc.)
+            const normalizedPhone = customerInfo.phone.replace(/[\s\-\(\)]/g, '')
+            
+            console.log('👤 [Cashback] Customer Info from Order:', {
+              userId: customerInfo.userId,
+              fullName: customerInfo.fullName,
+              phone: customerInfo.phone,
+              normalizedPhone: normalizedPhone
+            })
+            
+            let userRef = null
+            let userSnap = null
+            let lookupMethod = ''
+            
+            // STEP 1: Try direct lookup by userId
+            console.log('🔍 [Cashback] STEP 1: Direct lookup by userId:', customerInfo.userId)
+            userRef = doc(db, 'users', customerInfo.userId)
+            userSnap = await getDoc(userRef)
+            
+            if (userSnap.exists()) {
+              lookupMethod = '✅ Found user by DIRECT DOCUMENT ID'
+              console.log('✅ [Cashback]', lookupMethod)
+              console.log('📍 [Cashback] Document path:', userRef.path)
+            }
+            
+            // STEP 2: If not found, try searching by fullName
+            if (!userSnap.exists()) {
+              console.log('🔍 [Cashback] STEP 2: Searching by fullName:', customerInfo.fullName)
+              
+              try {
+                const usersRef = collection(db, 'users')
+                const q = query(usersRef, where('fullName', '==', customerInfo.fullName))
+                const querySnapshot = await getDocs(q)
+                
+                if (!querySnapshot.empty) {
+                  userSnap = querySnapshot.docs[0]
+                  userRef = userSnap.ref
+                  lookupMethod = '✅ Found user by FULLNAME QUERY'
+                  console.log('✅ [Cashback]', lookupMethod)
+                  console.log('📍 [Cashback] Document path:', userRef.path)
+                  console.log('🔍 [Cashback] Query matched', querySnapshot.size, 'document(s)')
+                } else {
+                  console.log('⚠️ [Cashback] No user found by fullName:', customerInfo.fullName)
+                }
+              } catch (queryError) {
+                console.error('⚠️ [Cashback] Query by fullName failed:', queryError.message)
+              }
+            }
+            
+            // STEP 3: If still not found, CREATE new user document
+            if (!userSnap || !userSnap.exists()) {
+              console.log('🆕 [Cashback] STEP 3: User not found, creating new profile...')
+              console.log('👤 [Cashback] Creating new user for:', customerInfo.fullName)
+              console.log('📱 [Cashback] Phone:', normalizedPhone)
+              console.log('🔑 [Cashback] Document ID will be:', customerInfo.userId)
+              
+              userRef = doc(db, 'users', customerInfo.userId)
+              
+              const newUserData = {
+                fullName: customerInfo.fullName,
+                phone: normalizedPhone,
+                cashbackBalance: 0,
+                totalCashbackAwarded: 0,
+                createdAt: serverTimestamp(),
+                createdBy: 'auto-cashback-system',
+                email: customerInfo.email
+              }
+              
+              try {
+                await setDoc(userRef, newUserData)
+                lookupMethod = '🆕 Created new user profile'
+                wasUserCreated = true
+                console.log('✅✅ [Cashback] New user profile created successfully!')
+                console.log('📍 [Cashback] Document path:', userRef.path)
+                
+                // Re-fetch to get the created document
+                userSnap = await getDoc(userRef)
+              } catch (createError) {
+                console.error('❌❌❌ [Cashback] CRITICAL ERROR creating user!')
+                console.error('❌ [Cashback] Error message:', createError.message)
+                console.error('❌ [Cashback] Error code:', createError.code)
+                console.error('❌ [Cashback] Full error:', createError)
+                throw new Error(`Failed to create user profile: ${createError.message}`)
+              }
+            }
+            
+            console.log('✅✅✅ [Cashback] User document ready!')
+            console.log('📊 [Cashback] Lookup/Creation Summary:', {
+              method: lookupMethod,
+              wasCreated: wasUserCreated,
+              documentPath: userRef.path,
+              documentId: userRef.id,
+              fullName: customerInfo.fullName,
+              phone: normalizedPhone
+            })
+            
+            const userData = userSnap.data()
+            const currentBalance = parseFloat(userData.cashbackBalance) || 0
+            const newBalance = currentBalance + cashbackAmount
+            
+            console.log('✅ [Cashback] User document data loaded successfully')
+            console.log('💰 [Cashback] Current cashbackBalance field value:', currentBalance)
+            console.log('➕ [Cashback] Adding cashback amount:', cashbackAmount)
+            console.log('🎯 [Cashback] Target new balance:', newBalance)
+            console.log('📊 [Cashback] Balance change:', currentBalance, '→', newBalance)
+            
+            // Perform the update with error tracking
+            console.log('💾 [Cashback] Executing updateDoc on path:', userRef.path)
+            console.log('💾 [Cashback] Update payload:', {
+              cashbackBalance: newBalance,
+              totalCashbackAwarded: 'increment(' + cashbackAmount + ')',
+              updatedAt: 'serverTimestamp()'
+            })
+            
+            try {
+              await updateDoc(userRef, {
+                cashbackBalance: newBalance,
+                totalCashbackAwarded: increment(cashbackAmount),
+                updatedAt: serverTimestamp()
+              })
+              console.log('✅✅ [Cashback] User balance WRITE SUCCESSFUL')
+            } catch (userUpdateError) {
+              console.error('❌❌❌ [Cashback] CRITICAL ERROR during user balance update!')
+              console.error('❌ [Cashback] Error message:', userUpdateError.message)
+              console.error('❌ [Cashback] Error code:', userUpdateError.code)
+              console.error('❌ [Cashback] Full error object:', userUpdateError)
+              console.error('❌ [Cashback] Stack trace:', userUpdateError.stack)
+              throw new Error(`Database write failed for user ${customerPhone}: ${userUpdateError.message}`)
+            }
+            
+            // Verify the write succeeded by re-fetching
+            const verifySnap = await getDoc(userRef)
+            const verifiedBalance = parseFloat(verifySnap.data().cashbackBalance)
+            console.log('🔍 [Cashback] Verified user balance after write:', verifiedBalance)
+            
+            if (verifiedBalance !== newBalance) {
+              console.error('❌ [Cashback] VERIFICATION FAILED! Expected:', newBalance, 'Got:', verifiedBalance)
+              throw new Error('Balance verification failed - write may not have persisted')
+            }
+            
+            // ============================================
+            // DATABASE WRITES - STEP 2: Log Transaction
+            // ============================================
+            console.log('📝 [Cashback] STEP 2: Attempting to create transaction log for order:', orderId)
+            console.log('📞 [Cashback] Using phone number for transaction:', normalizedPhone)
+            console.log('👤 [Cashback] Using fullName for transaction:', customerInfo.fullName)
+            
+            const transactionData = {
+              userId: normalizedPhone,  // Use normalized phone for consistency
+              fullName: customerInfo.fullName,  // Include customer name for reference
+              amount: cashbackAmount,
+              type: 'order_reward',
+              description: `Нараховано за ТТН до замовлення #${orderId}`,
+              orderId: orderId,
+              createdAt: serverTimestamp()
+            }
+            
+            console.log('📝 [Cashback] Transaction data to write:', transactionData)
+            console.log('📝 [Cashback] Target collection: cashback_transactions')
+            
+            let transactionRef
+            try {
+              transactionRef = await addDoc(collection(db, 'cashback_transactions'), transactionData)
+              console.log('✅✅ [Cashback] Transaction WRITE SUCCESSFUL')
+              console.log('🆔 [Cashback] Transaction document ID:', transactionRef.id)
+              console.log('📍 [Cashback] Transaction document path:', transactionRef.path)
+            } catch (transactionError) {
+              console.error('❌❌❌ [Cashback] CRITICAL ERROR during transaction creation!')
+              console.error('❌ [Cashback] Error message:', transactionError.message)
+              console.error('❌ [Cashback] Error code:', transactionError.code)
+              console.error('❌ [Cashback] Full error object:', transactionError)
+              console.error('❌ [Cashback] Stack trace:', transactionError.stack)
+              throw new Error(`Transaction log failed: ${transactionError.message}`)
+            }
+            
+            // Verify transaction was created
+            const verifyTransaction = await getDoc(transactionRef)
+            if (!verifyTransaction.exists()) {
+              console.error('❌ [Cashback] VERIFICATION FAILED! Transaction not found after creation')
+              throw new Error('Transaction verification failed - document not found')
+            }
+            console.log('🔍 [Cashback] Verified transaction exists in database')
+            
+            // ============================================
+            // DATABASE WRITES - STEP 3: Mark Order
+            // ============================================
+            console.log('🏷️ [Cashback] STEP 3: Marking order as cashback credited')
+            console.log('📍 [Cashback] Order path:', orderRef.path)
+            
+            try {
+              await updateDoc(orderRef, {
+                isCashbackCredited: true,
+                cashbackAwarded: cashbackAmount,
+                cashbackAmount: cashbackAmount,
+                cashbackCreditedAt: serverTimestamp()
+              })
+              console.log('✅ [Cashback] Order WRITE SUCCESSFUL')
+            } catch (orderUpdateError) {
+              console.error('❌ [Cashback] FAILED to update order:', orderUpdateError)
+              throw new Error(`Order update failed: ${orderUpdateError.message}`)
+            }
+            
+            // ============================================
+            // ALL DATABASE WRITES SUCCESSFUL
+            // ============================================
+            cashbackCredited = true
+            
+            // Store verified values for success toast
+            verifiedOldBalance = currentBalance
+            verifiedNewBalance = newBalance
+            verifiedTransactionId = transactionRef.id
+            
+            console.log('✅✅✅ [Cashback] ALL DATABASE WRITES SUCCESSFUL!')
+            console.log('📊 [Cashback] Summary:', {
+              method: lookupMethod,
+              userCreated: wasUserCreated,
+              userId: customerInfo.userId,
+              fullName: customerInfo.fullName,
+              phone: normalizedPhone,
+              balanceIncreased: `${currentBalance} → ${newBalance}`,
+              amountCredited: cashbackAmount,
+              transactionCreated: transactionRef.id,
+              orderMarked: orderId
+            })
+            
+          } catch (cashbackError) {
+            console.error('❌❌❌ [Cashback] CRITICAL ERROR - Database write failed:', {
+              error: cashbackError.message,
+              stack: cashbackError.stack,
+              orderId: orderId,
+              userId: customerPhone,
+              fullName: orderData.customer?.fullName || 'Unknown',
+              phone: orderData.customer?.phone || customerPhone,
+              cashbackAmount: cashbackAmount
+            })
+            
+            // Show detailed error to admin
+            showToast(
+              `❌ ПОМИЛКА НАРАХУВАННЯ КЕШБЕКУ!\n` +
+              `Користувач: ${orderData.customer?.fullName || customerPhone}\n` +
+              `Телефон: ${orderData.customer?.phone || customerPhone}\n` +
+              `Сума: ${cashbackAmount} грн\n` +
+              `Помилка: ${cashbackError.message}`,
+              'error'
+            )
+            
+            // Don't mark as credited if database write failed
+            cashbackCredited = false
+          }
+        } else {
+          console.log('💰 [Cashback] Skipping cashback (conditions not met):', {
+            isTTNBeingAdded: isTTNBeingAdded,
+            reason_ttn: !isTTNBeingAdded ? '❌ TTN was not being added (already had one)' : '✅',
+            isCashbackAlreadyCredited: isCashbackAlreadyCredited,
+            reason_credited: isCashbackAlreadyCredited ? '❌ Cashback already credited' : '✅',
+            hasPhone: !!customerPhone,
+            reason_phone: !customerPhone ? '❌ No customer phone (userId)' : '✅',
+            customerPhone: customerPhone,
+            hasTotal: orderTotal > 0,
+            reason_total: orderTotal <= 0 ? `❌ Order total is ${orderTotal}` : '✅',
+            orderTotal: orderTotal,
+            totalSource: totalSource
+          })
+        }
+        
+        // ============================================
+        // STEP 4: Update UI
+        // ============================================
+        
+        // Update current TTN display in modal
         const currentTtnDisplay = document.getElementById('current-ttn-display')
         const currentTtnLink = document.getElementById('current-ttn-link')
         const currentTtnLogo = document.getElementById('current-ttn-logo')
@@ -15127,34 +16043,58 @@
           }
         }
         
-        // Show success toast with delivery service logo
-        const toast = document.createElement('div')
-        toast.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3'
-        toast.innerHTML = `
-          <img src="${getDeliveryLogo(deliveryService)}" alt="" class="w-10 h-10 bg-white rounded-lg p-1">
-          <div>
-            <p class="font-bold">ТТН збережено!</p>
-            <p class="text-sm opacity-90 font-mono">${ttn}</p>
-            <p class="text-xs opacity-75 mt-1">📦 Статус змінено на "Відправлено"</p>
-          </div>
-        `
-        document.body.appendChild(toast)
-        lucide.createIcons()
-        setTimeout(() => toast.remove(), 4000)
+        // Show success toast
+        if (cashbackCredited) {
+          // Success toast with cashback info
+          const userCreatedMsg = wasUserCreated ? ' 🆕 Новий профіль створено!' : ''
+          showToast(
+            `✅ ТТН збережено! Статус: "Відправлено"\n` +
+            `💰 Кешбек ${cashbackAmount} грн нараховано успішно!${userCreatedMsg}`,
+            'success'
+          )
+        } else {
+          // Standard toast
+          showToast('✅ ТТН збережено! Статус: "Відправлено"', 'success')
+        }
         
         // Update badge immediately (order now has TTN)
         const orderIndex = allOrdersCache.findIndex(o => o.id === orderId)
         if (orderIndex !== -1) {
           allOrdersCache[orderIndex].ttn = ttn
+          // Update local state to prevent duplicate cashback crediting
+          if (cashbackCredited) {
+            allOrdersCache[orderIndex].isCashbackCredited = true
+            allOrdersCache[orderIndex].cashbackAwarded = cashbackAmount
+          }
           updateUnprocessedBadge(allOrdersCache)
         }
+        
+        // ============================================
+        // STEP 5: Refresh data to show updated stats
+        // ============================================
         
         // Refresh orders table
         loadOrders()
         
+        // Refresh cashback clients table (if function exists)
+        if (cashbackCredited && typeof loadCashbackClients === 'function') {
+          setTimeout(() => {
+            console.log('🔄 [Cashback] Refreshing cashback clients table...')
+            loadCashbackClients()
+          }, 1000) // Small delay to ensure Firestore updates are propagated
+        }
+        
+        // Refresh dashboard stats (if function exists)
+        if (cashbackCredited && typeof loadDashboardStats === 'function') {
+          setTimeout(() => {
+            console.log('🔄 [Cashback] Refreshing dashboard stats...')
+            loadDashboardStats()
+          }, 1000)
+        }
+        
       } catch (error) {
-        console.error('Error saving TTN:', error)
-        alert('❌ Помилка збереження ТТН: ' + error.message)
+        console.error('❌ Error saving TTN:', error)
+        showToast('❌ Помилка збереження ТТН: ' + error.message, 'error')
       }
     }
     
@@ -19492,6 +20432,11 @@
 
     let currentClientForCashback = null; // Store selected client for modal
     let allCashbackClients = []; // Store all clients for filtering
+    let filteredCashbackClients = []; // Store filtered clients
+    let currentPage = 1; // Current pagination page
+    const itemsPerPage = 20; // Items per page
+    let currentSortField = null; // Current sort field
+    let currentSortDirection = 'asc'; // Current sort direction
     
     /**
      * Load and display cashback clients list
@@ -19651,6 +20596,8 @@
         clients.sort((a, b) => b.ordersCount - a.ordersCount);
         
         allCashbackClients = clients;
+        filteredCashbackClients = clients;
+        currentPage = 1; // Reset to first page
         
         console.log('👥 [Cashback Clients] Successfully loaded', clients.length, 'clients');
         console.log('👥 [Sample client]', clients[0]);
@@ -19658,16 +20605,16 @@
         // Hide loading first
         if (loadingEl) loadingEl.classList.add('hidden');
         
-        // Display clients
-        displayCashbackClients(clients);
+        // Display clients with pagination
+        displayCashbackClients();
         
         // Show appropriate view
-        if (clients.length === 0) {
+        if (filteredCashbackClients.length === 0) {
           console.log('👥 [Cashback Clients] No clients - showing empty state');
           if (emptyEl) emptyEl.classList.remove('hidden');
           if (contentEl) contentEl.classList.add('hidden');
         } else {
-          console.log('👥 [Cashback Clients] Showing table with', clients.length, 'clients');
+          console.log('👥 [Cashback Clients] Showing table with', filteredCashbackClients.length, 'clients');
           if (emptyEl) emptyEl.classList.add('hidden');
           if (contentEl) contentEl.classList.remove('hidden');
         }
@@ -19694,221 +20641,270 @@
     };
     
     /**
-     * Display clients in both table and card views
-     * REDESIGNED: Modern UI with mobile card view and progress bars
+     * Display clients in EXCEL-STYLE TABLE with pagination
+     * REDESIGNED: Professional spreadsheet layout
      */
-    function displayCashbackClients(clients) {
-      console.log('📋 [Display Clients] Rendering', clients.length, 'clients');
+    function displayCashbackClients() {
+      console.log('📋 [Display Clients] Rendering with pagination (Page:', currentPage, ')');
       
       const tbody = document.getElementById('cashback-clients-tbody');
-      const cardsContainer = document.getElementById('cashback-clients-cards');
       
       if (!tbody) {
         console.error('❌ [Display Clients] tbody element not found!');
         return;
       }
       
+      // Clear table
       tbody.innerHTML = '';
-      if (cardsContainer) {
-        cardsContainer.innerHTML = '';
-        cardsContainer.classList.remove('hidden');
-      }
+      
+      const clients = filteredCashbackClients;
       
       if (clients.length === 0) {
         console.log('⚠️ [Display Clients] No clients to display');
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-500">Клієнтів не знайдено</td></tr>';
+        updatePagination(0);
         return;
       }
       
-      clients.forEach((client, index) => {
-        // Calculate usage percentage for progress bar
-        const usagePercentage = client.totalAwarded > 0 
-          ? Math.min((client.totalSpent / client.totalAwarded) * 100, 100)
-          : 0;
-        
-        const balanceColor = client.currentBalance > 0 ? 'text-green-600' : 'text-gray-600';
+      // Calculate pagination
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const paginatedClients = clients.slice(startIndex, endIndex);
+      
+      console.log(`📋 Showing ${paginatedClients.length} clients (${startIndex + 1}-${Math.min(endIndex, clients.length)} of ${clients.length})`);
+      
+      paginatedClients.forEach((client, index) => {
         const clientDataEncoded = encodeURIComponent(JSON.stringify(client));
         
-        // ============================================
-        // DESKTOP TABLE ROW with Enhanced Styling
-        // ============================================
+        // Determine balance badge class
+        let balanceBadgeClass = 'badge-balance-low';
+        if (client.currentBalance >= 100) {
+          balanceBadgeClass = 'badge-balance-high';
+        } else if (client.currentBalance >= 50) {
+          balanceBadgeClass = 'badge-balance-medium';
+        }
+        
+        // Create row
         const row = document.createElement('tr');
-        row.className = 'hover:bg-amber-50 transition-colors';
         
         row.innerHTML = `
-          <td class="px-6 py-4">
+          <td>
             <div class="client-name-cell">
               <span class="client-name-primary">${client.fullName}</span>
               <span class="client-phone-secondary">${client.phone}</span>
             </div>
           </td>
-          <td class="px-6 py-4 text-center">
-            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-blue-100 text-blue-700">
-              <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i>
+          <td class="text-center">
+            <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-semibold">
               ${client.ordersCount}
             </span>
           </td>
-          <td class="px-6 py-4 text-right">
-            <span class="cashback-badge cashback-badge-earned">
-              <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
-              +${client.totalAwarded.toFixed(0)} грн
+          <td class="money-cell money-positive">
+            <span class="transaction-clickable" onclick='showTransactionHistory(${JSON.stringify(client)}, "earned")' title="Переглянути історію нарахованих коштів">
+              <i class="transaction-icon" data-lucide="eye"></i>
+              +${client.totalAwarded.toFixed(0)}
             </span>
           </td>
-          <td class="px-6 py-4 text-right">
-            <div class="flex flex-col items-end">
-              <span class="cashback-badge cashback-badge-used">
-                <i data-lucide="trending-down" class="w-3.5 h-3.5"></i>
-                -${client.totalSpent.toFixed(0)} грн
+          <td class="money-cell money-negative">
+            <span class="transaction-clickable" onclick='showTransactionHistory(${JSON.stringify(client)}, "spent")' title="Переглянути історію використаних коштів">
+              <i class="transaction-icon" data-lucide="eye"></i>
+              -${client.totalSpent.toFixed(0)}
+            </span>
+          </td>
+          <td>
+            <div class="flex items-center justify-end gap-2">
+              <span class="cashback-compact-badge ${balanceBadgeClass}">
+                ${client.currentBalance.toFixed(0)} грн
               </span>
-              ${client.totalAwarded > 0 ? `
-                <div class="cashback-progress-wrapper mt-2" style="width: 80px;">
-                  <div class="cashback-progress-bar" style="width: ${usagePercentage}%;"></div>
-                </div>
-                <span class="text-xs text-gray-500 mt-1">${usagePercentage.toFixed(0)}% використано</span>
-              ` : ''}
+              ${client.currentBalance >= 100 ? '<span class="text-green-600 text-xs">★</span>' : ''}
             </div>
           </td>
-          <td class="px-6 py-4 text-right">
-            <span class="cashback-badge cashback-badge-balance">
-              <i data-lucide="coins" class="w-4 h-4"></i>
-              ${client.currentBalance.toFixed(0)} грн
-            </span>
-          </td>
-          <td class="px-6 py-4 text-center">
-            <div class="flex items-center justify-center gap-3">
+          <td>
+            <div class="flex items-center justify-center gap-2">
+              <button 
+                onclick="openQuickEditModal(JSON.parse(decodeURIComponent('${clientDataEncoded}')))"
+                class="cashback-action-btn cashback-action-btn-edit"
+                title="Швидке редагування"
+              >
+                <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+              </button>
               <button 
                 onclick="openManualCashbackModal(JSON.parse(decodeURIComponent('${clientDataEncoded}')))"
-                class="cashback-action-btn cashback-action-btn-credit text-white"
-                title="Нарахувати кешбек"
+                class="cashback-action-btn cashback-action-btn-credit"
+                title="Нарахувати"
               >
-                <i data-lucide="plus-circle" class="w-5 h-5"></i>
-                <span class="btn-tooltip">Нарахувати</span>
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
               </button>
               <button 
                 onclick="openDebitCashbackModal(JSON.parse(decodeURIComponent('${clientDataEncoded}')))"
-                class="cashback-action-btn cashback-action-btn-debit text-white"
-                title="Списати кешбек"
+                class="cashback-action-btn cashback-action-btn-debit"
+                title="Списати"
               >
-                <i data-lucide="minus-circle" class="w-5 h-5"></i>
-                <span class="btn-tooltip">Списати</span>
-              </button>
-              <div class="h-6 w-px bg-gray-300 mx-1"></div>
-              <button 
-                onclick="openSmsModal(JSON.parse(decodeURIComponent('${clientDataEncoded}')))"
-                class="cashback-action-btn cashback-action-btn-sms text-white"
-                title="Надіслати SMS"
-              >
-                <i data-lucide="message-square" class="w-5 h-5"></i>
-                <span class="btn-tooltip">Надіслати SMS</span>
+                <i data-lucide="minus" class="w-3.5 h-3.5"></i>
               </button>
             </div>
           </td>
         `;
         
         tbody.appendChild(row);
+      });
+      
+      // Update pagination
+      updatePagination(clients.length);
+      
+      // Reinit icons
+      lucide.createIcons();
+      
+      console.log('✅ [Display Clients] Rendered', paginatedClients.length, 'clients');
+    }
+    
+    /**
+     * Update pagination UI
+     */
+    function updatePagination(totalItems) {
+      const paginationEl = document.getElementById('cashback-clients-pagination');
+      const showingEl = document.getElementById('pagination-showing');
+      const totalEl = document.getElementById('pagination-total');
+      const prevBtn = document.getElementById('pagination-prev');
+      const nextBtn = document.getElementById('pagination-next');
+      
+      if (!paginationEl) return;
+      
+      if (totalItems === 0 || totalItems <= itemsPerPage) {
+        paginationEl.classList.add('hidden');
+        return;
+      }
+      
+      paginationEl.classList.remove('hidden');
+      
+      const startIndex = (currentPage - 1) * itemsPerPage + 1;
+      const endIndex = Math.min(currentPage * itemsPerPage, totalItems);
+      
+      if (showingEl) showingEl.textContent = `${startIndex}-${endIndex}`;
+      if (totalEl) totalEl.textContent = totalItems;
+      
+      const totalPages = Math.ceil(totalItems / itemsPerPage);
+      
+      if (prevBtn) {
+        prevBtn.disabled = currentPage === 1;
+      }
+      
+      if (nextBtn) {
+        nextBtn.disabled = currentPage >= totalPages;
+      }
+    }
+    
+    /**
+     * Change page
+     */
+    window.changePage = function(direction) {
+      const totalPages = Math.ceil(filteredCashbackClients.length / itemsPerPage);
+      const newPage = currentPage + direction;
+      
+      if (newPage >= 1 && newPage <= totalPages) {
+        currentPage = newPage;
+        displayCashbackClients();
         
-        // ============================================
-        // MOBILE CARD VIEW (shown below 768px)
-        // ============================================
-        if (cardsContainer) {
-          const card = document.createElement('div');
-          card.className = 'cashback-client-card';
-          
-          card.innerHTML = `
-            <!-- Card Header -->
-            <div class="card-header border-b border-gray-200 pb-3 mb-3">
-              <div class="card-client-info">
-                <h3 class="text-lg font-bold text-gray-900 mb-1">${client.fullName}</h3>
-                <p class="text-sm text-gray-500">${client.phone}</p>
-              </div>
-            </div>
-            
-            <!-- Stats Grid -->
-            <div class="card-stats-grid">
-              <div class="card-stat-item">
-                <div class="card-stat-label">
-                  <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i>
-                  <span>Замовлення</span>
-                </div>
-                <div class="card-stat-value">${client.ordersCount}</div>
-              </div>
-              
-              <div class="card-stat-item">
-                <div class="card-stat-label">
-                  <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
-                  <span>Нараховано</span>
-                </div>
-                <div class="card-stat-value positive">+${client.totalAwarded.toFixed(0)} грн</div>
-              </div>
-              
-              <div class="card-stat-item">
-                <div class="card-stat-label">
-                  <i data-lucide="trending-down" class="w-3.5 h-3.5"></i>
-                  <span>Використано</span>
-                </div>
-                <div class="card-stat-value negative">-${client.totalSpent.toFixed(0)} грн</div>
-              </div>
-              
-              <div class="card-stat-item">
-                <div class="card-stat-label">
-                  <i data-lucide="coins" class="w-3.5 h-3.5"></i>
-                  <span>Баланс</span>
-                </div>
-                <div class="card-stat-value highlight">${client.currentBalance.toFixed(0)} грн</div>
-              </div>
-            </div>
-            
-            <!-- Progress Bar Section -->
-            ${client.totalAwarded > 0 ? `
-              <div class="card-progress-section">
-                <div class="card-progress-label">
-                  <span>Використання кешбеку</span>
-                  <span>${usagePercentage.toFixed(0)}%</span>
-                </div>
-                <div class="cashback-progress-wrapper">
-                  <div class="cashback-progress-bar" style="width: ${usagePercentage}%;"></div>
-                </div>
-              </div>
-            ` : ''}
-            
-            <!-- Actions -->
-            <div class="card-actions">
-              <button 
-                onclick="openManualCashbackModal(JSON.parse(decodeURIComponent('${clientDataEncoded}')))"
-                class="card-action-btn bg-gradient-to-br from-emerald-500 to-green-600 text-white"
-              >
-                <i data-lucide="plus-circle" class="w-6 h-6"></i>
-                <span>➕ Додати</span>
-              </button>
-              <button 
-                onclick="openDebitCashbackModal(JSON.parse(decodeURIComponent('${clientDataEncoded}')))"
-                class="card-action-btn bg-gradient-to-br from-orange-500 to-red-500 text-white"
-              >
-                <i data-lucide="minus-circle" class="w-6 h-6"></i>
-                <span>➖ Списати</span>
-              </button>
-              <button 
-                onclick="openSmsModal(JSON.parse(decodeURIComponent('${clientDataEncoded}')))"
-                class="card-action-btn bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
-                style="grid-column: 1 / -1;"
-              >
-                <i data-lucide="send" class="w-6 h-6"></i>
-                <span>📩 Надіслати SMS</span>
-              </button>
-            </div>
-          `;
-          
-          cardsContainer.appendChild(card);
+        // Scroll to top of table
+        const tableEl = document.getElementById('cashback-clients-content');
+        if (tableEl) {
+          tableEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    };
+    
+    /**
+     * Sort clients table
+     */
+    window.sortClientsTable = function(field) {
+      console.log('🔄 Sorting by:', field);
+      
+      // Toggle sort direction if clicking same field
+      if (currentSortField === field) {
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+      } else {
+        currentSortField = field;
+        currentSortDirection = 'asc';
+      }
+      
+      // Sort the filtered clients array
+      filteredCashbackClients.sort((a, b) => {
+        let valA = a[field];
+        let valB = b[field];
+        
+        // Handle string comparison
+        if (typeof valA === 'string') {
+          valA = valA.toLowerCase();
+          valB = valB.toLowerCase();
         }
         
-        if (index === 0) {
-          console.log('📋 [Display Clients] First row/card rendered:', client.fullName);
+        if (currentSortDirection === 'asc') {
+          return valA > valB ? 1 : valA < valB ? -1 : 0;
+        } else {
+          return valA < valB ? 1 : valA > valB ? -1 : 0;
         }
       });
       
-      console.log('✅ [Display Clients] All', clients.length, 'rows and cards rendered successfully');
+      // Update UI to show active sort
+      document.querySelectorAll('th.sortable').forEach(th => {
+        th.classList.remove('sort-active');
+      });
       
-      // Reinit icons for the new elements
-      lucide.createIcons();
+      const activeHeader = document.querySelector(`th[data-sort="${field}"]`);
+      if (activeHeader) {
+        activeHeader.classList.add('sort-active');
+      }
+      
+      // Reset to page 1 and redisplay
+      currentPage = 1;
+      displayCashbackClients();
+    };
+    
+    /**
+     * Quick Edit Modal - for fast balance adjustments
+     */
+    window.openQuickEditModal = function(client) {
+      console.log('⚡ [Quick Edit] Opening for:', client.fullName);
+      
+      // Reuse existing manual cashback modal
+      openManualCashbackModal(client);
+    };
+    
+    /**
+     * Filter clients by search query
+     */
+    function filterCashbackClients(searchQuery) {
+      console.log('🔍 [Filter] Searching for:', searchQuery);
+      
+      if (!searchQuery || searchQuery.trim() === '') {
+        filteredCashbackClients = [...allCashbackClients];
+      } else {
+        const query = searchQuery.toLowerCase().trim();
+        filteredCashbackClients = allCashbackClients.filter(client => {
+          const nameMatch = client.fullName.toLowerCase().includes(query);
+          const phoneMatch = client.phone.toLowerCase().includes(query);
+          return nameMatch || phoneMatch;
+        });
+      }
+      
+      console.log(`🔍 [Filter] Found ${filteredCashbackClients.length} of ${allCashbackClients.length} clients`);
+      
+      // Reset to page 1 and redisplay
+      currentPage = 1;
+      displayCashbackClients();
+    }
+    
+    // Attach search filter to input
+    if (typeof document !== 'undefined') {
+      document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('cashback-clients-search');
+        if (searchInput) {
+          searchInput.addEventListener('input', (e) => {
+            filterCashbackClients(e.target.value);
+          });
+          console.log('✅ Search filter attached');
+        }
+      });
     }
     
     /**
@@ -19949,6 +20945,195 @@
         document.body.style.overflow = '';
       }
       currentClientForCashback = null;
+    };
+    
+    /**
+     * Show transaction history modal for a client
+     */
+    window.showTransactionHistory = async function(client, type) {
+      console.log(`📊 [Transaction History] Opening ${type} history for:`, client.fullName, client.phone);
+      
+      const modal = document.getElementById('transaction-history-modal');
+      const loadingDiv = document.getElementById('history-loading');
+      const emptyDiv = document.getElementById('history-empty');
+      const contentDiv = document.getElementById('history-content');
+      const tbody = document.getElementById('history-tbody');
+      
+      // Update client info in modal
+      document.getElementById('history-client-name').textContent = client.fullName;
+      document.getElementById('history-client-phone').textContent = client.phone;
+      
+      // Update title and header color based on type
+      const header = document.getElementById('history-modal-header');
+      if (type === 'earned') {
+        document.getElementById('history-modal-title').textContent = '💰 Історія нарахованого кешбеку';
+        document.getElementById('history-type-badge').innerHTML = '<span class="history-badge-earned">✅ Нараховано</span>';
+        header.className = 'bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-4';
+      } else {
+        document.getElementById('history-modal-title').textContent = '💸 Історія використаного кешбеку';
+        document.getElementById('history-type-badge').innerHTML = '<span class="history-badge-spent">❌ Використано</span>';
+        header.className = 'bg-gradient-to-r from-red-500 to-rose-600 px-6 py-4';
+      }
+      
+      // Show modal and loading state
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      loadingDiv.classList.remove('hidden');
+      emptyDiv.classList.add('hidden');
+      contentDiv.classList.add('hidden');
+      
+      // Reinit icons
+      lucide.createIcons();
+      
+      try {
+        // Fetch transactions from Firestore collection: cashback_transactions
+        // Filter by userId (client phone number)
+        // Sort by createdAt descending (newest first)
+        console.log('📊 [Transaction History] Fetching from cashback_transactions where userId ==', client.phone);
+        
+        const transactionsRef = collection(db, 'cashback_transactions');
+        const q = query(
+          transactionsRef,
+          where('userId', '==', client.phone)
+        );
+        
+        const querySnapshot = await getDocs(q);
+        let transactions = [];
+        
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          transactions.push({ id: doc.id, ...data });
+        });
+        
+        console.log(`📊 [Transaction History] Total transactions fetched: ${transactions.length}`);
+        
+        // Sort by createdAt DESC in JavaScript (newest first)
+        transactions.sort((a, b) => {
+          const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
+          const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
+          return dateB - dateA;
+        });
+        
+        // Filter by type based on amount sign
+        // earned (type==='earned') = amount > 0
+        // spent (type==='spent') = amount < 0
+        const filteredTransactions = transactions.filter(t => {
+          const amount = parseFloat(t.amount) || 0;
+          if (type === 'earned') {
+            return amount > 0; // Positive amounts only
+          } else {
+            return amount < 0; // Negative amounts only
+          }
+        });
+        
+        console.log(`📊 [Transaction History] Filtered ${type} transactions: ${filteredTransactions.length}`);
+        
+        // Hide loading
+        loadingDiv.classList.add('hidden');
+        
+        if (filteredTransactions.length === 0) {
+          // Show empty state
+          emptyDiv.classList.remove('hidden');
+        } else {
+          // Render transactions
+          tbody.innerHTML = '';
+          let totalEarned = 0;
+          let totalSpent = 0;
+          
+          filteredTransactions.forEach(transaction => {
+            // Parse createdAt timestamp
+            let date = new Date();
+            if (transaction.createdAt?.toDate) {
+              date = transaction.createdAt.toDate();
+            } else if (transaction.createdAt) {
+              date = new Date(transaction.createdAt);
+            }
+            
+            // Format date as DD.MM.YYYY HH:mm (Ukrainian format)
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const formattedDate = `${day}.${month}.${year} ${hours}:${minutes}`;
+            
+            // Parse amount (positive = earned, negative = spent)
+            const amount = parseFloat(transaction.amount) || 0;
+            const absAmount = Math.abs(amount);
+            
+            // Track totals
+            if (amount > 0) {
+              totalEarned += amount;
+            } else {
+              totalSpent += Math.abs(amount);
+            }
+            
+            // Map type field to Ukrainian labels
+            let typeLabel = '';
+            if (transaction.type === 'order_reward') {
+              typeLabel = 'Нарахування (Замовлення)';
+            } else if (transaction.type === 'manual_debit') {
+              typeLabel = 'Списання (Адмін)';
+            } else if (transaction.type === 'manual_credit') {
+              typeLabel = 'Нарахування (Адмін)';
+            } else {
+              // Fallback
+              typeLabel = transaction.type || 'Інше';
+            }
+            
+            // Get description
+            const description = transaction.description || typeLabel || '-';
+            
+            // Determine color based on amount sign
+            const amountColor = amount > 0 ? '#16a34a' : '#dc2626'; // Green for positive, Red for negative
+            const amountPrefix = amount > 0 ? '+' : ''; // + for positive, - already in negative
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td style="font-family: 'SF Mono', monospace; font-size: 0.75rem; color: #64748b;">
+                ${formattedDate}
+              </td>
+              <td style="font-size: 0.875rem;">
+                ${description}
+              </td>
+              <td class="text-right" style="font-family: 'SF Mono', monospace; font-weight: 600; color: ${amountColor};">
+                ${amountPrefix}${amount.toFixed(0)} грн
+              </td>
+            `;
+            tbody.appendChild(row);
+          });
+          
+          // Update summary stats
+          document.getElementById('history-total-earned').textContent = totalEarned.toFixed(0) + ' грн';
+          document.getElementById('history-total-spent').textContent = totalSpent.toFixed(0) + ' грн';
+          
+          // Show content
+          contentDiv.classList.remove('hidden');
+        }
+        
+        // Reinit icons again
+        lucide.createIcons();
+        
+      } catch (error) {
+        console.error('❌ [Transaction History] Error fetching transactions:', error);
+        
+        // Hide loading, show empty state with error message
+        loadingDiv.classList.add('hidden');
+        emptyDiv.classList.remove('hidden');
+        emptyDiv.querySelector('p.text-lg').textContent = 'Помилка завантаження історії';
+        emptyDiv.querySelector('p.text-sm').textContent = error.message;
+      }
+    };
+    
+    /**
+     * Close transaction history modal
+     */
+    window.closeTransactionHistoryModal = function() {
+      const modal = document.getElementById('transaction-history-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+      }
     };
     
     /**
