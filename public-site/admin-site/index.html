@@ -8811,11 +8811,39 @@
         loadingToast.className = 'fixed top-4 right-4 bg-blue-500 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3'
         loadingToast.innerHTML = `
                           <div class="animate-spin w-5 h-5 border-3 border-white border-t-transparent rounded-full"></div>
-                          <span class="font-semibold">Видалення ${count} замовлень...</span>
+                          <span class="font-semibold">Обробка ${count} замовлень...</span>
                       `
         document.body.appendChild(loadingToast)
 
-        // Use batched writes for efficiency (max 500 operations per batch)
+        // STEP 1: Revoke cashback for all orders (if applicable)
+        console.log('🔄 [Bulk Delete] Processing cashback revocations for', count, 'orders...')
+        let totalCashbackRevoked = 0
+        let revokedCount = 0
+        
+        const revocationPromises = orderIdsArray.map(async (orderId) => {
+          const result = await revokeCashbackForDeletedOrder(orderId)
+          if (result.revoked) {
+            totalCashbackRevoked += result.amount
+            revokedCount++
+          }
+          return result
+        })
+        
+        await Promise.all(revocationPromises)
+        
+        console.log('✅ [Bulk Delete] Cashback revocation completed:', {
+          totalOrders: count,
+          ordersWithCashback: revokedCount,
+          totalAmountRevoked: totalCashbackRevoked
+        })
+
+        // Update loading message
+        loadingToast.innerHTML = `
+                          <div class="animate-spin w-5 h-5 border-3 border-white border-t-transparent rounded-full"></div>
+                          <span class="font-semibold">Видалення ${count} замовлень...</span>
+                      `
+
+        // STEP 2: Delete orders using batched writes (max 500 operations per batch)
         const batchSize = 500
         const batches = []
 
@@ -8837,20 +8865,39 @@
         // Remove loading toast
         loadingToast.remove()
 
-        // Show success toast
+        // Show success toast with cashback info
         const successToast = document.createElement('div')
         successToast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3'
+        
+        let cashbackMsg = ''
+        if (revokedCount > 0) {
+          cashbackMsg = `<div class="text-sm mt-1">⚠️ Списано кешбек: ${totalCashbackRevoked} грн (${revokedCount} замовлень)</div>`
+        }
+        
         successToast.innerHTML = `
                           <i data-lucide="check-circle" class="w-6 h-6"></i>
-                          <span class="font-bold">Успішно видалено ${count} замовлень!</span>
+                          <div>
+                            <div class="font-bold">Успішно видалено ${count} замовлень!</div>
+                            ${cashbackMsg}
+                          </div>
                       `
         document.body.appendChild(successToast)
         lucide.createIcons()
-        setTimeout(() => successToast.remove(), 3000)
+        setTimeout(() => successToast.remove(), 5000)
 
         // Clear selection and reload
         clearSelection()
         loadOrders()
+        
+        // Refresh cashback clients table if it exists
+        if (typeof loadCashbackClients === 'function') {
+          setTimeout(() => loadCashbackClients(), 1000)
+        }
+        
+        // Refresh dashboard stats if it exists
+        if (typeof loadDashboardStats === 'function') {
+          setTimeout(() => loadDashboardStats(), 1000)
+        }
 
       } catch (error) {
         console.error('❌ Bulk delete error:', error)
@@ -9267,12 +9314,160 @@
       }
     }
 
+    // ============================================
+    // CASHBACK REVOCATION FOR DELETED ORDERS
+    // ============================================
+    
+    /**
+     * Revokes cashback when an order is deleted
+     * @param {string} orderId - The ID of the order being deleted
+     * @returns {Promise<{revoked: boolean, amount: number}>}
+     */
+    async function revokeCashbackForDeletedOrder(orderId) {
+      try {
+        console.log('🔍 [Cashback Revoke] Checking order for cashback revocation:', orderId)
+        
+        // STEP 1: Fetch the order to check if cashback was credited
+        const orderRef = doc(db, 'orders', orderId)
+        const orderSnap = await getDoc(orderRef)
+        
+        if (!orderSnap.exists()) {
+          console.log('⚠️ [Cashback Revoke] Order not found:', orderId)
+          return { revoked: false, amount: 0 }
+        }
+        
+        const orderData = orderSnap.data()
+        
+        // Check if cashback was ever credited for this order
+        const cashbackAmount = parseFloat(orderData.cashbackAwarded) || 0
+        const isCashbackCredited = orderData.isCashbackCredited || false
+        
+        console.log('📊 [Cashback Revoke] Order cashback status:', {
+          orderId,
+          cashbackAmount,
+          isCashbackCredited,
+          userId: orderData.userId,
+          customerFullName: orderData.customer?.fullName
+        })
+        
+        // If no cashback was credited, skip revocation
+        if (!isCashbackCredited || cashbackAmount <= 0) {
+          console.log('✅ [Cashback Revoke] No cashback to revoke for this order')
+          return { revoked: false, amount: 0 }
+        }
+        
+        // STEP 2: Find the user document
+        const userId = orderData.userId || orderData.customer?.phone
+        
+        if (!userId) {
+          console.error('❌ [Cashback Revoke] No userId found in order. Cannot revoke cashback.')
+          return { revoked: false, amount: 0 }
+        }
+        
+        console.log('🔍 [Cashback Revoke] Looking for user:', userId)
+        
+        // Try to find user by direct ID lookup
+        let userRef = doc(db, 'users', userId)
+        let userSnap = await getDoc(userRef)
+        
+        // If not found, try with fullName from order
+        if (!userSnap.exists() && orderData.customer?.fullName) {
+          console.log('🔍 [Cashback Revoke] User not found by ID, trying fullName query...')
+          const q = query(collection(db, 'users'), where('fullName', '==', orderData.customer.fullName))
+          const querySnap = await getDocs(q)
+          
+          if (!querySnap.empty) {
+            userSnap = querySnap.docs[0]
+            userRef = userSnap.ref
+            console.log('✅ [Cashback Revoke] User found by fullName query')
+          }
+        }
+        
+        if (!userSnap.exists()) {
+          console.error('❌ [Cashback Revoke] User document not found for userId:', userId)
+          console.error('❌ [Cashback Revoke] Cannot revoke cashback - user not found')
+          return { revoked: false, amount: 0 }
+        }
+        
+        // STEP 3: Deduct cashback from user balance
+        const userData = userSnap.data()
+        const currentBalance = parseFloat(userData.cashbackBalance) || 0
+        const newBalance = Math.max(0, currentBalance - cashbackAmount) // Don't go negative
+        
+        console.log('💰 [Cashback Revoke] Deducting cashback:', {
+          currentBalance,
+          amountToRevoke: cashbackAmount,
+          newBalance,
+          wouldGoNegative: currentBalance - cashbackAmount < 0
+        })
+        
+        // Update user balance
+        await updateDoc(userRef, {
+          cashbackBalance: newBalance,
+          totalCashbackAwarded: increment(-cashbackAmount),
+          updatedAt: serverTimestamp()
+        })
+        
+        console.log('✅ [Cashback Revoke] User balance updated successfully')
+        
+        // STEP 4: Log the revocation transaction
+        const customerPhone = orderData.customer?.phone || userId
+        const customerFullName = orderData.customer?.fullName || 'Unknown Customer'
+        
+        const transactionData = {
+          userId: customerPhone,
+          fullName: customerFullName,
+          amount: -cashbackAmount, // Negative value for revocation
+          type: 'order_revoked',
+          description: `Списання кешбеку: замовлення #${orderId.substring(0, 8).toUpperCase()} видалено`,
+          orderId: orderId,
+          createdAt: serverTimestamp()
+        }
+        
+        const transactionRef = await addDoc(collection(db, 'cashback_transactions'), transactionData)
+        
+        console.log('✅ [Cashback Revoke] Revocation transaction logged:', transactionRef.id)
+        console.log('✅✅✅ [Cashback Revoke] Cashback revocation completed successfully!')
+        
+        // Show notification to admin
+        showToast(
+          `⚠️ Кешбек ${cashbackAmount} грн списано з балансу клієнта\n` +
+          `👤 ${customerFullName}\n` +
+          `📊 Новий баланс: ${newBalance} грн`,
+          'warning'
+        )
+        
+        return { revoked: true, amount: cashbackAmount }
+        
+      } catch (error) {
+        console.error('❌❌❌ [Cashback Revoke] CRITICAL ERROR:', error)
+        console.error('❌ [Cashback Revoke] Error details:', {
+          message: error.message,
+          stack: error.stack,
+          orderId
+        })
+        
+        // Show error but don't block deletion
+        showToast(
+          `⚠️ Помилка списання кешбеку: ${error.message}\n` +
+          `Замовлення все одно буде видалено.`,
+          'error'
+        )
+        
+        return { revoked: false, amount: 0 }
+      }
+    }
+
     // Delete single abandoned order
     window.deleteAbandonedOrder = async function (orderId) {
       const confirmed = confirm(`⚠️ Видалити це покинуте замовлення?\n\nID: ${orderId.substring(0, 8).toUpperCase()}\n\nЦю дію не можна скасувати!`)
       if (!confirmed) return
 
       try {
+        // STEP 1: Pre-deletion check - revoke cashback if it was credited
+        const revocationResult = await revokeCashbackForDeletedOrder(orderId)
+        
+        // STEP 2: Delete the order document
         await deleteDoc(doc(db, 'orders', orderId))
 
         // Show success toast
@@ -9288,6 +9483,16 @@
 
         // Reload the list
         loadAbandonedOrders()
+        
+        // Refresh cashback clients table if cashback was revoked
+        if (revocationResult.revoked && typeof loadCashbackClients === 'function') {
+          setTimeout(() => loadCashbackClients(), 1000)
+        }
+        
+        // Refresh dashboard stats if function exists
+        if (revocationResult.revoked && typeof loadDashboardStats === 'function') {
+          setTimeout(() => loadDashboardStats(), 1000)
+        }
       } catch (e) {
         console.error('❌ Error deleting abandoned order:', e)
         alert(`Помилка видалення: ${e.message}`)
