@@ -2199,11 +2199,71 @@ window.checkout = async function () {
 };
 
 // ============================================
+// FIREBASE READY STATE HELPER
+// ============================================
+
+/**
+ * Wait for Firebase to be fully initialized and accessible
+ * @param {number} timeout - Maximum time to wait in milliseconds (default: 3000)
+ * @returns {Promise<boolean>} - Resolves to true if Firebase is ready, false if timeout
+ */
+window.waitForFirebase = function(timeout = 3000) {
+  console.log('⏳ Waiting for Firebase to initialize...');
+  
+  return new Promise((resolve) => {
+    const startTime = Date.now();
+    
+    // Check immediately first
+    if (window.firebaseInit && window.firebaseInit.db) {
+      console.log('✅ Firebase already initialized');
+      resolve(true);
+      return;
+    }
+    
+    // Poll every 50ms
+    const checkInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      
+      if (window.firebaseInit && window.firebaseInit.db) {
+        clearInterval(checkInterval);
+        console.log(`✅ Firebase ready after ${elapsed}ms`);
+        resolve(true);
+      } else if (elapsed >= timeout) {
+        clearInterval(checkInterval);
+        console.warn(`⚠️ Firebase timeout after ${timeout}ms - using fallback`);
+        resolve(false);
+      }
+    }, 50);
+  });
+};
+
+// ============================================
 // LOAD NAVIGATION (Categories + Pages)
 // ============================================
 
 let navigationCache = null; // Cache для швидкого завантаження
 const CACHE_KEY = 'latiao_nav_timestamp'; // LocalStorage key to track when to invalidate cache
+
+// ============================================
+// STATIC NAVIGATION LINKS (Consolidated)
+// ============================================
+const STATIC_NAV_LINKS = [
+  {
+    title: 'Про нас',
+    href: '/about.html',
+    mobileIcon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>'
+  },
+  {
+    title: 'Доставка та оплата',
+    href: '/delivery-payment.html',
+    mobileIcon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3"><path d="M14 19V7a2 2 0 0 0-2-2H9"/><path d="M15 19H9"/><path d="M19 19h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62L18.3 9.38a1 1 0 0 0-.78-.38H14"/><path d="M2 13v5a1 1 0 0 0 1 1h2"/><path d="M4 3 2.15 5.15a.495.495 0 0 0 .35.86h2.15a.47.47 0 0 1 .35.86L3 9.02"/><circle cx="17" cy="19" r="2"/><circle cx="7" cy="19" r="2"/></svg>'
+  },
+  {
+    title: 'Обмін та повернення',
+    href: '/returns.html',
+    mobileIcon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>'
+  }
+];
 
 /**
  * Clear navigation cache - use this after deleting pages/categories
@@ -2243,18 +2303,16 @@ async function loadNavigation() {
   try {
     console.log('🔄 Завантаження меню з Firebase...');
 
-    // Wait for Firebase to be available
-    let attempts = 0;
-    while (!window.firebaseInit && attempts < 50) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      attempts++;
-    }
+    // Wait for Firebase with 3-second timeout
+    const isFirebaseReady = await window.waitForFirebase(3000);
 
-    if (!window.firebaseInit) {
+    if (!isFirebaseReady || !window.firebaseInit) {
       console.warn('⚠️ Firebase not available for navigation - using fallback');
       renderNavigationFallback();
       return;
     }
+
+    console.log('✅ Firebase ready - injecting navigation');
 
     const { db, collection, getDocs, query, where, orderBy } = window.firebaseInit;
 
@@ -2311,14 +2369,8 @@ function renderNavigation({ categories, pages }) {
       ).join('');
     }
     
-    // Add static links (always visible)
-    const staticLinks = [
-      { title: 'Доставка та оплата', href: '/delivery-payment.html' },
-      { title: 'Обмін та повернення', href: '/returns.html' },
-      { title: 'Про нас', href: '/about.html' }
-    ];
-    
-    desktopPagesHTML += staticLinks.map(link =>
+    // Add static links (always visible) - using consolidated constant
+    desktopPagesHTML += STATIC_NAV_LINKS.map(link =>
       `<a href="${link.href}" class="desktop-nav-link text-gray-600 hover:text-spicy transition-colors font-medium">${link.title}</a>`
     ).join('');
     
@@ -2380,16 +2432,10 @@ function renderNavigation({ categories, pages }) {
       }).join('');
     }
     
-    // Add static links (always visible)
-    const deliveryIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3"><path d="M14 19V7a2 2 0 0 0-2-2H9"/><path d="M15 19H9"/><path d="M19 19h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62L18.3 9.38a1 1 0 0 0-.78-.38H14"/><path d="M2 13v5a1 1 0 0 0 1 1h2"/><path d="M4 3 2.15 5.15a.495.495 0 0 0 .35.86h2.15a.47.47 0 0 1 .35.86L3 9.02"/><circle cx="17" cy="19" r="2"/><circle cx="7" cy="19" r="2"/></svg>';
-    const returnIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>';
-    const aboutIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>';
-    
-    mobilePagesHTML += `
-      <li><a href="/delivery-payment.html" onclick="window.closeSideMenu()" class="mobile-menu-link mobile-nav-link group">${deliveryIcon}<span>Доставка та оплата</span></a></li>
-      <li><a href="/returns.html" onclick="window.closeSideMenu()" class="mobile-menu-link mobile-nav-link group">${returnIcon}<span>Обмін та повернення</span></a></li>
-      <li><a href="/about.html" onclick="window.closeSideMenu()" class="mobile-menu-link mobile-nav-link group">${aboutIcon}<span>Про нас</span></a></li>
-    `;
+    // Add static links (always visible) - using consolidated constant
+    mobilePagesHTML += STATIC_NAV_LINKS.map(link =>
+      `<li><a href="${link.href}" onclick="window.closeSideMenu()" class="mobile-menu-link mobile-nav-link group">${link.mobileIcon}<span>${link.title}</span></a></li>`
+    ).join('');
     
     mobilePages.innerHTML = mobilePagesHTML;
   }
@@ -2414,14 +2460,9 @@ function renderNavigationFallback() {
     desktopCatalog.innerHTML = '<div class="px-4 py-3 text-gray-400 text-sm">Помилка завантаження</div>';
   }
 
-  // Show static links in desktop nav even if Firebase failed
+  // Show static links in desktop nav even if Firebase failed - using consolidated constant
   if (desktopPages) {
-    const staticLinks = [
-      { title: 'Доставка та оплата', href: '/delivery-payment.html' },
-      { title: 'Обмін та повернення', href: '/returns.html' },
-      { title: 'Про нас', href: '/about.html' }
-    ];
-    desktopPages.innerHTML = staticLinks.map(link =>
+    desktopPages.innerHTML = STATIC_NAV_LINKS.map(link =>
       `<a href="${link.href}" class="desktop-nav-link text-gray-600 hover:text-spicy transition-colors font-medium">${link.title}</a>`
     ).join('');
   }
@@ -2430,17 +2471,11 @@ function renderNavigationFallback() {
     mobileCatalog.innerHTML = '<li class="text-gray-400 text-sm">Помилка завантаження</li>';
   }
 
-  // Show static links in mobile nav even if Firebase failed
+  // Show static links in mobile nav even if Firebase failed - using consolidated constant
   if (mobilePages) {
-    const deliveryIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3"><path d="M14 19V7a2 2 0 0 0-2-2H9"/><path d="M15 19H9"/><path d="M19 19h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62L18.3 9.38a1 1 0 0 0-.78-.38H14"/><path d="M2 13v5a1 1 0 0 0 1 1h2"/><path d="M4 3 2.15 5.15a.495.495 0 0 0 .35.86h2.15a.47.47 0 0 1 .35.86L3 9.02"/><circle cx="17" cy="19" r="2"/><circle cx="7" cy="19" r="2"/></svg>';
-    const returnIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>';
-    const aboutIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>';
-    
-    mobilePages.innerHTML = `
-      <li><a href="/delivery-payment.html" onclick="window.closeSideMenu()" class="mobile-menu-link mobile-nav-link group">${deliveryIcon}<span>Доставка та оплата</span></a></li>
-      <li><a href="/returns.html" onclick="window.closeSideMenu()" class="mobile-menu-link mobile-nav-link group">${returnIcon}<span>Обмін та повернення</span></a></li>
-      <li><a href="/about.html" onclick="window.closeSideMenu()" class="mobile-menu-link mobile-nav-link group">${aboutIcon}<span>Про нас</span></a></li>
-    `;
+    mobilePages.innerHTML = STATIC_NAV_LINKS.map(link =>
+      `<li><a href="${link.href}" onclick="window.closeSideMenu()" class="mobile-menu-link mobile-nav-link group">${link.mobileIcon}<span>${link.title}</span></a></li>`
+    ).join('');
   }
   
   // Update active navigation state
@@ -2572,7 +2607,7 @@ window.checkUserSession = checkUserSession;
 // MAIN EXPORT FUNCTION
 // ============================================
 
-export function loadLayout() {
+export async function loadLayout() {
   // Prevent duplicate layout injection
   if (document.body.hasAttribute('data-layout-loaded')) {
     console.log('✅ Layout вже завантажений');
@@ -2645,8 +2680,17 @@ export function loadLayout() {
   // Render footer if placeholder exists
   renderFooter();
 
-  // Load navigation (async, non-blocking)
-  loadNavigation();
+  // Wait for Firebase before loading navigation
+  console.log('⏳ Preparing to load navigation...');
+  const isFirebaseReady = await window.waitForFirebase(3000);
+  
+  if (isFirebaseReady) {
+    console.log('✅ Firebase ready - injecting layout');
+    await loadNavigation();
+  } else {
+    console.warn('⚠️ Firebase timeout - showing fallback navigation');
+    renderNavigationFallback();
+  }
 
   // Check user session and update profile button (async)
   checkUserSession();
@@ -2698,17 +2742,17 @@ async function renderFooter() {
 // ============================================
 async function loadFooterDynamicContent() {
   try {
-    // Wait for Firebase to be available
-    let attempts = 0;
-    while (!window.firebaseInit && attempts < 50) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      attempts++;
-    }
+    console.log('⏳ Loading footer content...');
+    
+    // Wait for Firebase with 3-second timeout
+    const isFirebaseReady = await window.waitForFirebase(3000);
 
-    if (!window.firebaseInit) {
+    if (!isFirebaseReady || !window.firebaseInit) {
       console.warn('⚠️ Firebase not available for footer - skipping dynamic content');
       return;
     }
+    
+    console.log('✅ Firebase ready - loading footer content');
 
     const { db, collection, query, where, getDocs } = window.firebaseInit;
 
@@ -2771,32 +2815,16 @@ async function loadFooterDynamicContent() {
       console.log('ℹ️ No client info pages found for footer');
     }
 
-    // Add static link: Доставка та оплата
-    const deliveryItem = document.createElement('li');
-    const deliveryLink = document.createElement('a');
-    deliveryLink.href = '/delivery-payment.html';
-    deliveryLink.className = 'text-gray-400 hover:text-red-500 transition-colors';
-    deliveryLink.textContent = 'Доставка та оплата';
-    deliveryItem.appendChild(deliveryLink);
-    clientInfoList.appendChild(deliveryItem);
-
-    // Add static link: Обмін та повернення
-    const returnsItem = document.createElement('li');
-    const returnsLink = document.createElement('a');
-    returnsLink.href = '/returns.html';
-    returnsLink.className = 'text-gray-400 hover:text-red-500 transition-colors';
-    returnsLink.textContent = 'Обмін та повернення';
-    returnsItem.appendChild(returnsLink);
-    clientInfoList.appendChild(returnsItem);
-
-    // Add static link: Про нас
-    const aboutItem = document.createElement('li');
-    const aboutLink = document.createElement('a');
-    aboutLink.href = '/about.html';
-    aboutLink.className = 'text-gray-400 hover:text-red-500 transition-colors';
-    aboutLink.textContent = 'Про нас';
-    aboutItem.appendChild(aboutLink);
-    clientInfoList.appendChild(aboutItem);
+    // Add static links to footer - using consolidated constant in correct order
+    STATIC_NAV_LINKS.forEach(link => {
+      const listItem = document.createElement('li');
+      const anchor = document.createElement('a');
+      anchor.href = link.href;
+      anchor.className = 'text-gray-400 hover:text-red-500 transition-colors';
+      anchor.textContent = link.title;
+      listItem.appendChild(anchor);
+      clientInfoList.appendChild(listItem);
+    });
 
     // Add social media icons after client info links
     const socialMediaItem = document.createElement('li');
