@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Кешбек — Latiao Snack</title>
+
+  <!-- Google Tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-KE8MZNKEYH"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-KE8MZNKEYH');
+    gtag('config', 'AW-17389864689');
+  </script>
+
+  <!-- ⚡ CONSOLE SILENCER - Must be first to catch all logs -->
+  <script src="./js/console-silencer.js"></script>
+  
+  <!-- 🔀 DOMAIN REDIRECT - Redirect Firebase domains to primary domain -->
+  <script src="./js/domain-redirect.js"></script>
+  
+  <!-- 🎯 SEO: Canonical Tag -->
+  <link rel="canonical" href="https://latiao-snack.com.ua/cashback.html">
+  
+  <!-- ⚡ PERFORMANCE: Priority Loading for Critical Resources -->
+  <link rel="modulepreload" href="./js/layout.js" as="script" fetchpriority="high">
+  
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       CACHE CONTROL - Force fresh assets
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            spicy: '#ff6b00',
+            'spicy-dark': '#e55d00',
+            fire: '#ff4444',
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Dark Mode Module (load early to prevent flash) -->
+  <script src="./js/dark-mode.js?v=1770245460083"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    
+    * { 
+      font-family: 'Inter', sans-serif; 
+      box-sizing: border-box;
+    }
+    
+    html { scroll-behavior: smooth; }
+    
+    body {
+      background-color: #fafafa;
+      color: #171717;
+    }
+    
+    .fire-gradient {
+      background: linear-gradient(135deg, #ff6b00 0%, #ff4444 100%);
+    }
+    
+    .step-badge {
+      background: linear-gradient(135deg, #ff6b00 0%, #ff4444 100%);
+      color: white;
+      width: 2rem;
+      height: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9999px;
+      font-weight: 700;
+      flex-shrink: 0;
+      box-shadow: 0 4px 6px rgba(255, 107, 0, 0.25);
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .animate-fade-in-up {
+      animation: fadeInUp 0.6s ease-out forwards;
+      opacity: 0;
+    }
+    
+    .delay-100 { animation-delay: 0.1s; }
+    .delay-200 { animation-delay: 0.2s; }
+    .delay-300 { animation-delay: 0.3s; }
+    .delay-400 { animation-delay: 0.4s; }
+  </style>
+</head>
+<body class="bg-white text-gray-900 overflow-x-hidden">
+
+  <!-- Main Content -->
+  <main class="max-w-4xl mx-auto px-4 pt-32 pb-16">
+    
+    <!-- Hero Section -->
+    <div class="text-center mb-12 animate-fade-in-up">
+      <div class="inline-flex items-center justify-center w-20 h-20 rounded-full fire-gradient mb-6 shadow-lg">
+        <span class="text-5xl">💰</span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 mb-4 leading-tight">
+        Кешбек за кожну покупку
+      </h1>
+      <p class="text-lg text-slate-600 max-w-2xl mx-auto">
+        Купуйте латяо та отримуйте бонуси на баланс. Використовуйте їх для наступних замовлень та економте!
+      </p>
+    </div>
+
+    <!-- Part 1: Як отримати кешбек? -->
+    <section class="mb-16 animate-fade-in-up delay-100">
+      <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-8 flex items-center gap-3">
+        <span class="text-3xl">🎁</span>
+        Як отримати кешбек?
+      </h2>
+
+      <!-- Step 1 -->
+      <div class="mb-8">
+        <div class="flex items-start gap-4 mb-4">
+          <div class="step-badge">1</div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-slate-900 mb-2">
+              Зайдіть у будь-яку категорію
+            </h3>
+            <p class="text-slate-600 leading-relaxed">
+              Під кожним товаром ви побачите суму кешбеку, яку отримаєте за покупку.
+            </p>
+          </div>
+        </div>
+        <img 
+          src="admin-site/images/cashback/cb-category.png" 
+          alt="Кешбек у категорії товарів" 
+          class="w-full rounded-xl border border-slate-200 my-4 shadow-sm"
+          loading="lazy"
+        >
+      </div>
+
+      <!-- Step 2 -->
+      <div class="mb-8">
+        <div class="flex items-start gap-4 mb-4">
+          <div class="step-badge">2</div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-slate-900 mb-2">
+              Переглянуте сторінку товару
+            </h3>
+            <p class="text-slate-600 leading-relaxed">
+              На сторінці конкретного товару також відображається сума кешбеку за покупку 1 одиниці.
+            </p>
+          </div>
+        </div>
+        <img 
+          src="admin-site/images/cashback/cb-product.png" 
+          alt="Кешбек на сторінці товару" 
+          class="w-full rounded-xl border border-slate-200 my-4 shadow-sm"
+          loading="lazy"
+        >
+      </div>
+
+      <!-- Step 3 -->
+      <div class="mb-8">
+        <div class="flex items-start gap-4 mb-4">
+          <div class="step-badge">3</div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-slate-900 mb-2">
+              Додайте товари в кошик
+            </h3>
+            <p class="text-slate-600 leading-relaxed">
+              Додайте в кошик латяо. У кошику одразу буде показано загальну суму кешбеку, яку ви отримаєте після покупки.
+            </p>
+          </div>
+        </div>
+        <img 
+          src="admin-site/images/cashback/cb-cart.png" 
+          alt="Кешбек у кошику" 
+          class="w-full rounded-xl border border-slate-200 my-4 shadow-sm"
+          loading="lazy"
+        >
+      </div>
+
+      <!-- Step 4 -->
+      <div class="mb-8">
+        <div class="flex items-start gap-4 mb-4">
+          <div class="step-badge">4</div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-slate-900 mb-2">
+              Оформіть замовлення
+            </h3>
+            <p class="text-slate-600 leading-relaxed">
+              Оформіть замовлення, заповнивши необхідні дані доставки та оплати.
+            </p>
+          </div>
+        </div>
+        <img 
+          src="admin-site/images/cashback/cb-checkout-form.png" 
+          alt="Форма оформлення замовлення" 
+          class="w-full rounded-xl border border-slate-200 my-4 shadow-sm"
+          loading="lazy"
+        >
+      </div>
+
+      <!-- Step 5 -->
+      <div class="mb-8">
+        <div class="flex items-start gap-4 mb-4">
+          <div class="step-badge">5</div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-slate-900 mb-2">
+              Перевірте баланс у профілі
+            </h3>
+            <p class="text-slate-600 leading-relaxed">
+              Після оплати зайдіть в <a href="/login.html" class="text-orange-600 font-semibold hover:underline">особистий кабінет</a>. Там ви побачите ваш баланс кешбеку, який можна використати для наступних покупок.
+            </p>
+          </div>
+        </div>
+        <img 
+          src="admin-site/images/cashback/cb-profile-balance.png" 
+          alt="Баланс кешбеку в особистому кабінеті" 
+          class="w-full rounded-xl border border-slate-200 my-4 shadow-sm"
+          loading="lazy"
+        >
+      </div>
+    </section>
+
+    <!-- Part 2: Як використати накопичений кешбек? -->
+    <section class="mb-16 animate-fade-in-up delay-200">
+      <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-8 flex items-center gap-3">
+        <span class="text-3xl">💸</span>
+        Як використати накопичений кешбек?
+      </h2>
+
+      <!-- Step 1 -->
+      <div class="mb-8">
+        <div class="flex items-start gap-4 mb-4">
+          <div class="step-badge">1</div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-slate-900 mb-2">
+              Оберіть товари та перейдіть до оформлення
+            </h3>
+            <p class="text-slate-600 leading-relaxed">
+              Оберіть латяо, додайте в кошик, перейдіть до оформлення та заповніть форму замовлення.
+            </p>
+          </div>
+        </div>
+        <img 
+          src="admin-site/images/cashback/cb-checkout-filled.png" 
+          alt="Заповнена форма оформлення" 
+          class="w-full rounded-xl border border-slate-200 my-4 shadow-sm"
+          loading="lazy"
+        >
+      </div>
+
+      <!-- Step 2 -->
+      <div class="mb-8">
+        <div class="flex items-start gap-4 mb-4">
+          <div class="step-badge">2</div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-slate-900 mb-2">
+              Введіть номер телефону
+            </h3>
+            <p class="text-slate-600 leading-relaxed">
+              Після введення номера телефону з'явиться плашка з вашим доступним балансом кешбеку.
+            </p>
+          </div>
+        </div>
+        <img 
+          src="admin-site/images/cashback/cb-balance-trigger.png" 
+          alt="Відображення балансу після введення телефону" 
+          class="w-full rounded-xl border border-slate-200 my-4 shadow-sm"
+          loading="lazy"
+        >
+      </div>
+
+      <!-- Step 3 -->
+      <div class="mb-8">
+        <div class="flex items-start gap-4 mb-4">
+          <div class="step-badge">3</div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-slate-900 mb-2">
+              Активуйте використання кешбеку
+            </h3>
+            <p class="text-slate-600 leading-relaxed">
+              Поставте галочку «Використати кешбек для знижки на це замовлення».
+            </p>
+          </div>
+        </div>
+        <img 
+          src="admin-site/images/cashback/cb-checkbox-active.png" 
+          alt="Активація використання кешбеку" 
+          class="w-full rounded-xl border border-slate-200 my-4 shadow-sm"
+          loading="lazy"
+        >
+      </div>
+
+      <!-- Step 4 -->
+      <div class="mb-8">
+        <div class="flex items-start gap-4 mb-4">
+          <div class="step-badge">4</div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-slate-900 mb-2">
+              Отримайте знижку
+            </h3>
+            <p class="text-slate-600 leading-relaxed">
+              Система автоматично застосує знижку з вашого кешбеку. Оформлюйте замовлення вже зі знижкою!
+            </p>
+          </div>
+        </div>
+        <img 
+          src="admin-site/images/cashback/cb-discount-applied.png" 
+          alt="Застосована знижка з кешбеку" 
+          class="w-full rounded-xl border border-slate-200 my-4 shadow-sm"
+          loading="lazy"
+        >
+      </div>
+    </section>
+
+    <!-- Part 3: Важливі умови -->
+    <section class="mb-16 animate-fade-in-up delay-300">
+      <div class="bg-amber-50 border-l-4 border-amber-500 rounded-xl p-6 sm:p-8">
+        <div class="flex items-start gap-4">
+          <div class="flex-shrink-0">
+            <span class="text-3xl">⚠️</span>
+          </div>
+          <div class="flex-1">
+            <h3 class="text-xl font-bold text-amber-900 mb-4">
+              Важливі умови використання кешбеку
+            </h3>
+            <ul class="space-y-3 text-amber-800">
+              <li class="flex items-start gap-3">
+                <span class="text-amber-600 font-bold mt-1">•</span>
+                <span>Максимальна сума кешбеку за одне замовлення — <strong>200 грн</strong>.</span>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="text-amber-600 font-bold mt-1">•</span>
+                <span>Можна використати не більше <strong>50% наявного балансу</strong> за один раз.</span>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="text-amber-600 font-bold mt-1">•</span>
+                <span>Кешбек нараховується протягом 24 годин після підтвердження оплати.</span>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="text-amber-600 font-bold mt-1">•</span>
+                <span>При скасуванні замовлення нарахований кешбек буде анульовано.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Button -->
+    <div class="text-center animate-fade-in-up delay-400">
+      <a 
+        href="https://latiao-snack.com.ua/category.html?slug=us-tovari" 
+        class="w-[92%] mx-auto py-4 block text-center rounded-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold text-base shadow-lg whitespace-nowrap active:scale-95 transition-all mt-12 md:w-fit md:px-12 md:text-lg hover:shadow-xl hover:-translate-y-1"
+      >
+        До каталогу 🛍️
+      </a>
+      <p class="text-sm text-slate-500 mt-4">
+        Починайте накопичувати кешбек вже сьогодні!
+      </p>
+    </div>
+
+  </main>
+
+  <!-- Footer Placeholder -->
+  <div id="footer-placeholder"></div>
+
+  <!-- Firebase SDK -->
+  <script type="module" src="./js/firebase-init.js?v=1770245460083"></script>
+  
+  <!-- Layout Module (Header + Footer) -->
+  <script type="module" src="./js/layout.js?v=1770245460083"></script>
+  
+  <!-- Favorites System -->
+  <script type="module" src="./js/favorites.js?v=1770245460083"></script>
+</body>
+</html>

@@ -9,6 +9,8 @@ import {
     initializeFirestore,
     terminate,
     enableIndexedDbPersistence,
+    enableNetwork,
+    waitForPendingWrites,
     getDocsFromCache,
     CACHE_SIZE_UNLIMITED,
     collection,
@@ -28,7 +30,7 @@ import {
     Timestamp,
     increment
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
 import { getStorage } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 
@@ -139,6 +141,11 @@ enableIndexedDbPersistence(db)
     window.firestoreInitialized = true;
   });
 
+// Wrap onAuthStateChanged for window export
+window.onAuthStateChanged = (auth, successCallback, errorCallback) => {
+  return onAuthStateChanged(auth, successCallback, errorCallback);
+};
+
 // ============================================
 // CRITICAL: EXPORT TO WINDOW SO LAYOUT.JS CAN RUN
 // ============================================
@@ -168,6 +175,7 @@ window.firebaseInit = {
 
 // Export to global scope for admin-chat.js and others
 window.db = db;
+window.auth = auth;
 window.functions = functions;
 window.httpsCallable = httpsCallable;
 window.collection = collection;
@@ -185,6 +193,8 @@ window.orderBy = orderBy;
 window.Timestamp = Timestamp;
 window.serverTimestamp = serverTimestamp;
 window.increment = increment;
+window.enableNetwork = enableNetwork;
+window.waitForPendingWrites = waitForPendingWrites;
 
 // ============================================
 // MODULE EXPORTS FOR ES6 IMPORTS

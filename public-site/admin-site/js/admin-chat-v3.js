@@ -28,7 +28,9 @@ console.log('⏰ Load time:', new Date().toISOString());
     
     const CONFIG = {
         DEBUG: true,
-        LOAD_TIMEOUT: 8000, // 8 seconds timeout
+        LOAD_TIMEOUT: 10000, // 10 seconds timeout
+        MAX_RETRIES: 3, // Maximum retry attempts
+        RETRY_DELAY: 2000, // 2 seconds between retries
         GEMINI_API_KEY: 'AIzaSyA11Wu1XUxEXXeCz3t_NfOr0ygoEblvbhY',
         GEMINI_MODEL: 'gemini-2.0-flash-exp',
         GEMINI_ENDPOINT: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent'
@@ -44,6 +46,7 @@ console.log('⏰ Load time:', new Date().toISOString());
     let chatsUnsubscribe = null;
     let loadingTimeoutId = null;
     let isAuthenticated = false;
+    let retryAttempt = 0;
 
     // ═══════════════════════════════════════════════════════════════════
     // 🛡️ ERROR DISPLAY HELPER
@@ -103,7 +106,7 @@ console.log('⏰ Load time:', new Date().toISOString());
     // ═══════════════════════════════════════════════════════════════════
     
     window.initLiveChat = async function() {
-        console.log('💬 initLiveChat() called');
+        console.log('💬 initLiveChat() called - Attempt', retryAttempt + 1, 'of', CONFIG.MAX_RETRIES);
         
         if (CONFIG.DEBUG) console.log('💬 Initializing Live Chat Management...');
         
@@ -114,63 +117,169 @@ console.log('⏰ Load time:', new Date().toISOString());
             updateLoadingStatus('Очікування Firebase...');
             await waitForFirebase();
             
-            // Step 2: Wait for Authentication
+            // Step 2: Ensure network is enabled
+            updateLoadingStatus('Перевірка мережі...');
+            await ensureNetworkEnabled();
+            
+            // Step 3: Wait for pending writes
+            updateLoadingStatus('Синхронізація...');
+            await checkPendingWrites();
+            
+            // Step 4: Wait for Authentication
             updateLoadingStatus('Перевірка авторизації...');
             await waitForAuth();
             
-            // Step 3: Load chats (only after auth confirmed)
+            // Step 5: Load chats (only after all checks passed)
             updateLoadingStatus('Завантаження чатів...');
             loadChats();
             
             loadChatSettings();
             setupEventListeners();
             
+            // Reset retry counter on success
+            retryAttempt = 0;
+            
         } catch (error) {
-            console.error('💬 Initialization failed:', error);
-            showErrorInUI(error.message, error.code || 'INIT_FAILED');
+            console.error('💬 Chat Debug - Initialization failed:', {
+                message: error.message,
+                code: error.code,
+                name: error.name,
+                stack: error.stack,
+                attempt: retryAttempt + 1,
+                maxRetries: CONFIG.MAX_RETRIES
+            });
+            
+            // Check for specific Firestore errors
+            if (error.code === 'resource-exhausted') {
+                showErrorInUI('Перевищено ліміт запитів. Спробуйте пізніше.', 'RESOURCE_EXHAUSTED');
+                return;
+            } else if (error.code === 'permission-denied') {
+                showErrorInUI('Немає доступу до чатів. Перевірте авторизацію.', 'PERMISSION_DENIED');
+                return;
+            }
+            
+            // Retry logic
+            if (retryAttempt < CONFIG.MAX_RETRIES) {
+                retryAttempt++;
+                console.log('🔄 Retrying in', CONFIG.RETRY_DELAY, 'ms... (attempt', retryAttempt, 'of', CONFIG.MAX_RETRIES, ')');
+                await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY));
+                window.initLiveChat();
+            } else {
+                showErrorInUI(
+                    `Не вдалося підключитися після ${CONFIG.MAX_RETRIES} спроб. ${error.message}`,
+                    error.code || 'INIT_FAILED'
+                );
+                retryAttempt = 0; // Reset for next manual retry
+            }
         }
     };
     
     // Retry function exposed globally
     window.retryLoadChats = function() {
-        console.log('💬 Retrying chat load...');
+        console.log('💬 Manual retry requested...');
+        retryAttempt = 0; // Reset retry counter
         if (loadingTimeoutId) clearTimeout(loadingTimeoutId);
         if (chatsUnsubscribe) chatsUnsubscribe();
         window.initLiveChat();
     };
+    
+    // Ensure network is enabled
+    async function ensureNetworkEnabled() {
+        if (typeof window.enableNetwork === 'undefined') {
+            console.warn('💬 enableNetwork not available, skipping network check');
+            return;
+        }
+        
+        try {
+            console.log('💬 Ensuring Firestore network is enabled...');
+            await window.enableNetwork(window.db);
+            console.log('✅ Network enabled successfully');
+        } catch (error) {
+            console.error('💬 Chat Debug - Network enable error:', {
+                message: error.message,
+                code: error.code,
+                name: error.name
+            });
+            // Don't throw - network might already be enabled
+        }
+    }
+    
+    // Check for pending writes
+    async function checkPendingWrites() {
+        if (typeof window.waitForPendingWrites === 'undefined') {
+            console.warn('💬 waitForPendingWrites not available, skipping sync check');
+            return;
+        }
+        
+        try {
+            console.log('💬 Waiting for pending writes to sync...');
+            await window.waitForPendingWrites(window.db);
+            console.log('✅ All writes synced successfully');
+        } catch (error) {
+            console.error('💬 Chat Debug - Pending writes error:', {
+                message: error.message,
+                code: error.code,
+                name: error.name
+            });
+            // Don't throw - we can proceed even if sync is pending
+        }
+    };
 
-    // Wait for Firebase initialization
+    // Wait for Firebase initialization with detailed checks
     async function waitForFirebase() {
         let attempts = 0;
         const maxAttempts = 100; // 10 seconds max
         
         console.log('💬 Waiting for Firebase initialization...');
-        console.log('💬 Current state - window.db:', typeof window.db, 'window.collection:', typeof window.collection);
+        console.log('💬 Current state:', {
+            'window.db': typeof window.db,
+            'window.auth': typeof window.auth,
+            'window.collection': typeof window.collection,
+            'window.onSnapshot': typeof window.onSnapshot,
+            'window.firebaseInit': typeof window.firebaseInit
+        });
         
         while (typeof window.db === 'undefined' && attempts < maxAttempts) {
             await new Promise(resolve => setTimeout(resolve, 100));
             attempts++;
             
             if (attempts % 10 === 0 && CONFIG.DEBUG) {
-                console.log('💬 Still waiting...', attempts * 100, 'ms', 
-                    'window.db:', typeof window.db,
-                    'window.collection:', typeof window.collection);
+                console.log('💬 Still waiting... Elapsed:', attempts * 100, 'ms');
+                console.log('💬 Firebase globals:', Object.keys(window).filter(k => 
+                    k.startsWith('firebase') || k === 'db' || k === 'auth' || k.includes('Firestore')
+                ).join(', '));
             }
         }
         
         if (typeof window.db === 'undefined') {
-            console.error('💬 Firebase initialization timeout after', attempts * 100, 'ms');
-            console.error('💬 Available globals:', Object.keys(window).filter(k => 
+            const availableGlobals = Object.keys(window).filter(k => 
                 k.startsWith('firebase') || k === 'db' || k === 'auth' || k === 'collection'
-            ).join(', '));
-            throw new Error('Firebase не ініціалізовано. Оновіть сторінку.');
+            );
+            
+            console.error('💬 Chat Debug - Firebase initialization timeout:', {
+                elapsedMs: attempts * 100,
+                availableGlobals: availableGlobals,
+                windowDb: typeof window.db,
+                windowAuth: typeof window.auth,
+                documentReadyState: document.readyState
+            });
+            
+            throw new Error('Firebase не ініціалізовано після ' + (attempts * 100) + 'мс. Оновіть сторінку.');
         }
         
         console.log('✅ Firebase ready after', attempts * 100, 'ms');
+        console.log('✅ Available Firebase methods:', {
+            db: !!window.db,
+            collection: !!window.collection,
+            onSnapshot: !!window.onSnapshot,
+            query: !!window.query,
+            orderBy: !!window.orderBy
+        });
+        
         return true;
     }
     
-    // Wait for Authentication
+    // Wait for Authentication with safety checks
     async function waitForAuth() {
         console.log('💬 Checking authentication...');
         
@@ -182,31 +291,51 @@ console.log('⏰ Load time:', new Date().toISOString());
                 return;
             }
             
-            // Check current auth state
-            const unsubscribe = window.onAuthStateChanged(window.auth, (user) => {
-                unsubscribe(); // Only need to check once
-                
-                if (user) {
-                    console.log('✅ User authenticated:', user.email);
-                    isAuthenticated = true;
-                    resolve(true);
-                } else {
-                    console.warn('⚠️ User NOT authenticated - chats may fail to load');
-                    // Still try to load, but warn
-                    isAuthenticated = false;
-                    resolve(false);
-                }
-            }, (error) => {
-                console.error('💬 Auth error:', error);
-                reject(error);
-            });
+            // Critical safety check for onAuthStateChanged
+            if (typeof window.onAuthStateChanged !== 'function') {
+                console.error('💬 Chat Debug - onAuthStateChanged is not a function:', {
+                    type: typeof window.onAuthStateChanged,
+                    value: window.onAuthStateChanged,
+                    windowAuth: typeof window.auth,
+                    availableAuthMethods: Object.keys(window.auth || {})
+                });
+                reject(new Error('onAuthStateChanged не імпортовано коректно. Перезавантажте сторінку.'));
+                return;
+            }
             
-            // Timeout for auth check
-            setTimeout(() => {
-                unsubscribe();
-                console.warn('💬 Auth check timeout, proceeding anyway...');
-                resolve(false);
-            }, 5000);
+            try {
+                // Check current auth state
+                const unsubscribe = window.onAuthStateChanged(window.auth, (user) => {
+                    unsubscribe(); // Only need to check once
+                    
+                    if (user) {
+                        console.log('✅ User authenticated:', user.email);
+                        isAuthenticated = true;
+                        resolve(true);
+                    } else {
+                        console.warn('⚠️ User NOT authenticated - chats may fail to load');
+                        // Still try to load, but warn
+                        isAuthenticated = false;
+                        resolve(false);
+                    }
+                }, (error) => {
+                    console.error('💬 Auth error:', error);
+                    reject(error);
+                });
+                
+                // Timeout for auth check
+                setTimeout(() => {
+                    unsubscribe();
+                    console.warn('💬 Auth check timeout, proceeding anyway...');
+                    resolve(false);
+                }, 5000);
+            } catch (error) {
+                console.error('💬 Chat Debug - Auth check crashed:', {
+                    message: error.message,
+                    stack: error.stack
+                });
+                reject(error);
+            }
         });
     }
 

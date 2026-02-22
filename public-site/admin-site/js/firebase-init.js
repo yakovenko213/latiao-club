@@ -8,6 +8,10 @@ import {
     getFirestore,
     initializeFirestore,
     enableIndexedDbPersistence,
+    enableNetwork,
+    waitForPendingWrites,
+    terminate,
+    clearIndexedDbPersistence,
     connectFirestoreEmulator,
     collection, 
     doc, 
@@ -28,7 +32,7 @@ import {
     arrayRemove,
     increment
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-import { getAuth, connectAuthEmulator } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getAuth, onAuthStateChanged, connectAuthEmulator } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
 import { getStorage, connectStorageEmulator } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 
@@ -105,6 +109,15 @@ enableIndexedDbPersistence(db).catch((err) => {
         console.warn('⚠️ Persistence not supported in this browser. App will still work online.');
     } else {
         console.error('❌ Persistence error:', err);
+        // If persistence fails completely, try to recover by clearing it
+        if (err.code === 'already-exists' || err.message.includes('404')) {
+            console.log('🔄 Attempting to clear corrupted persistence...');
+            clearIndexedDbPersistence(db).then(() => {
+                console.log('✅ Persistence cleared, please refresh the page');
+            }).catch(clearErr => {
+                console.error('❌ Failed to clear persistence:', clearErr);
+            });
+        }
     }
 });
 
@@ -153,10 +166,21 @@ window.serverTimestamp = serverTimestamp;
 window.arrayUnion = arrayUnion;
 window.arrayRemove = arrayRemove;
 window.increment = increment;
+window.enableNetwork = enableNetwork;
+window.waitForPendingWrites = waitForPendingWrites;
+window.terminate = terminate;
+window.clearIndexedDbPersistence = clearIndexedDbPersistence;
+window.auth = auth;
+
+// Properly wrap onAuthStateChanged to work with window.auth
+window.onAuthStateChanged = (auth, successCallback, errorCallback) => {
+    return onAuthStateChanged(auth, successCallback, errorCallback);
+};
 
 console.log('✅ Firebase initialized');
 console.log('📦 window.firebaseInit available:', !!window.firebaseInit);
 console.log('🔧 arrayUnion available:', typeof window.firebaseInit?.arrayUnion);
+console.log('🔐 onAuthStateChanged available:', typeof window.onAuthStateChanged);
 
 // ============================================
 // MODULE EXPORTS FOR ES6 IMPORTS
@@ -184,7 +208,9 @@ export {
     arrayUnion,
     arrayRemove,
     increment,
-    httpsCallable
+    httpsCallable,
+    enableNetwork,
+    waitForPendingWrites
 };
 
 // ============================================

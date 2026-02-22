@@ -13,6 +13,10 @@
         getFirestore,
         initializeFirestore,
         enableIndexedDbPersistence,
+        enableNetwork,
+        waitForPendingWrites,
+        terminate,
+        clearIndexedDbPersistence,
         connectFirestoreEmulator,
         collection, 
         doc, 
@@ -107,6 +111,15 @@
             console.warn('⚠️ Persistence not supported in this browser. App will still work online.');
         } else {
             console.error('❌ Persistence error:', err);
+            // If persistence fails completely, try to recover by clearing it
+            if (err.code === 'already-exists' || err.message.includes('404')) {
+                console.log('🔄 Attempting to clear corrupted persistence...');
+                clearIndexedDbPersistence(db).then(() => {
+                    console.log('✅ Persistence cleared, please refresh the page');
+                }).catch(clearErr => {
+                    console.error('❌ Failed to clear persistence:', clearErr);
+                });
+            }
         }
     });
 
@@ -133,9 +146,17 @@
     window.arrayUnion = arrayUnion;
     window.arrayRemove = arrayRemove;
     window.increment = increment;
-    window.onAuthStateChanged = onAuthStateChanged;
     window.signInWithEmailAndPassword = signInWithEmailAndPassword;
     window.signOut = signOut;
+    window.enableNetwork = enableNetwork;
+    window.waitForPendingWrites = waitForPendingWrites;
+    window.terminate = terminate;
+    window.clearIndexedDbPersistence = clearIndexedDbPersistence;
+    
+    // Properly wrap onAuthStateChanged
+    window.onAuthStateChanged = (auth, successCallback, errorCallback) => {
+        return onAuthStateChanged(auth, successCallback, errorCallback);
+    };
 
     // Also keep the firebaseInit object for compatibility
     window.firebaseInit = {
