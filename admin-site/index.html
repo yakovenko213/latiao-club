@@ -1548,6 +1548,10 @@
           <i data-lucide="trending-up" class="w-5 h-5"></i>
           <span>🔥 Допродажі</span>
         </a>
+        <a href="#checkout-upsell-settings" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+          <i data-lucide="zap" class="w-5 h-5"></i>
+          <span>⚡ Upsell на Checkout</span>
+        </a>
         <a href="#peppers-game" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700" onclick="setTimeout(() => { console.log('🌶️ [CLICK] Peppers link clicked'); if (typeof initPeppersGameView === 'function') { initPeppersGameView(); } else { console.error('❌ initPeppersGameView not found!'); } }, 200);">
           <i data-lucide="gamepad-2" class="w-5 h-5"></i>
           <span>🌶️ Гра Перчики</span>
@@ -4964,6 +4968,239 @@
                   </tr>
                 </tbody>
               </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============================================ -->
+      <!-- CHECKOUT UPSELL SETTINGS - Налаштування Допродажу на Checkout -->
+      <!-- ============================================ -->
+      <div id="view-checkout-upsell-settings" class="view p-8">
+        <div class="max-w-5xl mx-auto">
+          
+          <!-- Header -->
+          <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center shadow-lg">
+                <i data-lucide="zap" class="w-7 h-7 text-white"></i>
+              </div>
+              <div>
+                <h2 class="text-2xl font-bold text-gray-900">Налаштування Upsell на Checkout</h2>
+                <p class="text-gray-500 text-sm mt-0.5">Flash-пропозиція зі знижкою перед оформленням замовлення</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Analytics Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-white rounded-xl border border-gray-200 p-6">
+              <div class="flex items-center justify-between mb-2">
+                <i data-lucide="eye" class="w-5 h-5 text-blue-600"></i>
+                <span class="text-xs text-gray-500">Покази</span>
+              </div>
+              <p id="checkout-upsell-views" class="text-3xl font-bold text-gray-900">
+                <span class="inline-block animate-spin w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full"></span>
+              </p>
+              <p class="text-xs text-gray-600 mt-1">Кількість показів</p>
+            </div>
+            
+            <div class="bg-white rounded-xl border border-gray-200 p-6">
+              <div class="flex items-center justify-between mb-2">
+                <i data-lucide="shopping-cart" class="w-5 h-5 text-green-600"></i>
+                <span class="text-xs text-gray-500">Додавання</span>
+              </div>
+              <p id="checkout-upsell-adds" class="text-3xl font-bold text-green-600">
+                <span class="inline-block animate-spin w-5 h-5 border-2 border-green-600 border-t-transparent rounded-full"></span>
+              </p>
+              <p class="text-xs text-gray-600 mt-1">Додано в кошик</p>
+            </div>
+            
+            <div class="bg-white rounded-xl border border-gray-200 p-6">
+              <div class="flex items-center justify-between mb-2">
+                <i data-lucide="trending-up" class="w-5 h-5 text-purple-600"></i>
+                <span class="text-xs text-gray-500">Конверсія</span>
+              </div>
+              <p id="checkout-upsell-conversion" class="text-3xl font-bold text-purple-600">0%</p>
+              <p class="text-xs text-gray-600 mt-1">Ефективність</p>
+            </div>
+          </div>
+
+          <!-- Settings Card -->
+          <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                <i data-lucide="settings" class="w-5 h-5 text-emerald-600"></i>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-gray-900">Параметри пропозиції</h3>
+                <p class="text-sm text-gray-500">Налаштуйте умови та тривалість акції</p>
+              </div>
+            </div>
+
+            <div class="space-y-6">
+              <!-- Toggle Switch -->
+              <div class="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl">
+                <div class="flex-1">
+                  <label for="checkout-upsell-toggle" class="font-semibold text-gray-800 cursor-pointer flex items-center gap-2">
+                    <span>⚡</span>
+                    <span>Активувати пропозицію на checkout</span>
+                  </label>
+                  <p class="text-xs text-gray-600 mt-1">
+                    Показувати спеціальну пропозицію зі знижкою перед кнопкою оформлення
+                  </p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer ml-4">
+                  <input type="checkbox" id="checkout-upsell-toggle" class="sr-only peer" checked>
+                  <div class="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-600"></div>
+                </label>
+              </div>
+
+              <!-- Discount Input -->
+              <div>
+                <label for="checkout-upsell-discount" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <i data-lucide="percent" class="w-4 h-4 text-green-600"></i>
+                  Знижка (%)
+                </label>
+                <div class="relative">
+                  <input 
+                    type="number" 
+                    id="checkout-upsell-discount" 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-400 outline-none text-lg font-semibold"
+                    placeholder="8"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="8"
+                  >
+                  <div class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold pointer-events-none">%</div>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">💡 Знижка на товар, який пропонується у блоці upsell (рекомендовано 5-10%)</p>
+              </div>
+
+              <!-- Timer Duration -->
+              <div>
+                <label for="checkout-upsell-timer-minutes" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <i data-lucide="clock" class="w-4 h-4 text-red-600"></i>
+                  Час дії таймера
+                </label>
+                <div class="flex items-center gap-3">
+                  <div class="flex-1">
+                    <input 
+                      type="number" 
+                      id="checkout-upsell-timer-minutes" 
+                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none text-lg font-semibold"
+                      placeholder="2"
+                      min="0"
+                      max="59"
+                      value="2"
+                    >
+                    <p class="text-xs text-gray-500 mt-1">Хвилини</p>
+                  </div>
+                  <span class="text-2xl font-bold text-gray-400">:</span>
+                  <div class="flex-1">
+                    <input 
+                      type="number" 
+                      id="checkout-upsell-timer-seconds" 
+                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none text-lg font-semibold"
+                      placeholder="20"
+                      min="0"
+                      max="59"
+                      value="20"
+                    >
+                    <p class="text-xs text-gray-500 mt-1">Секунди</p>
+                  </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">⏰ Час, протягом якого діє пропозиція (після закінчення блок зникає)</p>
+              </div>
+
+              <!-- Lockout Duration -->
+              <div>
+                <label for="checkout-upsell-cooldown" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <i data-lucide="lock" class="w-4 h-4 text-orange-600"></i>
+                  Пауза після показу (години)
+                </label>
+                <input 
+                  type="number" 
+                  id="checkout-upsell-cooldown" 
+                  class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none text-lg font-semibold"
+                  placeholder="48"
+                  min="1"
+                  max="168"
+                  value="48"
+                >
+                <p class="text-xs text-gray-500 mt-2">🔒 Скільки годин пропозиція НЕ показується після додавання або закінчення таймера (рекомендовано 24-72 год)</p>
+              </div>
+            </div>
+
+            <!-- Save Button -->
+            <div class="mt-6 pt-6 border-t border-gray-200 flex items-center justify-between">
+              <div class="flex items-start gap-2 text-sm text-gray-600">
+                <i data-lucide="info" class="w-4 h-4 mt-0.5 flex-shrink-0"></i>
+                <p>Зміни застосовуються одразу після збереження</p>
+              </div>
+              <button id="save-checkout-upsell-btn" onclick="window.saveCheckoutUpsellSettings()" class="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold hover:from-green-600 hover:to-emerald-700 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                <i data-lucide="save" class="w-5 h-5"></i>
+                <span>Зберегти зміни</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Preview Card -->
+          <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <i data-lucide="eye" class="w-5 h-5 text-blue-600"></i>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-gray-900">Попередній перегляд</h3>
+                <p class="text-sm text-gray-500">Як виглядає блок для клієнта</p>
+              </div>
+            </div>
+
+            <!-- Preview Box -->
+            <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border-2 border-dashed border-gray-300">
+              <!-- Simulated Upsell Block -->
+              <div id="upsell-preview" class="max-w-md mx-auto bg-green-50 border-2 border-dashed border-green-200 rounded-2xl p-4">
+                <!-- Badge with Timer -->
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-2">
+                    <span class="text-lg">🎁</span>
+                    <p class="text-sm font-bold text-green-700">Спеціальна пропозиція тільки для цього замовлення</p>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-xs text-red-600 font-semibold">⏰</span>
+                    <span id="preview-timer" class="text-sm font-mono font-bold text-red-600 animate-pulse">2:20</span>
+                  </div>
+                </div>
+                
+                <!-- Timer Message -->
+                <div class="mb-3 -mt-1">
+                  <p class="text-xs text-red-600 font-medium">⚡ Пропозиція діє лише: <span id="preview-timer-text" class="font-bold">2:20</span></p>
+                </div>
+                
+                <!-- Product Card -->
+                <div class="bg-white rounded-xl p-3 flex items-center gap-3 mb-3">
+                  <div class="w-16 h-16 bg-orange-100 rounded-lg flex items-center justify-center text-2xl">🌶️</div>
+                  <div class="flex-1">
+                    <h4 class="text-sm font-bold text-gray-900 mb-1">Latiao Classic Spicy</h4>
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs text-gray-400 line-through">150 грн</span>
+                      <span id="preview-discounted-price" class="text-base font-extrabold text-green-600">138 грн</span>
+                      <span id="preview-discount-badge" class="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full font-bold">-8%</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Button -->
+                <button class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2">
+                  <i data-lucide="plus" class="w-5 h-5"></i>
+                  <span id="preview-button-text">Додати за 138 грн</span>
+                </button>
+              </div>
+
+              <p class="text-xs text-center text-gray-500 mt-4">Це демонстраційне зображення. Фактичний товар вибирається випадково.</p>
             </div>
           </div>
 
@@ -20151,6 +20388,209 @@
     });
 
     // ============================================
+    // ⚡ CHECKOUT UPSELL SETTINGS MODULE
+    // ============================================
+    
+    /**
+     * Load checkout upsell settings from Firestore
+     */
+    window.loadCheckoutUpsellSettings = async function() {
+      try {
+        console.log('⚡ Loading checkout upsell settings...');
+        
+        const docRef = doc(db, 'settings', 'checkout_upsell');
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          console.log('✅ Checkout upsell settings loaded:', data);
+          
+          // Update UI
+          document.getElementById('checkout-upsell-toggle').checked = data.isEnabled !== false; // Default true
+          document.getElementById('checkout-upsell-discount').value = data.discountPercent || 8;
+          document.getElementById('checkout-upsell-timer-minutes').value = Math.floor((data.timerSeconds || 140) / 60);
+          document.getElementById('checkout-upsell-timer-seconds').value = (data.timerSeconds || 140) % 60;
+          document.getElementById('checkout-upsell-cooldown').value = data.cooldownHours || 48;
+          
+          // Update preview
+          updateCheckoutUpsellPreview();
+        } else {
+          console.log('ℹ️ No checkout upsell settings found, using defaults');
+          updateCheckoutUpsellPreview();
+        }
+        
+      } catch (error) {
+        console.error('❌ Error loading checkout upsell settings:', error);
+      }
+    };
+    
+    /**
+     * Save checkout upsell settings to Firestore
+     */
+    window.saveCheckoutUpsellSettings = async function() {
+      try {
+        console.log('💾 Saving checkout upsell settings...');
+        
+        const isEnabled = document.getElementById('checkout-upsell-toggle').checked;
+        const discountPercent = parseInt(document.getElementById('checkout-upsell-discount').value) || 8;
+        const minutes = parseInt(document.getElementById('checkout-upsell-timer-minutes').value) || 2;
+        const seconds = parseInt(document.getElementById('checkout-upsell-timer-seconds').value) || 20;
+        const cooldownHours = parseInt(document.getElementById('checkout-upsell-cooldown').value) || 48;
+        
+        const timerSeconds = (minutes * 60) + seconds;
+        
+        // Validation
+        if (discountPercent < 0 || discountPercent > 100) {
+          alert('⚠️ Знижка має бути від 0 до 100%');
+          return;
+        }
+        
+        if (timerSeconds < 10) {
+          alert('⚠️ Таймер має бути мінімум 10 секунд');
+          return;
+        }
+        
+        if (cooldownHours < 1) {
+          alert('⚠️ Пауза має бути мінімум 1 година');
+          return;
+        }
+        
+        // Show loading
+        const btn = document.getElementById('save-checkout-upsell-btn');
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `
+          <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span>Збереження...</span>
+        `;
+        
+        // Save to Firestore
+        await setDoc(doc(db, 'settings', 'checkout_upsell'), {
+          isEnabled: isEnabled,
+          discountPercent: discountPercent,
+          timerSeconds: timerSeconds,
+          cooldownHours: cooldownHours,
+          updatedAt: serverTimestamp()
+        });
+        
+        console.log('✅ Checkout upsell settings saved:', { isEnabled, discountPercent, timerSeconds, cooldownHours });
+        
+        // Success notification
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3';
+        toast.innerHTML = `
+          <i data-lucide="check-circle" class="w-6 h-6"></i>
+          <div>
+            <p class="font-bold">Налаштування збережено! ✅</p>
+            <p class="text-sm text-green-100">Зміни застосовані на сторінці checkout</p>
+          </div>
+        `;
+        document.body.appendChild(toast);
+        lucide.createIcons();
+        
+        setTimeout(() => toast.remove(), 3000);
+        
+        // Restore button
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        lucide.createIcons();
+        
+      } catch (error) {
+        console.error('❌ Error saving checkout upsell settings:', error);
+        alert('❌ Помилка збереження: ' + error.message);
+      }
+    };
+    
+    /**
+     * Update preview when settings change
+     */
+    function updateCheckoutUpsellPreview() {
+      const discount = parseInt(document.getElementById('checkout-upsell-discount')?.value) || 8;
+      const minutes = parseInt(document.getElementById('checkout-upsell-timer-minutes')?.value) || 2;
+      const seconds = parseInt(document.getElementById('checkout-upsell-timer-seconds')?.value) || 20;
+      
+      const originalPrice = 150;
+      const discountedPrice = Math.round(originalPrice * (1 - discount / 100));
+      
+      const timerText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      
+      // Update preview elements
+      const timerEl = document.getElementById('preview-timer');
+      const timerTextEl = document.getElementById('preview-timer-text');
+      const discountedPriceEl = document.getElementById('preview-discounted-price');
+      const discountBadgeEl = document.getElementById('preview-discount-badge');
+      const buttonTextEl = document.getElementById('preview-button-text');
+      
+      if (timerEl) timerEl.textContent = timerText;
+      if (timerTextEl) timerTextEl.textContent = timerText;
+      if (discountedPriceEl) discountedPriceEl.textContent = `${discountedPrice} грн`;
+      if (discountBadgeEl) discountBadgeEl.textContent = `-${discount}%`;
+      if (buttonTextEl) buttonTextEl.textContent = `Додати за ${discountedPrice} грн`;
+    }
+    
+    /**
+     * Load checkout upsell analytics
+     */
+    window.loadCheckoutUpsellAnalytics = async function() {
+      try {
+        console.log('📊 Loading checkout upsell analytics...');
+        
+        // Read stats from settings/checkout_upsell document
+        const upsellRef = doc(db, 'settings', 'checkout_upsell');
+        const docSnap = await getDoc(upsellRef);
+        
+        const data = docSnap.exists() ? docSnap.data() : {};
+        const views = data.viewsCount || 0;
+        const adds = data.addsCount || 0;
+        const conversion = views > 0 ? ((adds / views) * 100).toFixed(1) : 0;
+        
+        // Update UI
+        document.getElementById('checkout-upsell-views').textContent = views;
+        document.getElementById('checkout-upsell-adds').textContent = adds;
+        document.getElementById('checkout-upsell-conversion').textContent = `${conversion}%`;
+        
+        // Apply color indicators based on conversion rate
+        const conversionEl = document.getElementById('checkout-upsell-conversion');
+        conversionEl.classList.remove('text-green-600', 'text-yellow-600', 'text-red-600', 'text-purple-600');
+        
+        const conversionNum = parseFloat(conversion);
+        if (conversionNum >= 5) {
+          conversionEl.classList.add('text-green-600');
+        } else if (conversionNum >= 2) {
+          conversionEl.classList.add('text-yellow-600');
+        } else if (views > 0) {
+          conversionEl.classList.add('text-red-600');
+        } else {
+          conversionEl.classList.add('text-purple-600');
+        }
+        
+        console.log('✅ Analytics loaded:', { views, adds, conversion: `${conversion}%` });
+        
+      } catch (error) {
+        console.error('❌ Error loading analytics:', error);
+        document.getElementById('checkout-upsell-views').textContent = '0';
+        document.getElementById('checkout-upsell-adds').textContent = '0';
+        document.getElementById('checkout-upsell-conversion').textContent = '0%';
+      }
+    };
+    
+    // Attach real-time preview listeners
+    document.addEventListener('DOMContentLoaded', () => {
+      const discountInput = document.getElementById('checkout-upsell-discount');
+      const minutesInput = document.getElementById('checkout-upsell-timer-minutes');
+      const secondsInput = document.getElementById('checkout-upsell-timer-seconds');
+      
+      if (discountInput) discountInput.addEventListener('input', updateCheckoutUpsellPreview);
+      if (minutesInput) minutesInput.addEventListener('input', updateCheckoutUpsellPreview);
+      if (secondsInput) secondsInput.addEventListener('input', updateCheckoutUpsellPreview);
+      
+      console.log('✅ Checkout upsell preview listeners attached');
+    });
+
+    // ============================================
     // 📊 CASHBACK STATISTICS MODULE
     // ============================================
     
@@ -26150,6 +26590,15 @@
         console.log('🌶️ [NAV] Detected peppers-game view, initializing...');
         setTimeout(() => {
           initPeppersGameView();
+        }, 100);
+      }
+      
+      // Initialize Checkout Upsell Settings view
+      if (view === 'checkout-upsell-settings') {
+        console.log('⚡ [NAV] Detected checkout-upsell-settings view, loading...');
+        setTimeout(() => {
+          window.loadCheckoutUpsellSettings();
+          window.loadCheckoutUpsellAnalytics();
         }, 100);
       }
     };
