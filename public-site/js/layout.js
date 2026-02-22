@@ -2300,11 +2300,29 @@ function renderNavigation({ categories, pages }) {
 
   // === DESKTOP PAGES MENU ===
   const desktopPages = document.getElementById('desktop-pages-menu');
-  if (desktopPages && pages.length > 0) {
-    const headerPages = pages.filter(p => p.location === 'header' || p.location === 'both');
-    desktopPages.innerHTML = headerPages.map(page =>
-      `<a href="/page.html?slug=${page.slug}" class="text-gray-600 hover:text-spicy transition-colors font-medium">${page.title}</a>`
+  if (desktopPages) {
+    let desktopPagesHTML = '';
+    
+    // Add Firebase-loaded pages
+    if (pages.length > 0) {
+      const headerPages = pages.filter(p => p.location === 'header' || p.location === 'both');
+      desktopPagesHTML = headerPages.map(page =>
+        `<a href="/page.html?slug=${page.slug}" class="desktop-nav-link text-gray-600 hover:text-spicy transition-colors font-medium">${page.title}</a>`
+      ).join('');
+    }
+    
+    // Add static links (always visible)
+    const staticLinks = [
+      { title: 'Доставка та оплата', href: '/delivery-payment.html' },
+      { title: 'Обмін та повернення', href: '/returns.html' },
+      { title: 'Про нас', href: '/about.html' }
+    ];
+    
+    desktopPagesHTML += staticLinks.map(link =>
+      `<a href="${link.href}" class="desktop-nav-link text-gray-600 hover:text-spicy transition-colors font-medium">${link.title}</a>`
     ).join('');
+    
+    desktopPages.innerHTML = desktopPagesHTML;
   }
 
   // === MOBILE CATALOG ===
@@ -2334,8 +2352,8 @@ function renderNavigation({ categories, pages }) {
 
   // === MOBILE PAGES ===
   const mobilePages = document.getElementById('mobile-pages-container');
-  if (mobilePages && pages.length > 0) {
-    const headerPages = pages.filter(p => p.location === 'header' || p.location === 'both');
+  if (mobilePages) {
+    let mobilePagesHTML = '';
     
     // Map page icons by common titles - Direct SVG for reliability
     const pageIcons = {
@@ -2346,28 +2364,49 @@ function renderNavigation({ categories, pages }) {
       'Контакти': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>'
     };
     
-    mobilePages.innerHTML = headerPages.map(page => {
-      // Try to match icon by partial title match
-      let icon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>';
-      for (const [key, svg] of Object.entries(pageIcons)) {
-        if (page.title.includes(key)) {
-          icon = svg;
-          break;
+    // Add Firebase-loaded pages
+    if (pages.length > 0) {
+      const headerPages = pages.filter(p => p.location === 'header' || p.location === 'both');
+      mobilePagesHTML = headerPages.map(page => {
+        // Try to match icon by partial title match
+        let icon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>';
+        for (const [key, svg] of Object.entries(pageIcons)) {
+          if (page.title.includes(key)) {
+            icon = svg;
+            break;
+          }
         }
-      }
-      return `<li><a href="/page.html?slug=${page.slug}" onclick="window.closeSideMenu()" class="mobile-menu-link group">${icon}<span>${page.title}</span></a></li>`;
-    }).join('');
+        return `<li><a href="/page.html?slug=${page.slug}" onclick="window.closeSideMenu()" class="mobile-menu-link mobile-nav-link group">${icon}<span>${page.title}</span></a></li>`;
+      }).join('');
+    }
+    
+    // Add static links (always visible)
+    const deliveryIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3"><path d="M14 19V7a2 2 0 0 0-2-2H9"/><path d="M15 19H9"/><path d="M19 19h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62L18.3 9.38a1 1 0 0 0-.78-.38H14"/><path d="M2 13v5a1 1 0 0 0 1 1h2"/><path d="M4 3 2.15 5.15a.495.495 0 0 0 .35.86h2.15a.47.47 0 0 1 .35.86L3 9.02"/><circle cx="17" cy="19" r="2"/><circle cx="7" cy="19" r="2"/></svg>';
+    const returnIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>';
+    const aboutIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>';
+    
+    mobilePagesHTML += `
+      <li><a href="/delivery-payment.html" onclick="window.closeSideMenu()" class="mobile-menu-link mobile-nav-link group">${deliveryIcon}<span>Доставка та оплата</span></a></li>
+      <li><a href="/returns.html" onclick="window.closeSideMenu()" class="mobile-menu-link mobile-nav-link group">${returnIcon}<span>Обмін та повернення</span></a></li>
+      <li><a href="/about.html" onclick="window.closeSideMenu()" class="mobile-menu-link mobile-nav-link group">${aboutIcon}<span>Про нас</span></a></li>
+    `;
+    
+    mobilePages.innerHTML = mobilePagesHTML;
   }
 
   // Reinit Lucide icons
   if (typeof lucide !== 'undefined') {
     lucide.createIcons();
   }
+  
+  // Update active navigation state
+  updateActiveNavigation();
 }
 
 function renderNavigationFallback() {
   // Fallback якщо Firebase не завантажився
   const desktopCatalog = document.getElementById('desktop-catalog-menu');
+  const desktopPages = document.getElementById('desktop-pages-menu');
   const mobileCatalog = document.getElementById('mobile-catalog-container');
   const mobilePages = document.getElementById('mobile-pages-container');
 
@@ -2375,13 +2414,74 @@ function renderNavigationFallback() {
     desktopCatalog.innerHTML = '<div class="px-4 py-3 text-gray-400 text-sm">Помилка завантаження</div>';
   }
 
+  // Show static links in desktop nav even if Firebase failed
+  if (desktopPages) {
+    const staticLinks = [
+      { title: 'Доставка та оплата', href: '/delivery-payment.html' },
+      { title: 'Обмін та повернення', href: '/returns.html' },
+      { title: 'Про нас', href: '/about.html' }
+    ];
+    desktopPages.innerHTML = staticLinks.map(link =>
+      `<a href="${link.href}" class="desktop-nav-link text-gray-600 hover:text-spicy transition-colors font-medium">${link.title}</a>`
+    ).join('');
+  }
+
   if (mobileCatalog) {
     mobileCatalog.innerHTML = '<li class="text-gray-400 text-sm">Помилка завантаження</li>';
   }
 
+  // Show static links in mobile nav even if Firebase failed
   if (mobilePages) {
-    mobilePages.innerHTML = '<li class="text-gray-400 text-sm">Помилка завантаження</li>';
+    const deliveryIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3"><path d="M14 19V7a2 2 0 0 0-2-2H9"/><path d="M15 19H9"/><path d="M19 19h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62L18.3 9.38a1 1 0 0 0-.78-.38H14"/><path d="M2 13v5a1 1 0 0 0 1 1h2"/><path d="M4 3 2.15 5.15a.495.495 0 0 0 .35.86h2.15a.47.47 0 0 1 .35.86L3 9.02"/><circle cx="17" cy="19" r="2"/><circle cx="7" cy="19" r="2"/></svg>';
+    const returnIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>';
+    const aboutIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-500 mr-3"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>';
+    
+    mobilePages.innerHTML = `
+      <li><a href="/delivery-payment.html" onclick="window.closeSideMenu()" class="mobile-menu-link mobile-nav-link group">${deliveryIcon}<span>Доставка та оплата</span></a></li>
+      <li><a href="/returns.html" onclick="window.closeSideMenu()" class="mobile-menu-link mobile-nav-link group">${returnIcon}<span>Обмін та повернення</span></a></li>
+      <li><a href="/about.html" onclick="window.closeSideMenu()" class="mobile-menu-link mobile-nav-link group">${aboutIcon}<span>Про нас</span></a></li>
+    `;
   }
+  
+  // Update active navigation state
+  updateActiveNavigation();
+}
+
+// Update active navigation state based on current page
+function updateActiveNavigation() {
+  const currentPath = window.location.pathname;
+  
+  // Desktop navigation links
+  const desktopLinks = document.querySelectorAll('.desktop-nav-link');
+  desktopLinks.forEach(link => {
+    const linkPath = new URL(link.href, window.location.origin).pathname;
+    if (linkPath === currentPath) {
+      link.classList.remove('text-gray-600');
+      link.classList.add('text-spicy', 'font-bold');
+    } else {
+      link.classList.remove('text-spicy', 'font-bold');
+      link.classList.add('text-gray-600');
+    }
+  });
+  
+  // Mobile navigation links
+  const mobileLinks = document.querySelectorAll('.mobile-nav-link');
+  mobileLinks.forEach(link => {
+    const linkPath = new URL(link.href, window.location.origin).pathname;
+    if (linkPath === currentPath) {
+      link.classList.add('bg-orange-50');
+      const span = link.querySelector('span');
+      if (span) {
+        span.classList.add('text-spicy', 'font-bold');
+      }
+    } else {
+      link.classList.remove('bg-orange-50');
+      const span = link.querySelector('span');
+      if (span) {
+        span.classList.remove('text-spicy', 'font-bold');
+      }
+    }
+  });
 }
 
 // ============================================
@@ -2670,6 +2770,33 @@ async function loadFooterDynamicContent() {
     } else {
       console.log('ℹ️ No client info pages found for footer');
     }
+
+    // Add static link: Доставка та оплата
+    const deliveryItem = document.createElement('li');
+    const deliveryLink = document.createElement('a');
+    deliveryLink.href = '/delivery-payment.html';
+    deliveryLink.className = 'text-gray-400 hover:text-red-500 transition-colors';
+    deliveryLink.textContent = 'Доставка та оплата';
+    deliveryItem.appendChild(deliveryLink);
+    clientInfoList.appendChild(deliveryItem);
+
+    // Add static link: Обмін та повернення
+    const returnsItem = document.createElement('li');
+    const returnsLink = document.createElement('a');
+    returnsLink.href = '/returns.html';
+    returnsLink.className = 'text-gray-400 hover:text-red-500 transition-colors';
+    returnsLink.textContent = 'Обмін та повернення';
+    returnsItem.appendChild(returnsLink);
+    clientInfoList.appendChild(returnsItem);
+
+    // Add static link: Про нас
+    const aboutItem = document.createElement('li');
+    const aboutLink = document.createElement('a');
+    aboutLink.href = '/about.html';
+    aboutLink.className = 'text-gray-400 hover:text-red-500 transition-colors';
+    aboutLink.textContent = 'Про нас';
+    aboutItem.appendChild(aboutLink);
+    clientInfoList.appendChild(aboutItem);
 
     // Add social media icons after client info links
     const socialMediaItem = document.createElement('li');
