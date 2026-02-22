@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Доставка та оплата — Latiao Snack</title>
+
+  <!-- Google Tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-KE8MZNKEYH"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-KE8MZNKEYH');
+    gtag('config', 'AW-17389864689');
+  </script>
+
+  <!-- ⚡ CONSOLE SILENCER - Must be first to catch all logs -->
+  <script src="./js/console-silencer.js"></script>
+  
+  <!-- 🔀 DOMAIN REDIRECT - Redirect Firebase domains to primary domain -->
+  <script src="./js/domain-redirect.js"></script>
+  
+  <!-- 🎯 SEO: Canonical Tag -->
+  <link rel="canonical" href="https://latiao-snack.com.ua/delivery-payment.html">
+  
+  <!-- ⚡ PERFORMANCE: Priority Loading for Critical Resources -->
+  <link rel="modulepreload" href="./js/layout.js" as="script" fetchpriority="high">
+  
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       CACHE CONTROL - Force fresh assets
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            spicy: '#ff6b00',
+            'spicy-dark': '#e55d00',
+            fire: '#ff4444',
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Dark Mode Module (load early to prevent flash) -->
+  <script src="./js/dark-mode.js?v=1770245460083"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    
+    * { 
+      font-family: 'Inter', sans-serif; 
+      box-sizing: border-box;
+    }
+    
+    html { scroll-behavior: smooth; }
+    
+    body {
+      background-color: #fafafa;
+      color: #171717;
+    }
+    
+    .fire-gradient {
+      background: linear-gradient(135deg, #ff6b00 0%, #ff4444 100%);
+    }
+    
+    .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .card-hover:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(255, 107, 0, 0.15); }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .animate-fade-in-up {
+      animation: fadeInUp 0.6s ease-out forwards;
+      opacity: 0;
+    }
+    
+    .delay-100 { animation-delay: 0.1s; }
+    .delay-200 { animation-delay: 0.2s; }
+    .delay-300 { animation-delay: 0.3s; }
+    .delay-400 { animation-delay: 0.4s; }
+  </style>
+</head>
+<body class="bg-white text-gray-900 overflow-x-hidden">
+
+  <!-- Main Content -->
+  <main class="max-w-4xl mx-auto px-4 pt-32 pb-16">
+    
+    <!-- Page Header -->
+    <div class="text-center mb-12 animate-fade-in-up">
+      <div class="inline-flex items-center justify-center w-20 h-20 rounded-full fire-gradient mb-6 shadow-lg">
+        <span class="text-5xl">📦</span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 mb-4">
+        Доставка та оплата
+      </h1>
+      <p class="text-lg text-slate-600 max-w-2xl mx-auto">
+        <strong>Ми цінуємо ваш час, тому відправляємо замовлення максимально швидко!</strong>
+      </p>
+    </div>
+
+    <!-- Content Wrapper -->
+    <div class="bg-white rounded-2xl shadow-xl p-6 sm:p-8 lg:p-10 space-y-10">
+      
+      <!-- Payment Section -->
+      <section class="animate-fade-in-up">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-14 h-14 rounded-xl fire-gradient flex items-center justify-center shadow-md">
+            <span class="text-3xl">💰</span>
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">
+            Оплата
+          </h2>
+        </div>
+        
+        <div class="space-y-5 text-slate-700 leading-relaxed">
+          <p class="font-semibold text-lg">
+            <strong>Обирайте найзручніший спосіб розрахунку:</strong>
+          </p>
+          
+          <ul class="space-y-4 ml-2">
+            <li class="flex items-start gap-3">
+              <span class="text-orange-600 font-bold text-xl flex-shrink-0 mt-1">•</span>
+              <div>
+                <strong>Онлайн-оплата (Monobank):</strong> Швидка оплата картками будь-яких банків <strong class="text-orange-600">без жодних комісій</strong>. Ваші платежі максимально захищені.
+              </div>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-orange-600 font-bold text-xl flex-shrink-0 mt-1">•</span>
+              <div>
+                <strong>Оплата при отриманні (накладений платіж):</strong>
+                <ul class="mt-2 ml-6 space-y-2">
+                  <li class="flex items-start gap-2">
+                    <span class="text-orange-500 text-sm mt-1">▸</span>
+                    <span>Потрібна мінімальна <strong class="text-orange-600">передоплата 100 грн</strong> (це є гарантією нашої успішної співпраці).</span>
+                  </li>
+                  <li class="flex items-start gap-2">
+                    <span class="text-orange-500 text-sm mt-1">▸</span>
+                    <span><em>Важливо:</em> При виборі цього способу ви додатково сплачуєте комісію Нової Пошти — <strong class="text-orange-600">20 грн + 2%</strong> від суми замовлення.</span>
+                  </li>
+                </ul>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Delivery Section -->
+      <section class="animate-fade-in-up delay-100">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-14 h-14 rounded-xl fire-gradient flex items-center justify-center shadow-md">
+            <span class="text-3xl">🛍️</span>
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">
+            Доставка
+          </h2>
+        </div>
+        
+        <div class="space-y-6 text-slate-700 leading-relaxed">
+          <p class="font-semibold text-lg">
+            <strong>Ми відправляємо замовлення максимально оперативно!</strong>
+          </p>
+          
+          <!-- Nova Poshta -->
+          <div class="border-l-4 border-orange-500 pl-6 py-2">
+            <h3 class="text-xl font-bold text-gray-900 mb-3 flex items-center gap-3">
+              <img src="https://poletehnika.com.ua/image/catalog/e-mag/landing/np-logomark-red.png" alt="Nova Poshta" class="h-8 object-contain" style="height: 32px;">
+              <span>Нова Пошта</span>
+            </h3>
+            <ul class="space-y-2.5 ml-2">
+              <li class="flex items-start gap-3">
+                <span class="text-orange-600 font-bold text-lg flex-shrink-0 mt-0.5">•</span>
+                <div>
+                  <strong>Графік відправки:</strong> 2 рази на день (замовлення до <strong class="text-orange-600">12:00</strong> та до <strong class="text-orange-600">17:00</strong>).
+                </div>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="text-orange-600 font-bold text-lg flex-shrink-0 mt-0.5">•</span>
+                <div>
+                  <strong>Термін доставки:</strong> лише <strong class="text-orange-600">1–2 дні</strong>.
+                </div>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="text-orange-600 font-bold text-lg flex-shrink-0 mt-0.5">•</span>
+                <div>
+                  <strong>Вартість:</strong> орієнтовно <strong class="text-orange-600">70–90 грн</strong>.
+                </div>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="text-slate-400 text-sm flex-shrink-0 mt-0.5">ℹ️</span>
+                <div class="text-sm">
+                  <em>Детальні тарифи можна переглянути на <a href="https://novaposhta.ua/shipping-cost/" target="_blank" rel="noopener noreferrer" class="text-orange-600 hover:text-orange-700 underline">сайті Нової Пошти</a>.</em>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Ukrposhta -->
+          <div class="border-l-4 border-blue-500 pl-6 py-2">
+            <h3 class="text-xl font-bold text-gray-900 mb-3 flex items-center gap-3">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Ukrposhta-ua-icon.svg/1920px-Ukrposhta-ua-icon.svg.png" alt="Ukrposhta" class="h-8 object-contain" style="height: 32px;">
+              <span>Укрпошта</span>
+            </h3>
+            <ul class="space-y-2.5 ml-2">
+              <li class="flex items-start gap-3">
+                <span class="text-blue-600 font-bold text-lg flex-shrink-0 mt-0.5">•</span>
+                <div>
+                  <strong>Графік відправки:</strong> Щодня, крім неділі та понеділка (замовлення до <strong class="text-blue-600">12:00</strong>).
+                </div>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="text-blue-600 font-bold text-lg flex-shrink-0 mt-0.5">•</span>
+                <div>
+                  <strong>Термін доставки:</strong> від <strong class="text-blue-600">5 до 15 днів</strong>.
+                </div>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="text-blue-600 font-bold text-lg flex-shrink-0 mt-0.5">•</span>
+                <div>
+                  <strong>Вартість:</strong> від <strong class="text-blue-600">40 грн</strong>.
+                </div>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="text-blue-600 font-bold text-lg flex-shrink-0 mt-0.5">•</span>
+                <div>
+                  <strong>Умова:</strong> Відправка Укрпоштою здійснюється <strong class="text-blue-600">тільки за повною передоплатою</strong>.
+                </div>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="text-slate-400 text-sm flex-shrink-0 mt-0.5">ℹ️</span>
+                <div class="text-sm">
+                  <em>Детальні тарифи на 2026 рік — за <a href="https://www.ukrposhta.ua/doc/kutochok-spozhyvacha/taryfy_ukrposhty_na_2026_rik.pdf" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-700 underline">цим посиланням</a>.</em>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Important Conditions -->
+      <section class="animate-fade-in-up delay-200">
+        <div class="bg-amber-50/80 border border-amber-200 rounded-2xl p-6 md:p-8 w-[92%] mx-auto md:w-full shadow-sm">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="text-3xl">⚠️</span>
+            <h3 class="text-lg font-bold text-amber-800">
+              Важливі умови
+            </h3>
+          </div>
+          
+          <div class="flex flex-col gap-4 leading-relaxed">
+            <!-- Minimum Order -->
+            <div class="flex items-start gap-3 text-slate-700">
+              <span class="text-amber-600 font-bold text-lg flex-shrink-0 mt-0.5">•</span>
+              <p>
+                Мінімальна сума замовлення — <span class="font-bold text-slate-900">100 грн</span>.
+              </p>
+            </div>
+            
+            <!-- Free Delivery Highlight -->
+            <div class="flex items-start gap-3">
+              <span class="text-xl flex-shrink-0 mt-0.5">🚀</span>
+              <p class="text-orange-700 font-medium">
+                При замовленні від <span class="font-black text-orange-600">1 100 грн</span> — доставка <span class="font-black text-orange-600">безкоштовна</span> (за наш рахунок)!
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Catalog Info Plaque -->
+      <section class="animate-fade-in-up delay-300">
+        <div 
+          class="flex items-center justify-center gap-3 w-[92%] mx-auto md:max-w-2xl py-3 px-6 mt-10 mb-6 bg-gradient-to-r from-orange-500/90 to-red-600/90 text-white font-bold tracking-wide text-base md:text-lg whitespace-nowrap rounded-full shadow-lg"
+        >
+          <span>Широкий вибір у каталозі 🛍️</span>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Footer Placeholder - динамічно рендериться через layout.js -->
+  <div id="footer-placeholder"></div>
+
+  <!-- Force Cache Clear - CRITICAL: Must be FIRST! -->
+  <script src="./js/cache-clear.js?v=1770245460083"></script>
+
+  <!-- Load Firebase Initialization (Must be first!) -->
+  <script type="module" src="./js/firebase-init.js?v=1770245460083"></script>
+
+  <!-- 📊 Visitor Device Tracking - Logs ONCE per session -->
+  <script src="./js/visitor-tracker.js?v=1770245460083"></script>
+
+  <!-- Maintenance Mode Check - CRITICAL: Must be early! -->
+  <script type="module" src="./js/maintenance-check.js?v=1770245460083"></script>
+
+  <!-- Load Shared Layout (Header, Mobile Menu, Cart) - CRITICAL -->
+  <script type="module" src="./js/layout.js?v=1770245460083"></script>
+
+  <!-- Initialize Lucide Icons -->
+  <script>
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+  </script>
+
+</body>
+</html>

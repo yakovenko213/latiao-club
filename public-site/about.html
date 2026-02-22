@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Про нас — Latiao Snack</title>
+
+  <!-- Google Tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-KE8MZNKEYH"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-KE8MZNKEYH');
+    gtag('config', 'AW-17389864689');
+  </script>
+
+  <!-- ⚡ CONSOLE SILENCER - Must be first to catch all logs -->
+  <script src="./js/console-silencer.js"></script>
+  
+  <!-- 🔀 DOMAIN REDIRECT - Redirect Firebase domains to primary domain -->
+  <script src="./js/domain-redirect.js"></script>
+  
+  <!-- 🎯 SEO: Canonical Tag -->
+  <link rel="canonical" href="https://latiao-snack.com.ua/about.html">
+  
+  <!-- ⚡ PERFORMANCE: Priority Loading for Critical Resources -->
+  <link rel="modulepreload" href="./js/layout.js" as="script" fetchpriority="high">
+  
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       CACHE CONTROL - Force fresh assets
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            spicy: '#ff6b00',
+            'spicy-dark': '#e55d00',
+            fire: '#ff4444',
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Dark Mode Module (load early to prevent flash) -->
+  <script src="./js/dark-mode.js?v=1770245460083"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    
+    * { 
+      font-family: 'Inter', sans-serif; 
+      box-sizing: border-box;
+    }
+    
+    html { scroll-behavior: smooth; }
+    
+    body {
+      background-color: #fafafa;
+      color: #171717;
+    }
+    
+    .fire-gradient {
+      background: linear-gradient(135deg, #ff6b00 0%, #ff4444 100%);
+    }
+    
+    .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .card-hover:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(255, 107, 0, 0.15); }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .animate-fade-in-up {
+      animation: fadeInUp 0.6s ease-out forwards;
+      opacity: 0;
+    }
+    
+    .delay-100 { animation-delay: 0.1s; }
+    .delay-200 { animation-delay: 0.2s; }
+    .delay-300 { animation-delay: 0.3s; }
+    .delay-400 { animation-delay: 0.4s; }
+  </style>
+</head>
+<body class="bg-white text-gray-900 overflow-x-hidden">
+
+  <!-- Main Content -->
+  <main class="max-w-4xl mx-auto px-4 pt-32 pb-16">
+    
+    <!-- Hero Section -->
+    <div class="text-center mb-12 animate-fade-in-up">
+      <div class="inline-flex items-center justify-center w-20 h-20 rounded-full fire-gradient mb-6 shadow-lg">
+        <span class="text-5xl">🌶️</span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 mb-4 leading-tight">
+        Latiao Snack — ваш провідник<br>
+        <span class="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">у світ справжнього китайського латяо</span>
+      </h1>
+      <p class="text-lg text-slate-600 max-w-2xl mx-auto">
+        Ми закохані в цей неймовірний снек і хочемо поділитися з вами його автентичним смаком та яскравими відчуттями.
+      </p>
+    </div>
+
+    <!-- Stats Grid -->
+    <section class="animate-fade-in-up delay-100 mb-10">
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+        <!-- Stat 1 -->
+        <div class="bg-white border-2 border-orange-100 rounded-2xl p-6 text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+          <div class="text-3xl md:text-4xl font-black bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent mb-2">
+            5 000+
+          </div>
+          <div class="text-sm md:text-base text-slate-600 font-medium">
+            постійних клієнтів
+          </div>
+        </div>
+        
+        <!-- Stat 2 -->
+        <div class="bg-white border-2 border-orange-100 rounded-2xl p-6 text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+          <div class="text-3xl md:text-4xl font-black bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent mb-2">
+            30 000+
+          </div>
+          <div class="text-sm md:text-base text-slate-600 font-medium">
+            проданих пачок
+          </div>
+        </div>
+        
+        <!-- Stat 3 -->
+        <div class="bg-white border-2 border-orange-100 rounded-2xl p-6 text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1 col-span-2 md:col-span-1">
+          <div class="text-3xl md:text-4xl font-black bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent mb-2">
+            З 2024
+          </div>
+          <div class="text-sm md:text-base text-slate-600 font-medium">
+            року на ринку
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Our Mission -->
+    <section class="animate-fade-in-up delay-200 mb-8">
+      <div class="bg-slate-50 border border-slate-100 rounded-3xl p-6 sm:p-8">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-14 h-14 rounded-xl fire-gradient flex items-center justify-center shadow-md flex-shrink-0">
+            <span class="text-3xl">🚀</span>
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900">
+            Наша місія
+          </h2>
+        </div>
+        
+        <div class="text-slate-600 leading-relaxed space-y-4">
+          <p class="text-base sm:text-lg">
+            Ми не просто продаємо латяо — <strong class="text-slate-900">ми ділимося культурою та справжнім смаком Китаю</strong>. Кожен пакетик — це результат нашої пристрасті до деталей, якості та ідеального сервісу.
+          </p>
+          <p class="text-base sm:text-lg">
+            Наша команда постійно працює над тим, щоб <em>ви отримували свіжий продукт максимально швидко</em> та насолоджувалися неймовірним вибором смаків і текстур.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Assortment Highlights -->
+    <section class="animate-fade-in-up delay-300 mb-8">
+      <div class="bg-gradient-to-br from-orange-50 to-red-50 border border-orange-100 rounded-3xl p-6 sm:p-8">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-14 h-14 rounded-xl fire-gradient flex items-center justify-center shadow-md flex-shrink-0">
+            <span class="text-3xl">🌶️</span>
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900">
+            Асортимент
+          </h2>
+        </div>
+        
+        <div class="space-y-5">
+          <p class="text-slate-700 leading-relaxed text-base sm:text-lg">
+            <strong class="text-orange-600 text-xl">Понад 30 видів латяо:</strong> соковите, сухе, різної гостроти та неймовірних форм — від кульок до креветок.
+          </p>
+          
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-white/80 rounded-xl p-4 border border-orange-200 text-center">
+              <div class="text-2xl mb-2">🔥</div>
+              <div class="text-sm font-semibold text-slate-700">Різні рівні гостроти</div>
+            </div>
+            <div class="bg-white/80 rounded-xl p-4 border border-orange-200 text-center">
+              <div class="text-2xl mb-2">✨</div>
+              <div class="text-sm font-semibold text-slate-700">Унікальні форми</div>
+            </div>
+            <div class="bg-white/80 rounded-xl p-4 border border-orange-200 text-center">
+              <div class="text-2xl mb-2">💧</div>
+              <div class="text-sm font-semibold text-slate-700">Соковите</div>
+            </div>
+            <div class="bg-white/80 rounded-xl p-4 border border-orange-200 text-center">
+              <div class="text-2xl mb-2">🍃</div>
+              <div class="text-sm font-semibold text-slate-700">Сухе</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quality Promise -->
+    <section class="animate-fade-in-up delay-400 mb-8">
+      <div class="bg-slate-50 border border-slate-100 rounded-3xl p-6 sm:p-8">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-14 h-14 rounded-xl fire-gradient flex items-center justify-center shadow-md flex-shrink-0">
+            <span class="text-3xl">✅</span>
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900">
+            Гарантія якості
+          </h2>
+        </div>
+        
+        <div class="space-y-5 text-slate-600 leading-relaxed">
+          <p class="text-base sm:text-lg">
+            Ми працюємо напряму з <strong class="text-slate-900">найкращими китайськими виробниками</strong>, які спеціалізуються на латяо вже десятиліттями.
+          </p>
+          
+          <div class="bg-white border-l-4 border-orange-500 rounded-r-2xl p-5">
+            <div class="flex items-start gap-3">
+              <span class="text-2xl flex-shrink-0">📦</span>
+              <div>
+                <p class="font-semibold text-slate-900 mb-2">Свіжі поставки щомісяця</p>
+                <p class="text-sm text-slate-600">Ви завжди отримуєте продукт зі свіжим терміном придатності та ідеальними смаковими якостями.</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-white border-l-4 border-green-500 rounded-r-2xl p-5">
+            <div class="flex items-start gap-3">
+              <span class="text-2xl flex-shrink-0">🎯</span>
+              <div>
+                <p class="font-semibold text-slate-900 mb-2">Контроль на кожному етапі</p>
+                <p class="text-sm text-slate-600">Від підбору постачальників до пакування — ми ретельно перевіряємо кожен крок.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Button -->
+    <section class="animate-fade-in-up mb-8">
+      <div class="flex items-center justify-center">
+        <a href="https://latiao-snack.com.ua/category.html?slug=us-tovari" 
+           class="w-[92%] mx-auto py-4 block text-center rounded-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold text-base shadow-lg whitespace-nowrap active:scale-95 transition-all mt-12 md:w-fit md:px-12 md:text-lg hover:shadow-xl hover:-translate-y-1">
+          Перейти до каталогу
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer Placeholder - динамічно рендериться через layout.js -->
+  <div id="footer-placeholder"></div>
+
+  <!-- Force Cache Clear - CRITICAL: Must be FIRST! -->
+  <script src="./js/cache-clear.js?v=1770245460083"></script>
+
+  <!-- Load Firebase Initialization (Must be first!) -->
+  <script type="module" src="./js/firebase-init.js?v=1770245460083"></script>
+
+  <!-- 📊 Visitor Device Tracking - Logs ONCE per session -->
+  <script src="./js/visitor-tracker.js?v=1770245460083"></script>
+
+  <!-- Maintenance Mode Check - CRITICAL: Must be early! -->
+  <script type="module" src="./js/maintenance-check.js?v=1770245460083"></script>
+
+  <!-- Load Shared Layout (Header, Mobile Menu, Cart) - CRITICAL -->
+  <script type="module" src="./js/layout.js?v=1770245460083"></script>
+
+  <!-- Initialize Lucide Icons -->
+  <script>
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+  </script>
+
+</body>
+</html>

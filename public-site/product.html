@@ -250,6 +250,16 @@
       scrollbar-width: none;
     }
 
+    /* Horizontal Slider Scrollbar Hide */
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
     /* Stock Warning Pulse Dot Animation */
     .pulse-dot {
       width: 8px;
@@ -903,11 +913,11 @@
       </div>
     </div>
 
-    <!-- 6. "ALSO RECOMMENDED" SECTION -->
+    <!-- 6. SIMILAR PRODUCTS SLIDER -->
     <section class="mb-10 fade-slide-up stagger-5">
-      <h2 class="text-2xl font-bold text-gray-900 mb-4">Також рекомендуємо 🌶️</h2>
-      <div id="recommended-products" class="flex gap-4 overflow-x-auto pb-4 hide-scrollbar -mx-4 px-4">
-        <!-- Recommended products will be populated dynamically -->
+      <h2 class="text-2xl font-bold text-slate-800 mb-6">Схожі товари за смаком</h2>
+      <div id="recommended-products" class="flex overflow-x-auto gap-4 scrollbar-hide snap-x snap-mandatory pb-4">
+        <!-- Similar products slider will be populated dynamically -->
       </div>
     </section>
 
@@ -1537,8 +1547,8 @@
           initFavoriteButton();
         }, 100);
 
-        // Load recommended products
-        await loadRecommendedProducts(currentProduct.category)
+        // Load recommended products (smart marketing strategy)
+        await loadRecommendedProducts(currentProduct)
 
         // Load mobile upsell bundle
         await loadMobileUpsellBundle(currentProduct)
@@ -1998,53 +2008,147 @@
     }
 
     // ============================================
-    // LOAD RECOMMENDED PRODUCTS
+    // LOAD SIMILAR PRODUCTS (SAME CATEGORY)
     // ============================================
-    async function loadRecommendedProducts(categorySlug) {
+    async function loadRecommendedProducts(currentProduct) {
       try {
-        // Fetch more products to filter later (since we can't use array-contains in where clause)
+        const currentProductId = currentProduct.id
+        const currentCategory = currentProduct.category || ''
+        
+        console.log('🔍 Loading similar products from category:', currentCategory)
+
+        // Fetch products from the SAME category only
         const q = query(
           collection(db, 'products'),
-          limit(20)
+          where('category', '==', currentCategory),
+          where('isVisible', '==', true),
+          where('stock', '>', 0)
         )
         const snap = await getDocs(q)
 
-        const products = snap.docs
+        // Filter out current product
+        let categoryProducts = snap.docs
           .map(doc => ({ id: doc.id, ...doc.data() }))
-          .filter(p => {
-            // Skip hidden products
-            if (p.isVisible === false) return false;
+          .filter(p => p.id !== currentProductId)
 
-            // ⭐ NEW: Check if product belongs to category (supports multiple categories)
-            if (p.categories && Array.isArray(p.categories)) {
-              return p.categories.includes(categorySlug || 'latiao');
-            }
-            // Fallback to single category (backward compatibility)
-            return p.category === (categorySlug || 'latiao');
-          })
-          .slice(0, 5) // Take first 5 matching products
+        console.log(`📦 Found ${categoryProducts.length} similar products in category`)
 
-        const html = products.map(p => {
+        // Shuffle array randomly and pick 5
+        const shuffled = categoryProducts.sort(() => Math.random() - 0.5)
+        const selectedProducts = shuffled.slice(0, 5)
+
+        console.log(`✅ Selected ${selectedProducts.length} products to display`)
+
+        // Generate HTML with category page styling
+        const html = selectedProducts.map(p => {
           const spicyIcons = '🌶️'.repeat(p.spiciness || 1)
+          const imageUrl = p.image || p.imageUrl || 'https://placehold.co/300x300/fff3e8/ff6b00?text=Latiao'
+          const hasVariants = p.variants && Array.isArray(p.variants) && p.variants.length > 1
+          const inStock = p.stock > 0
+          
           return `
-            <div class="flex-shrink-0 w-44 bg-white rounded-2xl shadow-md overflow-hidden card-lift cursor-pointer" onclick="window.location.href='product.html?id=${p.id}'">
-              <div class="aspect-square bg-gradient-to-br from-orange-50 to-red-50 p-3">
-                <img src="${p.image || p.imageUrl || 'https://placehold.co/150x150/fff3e8/ff6b00?text=Latiao'}" alt="${p.name}" class="w-full h-full object-contain" onerror="this.src='https://placehold.co/150x150/fff3e8/ff6b00?text=Latiao'"/>
-              </div>
-              <div class="p-3">
-                <h3 class="font-semibold text-gray-900 text-sm truncate">${p.name}</h3>
-                <div class="flex gap-0.5 my-1">
-                  <span class="text-xs">${spicyIcons}</span>
+            <div class="min-w-[160px] max-w-[160px] md:min-w-[200px] md:max-w-[200px] flex-shrink-0 snap-start bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col">
+              <!-- Image (clickable to product page) -->
+              <a href="product.html?id=${p.id}" class="block">
+                <div class="relative bg-gradient-to-br from-orange-50 to-red-50 overflow-hidden">
+                  <img src="${imageUrl}" alt="${p.name}" class="h-32 md:h-40 w-full object-cover hover:scale-105 transition-transform duration-300" onerror="this.src='https://placehold.co/300x300/fff3e8/ff6b00?text=Latiao'"/>
                 </div>
-                <p class="text-spicy font-bold">${p.price} ₴</p>
+              </a>
+              
+              <!-- Card Content -->
+              <div class="p-2 md:p-3 flex flex-col flex-grow">
+                <a href="product.html?id=${p.id}" class="block mb-2">
+                  <h3 class="text-sm font-bold text-gray-900 line-clamp-2 mb-1">${p.name}</h3>
+                  <p class="text-base font-bold text-orange-600">₴${p.price}</p>
+                </a>
+                
+                <!-- Add to Cart Button -->
+                <div class="mt-auto">
+                  ${!inStock 
+                    ? `<button disabled class="w-full font-bold text-xs py-1.5 px-2 rounded-lg bg-gray-300 text-gray-500 cursor-not-allowed">
+                        Немає
+                      </button>`
+                    : hasVariants 
+                      ? `<button onclick="window.location.href='product.html?id=${p.id}'" class="w-full font-bold text-xs md:text-sm py-1.5 px-2 rounded-lg transition-all duration-200 hover:shadow-lg active:scale-95 bg-gradient-to-r from-[#ff6b00] to-[#e53e3e] text-white">
+                          Вибрати →
+                        </button>`
+                      : `<button onclick="quickAddToCart('${p.id}', '${p.name.replace(/'/g, "\\'")}', ${p.price}, this); event.stopPropagation();" class="w-full font-bold text-xs md:text-sm py-1.5 px-2 rounded-lg transition-all duration-200 hover:shadow-lg active:scale-95 bg-gradient-to-r from-[#ff6b00] to-[#e53e3e] text-white">
+                          <span class="cart-btn-text">Додати 🛒</span>
+                        </button>`
+                  }
+                </div>
               </div>
             </div>
           `
         }).join('')
 
-        document.getElementById('recommended-products').innerHTML = html || '<p class="text-gray-500">Немає рекомендацій</p>'
+        const container = document.getElementById('recommended-products')
+        if (container) {
+          container.innerHTML = html || '<p class="w-full text-center text-gray-500 py-8">Немає схожих товарів</p>'
+          console.log(`✅ Displayed ${selectedProducts.length} similar products`)
+        }
       } catch (err) {
-        console.error('⚠️ Помилка завантаження рекомендованих товарів:', err)
+        console.error('❌ Error loading similar products:', err)
+        const container = document.getElementById('recommended-products')
+        if (container) {
+          container.innerHTML = '<p class="w-full text-center text-gray-500 py-8">Не вдалося завантажити рекомендації</p>'
+        }
+      }
+    }
+
+    // ============================================
+    // QUICK ADD TO CART FROM RECOMMENDATIONS
+    // ============================================
+    async function quickAddToCart(productId, productName, productPrice, buttonElement) {
+      try {
+        const textElement = buttonElement.querySelector('.cart-btn-text')
+        const originalText = textElement.innerHTML
+        
+        // Visual feedback: Loading state
+        buttonElement.disabled = true
+        buttonElement.classList.add('opacity-75', 'cursor-not-allowed')
+        textElement.innerHTML = '⏳ Додаю...'
+        
+        // Add to cart (quantity: 1)
+        if (typeof window.addToCart === 'function') {
+          await window.addToCart(productId, 1, {
+            id: productId,
+            name: productName,
+            price: productPrice
+          })
+          
+          // Success animation - remove gradient, add green
+          textElement.innerHTML = '✅ Додано'
+          buttonElement.classList.remove('from-[#ff6b00]', 'to-[#e53e3e]')
+          buttonElement.classList.add('bg-green-600')
+          
+          // Show toast if available
+          if (typeof window.showToast === 'function') {
+            window.showToast(`${productName} додано до кошика! 🛒`, 'success')
+          }
+          
+          // Reset button after 1.5 seconds
+          setTimeout(() => {
+            textElement.innerHTML = originalText
+            buttonElement.classList.remove('bg-green-600', 'opacity-75', 'cursor-not-allowed')
+            buttonElement.classList.add('from-[#ff6b00]', 'to-[#e53e3e]')
+            buttonElement.disabled = false
+          }, 1500)
+          
+        } else {
+          throw new Error('addToCart function not available')
+        }
+      } catch (err) {
+        console.error('❌ Quick add error:', err)
+        const textElement = buttonElement.querySelector('.cart-btn-text')
+        textElement.innerHTML = '❌ Помилка'
+        
+        // Reset button after error
+        setTimeout(() => {
+          textElement.innerHTML = 'Додати в кошик'
+          buttonElement.classList.remove('opacity-75', 'cursor-not-allowed')
+          buttonElement.disabled = false
+        }, 2000)
       }
     }
 
