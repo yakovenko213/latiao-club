@@ -818,15 +818,92 @@ async function validateCartStockOnLoad() {
 // ============================================
 // GLOBAL CART STATE & FUNCTIONS
 // ============================================
+// GLOBAL CART STATE & FUNCTIONS
+// ============================================
+
+// ============================================
+// 📦 WHOLESALE PRICING LOGIC
+// ============================================
+
+/**
+ * Get effective price based on quantity and wholesale tiers
+ * @param {Object} product - Product object with base price
+ * @param {number} quantity - Quantity being purchased
+ * @returns {Object} - { effectivePrice, discount, tierApplied, basePrice }
+ */
+window.getEffectivePrice = function(product, quantity) {
+  // Standard wholesale tiers (matches product page)
+  const wholesaleTiers = [
+    { quantity: 10, discount: 0.15 }, // 15% discount (check highest first)
+    { quantity: 5, discount: 0.10 },  // 10% discount
+    { quantity: 2, discount: 0.05 }   // 5% discount
+  ];
+
+  // Get base price (use basePrice if available, otherwise use current price)
+  const basePrice = product.basePrice || product.price;
+
+  // Find applicable tier (highest quantity that qualifies)
+  const applicableTier = wholesaleTiers.find(tier => quantity >= tier.quantity);
+
+  if (applicableTier) {
+    const effectivePrice = parseFloat((basePrice * (1 - applicableTier.discount)).toFixed(2));
+    return {
+      effectivePrice,
+      discount: applicableTier.discount,
+      tierApplied: applicableTier.quantity,
+      basePrice
+    };
+  }
+
+  // No tier applies - return base price
+  return {
+    effectivePrice: basePrice,
+    discount: 0,
+    tierApplied: null,
+    basePrice
+  };
+};
+
+/**
+ * Apply wholesale pricing to a cart item
+ * Updates the item.price to the effective price
+ * Stores original price in item.basePrice for reference
+ * @param {Object} item - Cart item to update
+ */
+window.applyWholesalePricing = function(item) {
+  // Skip gifts - they're always free
+  if (item.isGift === true) {
+    return;
+  }
+
+  // Ensure we have a base price stored
+  if (!item.basePrice) {
+    item.basePrice = item.price;
+  }
+
+  const result = window.getEffectivePrice(item, item.quantity);
+  item.price = result.effectivePrice;
+  item.wholesaleDiscount = result.discount;
+  item.wholesaleTier = result.tierApplied;
+
+  console.log(`📦 [Wholesale] ${item.name}: qty=${item.quantity}, base=${item.basePrice}, effective=${item.price}, discount=${result.discount * 100}%`);
+};
 
 // Initialize cart from localStorage
 window.cart = JSON.parse(localStorage.getItem('latiao_cart') || '[]');
+
+// Apply wholesale pricing to all cart items on load
+window.cart.forEach(item => {
+  if (!item.isGift) {
+    window.applyWholesalePricing(item);
+  }
+});
 
 // Save cart to localStorage
 function saveCart() {
   localStorage.setItem('latiao_cart', JSON.stringify(window.cart));
   updateBadges();
-}
+};
 
 // ============================================
 // AUTO-INJECT GIFTS INTO CART
@@ -1097,9 +1174,22 @@ function renderCart() {
           <div class="flex-1 min-w-0">
             <div class="flex items-start justify-between gap-2 mb-2">
               <h3 class="text-sm font-semibold text-gray-900 line-clamp-2">${item.name}</h3>
-              <p class="item-price w-20 text-right text-sm font-extrabold flex-shrink-0 transition-all duration-300 ${isGift ? 'text-green-600' : 'text-orange-600'}">${isGift ? 'Безкоштовно' : (item.price * qty) + ' ₴'}</p>
+              ${!isGift ? (item.wholesaleTier ? `
+                <div class="flex flex-col items-end gap-0.5 w-20 flex-shrink-0">
+                  <p class="text-[10px] text-gray-400 line-through">${(item.basePrice * qty).toFixed(0)} ₴</p>
+                  <p class="item-price text-sm font-extrabold text-green-600 transition-all duration-300">${(item.price * qty).toFixed(0)} ₴</p>
+                </div>
+              ` : `
+                <p class="item-price w-20 text-right text-sm font-extrabold text-orange-600 transition-all duration-300">${(item.price * qty).toFixed(0)} ₴</p>
+              `) : `
+                <p class="item-price w-20 text-right text-sm font-extrabold text-green-600 transition-all duration-300">Безкоштовно</p>
+              `}
             </div>
-            ${isGift ? '<p class="text-[10px] text-green-600 font-semibold mb-1">🎁 Подарунок від Latiao Snack</p>' : `<p class="text-[10px] text-gray-500 mb-1">${renderSpiciness(item.spiciness)}</p>`}
+            ${isGift ? '<p class="text-[10px] text-green-600 font-semibold mb-1">🎁 Подарунок від Latiao Snack</p>' : (item.wholesaleTier ? `
+              <div class="flex items-center gap-1 mb-1">
+                <span class="text-[10px] text-green-700 font-medium bg-green-50 px-1.5 py-0.5 rounded">🔥 Оптова ціна -${(item.wholesaleDiscount * 100).toFixed(0)}%</span>
+              </div>
+            ` : `<p class="text-[10px] text-gray-500 mb-1">${renderSpiciness(item.spiciness)}</p>`)}
             <div class="flex items-center justify-between">
               ${!isGift ? `
               <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
@@ -1530,13 +1620,21 @@ window.addToCart = async function (product, source = null) {
         existingItem.qty = newQty;
       }
     }
+    
+    // 📦 Apply wholesale pricing to updated item
+    window.applyWholesalePricing(existingItem);
   } else {
     // No matching item - add as new entry
-    window.cart.push({
+    const newItem = {
       ...product,
       quantity: product.quantity || product.qty || 1,
       isGift: productIsGift // Ensure boolean
-    });
+    };
+    
+    // 📦 Apply wholesale pricing to new item
+    window.applyWholesalePricing(newItem);
+    
+    window.cart.push(newItem);
   }
 
   saveCart();
@@ -1589,6 +1687,9 @@ window.updateQty = function (productId, delta) {
   } else {
     item.qty = newQty;
   }
+
+  // 📦 Apply wholesale pricing after quantity change
+  window.applyWholesalePricing(item);
 
   saveCart();
   renderCart();
@@ -1658,6 +1759,9 @@ window.updateQtyByIndex = async function (cartIndex, delta) {
   } else {
     item.qty = newQty;
   }
+
+  // 📦 Apply wholesale pricing after quantity change
+  window.applyWholesalePricing(item);
 
   saveCart();
   renderCart();

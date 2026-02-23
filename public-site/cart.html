@@ -796,12 +796,24 @@
       const saved = localStorage.getItem('latiao_cart');
       if (saved) {
         cart = JSON.parse(saved);
+        // Recalculate wholesale pricing for all items on load
+        cart.forEach(item => {
+          if (!item.isGift && item.quantity > 0) {
+            applyWholesalePricing(item);
+          }
+        });
       } else {
         cart = [
           { ...DEMO_PRODUCTS[0], quantity: 2 },
           { ...DEMO_PRODUCTS[1], quantity: 1 },
           { ...DEMO_PRODUCTS[3], quantity: 1 }
         ];
+        // Apply wholesale pricing to demo products
+        cart.forEach(item => {
+          if (!item.isGift) {
+            applyWholesalePricing(item);
+          }
+        });
         saveCart();
       }
       renderCart();
@@ -885,8 +897,16 @@
           const existingIndex = mergedCart.findIndex(item => item.sku === sharedItem.sku);
           if (existingIndex >= 0) {
             mergedCart[existingIndex].quantity += sharedItem.quantity;
+            applyWholesalePricing(mergedCart[existingIndex]); // Recalculate pricing
           } else {
             mergedCart.push(sharedItem);
+          }
+        });
+        
+        // Apply wholesale pricing to all newly added items
+        mergedCart.forEach(item => {
+          if (!item.isGift) {
+            applyWholesalePricing(item);
           }
         });
         
@@ -921,6 +941,14 @@
         
         isUpdatingFromSnapshot = true;
         cart = sharedCart.items;
+        
+        // Apply wholesale pricing to all items from real-time update
+        cart.forEach(item => {
+          if (!item.isGift) {
+            applyWholesalePricing(item);
+          }
+        });
+        
         localStorage.setItem('latiao_cart', JSON.stringify(cart));
         renderCart();
         isUpdatingFromSnapshot = false;
@@ -938,6 +966,63 @@
 
     function calculateItemsCount() {
       return cart.reduce((sum, item) => sum + item.quantity, 0);
+    }
+
+    // ============================================
+    // 📦 WHOLESALE PRICING LOGIC
+    // ============================================
+
+    /**
+     * Calculate effective price based on wholesale tiers
+     * Tiers match product page: 2+: 5%, 5+: 10%, 10+: 15%
+     * @param {number} basePrice - Original product price
+     * @param {number} quantity - Current quantity in cart
+     * @returns {object} - { effectivePrice, discount, tierApplied }
+     */
+    function calculateEffectivePrice(basePrice, quantity) {
+      const wholesaleTiers = [
+        { quantity: 10, discount: 0.15 }, // 15% discount (check highest first)
+        { quantity: 5, discount: 0.10 },  // 10% discount
+        { quantity: 2, discount: 0.05 }   // 5% discount
+      ];
+
+      // Find applicable tier
+      const applicableTier = wholesaleTiers.find(tier => quantity >= tier.quantity);
+
+      if (applicableTier) {
+        const effectivePrice = parseFloat((basePrice * (1 - applicableTier.discount)).toFixed(2));
+        return {
+          effectivePrice,
+          discount: applicableTier.discount,
+          tierApplied: applicableTier.quantity
+        };
+      }
+
+      // No tier applies
+      return {
+        effectivePrice: basePrice,
+        discount: 0,
+        tierApplied: null
+      };
+    }
+
+    /**
+     * Apply wholesale pricing to a cart item
+     * Updates the item.price to the effective price
+     * Stores original price in item.basePrice for reference
+     */
+    function applyWholesalePricing(item) {
+      // Ensure we have a base price stored
+      if (!item.basePrice) {
+        item.basePrice = item.price;
+      }
+
+      const result = calculateEffectivePrice(item.basePrice, item.quantity);
+      item.price = result.effectivePrice;
+      item.wholesaleDiscount = result.discount;
+      item.wholesaleTier = result.tierApplied;
+
+      console.log(`📦 [Wholesale] ${item.name}: qty=${item.quantity}, base=${item.basePrice}, effective=${item.price}, discount=${result.discount * 100}%`);
     }
 
     // ============================================
@@ -1149,10 +1234,28 @@
                 <div class="text-sm text-green-600 font-semibold">Безкоштовно</div>
                 `}
                 
-                <!-- Price -->
+                <!-- Price Section -->
                 <div class="text-right">
-                  <p class="text-lg font-extrabold ${isGift ? 'text-green-600' : 'text-primary'}">${isGift ? '0 грн' : (item.price * item.quantity) + ' грн'}</p>
-                  ${item.quantity > 1 && !isGift ? `<p class="text-xs text-gray-400">${item.price} грн/шт</p>` : ''}
+                  ${!isGift ? `
+                    ${item.wholesaleTier ? `
+                      <!-- Wholesale Pricing Applied -->
+                      <div class="flex flex-col items-end gap-0.5">
+                        <p class="text-xs text-gray-400 line-through">${(item.basePrice * item.quantity).toFixed(0)} грн</p>
+                        <p class="text-lg font-extrabold text-green-600">${(item.price * item.quantity).toFixed(0)} грн</p>
+                        ${item.quantity > 1 ? `<p class="text-xs text-gray-400">${item.price.toFixed(2)} грн/шт</p>` : ''}
+                        <div class="flex items-center gap-1 mt-1 bg-green-50 px-2 py-0.5 rounded-full">
+                          <span class="text-xs text-green-700 font-medium">🔥 Оптова ціна</span>
+                        </div>
+                      </div>
+                    ` : `
+                      <!-- Regular Pricing -->
+                      <p class="text-lg font-extrabold text-primary">${(item.price * item.quantity).toFixed(0)} грн</p>
+                      ${item.quantity > 1 ? `<p class="text-xs text-gray-400">${item.price.toFixed(2)} грн/шт</p>` : ''}
+                    `}
+                  ` : `
+                    <!-- Gift Item -->
+                    <p class="text-lg font-extrabold text-green-600">0 грн</p>
+                  `}
                 </div>
               </div>
             </div>
@@ -1178,16 +1281,20 @@
       if (existingItem) {
         if (existingItem.quantity < product.stock) {
           existingItem.quantity++;
+          applyWholesalePricing(existingItem); // Apply wholesale pricing
           showToast(`${product.name} додано до кошика`);
         } else {
           showToast('Досягнуто максимальну кількість', 'warning');
         }
       } else {
-        cart.push({ 
+        const newItem = { 
           ...product, 
           quantity: 1,
-          isGift: productIsGift
-        });
+          isGift: productIsGift,
+          basePrice: product.price // Store original price
+        };
+        applyWholesalePricing(newItem); // Apply wholesale pricing
+        cart.push(newItem);
         showToast(`${product.name} додано до кошика`);
       }
       
@@ -1257,6 +1364,7 @@
       }
       
       item.quantity = newQty;
+      applyWholesalePricing(item); // Apply wholesale pricing
       saveCart();
       renderCart();
     }
@@ -1285,6 +1393,7 @@
       }
       
       item.quantity = newQty;
+      applyWholesalePricing(item); // Apply wholesale pricing
       saveCart();
       renderCart();
     }

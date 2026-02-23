@@ -1315,6 +1315,84 @@
     // CRITICAL: Load Cart Data from LocalStorage and validate IMMEDIATELY
     let cartItems = JSON.parse(localStorage.getItem('latiao_cart') || '[]')
 
+    // ============================================
+    // 📦 WHOLESALE PRICING LOGIC
+    // ============================================
+
+    /**
+     * Get effective price based on quantity and wholesale tiers
+     * @param {Object} product - Product object with base price
+     * @param {number} quantity - Quantity being purchased
+     * @returns {Object} - { effectivePrice, discount, tierApplied, basePrice }
+     */
+    function getEffectivePrice(product, quantity) {
+      // Standard wholesale tiers (matches product page)
+      const wholesaleTiers = [
+        { quantity: 10, discount: 0.15 }, // 15% discount (check highest first)
+        { quantity: 5, discount: 0.10 },  // 10% discount
+        { quantity: 2, discount: 0.05 }   // 5% discount
+      ];
+
+      // Get base price (use basePrice if available, otherwise use current price)
+      const basePrice = product.basePrice || product.price;
+
+      // Find applicable tier (highest quantity that qualifies)
+      const applicableTier = wholesaleTiers.find(tier => quantity >= tier.quantity);
+
+      if (applicableTier) {
+        const effectivePrice = parseFloat((basePrice * (1 - applicableTier.discount)).toFixed(2));
+        return {
+          effectivePrice,
+          discount: applicableTier.discount,
+          tierApplied: applicableTier.quantity,
+          basePrice
+        };
+      }
+
+      // No tier applies - return base price
+      return {
+        effectivePrice: basePrice,
+        discount: 0,
+        tierApplied: null,
+        basePrice
+      };
+    }
+
+    /**
+     * Apply wholesale pricing to a cart item
+     * Updates the item.price to the effective price
+     * Stores original price in item.basePrice for reference
+     * @param {Object} item - Cart item to update
+     */
+    function applyWholesalePricing(item) {
+      // Skip gifts - they're always free
+      if (item.isGift === true) {
+        return;
+      }
+
+      // Ensure we have a base price stored
+      if (!item.basePrice) {
+        item.basePrice = item.price;
+      }
+
+      const result = getEffectivePrice(item, item.quantity);
+      item.price = result.effectivePrice;
+      item.wholesaleDiscount = result.discount;
+      item.wholesaleTier = result.tierApplied;
+
+      console.log(`📦 [Wholesale] ${item.name}: qty=${item.quantity}, base=${item.basePrice}, effective=${item.price}, discount=${result.discount * 100}%`);
+    }
+
+    // Apply wholesale pricing to all cart items on load
+    cartItems.forEach(item => {
+      if (!item.isGift) {
+        applyWholesalePricing(item);
+      }
+    });
+
+    // Save updated cart back to localStorage
+    localStorage.setItem('latiao_cart', JSON.stringify(cartItems));
+
     // BOUNCER: Redirect if cart is empty (NO fake data allowed)
     if (!cartItems || cartItems.length === 0) {
       // Immediate redirect - no alerts, no delays
@@ -2432,7 +2510,17 @@
             <div class="flex items-center gap-1 mt-1">
               ${'🌶️'.repeat(item.spiciness || 0)}
             </div>
-            <p class="text-xs text-gray-500 mt-1">${item.price} грн/шт</p>
+            ${item.wholesaleTier ? `
+              <div class="flex items-center gap-1 mt-1">
+                <span class="text-xs line-through text-gray-400">${item.basePrice} грн/шт</span>
+                <span class="text-xs font-semibold text-green-600">${item.price} грн/шт</span>
+              </div>
+              <div class="inline-flex items-center gap-1 mt-1 bg-green-50 px-2 py-0.5 rounded-full">
+                <span class="text-xs text-green-700 font-medium">🔥 Оптова ціна -${(item.wholesaleDiscount * 100).toFixed(0)}%</span>
+              </div>
+            ` : `
+              <p class="text-xs text-gray-500 mt-1">${item.price} грн/шт</p>
+            `}
             `}
             
             <!-- Quantity Controls -->
@@ -2464,7 +2552,16 @@
             `}
           </div>
           <div class="text-right flex-shrink-0">
-            <span class="font-bold ${isGift ? 'text-green-600' : 'text-gray-900'} text-sm">${isGift ? '0 грн' : (item.quantity * item.price) + ' грн'}</span>
+            ${!isGift ? (item.wholesaleTier ? `
+              <div class="flex flex-col items-end gap-0.5">
+                <span class="text-xs line-through text-gray-400">${(item.basePrice * item.quantity).toFixed(0)} грн</span>
+                <span class="font-bold text-green-600 text-sm">${(item.quantity * item.price).toFixed(0)} грн</span>
+              </div>
+            ` : `
+              <span class="font-bold text-gray-900 text-sm">${(item.quantity * item.price).toFixed(0)} грн</span>
+            `) : `
+              <span class="font-bold text-green-600 text-sm">0 грн</span>
+            `}
           </div>
         </div>
       `
@@ -2492,6 +2589,9 @@
 
       // Step 3: Modify data - increment quantity
       cart[index].quantity = (cart[index].quantity || 1) + 1
+
+      // 📦 Apply wholesale pricing
+      applyWholesalePricing(cart[index])
 
       // Step 4: Save back to localStorage
       localStorage.setItem('latiao_cart', JSON.stringify(cart))
@@ -2532,6 +2632,9 @@
 
       // Decrement quantity
       cart[index].quantity = currentQty - 1
+
+      // 📦 Apply wholesale pricing
+      applyWholesalePricing(cart[index])
 
       // Step 4: Save back to localStorage
       localStorage.setItem('latiao_cart', JSON.stringify(cart))
@@ -4342,12 +4445,18 @@
         // TASK 4: CALCULATE POINTS EARNED FOR THIS ORDER
         // Using the unified calculateOrderCashback() function
         // Ensures consistency with what's displayed in the UI
+        // 
+        // NOTE: This uses the cashback config loaded at page load time.
+        // The ACTUAL cashback awarded will be RECALCULATED when the order
+        // status changes to 'paid' in the admin panel, using the LATEST
+        // config values. This ensures rules are always enforced correctly.
         // ============================================
         
         const cashbackResult = calculateOrderCashback(finalTotal);
         const pointsEarned = cashbackResult.finalAward;
         
         console.log('🎁 Cashback to be earned (via calculateOrderCashback):');
+        console.log('   ⚠️ This is ESTIMATED - actual award will be recalculated when order is marked as paid');
         console.log('   Percentage rate:', cashbackResult.cashbackPercent + '%');
         console.log('   Calculated from final total:', finalTotal, 'грн');
         console.log('   Raw amount:', cashbackResult.rawAmount, 'грн');

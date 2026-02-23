@@ -838,44 +838,38 @@
               </div>
             </div>
 
-            <!-- Club Price Box - Clean & Minimalist -->
-            <div class="relative border-2 border-orange-400/30 rounded-2xl p-4 bg-orange-50/30 mb-3" id="club-price-frame">
-              
-              <!-- Badge and Info Icon Row -->
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-bold text-orange-600">Клубна ціна</span>
-                <button 
-                  type="button"
-                  id="club-price-info" 
-                  class="text-slate-400 ml-2 cursor-pointer hover:text-orange-500 transition-colors focus:outline-none"
-                  aria-label="Інформація про клубну ціну"
-                  tabindex="0"
-                >
-                  ⓘ
-                </button>
-              </div>
-
-              <!-- Price with Lock Icon -->
-              <div class="flex items-center gap-2">
-                <span id="product-club-price" class="text-3xl font-bold text-orange-600">0 ₴</span>
-                <span class="text-2xl opacity-60">🔒</span>
-              </div>
-
-              <!-- Tooltip - Simple White Bubble -->
-              <div 
-                id="club-price-popover" 
-                class="hidden absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-white shadow-lg rounded-xl p-4 border border-slate-200 z-50 tooltip-fade w-[280px] sm:w-[320px]"
+            <!-- 📦 Wholesale Pricing Accordion -->
+            <div id="wholesale-pricing-accordion" class="mt-3 mb-3 hidden">
+              <!-- Trigger Button -->
+              <button 
+                id="wholesale-toggle-btn"
+                type="button"
+                class="text-sm text-blue-600 dark:text-blue-400 font-medium cursor-pointer hover:underline flex items-center gap-1 transition-colors focus:outline-none"
+                aria-expanded="false"
+                aria-controls="wholesale-content"
               >
-                <p class="text-sm text-slate-700 leading-relaxed">
-                  Ціна доступна лише для учасників <span class="font-semibold text-orange-600">Latiao Club</span>. Оформи підписку, щоб купувати дешевше!
-                </p>
+                <span>Дивитися оптові ціни</span>
+                <svg 
+                  id="wholesale-chevron" 
+                  class="w-4 h-4 transition-transform duration-200" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              <!-- Collapsible Content -->
+              <div 
+                id="wholesale-content" 
+                class="hidden mt-3 bg-gray-50 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700"
+              >
+                <div id="wholesale-tiers-list" class="space-y-2">
+                  <!-- Tiers will be populated dynamically -->
+                </div>
               </div>
             </div>
-
-            <!-- Marketing Message -->
-            <span class="text-xs text-slate-400 mt-2 text-center block mb-4">
-              З підпискою ви економите від 500 грн на місяць
-            </span>
 
             <!-- 🪙 Cashback Badge -->
             <div id="cashback-badge" class="bg-gradient-to-r from-amber-50 to-yellow-50 border border-yellow-200 rounded-lg p-3 my-4 flex items-center gap-3 cashback-shine-effect">
@@ -975,15 +969,7 @@
       </div>
     </div>
 
-    <!-- 6. SIMILAR PRODUCTS SLIDER -->
-    <section class="mb-10 fade-slide-up stagger-5">
-      <h2 class="text-2xl font-bold text-slate-800 mb-6">Схожі товари за смаком</h2>
-      <div id="recommended-products" class="flex overflow-x-auto gap-4 scrollbar-hide snap-x snap-mandatory pb-4">
-        <!-- Similar products slider will be populated dynamically -->
-      </div>
-    </section>
-
-    <!-- 7. PRODUCT DETAILS BLOCK -->
+    <!-- 6. PRODUCT DETAILS BLOCK -->
     <section class="fade-slide-up stagger-5">
       <div class="space-y-3">
 
@@ -1505,6 +1491,105 @@
     }
 
     // ============================================
+    // 📦 WHOLESALE PRICING LOGIC
+    // ============================================
+
+    /**
+     * Calculate and display wholesale pricing tiers
+     * @param {number} basePrice - The regular product price
+     */
+    function displayWholesalePricing(basePrice) {
+      console.log('📦 [Wholesale] Calculating pricing for base price:', basePrice);
+
+      // Wholesale tier configuration (placeholder data)
+      const wholesaleTiers = [
+        { quantity: 2, discount: 0.05 },  // 5% discount
+        { quantity: 5, discount: 0.10 },  // 10% discount
+        { quantity: 10, discount: 0.15 }  // 15% discount
+      ];
+
+      const accordionEl = document.getElementById('wholesale-pricing-accordion');
+      const listEl = document.getElementById('wholesale-tiers-list');
+
+      if (!accordionEl || !listEl) {
+        console.warn('⚠️ [Wholesale] Elements not found in DOM');
+        return;
+      }
+
+      // Validate base price
+      if (!basePrice || basePrice <= 0) {
+        accordionEl.classList.add('hidden');
+        console.log('ℹ️ [Wholesale] Hiding accordion - invalid price');
+        return;
+      }
+
+      // Generate simple tier list HTML
+      let tiersHTML = '';
+      wholesaleTiers.forEach((tier, index) => {
+        const discountedPrice = (basePrice * (1 - tier.discount)).toFixed(2);
+        
+        tiersHTML += `
+          <div class="flex items-center justify-between py-1.5 text-sm">
+            <span class="text-gray-700 dark:text-gray-300">${tier.quantity}+ шт.</span>
+            <span class="font-semibold text-gray-900 dark:text-white">${discountedPrice} грн</span>
+          </div>
+        `;
+        
+        // Add divider between items (except last)
+        if (index < wholesaleTiers.length - 1) {
+          tiersHTML += '<div class="border-t border-gray-200 dark:border-gray-700"></div>';
+        }
+      });
+
+      listEl.innerHTML = tiersHTML;
+      accordionEl.classList.remove('hidden');
+      
+      // Initialize toggle functionality
+      initWholesaleToggle();
+      
+      console.log('✅ [Wholesale] Accordion displayed with', wholesaleTiers.length, 'tiers');
+    }
+
+    /**
+     * Initialize wholesale pricing accordion toggle
+     */
+    function initWholesaleToggle() {
+      const toggleBtn = document.getElementById('wholesale-toggle-btn');
+      const contentEl = document.getElementById('wholesale-content');
+      const chevronEl = document.getElementById('wholesale-chevron');
+
+      if (!toggleBtn || !contentEl || !chevronEl) {
+        console.warn('⚠️ [Wholesale] Toggle elements not found');
+        return;
+      }
+
+      // Remove any existing listeners
+      const newToggleBtn = toggleBtn.cloneNode(true);
+      toggleBtn.parentNode.replaceChild(newToggleBtn, toggleBtn);
+
+      // Add click listener
+      newToggleBtn.addEventListener('click', () => {
+        const isExpanded = contentEl.classList.contains('hidden');
+        
+        if (isExpanded) {
+          // Open accordion
+          contentEl.classList.remove('hidden');
+          chevronEl.style.transform = 'rotate(180deg)';
+          newToggleBtn.setAttribute('aria-expanded', 'true');
+          console.log('📦 [Wholesale] Accordion opened');
+        } else {
+          // Close accordion
+          contentEl.classList.add('hidden');
+          chevronEl.style.transform = 'rotate(0deg)';
+          newToggleBtn.setAttribute('aria-expanded', 'false');
+          console.log('📦 [Wholesale] Accordion closed');
+        }
+      });
+
+      console.log('✅ [Wholesale] Toggle initialized');
+    }
+
+    // ============================================
     // SOCIAL PROOF: VIEW COUNTER
     // ============================================
 
@@ -1608,9 +1693,6 @@
         setTimeout(() => {
           initFavoriteButton();
         }, 100);
-
-        // Load recommended products (smart marketing strategy)
-        await loadRecommendedProducts(currentProduct)
 
         // Load mobile upsell bundle
         await loadMobileUpsellBundle(currentProduct)
@@ -1727,6 +1809,9 @@
       const oldPrice = product.originalPrice || product.oldPrice || product.priceOld || 0
       const isOnSale = product.isOnSale === true || (oldPrice > price)
 
+      // Store current product price for wholesale calculations
+      window.currentProductPrice = price;
+
       if (priceEl) {
         if (isOnSale && oldPrice > price) {
           // Sale mode: show green price
@@ -1759,6 +1844,11 @@
       }
 
       // ============================================
+      // 📦 WHOLESALE PRICING DISPLAY
+      // ============================================
+      displayWholesalePricing(price);
+
+      // ============================================
       // 🪙 CASHBACK CALCULATION (dynamic % of price)
       // ============================================
       const cashbackEl = document.getElementById('cashback-amount')
@@ -1778,16 +1868,6 @@
         } else {
           cashbackBadgeEl.classList.add('hidden');
         }
-      }
-
-      // ============================================
-      // 🔐 CLUB PRICE CALCULATION (10% discount)
-      // ============================================
-      const clubPriceEl = document.getElementById('product-club-price')
-      
-      if (clubPriceEl && price > 0) {
-        const clubPrice = Math.floor(price * 0.9) // 10% discount for club members
-        clubPriceEl.textContent = `${clubPrice} ₴`
       }
 
       // ============================================
@@ -2054,47 +2134,6 @@
 
       // Update shipping status based on stock
       updateShippingStatus(maxStock)
-
-      // Set up club price popover interaction
-      setupClubPricePopover()
-    }
-
-    // ============================================
-    // CLUB PRICE POPOVER INTERACTION
-    // ============================================
-    function setupClubPricePopover() {
-      const clubInfoIcon = document.getElementById('club-price-info')
-      const clubPopover = document.getElementById('club-price-popover')
-      const clubPriceFrame = document.getElementById('club-price-frame')
-
-      if (!clubInfoIcon || !clubPopover || !clubPriceFrame) {
-        return // Elements not found, skip setup
-      }
-
-      // Toggle popover on info icon click
-      clubInfoIcon.addEventListener('click', (e) => {
-        e.stopPropagation()
-        clubPopover.classList.toggle('hidden')
-      })
-
-      // Show popover on frame click
-      clubPriceFrame.addEventListener('click', (e) => {
-        // Don't toggle if clicking the info icon (it has its own handler)
-        if (e.target.closest('#club-price-info')) {
-          return
-        }
-        clubPopover.classList.toggle('hidden')
-      })
-
-      // Close popover when clicking outside
-      document.addEventListener('click', (e) => {
-        if (!clubPopover.classList.contains('hidden') && 
-            !clubPopover.contains(e.target) && 
-            !clubInfoIcon.contains(e.target) &&
-            !clubPriceFrame.contains(e.target)) {
-          clubPopover.classList.add('hidden')
-        }
-      })
     }
 
     // ============================================
@@ -2118,151 +2157,6 @@
         'snacks': 'Снеки'
       }
       return names[slug] || 'Категорія'
-    }
-
-    // ============================================
-    // LOAD SIMILAR PRODUCTS (SAME CATEGORY)
-    // ============================================
-    async function loadRecommendedProducts(currentProduct) {
-      try {
-        const currentProductId = currentProduct.id
-        const currentCategory = currentProduct.category || ''
-        
-        console.log('🔍 Loading similar products from category:', currentCategory)
-
-        // Fetch products from the SAME category only
-        const q = query(
-          collection(db, 'products'),
-          where('category', '==', currentCategory),
-          where('isVisible', '==', true),
-          where('stock', '>', 0)
-        )
-        const snap = await getDocs(q)
-
-        // Filter out current product
-        let categoryProducts = snap.docs
-          .map(doc => ({ id: doc.id, ...doc.data() }))
-          .filter(p => p.id !== currentProductId)
-
-        console.log(`📦 Found ${categoryProducts.length} similar products in category`)
-
-        // Shuffle array randomly and pick 5
-        const shuffled = categoryProducts.sort(() => Math.random() - 0.5)
-        const selectedProducts = shuffled.slice(0, 5)
-
-        console.log(`✅ Selected ${selectedProducts.length} products to display`)
-
-        // Generate HTML with category page styling
-        const html = selectedProducts.map(p => {
-          const spicyIcons = '🌶️'.repeat(p.spiciness || 1)
-          const imageUrl = p.image || p.imageUrl || 'https://placehold.co/300x300/fff3e8/ff6b00?text=Latiao'
-          const hasVariants = p.variants && Array.isArray(p.variants) && p.variants.length > 1
-          const inStock = p.stock > 0
-          
-          return `
-            <div class="min-w-[160px] max-w-[160px] md:min-w-[200px] md:max-w-[200px] flex-shrink-0 snap-start bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col">
-              <!-- Image (clickable to product page) -->
-              <a href="product.html?id=${p.id}" class="block">
-                <div class="relative bg-gradient-to-br from-orange-50 to-red-50 overflow-hidden">
-                  <img src="${imageUrl}" alt="${p.name}" class="h-32 md:h-40 w-full object-cover hover:scale-105 transition-transform duration-300" onerror="this.src='https://placehold.co/300x300/fff3e8/ff6b00?text=Latiao'"/>
-                </div>
-              </a>
-              
-              <!-- Card Content -->
-              <div class="p-2 md:p-3 flex flex-col flex-grow">
-                <a href="product.html?id=${p.id}" class="block mb-2">
-                  <h3 class="text-sm font-bold text-gray-900 line-clamp-2 mb-1">${p.name}</h3>
-                  <p class="text-base font-bold text-orange-600">₴${p.price}</p>
-                </a>
-                
-                <!-- Add to Cart Button -->
-                <div class="mt-auto">
-                  ${!inStock 
-                    ? `<button disabled class="w-full font-bold text-xs py-1.5 px-2 rounded-lg bg-gray-300 text-gray-500 cursor-not-allowed">
-                        Немає
-                      </button>`
-                    : hasVariants 
-                      ? `<button onclick="window.location.href='product.html?id=${p.id}'" class="w-full font-bold text-xs md:text-sm py-1.5 px-2 rounded-lg transition-all duration-200 hover:shadow-lg active:scale-95 bg-gradient-to-r from-[#ff6b00] to-[#e53e3e] text-white">
-                          Вибрати →
-                        </button>`
-                      : `<button onclick="quickAddToCart('${p.id}', '${p.name.replace(/'/g, "\\'")}', ${p.price}, this); event.stopPropagation();" class="w-full font-bold text-xs md:text-sm py-1.5 px-2 rounded-lg transition-all duration-200 hover:shadow-lg active:scale-95 bg-gradient-to-r from-[#ff6b00] to-[#e53e3e] text-white">
-                          <span class="cart-btn-text">Додати 🛒</span>
-                        </button>`
-                  }
-                </div>
-              </div>
-            </div>
-          `
-        }).join('')
-
-        const container = document.getElementById('recommended-products')
-        if (container) {
-          container.innerHTML = html || '<p class="w-full text-center text-gray-500 py-8">Немає схожих товарів</p>'
-          console.log(`✅ Displayed ${selectedProducts.length} similar products`)
-        }
-      } catch (err) {
-        console.error('❌ Error loading similar products:', err)
-        const container = document.getElementById('recommended-products')
-        if (container) {
-          container.innerHTML = '<p class="w-full text-center text-gray-500 py-8">Не вдалося завантажити рекомендації</p>'
-        }
-      }
-    }
-
-    // ============================================
-    // QUICK ADD TO CART FROM RECOMMENDATIONS
-    // ============================================
-    async function quickAddToCart(productId, productName, productPrice, buttonElement) {
-      try {
-        const textElement = buttonElement.querySelector('.cart-btn-text')
-        const originalText = textElement.innerHTML
-        
-        // Visual feedback: Loading state
-        buttonElement.disabled = true
-        buttonElement.classList.add('opacity-75', 'cursor-not-allowed')
-        textElement.innerHTML = '⏳ Додаю...'
-        
-        // Add to cart (quantity: 1)
-        if (typeof window.addToCart === 'function') {
-          await window.addToCart(productId, 1, {
-            id: productId,
-            name: productName,
-            price: productPrice
-          })
-          
-          // Success animation - remove gradient, add green
-          textElement.innerHTML = '✅ Додано'
-          buttonElement.classList.remove('from-[#ff6b00]', 'to-[#e53e3e]')
-          buttonElement.classList.add('bg-green-600')
-          
-          // Show toast if available
-          if (typeof window.showToast === 'function') {
-            window.showToast(`${productName} додано до кошика! 🛒`, 'success')
-          }
-          
-          // Reset button after 1.5 seconds
-          setTimeout(() => {
-            textElement.innerHTML = originalText
-            buttonElement.classList.remove('bg-green-600', 'opacity-75', 'cursor-not-allowed')
-            buttonElement.classList.add('from-[#ff6b00]', 'to-[#e53e3e]')
-            buttonElement.disabled = false
-          }, 1500)
-          
-        } else {
-          throw new Error('addToCart function not available')
-        }
-      } catch (err) {
-        console.error('❌ Quick add error:', err)
-        const textElement = buttonElement.querySelector('.cart-btn-text')
-        textElement.innerHTML = '❌ Помилка'
-        
-        // Reset button after error
-        setTimeout(() => {
-          textElement.innerHTML = 'Додати в кошик'
-          buttonElement.classList.remove('opacity-75', 'cursor-not-allowed')
-          buttonElement.disabled = false
-        }, 2000)
-      }
     }
 
     // ============================================
