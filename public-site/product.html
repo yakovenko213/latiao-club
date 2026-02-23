@@ -1495,18 +1495,11 @@
     // ============================================
 
     /**
-     * Calculate and display wholesale pricing tiers
-     * @param {number} basePrice - The regular product price
+     * Display wholesale pricing tiers from Firestore data
+     * @param {object} product - The product object with wholesaleTiers and showWholesale fields
      */
-    function displayWholesalePricing(basePrice) {
-      console.log('📦 [Wholesale] Calculating pricing for base price:', basePrice);
-
-      // Wholesale tier configuration (placeholder data)
-      const wholesaleTiers = [
-        { quantity: 2, discount: 0.05 },  // 5% discount
-        { quantity: 5, discount: 0.10 },  // 10% discount
-        { quantity: 10, discount: 0.15 }  // 15% discount
-      ];
+    function displayWholesalePricing(product) {
+      console.log('📦 [Wholesale] Checking wholesale pricing for product:', product?.name);
 
       const accordionEl = document.getElementById('wholesale-pricing-accordion');
       const listEl = document.getElementById('wholesale-tiers-list');
@@ -1516,22 +1509,49 @@
         return;
       }
 
-      // Validate base price
+      // ============================================
+      // CHECK IF WHOLESALE IS ENABLED
+      // ============================================
+      const showWholesale = product?.showWholesale || false;
+      const wholesaleTiers = product?.wholesaleTiers || [];
+
+      // Hide if not enabled or no tiers defined
+      if (!showWholesale || wholesaleTiers.length === 0) {
+        accordionEl.classList.add('hidden');
+        console.log('ℹ️ [Wholesale] Hidden - showWholesale:', showWholesale, '| tiers:', wholesaleTiers.length);
+        return;
+      }
+
+      console.log(`💼 [Wholesale] Enabled with ${wholesaleTiers.length} tiers:`, wholesaleTiers);
+
+      // ============================================
+      // VALIDATE BASE PRICE
+      // ============================================
+      const basePrice = product?.price || 0;
       if (!basePrice || basePrice <= 0) {
         accordionEl.classList.add('hidden');
         console.log('ℹ️ [Wholesale] Hiding accordion - invalid price');
         return;
       }
 
-      // Generate simple tier list HTML
+      // ============================================
+      // RENDER TIERS FROM FIRESTORE
+      // ============================================
       let tiersHTML = '';
       wholesaleTiers.forEach((tier, index) => {
-        const discountedPrice = (basePrice * (1 - tier.discount)).toFixed(2);
+        const minQty = tier.minQty || 0;
+        const tierPrice = tier.price || 0;
+        
+        // Skip invalid tiers
+        if (minQty <= 0 || tierPrice <= 0) {
+          console.warn('⚠️ [Wholesale] Skipping invalid tier:', tier);
+          return;
+        }
         
         tiersHTML += `
           <div class="flex items-center justify-between py-1.5 text-sm">
-            <span class="text-gray-700 dark:text-gray-300">${tier.quantity}+ шт.</span>
-            <span class="font-semibold text-gray-900 dark:text-white">${discountedPrice} грн</span>
+            <span class="text-gray-700 dark:text-gray-300">Від ${minQty} шт.</span>
+            <span class="font-semibold text-gray-900 dark:text-white">${tierPrice} грн/шт</span>
           </div>
         `;
         
@@ -1540,6 +1560,13 @@
           tiersHTML += '<div class="border-t border-gray-200 dark:border-gray-700"></div>';
         }
       });
+
+      // If no valid tiers were rendered, hide the accordion
+      if (!tiersHTML.trim()) {
+        accordionEl.classList.add('hidden');
+        console.log('ℹ️ [Wholesale] No valid tiers to display');
+        return;
+      }
 
       listEl.innerHTML = tiersHTML;
       accordionEl.classList.remove('hidden');
@@ -1846,7 +1873,7 @@
       // ============================================
       // 📦 WHOLESALE PRICING DISPLAY
       // ============================================
-      displayWholesalePricing(price);
+      displayWholesalePricing(product);
 
       // ============================================
       // 🪙 CASHBACK CALCULATION (dynamic % of price)

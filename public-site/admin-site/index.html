@@ -7482,6 +7482,23 @@
 
         </div>
 
+        <!-- Wholesale Pricing Management -->
+        <div class="border-t pt-4 mt-4">
+          <div class="flex items-center gap-2 mb-3">
+            <input type="checkbox" id="edit-product-showWholesale" class="w-5 h-5 text-blue-600 rounded">
+            <label for="edit-product-showWholesale" class="font-medium text-gray-700">💼 Показувати опт на сайті</label>
+          </div>
+          
+          <div id="wholesale-tiers-container" class="hidden">
+            <div id="wholesale-tiers-list" class="mt-3 space-y-2">
+              <!-- Wholesale tiers will be dynamically rendered here -->
+            </div>
+            <button type="button" id="add-wholesale-tier-btn" class="mt-3 text-blue-500 text-sm font-bold hover:text-blue-700 transition-colors">
+              + Додати оптову ціну
+            </button>
+          </div>
+        </div>
+
         <div class="grid grid-cols-2 gap-4">
 
           <div>
@@ -18221,7 +18238,82 @@
       const submitBtn = productForm.querySelector('button[type="submit"]')
       submitBtn.innerHTML = '<i data-lucide="plus" class="w-4 h-4 inline mr-2"></i>Створити товар'
       lucide.createIcons()
+      
+      // Clear wholesale pricing
+      clearWholesaleTiers()
     }
+
+    // ============================================
+    // WHOLESALE PRICING MANAGEMENT
+    // ============================================
+    
+    /**
+     * Render a single wholesale tier row
+     */
+    window.renderWholesaleTier = function(qty = '', price = '') {
+      const tiersList = document.getElementById('wholesale-tiers-list')
+      const tierRow = document.createElement('div')
+      tierRow.className = 'wholesale-tier-row flex gap-2 items-center p-2 bg-gray-50 rounded-lg border border-gray-200'
+      
+      tierRow.innerHTML = `
+        <div class="flex-1">
+          <label class="block text-xs text-gray-600 mb-1">Кількість</label>
+          <input type="number" 
+                 class="tier-qty w-full border border-gray-300 rounded p-2 text-sm" 
+                 placeholder="від" 
+                 min="1" 
+                 value="${qty}">
+        </div>
+        <div class="flex-1">
+          <label class="block text-xs text-gray-600 mb-1">Ціна (₴)</label>
+          <input type="number" 
+                 class="tier-price w-full border border-gray-300 rounded p-2 text-sm" 
+                 placeholder="ціна" 
+                 min="0" 
+                 step="0.01" 
+                 value="${price}">
+        </div>
+        <button type="button" 
+                class="remove-tier-btn mt-5 p-2 text-red-500 hover:bg-red-50 rounded transition-colors" 
+                title="Видалити">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      `
+      
+      // Add delete handler
+      const removeBtn = tierRow.querySelector('.remove-tier-btn')
+      removeBtn.addEventListener('click', () => {
+        tierRow.remove()
+      })
+      
+      tiersList.appendChild(tierRow)
+      lucide.createIcons()
+    }
+    
+    /**
+     * Clear all wholesale tiers
+     */
+    function clearWholesaleTiers() {
+      const tiersList = document.getElementById('wholesale-tiers-list')
+      tiersList.innerHTML = ''
+      document.getElementById('edit-product-showWholesale').checked = false
+      document.getElementById('wholesale-tiers-container').classList.add('hidden')
+    }
+    
+    // Event listener for wholesale toggle
+    document.getElementById('edit-product-showWholesale').addEventListener('change', (e) => {
+      const container = document.getElementById('wholesale-tiers-container')
+      if (e.target.checked) {
+        container.classList.remove('hidden')
+      } else {
+        container.classList.add('hidden')
+      }
+    })
+    
+    // Event listener for add wholesale tier button
+    document.getElementById('add-wholesale-tier-btn').addEventListener('click', () => {
+      window.renderWholesaleTier()
+    })
 
     window.startEditProduct = async (productId) => {
       try {
@@ -18266,6 +18358,32 @@
           arrivalContainer.classList.remove('hidden')
         } else {
           arrivalContainer.classList.add('hidden')
+        }
+
+        // ============================================
+        // LOAD WHOLESALE PRICING
+        // ============================================
+        // Clear existing tiers
+        clearWholesaleTiers()
+        
+        // Load showWholesale toggle
+        const showWholesale = product.showWholesale || false
+        document.getElementById('edit-product-showWholesale').checked = showWholesale
+        
+        // Show/hide wholesale container based on toggle
+        const wholesaleContainer = document.getElementById('wholesale-tiers-container')
+        if (showWholesale) {
+          wholesaleContainer.classList.remove('hidden')
+        } else {
+          wholesaleContainer.classList.add('hidden')
+        }
+        
+        // Load wholesale tiers if they exist
+        if (product.wholesaleTiers && Array.isArray(product.wholesaleTiers) && product.wholesaleTiers.length > 0) {
+          console.log(`💼 Loading ${product.wholesaleTiers.length} wholesale tiers...`)
+          product.wholesaleTiers.forEach(tier => {
+            window.renderWholesaleTier(tier.minQty || '', tier.price || '')
+          })
         }
 
         // ============================================
@@ -18698,6 +18816,35 @@
           arrival_date: document.getElementById('p-expected').checked ? calculateArrivalDate() : null,
           updatedAt: new Date().toISOString()
         }
+
+        // ============================================
+        // COLLECT WHOLESALE PRICING DATA
+        // ============================================
+        const showWholesale = document.getElementById('edit-product-showWholesale').checked
+        productData.showWholesale = showWholesale
+        
+        // Collect wholesale tiers from DOM
+        const wholesaleTiers = []
+        const tierRows = document.querySelectorAll('.wholesale-tier-row')
+        tierRows.forEach(row => {
+          const qty = Number(row.querySelector('.tier-qty').value)
+          const price = Number(row.querySelector('.tier-price').value)
+          
+          // Only add valid tiers (both qty and price must be > 0)
+          if (qty > 0 && price > 0) {
+            wholesaleTiers.push({
+              minQty: qty,
+              price: price
+            })
+          }
+        })
+        
+        // Sort tiers by quantity (ascending)
+        wholesaleTiers.sort((a, b) => a.minQty - b.minQty)
+        
+        // Save to productData
+        productData.wholesaleTiers = wholesaleTiers
+        console.log(`💼 Saving ${wholesaleTiers.length} wholesale tiers:`, wholesaleTiers)
 
         // ============================================
         // STOCK HANDLING - REMOVED AUTO-SET LOGIC

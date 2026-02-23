@@ -2,6 +2,9 @@
 // ADMIN.JS - CORRECTED VERSION
 // ============================================
 
+console.log("🛠️ [MAIN_ADMIN] Main script running at " + new Date().getTime());
+console.log("🛠️ [MAIN_ADMIN] Script initialized at", new Date().toISOString());
+
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { 
     getFirestore, 
@@ -70,8 +73,44 @@ window.deleteField = deleteField;
 window.collection = collection;
 window.getDocs = getDocs;
 window.serverTimestamp = serverTimestamp;
+window.query = query;
+window.where = where;
+window.orderBy = orderBy;
+window.limit = limit;
+window.onSnapshot = onSnapshot;
 
 console.log('✅ Global Firebase exports initialized (for external modules)');
+console.log('✅ Firestore query helpers exported: query, where, orderBy, limit, onSnapshot');
+
+// ============================================
+// GLOBAL NOTIFICATION FUNCTION
+// ============================================
+/**
+ * Display a notification toast to the user
+ * @param {string} message - The message to display
+ * @param {string} type - 'success', 'error', or 'info'
+ */
+window.showNotification = function(message, type = 'info') {
+  const toast = document.createElement('div');
+  const bgColor = type === 'error' ? 'bg-red-600' : type === 'success' ? 'bg-green-600' : 'bg-blue-600';
+  const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+  
+  toast.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3 transition-opacity duration-300`;
+  toast.innerHTML = `
+    <span class="text-xl">${icon}</span>
+    <span class="font-medium">${message}</span>
+  `;
+  
+  document.body.appendChild(toast);
+  
+  // Auto-remove after 4 seconds
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+};
+
+console.log('✅ Global notification function initialized');
 
 // ============================================
 // IMPORT PHONE UTILS
