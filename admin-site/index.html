@@ -5132,6 +5132,21 @@
                 >
                 <p class="text-xs text-gray-500 mt-2">🔒 Скільки годин пропозиція НЕ показується після додавання або закінчення таймера (рекомендовано 24-72 год)</p>
               </div>
+
+              <!-- Category Selector -->
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <i data-lucide="tag" class="w-4 h-4 text-purple-600"></i>
+                  Категорії для допродажу
+                </label>
+                <div id="checkout-upsell-categories" class="space-y-2 max-h-64 overflow-y-auto border border-gray-300 rounded-xl p-4 bg-gray-50">
+                  <div class="flex items-center justify-center py-4">
+                    <div class="animate-spin w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full"></div>
+                    <span class="ml-2 text-sm text-gray-500">Завантаження категорій...</span>
+                  </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">🏷️ Виберіть категорії товарів для пропозиції, або "Усі категорії" для випадкового вибору</p>
+              </div>
             </div>
 
             <!-- Save Button -->
@@ -6671,6 +6686,13 @@
 
   </div>
 
+  <!-- Sub-Footer Promo Bar -->
+  <div class="sub-footer-promo py-3 bg-gray-100 dark:bg-gray-900 text-center border-t border-gray-200 dark:border-gray-800">
+    <p class="text-xs text-gray-500 dark:text-gray-400">
+      Хочете собі такий сайт? <a href="https://t.me/yarus_lik" target="_blank" class="font-medium text-blue-500 hover:text-blue-600 underline-offset-4 hover:underline transition-colors">Напишіть нам</a>
+    </p>
+  </div>
+
   <!-- ============================================ -->
   <!-- REVIEW MODAL - Add/Edit Review -->
   <!-- ============================================ -->
@@ -7482,23 +7504,6 @@
 
         </div>
 
-        <!-- Wholesale Pricing Management -->
-        <div class="border-t pt-4 mt-4">
-          <div class="flex items-center gap-2 mb-3">
-            <input type="checkbox" id="edit-product-showWholesale" class="w-5 h-5 text-blue-600 rounded">
-            <label for="edit-product-showWholesale" class="font-medium text-gray-700">💼 Показувати опт на сайті</label>
-          </div>
-          
-          <div id="wholesale-tiers-container" class="hidden">
-            <div id="wholesale-tiers-list" class="mt-3 space-y-2">
-              <!-- Wholesale tiers will be dynamically rendered here -->
-            </div>
-            <button type="button" id="add-wholesale-tier-btn" class="mt-3 text-blue-500 text-sm font-bold hover:text-blue-700 transition-colors">
-              + Додати оптову ціну
-            </button>
-          </div>
-        </div>
-
         <div class="grid grid-cols-2 gap-4">
 
           <div>
@@ -7583,6 +7588,20 @@
           <textarea id="p-ingredients" class="w-full border rounded-lg p-2" rows="3"
             placeholder="Пшенична мука, рослинна олія, соєвий соус, перець чилі..."></textarea>
 
+        </div>
+
+        <!-- ⚡ WHOLESALE PRICING SECTION ⚡ -->
+        <div class="border-t pt-4 mt-4">
+          <div class="flex items-center justify-between mb-2">
+            <label class="font-bold text-gray-700">Оптові ціни</label>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="edit-product-showWholesale" class="sr-only peer">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              <span class="ml-3 text-sm font-medium text-gray-900">Показувати на сайті</span>
+            </label>
+          </div>
+          <div id="wholesale-tiers-list" class="space-y-2"></div>
+          <button type="button" id="add-wholesale-tier-btn" class="mt-2 text-blue-600 text-sm hover:underline">+ Додати оптову ціну</button>
         </div>
 
         <div class="flex items-center gap-2">
@@ -8591,6 +8610,12 @@
 
   <script type="module">
     // ============================================
+    // 🚀 DEBUG: SCRIPT ACTIVE VERIFICATION
+    // ============================================
+    console.log("🚀 [DEBUG] Admin script is active at: " + new Date().toLocaleTimeString());
+    console.log("🚀 [DEBUG] File version: index.html v999");
+    
+    // ============================================
     // FIREBASE INITIALIZATION
     // ============================================
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'
@@ -9238,7 +9263,26 @@
               const pointsEarned = Number(order.pointsEarned || 0);
               const alreadyAwarded = order.cashbackAwarded === true;
               
-              if (pointsEarned > 0 && !alreadyAwarded) {
+              // ============================================
+              // 💰 RECALCULATE CASHBACK WITH CURRENT RULES
+              // ============================================
+              const orderTotal = Number(order.total || order.totalPrice || 0);
+              
+              // Safety check: Ensure module function is loaded
+              if (typeof window.calculateOrderCashbackWithRules !== 'function') {
+                console.error('❌ [Bulk-Cashback] calculateOrderCashbackWithRules not found! Module not loaded.');
+                throw new Error('Cashback calculation module not loaded');
+              }
+              
+              console.log(`🔍 [Bulk-Cashback] Calling module for order ${orderId} with total ${orderTotal} грн`);
+              const cashbackCalc = await window.calculateOrderCashbackWithRules(orderTotal);
+              const finalCashback = cashbackCalc.finalCashback;
+              
+              console.log(`💰 [Bulk-Cashback] Order ${orderId}: Original=${pointsEarned}, Recalculated=${finalCashback} грн`);
+              console.log(`�️ [CASHBACK ENFORCED] Order: ${orderId}, Order Total: ${orderTotal} грн, Capped Amount: ${finalCashback} грн`);
+              console.log(`�💰 [Bulk-Cashback] Calculation details:`, cashbackCalc);
+              
+              if (finalCashback > 0 && !alreadyAwarded) {
                 const phone = order.customer?.phone;
                 const userId = order.userId;
                 let userPhone = null;
@@ -9264,16 +9308,16 @@
                   
                   if (userDoc.exists()) {
                     await updateDoc(userRef, {
-                      cashbackBalance: increment(pointsEarned),
-                      totalCashbackAwarded: increment(pointsEarned),
+                      cashbackBalance: increment(finalCashback),
+                      totalCashbackAwarded: increment(finalCashback),
                       updatedAt: serverTimestamp()
                     });
                   } else {
                     await setDoc(userRef, {
                       phone: userPhone,
                       fullName: order.customer?.fullName || 'Клієнт',
-                      cashbackBalance: pointsEarned,
-                      totalCashbackAwarded: pointsEarned,
+                      cashbackBalance: finalCashback,
+                      totalCashbackAwarded: finalCashback,
                       totalCashbackUsed: 0,
                       createdAt: serverTimestamp(),
                       updatedAt: serverTimestamp()
@@ -9284,7 +9328,7 @@
                   await addDoc(collection(db, 'cashback_transactions'), {
                     userId: userPhone,
                     userName: order.customer?.fullName || 'Клієнт',
-                    amount: pointsEarned,
+                    amount: finalCashback,
                     type: 'нарахування', // Updated to match user requirement
                     orderId: orderId,
                     orderShortId: orderId.slice(-8).toUpperCase(),
@@ -9293,17 +9337,18 @@
                     awardedBy: 'bulk_status_paid'
                   });
                   
-                  // Update order with cashbackAwarded
+                  // Update order with cashbackAwarded (save actual awarded amount)
                   await updateDoc(doc(db, 'orders', orderId), {
                     status: newStatus,
                     cashbackAwarded: true,
                     cashbackAwardedAt: serverTimestamp(),
+                    pointsEarned: finalCashback, // Update with actual awarded amount
                     updatedAt: serverTimestamp()
                   });
                   
                   cashbackAwardedCount++;
-                  totalCashbackAwarded += pointsEarned;
-                  console.log(`🪙 [Bulk-Cashback] Awarded ${pointsEarned} грн for order ${orderId}`);
+                  totalCashbackAwarded += finalCashback;
+                  console.log(`🪙 [Bulk-Cashback] Awarded ${finalCashback} грн for order ${orderId}`);
                 }
               } else {
                 // Just update status if no cashback to award
@@ -9314,6 +9359,12 @@
               }
             } catch (orderError) {
               console.error(`❌ [Bulk-Cashback] Error processing order ${orderId}:`, orderError);
+              console.error(`❌ [Bulk-Cashback] Error details:`, {
+                errorMessage: orderError.message,
+                errorStack: orderError.stack,
+                orderId: orderId,
+                moduleAvailable: typeof window.calculateOrderCashbackWithRules === 'function'
+              });
             }
           }
           
@@ -15249,12 +15300,30 @@
             const pointsEarned = Number(order.pointsEarned || 0);
             const alreadyAwarded = order.cashbackAwarded === true;
             
+            // ============================================
+            // 💰 RECALCULATE CASHBACK WITH CURRENT RULES
+            // ============================================
+            const orderTotal = Number(order.total || order.totalPrice || 0);
+            
+            // Safety check: Ensure module function is loaded
+            if (typeof window.calculateOrderCashbackWithRules !== 'function') {
+              console.error('❌ [Auto-Cashback] calculateOrderCashbackWithRules not found! Module not loaded.');
+              throw new Error('Cashback calculation module not loaded');
+            }
+            
+            console.log(`🔍 [Auto-Cashback] Calling module for order ${orderId} with total ${orderTotal} грн`);
+            const cashbackCalc = await window.calculateOrderCashbackWithRules(orderTotal);
+            const finalCashback = cashbackCalc.finalCashback;
+            
             console.log(`🪙 [Auto-Cashback] Order ${orderId}: pointsEarned=${pointsEarned}, alreadyAwarded=${alreadyAwarded}`);
+            console.log(`�️ [CASHBACK ENFORCED] Order: ${orderId}, Order Total: ${orderTotal} грн, Capped Amount: ${finalCashback} грн`);
+            console.log(`�💰 [Auto-Cashback] Recalculated with current rules: ${finalCashback} грн (was ${pointsEarned} грн)`);
+            console.log(`💰 [Auto-Cashback] Calculation details:`, cashbackCalc);
             
             // Only award if:
-            // 1. Order has pointsEarned > 0
+            // 1. Order has finalCashback > 0 (after applying rules)
             // 2. Cashback hasn't been awarded yet (cashbackAwarded !== true)
-            if (pointsEarned > 0 && !alreadyAwarded) {
+            if (finalCashback > 0 && !alreadyAwarded) {
               console.log(`🪙 [Auto-Cashback] ✅ Conditions met - proceeding with cashback awarding...`);
               
               // Get user identifier (phone or userId)
@@ -15285,7 +15354,8 @@
               
               console.log(`🪙 [Auto-Cashback] User phone normalized: "${phone}" → "${userPhone}"`);
               console.log(`🪙 [Auto-Cashback] Starting balance update for ${userPhone}...`);
-              console.log(`🪙 [Auto-Cashback] Awarding ${pointsEarned} грн to user ${userPhone}`);
+              console.log(`✅ [AWARDING] Crediting EXACTLY ${finalCashback} грн to user ${userPhone} (NOT ${pointsEarned} грн)`);
+              console.log(`🪙 [Auto-Cashback] Awarding ${finalCashback} грн to user ${userPhone}`);
               
               // ============================================
               // 🪙 TASK 2: Atomic Balance & Transaction Update
@@ -15297,8 +15367,8 @@
                 console.log(`🪙 [Auto-Cashback] User exists - updating balance...`);
                 // Update existing user balance
                 await updateDoc(userRef, {
-                  cashbackBalance: increment(pointsEarned),
-                  totalCashbackAwarded: increment(pointsEarned),
+                  cashbackBalance: increment(finalCashback),
+                  totalCashbackAwarded: increment(finalCashback),
                   updatedAt: serverTimestamp()
                 });
                 console.log(`🪙 [Auto-Cashback] ✅ Balance updated for existing user`);
@@ -15309,8 +15379,8 @@
                 await setDoc(userRef, {
                   phone: userPhone,
                   fullName: order.customer?.fullName || 'Клієнт',
-                  cashbackBalance: pointsEarned,
-                  totalCashbackAwarded: pointsEarned,
+                  cashbackBalance: finalCashback,
+                  totalCashbackAwarded: finalCashback,
                   totalCashbackUsed: 0,
                   createdAt: serverTimestamp(),
                   updatedAt: serverTimestamp()
@@ -15324,7 +15394,7 @@
               await addDoc(transactionRef, {
                 userId: userPhone,
                 userName: order.customer?.fullName || 'Клієнт',
-                amount: pointsEarned,
+                amount: finalCashback,
                 type: 'нарахування', // As requested by user
                 orderId: orderId,
                 orderShortId: orderId.slice(-8).toUpperCase(),
@@ -15334,31 +15404,32 @@
               });
               console.log(`🪙 [Auto-Cashback] ✅ Transaction record created`);
               
-              // Mark order as cashback awarded
+              // Mark order as cashback awarded (save actual awarded amount)
               console.log(`🪙 [Auto-Cashback] Marking order as cashback awarded...`);
               await updateDoc(doc(db, 'orders', orderId), {
                 status: newStatus,
                 cashbackAwarded: true,
                 cashbackAwardedAt: serverTimestamp(),
+                pointsEarned: finalCashback, // Update with actual awarded amount
                 updatedAt: serverTimestamp()
               });
               console.log(`🪙 [Auto-Cashback] ✅ Order marked as cashback awarded`);
               
               cashbackAwardResult = {
                 success: true,
-                amount: pointsEarned,
+                amount: finalCashback,
                 userName: order.customer?.fullName || 'Клієнт'
               };
               
-              console.log(`✅ [Auto-Cashback] 🎉 SUCCESS! Awarded ${pointsEarned} грн to ${order.customer?.fullName || userPhone}`);
+              console.log(`✅ [Auto-Cashback] 🎉 SUCCESS! Awarded ${finalCashback} грн to ${order.customer?.fullName || userPhone}`);
               console.log(`✅ [Auto-Cashback] Final result:`, cashbackAwardResult);
               
-            } else if (pointsEarned <= 0) {
-              console.log(`⚠️ [Auto-Cashback] ❌ Skipped - No points to award (pointsEarned=${pointsEarned})`);
+            } else if (finalCashback <= 0) {
+              console.log(`⚠️ [Auto-Cashback] ❌ Skipped - No cashback to award after applying rules (finalCashback=${finalCashback}, was ${pointsEarned} грн)`);
             } else if (alreadyAwarded) {
               console.log(`⚠️ [Auto-Cashback] ❌ Skipped - Cashback already awarded for order ${orderId}`);
             } else {
-              console.log(`⚠️ [Auto-Cashback] ❌ Skipped - Unknown reason (pointsEarned=${pointsEarned}, alreadyAwarded=${alreadyAwarded})`);
+              console.log(`⚠️ [Auto-Cashback] ❌ Skipped - Unknown reason (finalCashback=${finalCashback}, alreadyAwarded=${alreadyAwarded})`);
             }
             
           } catch (cashbackError) {
@@ -15806,10 +15877,10 @@
             row.innerHTML = `
                                   <td class="px-4 py-4">
                                       <div class="flex items-center gap-3">
-                                          <img src="${item.image || 'images/placeholder.jpg'}" 
+                                          <img src="${item.image || '/images/placeholder.jpg'}" 
                                                alt="${item.name}" 
                                                class="w-16 h-16 object-cover rounded-lg border-2 border-gray-200"
-                                               onerror="this.src='images/placeholder.jpg'">
+                                               onerror="this.src='/images/placeholder.jpg'">
                                           <div>
                                               <p class="font-semibold text-gray-900">${item.name}</p>
                                           </div>
@@ -16200,25 +16271,52 @@
           console.log('💰 [Cashback] Triggering automatic cashback crediting...')
           
           try {
-            // Fetch cashback percentage from settings
-            let cashbackPercentage = 8 // Default 8%
-            try {
-              const cashbackConfigDoc = await getDoc(doc(db, 'settings', 'cashback_config'))
-              if (cashbackConfigDoc.exists()) {
-                cashbackPercentage = cashbackConfigDoc.data().percentage || 8
+            // ============================================
+            // 🔍 USE MODULE FUNCTION WITH RULES ENFORCEMENT
+            // ============================================
+            
+            // Safety check: Ensure module function is loaded
+            if (typeof window.calculateOrderCashbackWithRules !== 'function') {
+              console.error('❌ [TTN-Cashback] calculateOrderCashbackWithRules not found! Module not loaded.');
+              console.warn('⚠️ [TTN-Cashback] Falling back to manual calculation with limit enforcement');
+              
+              // FALLBACK: Fetch settings and apply limits manually
+              let cashbackPercentage = 8; // Default 8%
+              let maxCashbackPerOrder = 0; // Default unlimited
+              
+              try {
+                const cashbackConfigDoc = await getDoc(doc(db, 'settings', 'cashback_config'));
+                if (cashbackConfigDoc.exists()) {
+                  const settings = cashbackConfigDoc.data();
+                  cashbackPercentage = Number(settings.cashbackPercent || settings.percentage || 8);
+                  maxCashbackPerOrder = Number(settings.maxCashbackPerOrder || 0);
+                }
+              } catch (settingsError) {
+                console.warn('⚠️ [TTN-Cashback] Could not fetch settings, using defaults:', settingsError);
               }
-            } catch (settingsError) {
-              console.warn('⚠️ [Cashback] Could not fetch settings, using default 8%:', settingsError)
+              
+              // Calculate with limit
+              let calculated = Math.floor(orderTotal * (cashbackPercentage / 100));
+              cashbackAmount = (maxCashbackPerOrder > 0 && calculated > maxCashbackPerOrder) 
+                ? maxCashbackPerOrder 
+                : calculated;
+              
+              console.log('🔍 [TTN-Cashback] FALLBACK Calculation:', {
+                orderTotal,
+                percentage: cashbackPercentage,
+                calculated: calculated,
+                maxLimit: maxCashbackPerOrder,
+                finalAmount: cashbackAmount
+              });
+            } else {
+              // ✅ Use module function (preferred method)
+              console.log(`🔍 [TTN-Cashback] Calling module for order with total ${orderTotal} грн`);
+              const cashbackCalc = await window.calculateOrderCashbackWithRules(orderTotal);
+              cashbackAmount = cashbackCalc.finalCashback;
+              
+              console.log(`🛡️ [CASHBACK] Applying rules. Order total: ${orderTotal} грн, Final Amount: ${cashbackAmount} грн`);
+              console.log('💰 [TTN-Cashback] Calculation details:', cashbackCalc);
             }
-            
-            // Calculate cashback amount
-            cashbackAmount = Math.round(orderTotal * (cashbackPercentage / 100))
-            
-            console.log('💰 [Cashback] Calculated:', {
-              orderTotal,
-              percentage: cashbackPercentage,
-              amount: cashbackAmount
-            })
             
             // ============================================
             // DATABASE WRITES - STEP 1: Find or Create User & Update Balance
@@ -18224,6 +18322,10 @@
       document.getElementById('p-arrival-month').value = ''
       document.getElementById('arrival-date-container').classList.add('hidden')
       
+      // Clear wholesale pricing fields
+      document.getElementById('edit-product-showWholesale').checked = false
+      document.getElementById('wholesale-tiers-list').innerHTML = ''
+      
       // 🎨 NEW: Clear Gallery Manager
       clearGallery()
       
@@ -18238,82 +18340,7 @@
       const submitBtn = productForm.querySelector('button[type="submit"]')
       submitBtn.innerHTML = '<i data-lucide="plus" class="w-4 h-4 inline mr-2"></i>Створити товар'
       lucide.createIcons()
-      
-      // Clear wholesale pricing
-      clearWholesaleTiers()
     }
-
-    // ============================================
-    // WHOLESALE PRICING MANAGEMENT
-    // ============================================
-    
-    /**
-     * Render a single wholesale tier row
-     */
-    window.renderWholesaleTier = function(qty = '', price = '') {
-      const tiersList = document.getElementById('wholesale-tiers-list')
-      const tierRow = document.createElement('div')
-      tierRow.className = 'wholesale-tier-row flex gap-2 items-center p-2 bg-gray-50 rounded-lg border border-gray-200'
-      
-      tierRow.innerHTML = `
-        <div class="flex-1">
-          <label class="block text-xs text-gray-600 mb-1">Кількість</label>
-          <input type="number" 
-                 class="tier-qty w-full border border-gray-300 rounded p-2 text-sm" 
-                 placeholder="від" 
-                 min="1" 
-                 value="${qty}">
-        </div>
-        <div class="flex-1">
-          <label class="block text-xs text-gray-600 mb-1">Ціна (₴)</label>
-          <input type="number" 
-                 class="tier-price w-full border border-gray-300 rounded p-2 text-sm" 
-                 placeholder="ціна" 
-                 min="0" 
-                 step="0.01" 
-                 value="${price}">
-        </div>
-        <button type="button" 
-                class="remove-tier-btn mt-5 p-2 text-red-500 hover:bg-red-50 rounded transition-colors" 
-                title="Видалити">
-          <i data-lucide="trash-2" class="w-4 h-4"></i>
-        </button>
-      `
-      
-      // Add delete handler
-      const removeBtn = tierRow.querySelector('.remove-tier-btn')
-      removeBtn.addEventListener('click', () => {
-        tierRow.remove()
-      })
-      
-      tiersList.appendChild(tierRow)
-      lucide.createIcons()
-    }
-    
-    /**
-     * Clear all wholesale tiers
-     */
-    function clearWholesaleTiers() {
-      const tiersList = document.getElementById('wholesale-tiers-list')
-      tiersList.innerHTML = ''
-      document.getElementById('edit-product-showWholesale').checked = false
-      document.getElementById('wholesale-tiers-container').classList.add('hidden')
-    }
-    
-    // Event listener for wholesale toggle
-    document.getElementById('edit-product-showWholesale').addEventListener('change', (e) => {
-      const container = document.getElementById('wholesale-tiers-container')
-      if (e.target.checked) {
-        container.classList.remove('hidden')
-      } else {
-        container.classList.add('hidden')
-      }
-    })
-    
-    // Event listener for add wholesale tier button
-    document.getElementById('add-wholesale-tier-btn').addEventListener('click', () => {
-      window.renderWholesaleTier()
-    })
 
     window.startEditProduct = async (productId) => {
       try {
@@ -18361,28 +18388,20 @@
         }
 
         // ============================================
-        // LOAD WHOLESALE PRICING
+        // LOAD WHOLESALE PRICING DATA
         // ============================================
-        // Clear existing tiers
-        clearWholesaleTiers()
-        
-        // Load showWholesale toggle
         const showWholesale = product.showWholesale || false
+        console.log('📦 Loading wholesale data. Show:', showWholesale, 'Tiers:', product.wholesaleTiers)
         document.getElementById('edit-product-showWholesale').checked = showWholesale
         
-        // Show/hide wholesale container based on toggle
-        const wholesaleContainer = document.getElementById('wholesale-tiers-container')
-        if (showWholesale) {
-          wholesaleContainer.classList.remove('hidden')
-        } else {
-          wholesaleContainer.classList.add('hidden')
-        }
+        // Clear existing tier rows
+        document.getElementById('wholesale-tiers-list').innerHTML = ''
         
-        // Load wholesale tiers if they exist
+        // Load wholesale tiers from product data
         if (product.wholesaleTiers && Array.isArray(product.wholesaleTiers) && product.wholesaleTiers.length > 0) {
-          console.log(`💼 Loading ${product.wholesaleTiers.length} wholesale tiers...`)
+          console.log('📦 Loading', product.wholesaleTiers.length, 'wholesale tiers...')
           product.wholesaleTiers.forEach(tier => {
-            window.renderWholesaleTier(tier.minQty || '', tier.price || '')
+            window.addWholesaleTierRow(tier.minQty || '', tier.price || '')
           })
         }
 
@@ -18679,6 +18698,81 @@
       }
     })
 
+    // ============================================
+    // ⚡ WHOLESALE PRICING LOGIC ⚡
+    // ============================================
+    
+    /**
+     * Add a single wholesale tier row to the list
+     * @param {string|number} qty - Minimum quantity
+     * @param {string|number} price - Price per unit
+     */
+    window.addWholesaleTierRow = function(qty = '', price = '') {
+      console.log('🔥 addWholesaleTierRow called with qty:', qty, 'price:', price)
+      const container = document.getElementById('wholesale-tiers-list')
+      if (!container) {
+        console.error('❌ Container wholesale-tiers-list not found!')
+        return
+      }
+      
+      const rowDiv = document.createElement('div')
+      rowDiv.className = 'wholesale-tier-row flex gap-2 items-center bg-white p-3 rounded-lg border border-gray-200'
+      rowDiv.innerHTML = `
+        <div class="flex-1">
+          <input 
+            type="number" 
+            min="1" 
+            value="${qty}" 
+            class="tier-qty w-full border border-gray-300 rounded px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            placeholder="Від (к-сть)"
+          >
+        </div>
+        <div class="flex-1">
+          <input 
+            type="number" 
+            min="0" 
+            step="0.01" 
+            value="${price}" 
+            class="tier-price w-full border border-gray-300 rounded px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            placeholder="Ціна за шт"
+          >
+        </div>
+        <button 
+          type="button" 
+          class="remove-tier px-3 py-2 text-red-600 hover:bg-red-50 rounded transition font-bold"
+          title="Видалити"
+        >
+          🗑️
+        </button>
+      `
+      container.appendChild(rowDiv)
+      console.log('✅ Tier row added successfully')
+      
+      // Attach delete handler
+      const removeBtn = rowDiv.querySelector('.remove-tier')
+      removeBtn.addEventListener('click', function() {
+        console.log('🗑️ Removing tier row')
+        rowDiv.remove()
+      })
+    }
+
+    // Initialize wholesale pricing section
+    console.log('🚀 Initializing wholesale pricing...')
+    
+    // Add tier button handler
+    const addWholesaleTierBtn = document.getElementById('add-wholesale-tier-btn')
+    if (addWholesaleTierBtn) {
+      console.log('✅ Found add-wholesale-tier-btn')
+      addWholesaleTierBtn.addEventListener('click', function() {
+        console.log('➕ Add wholesale tier button clicked')
+        window.addWholesaleTierRow('', '')
+      })
+    } else {
+      console.error('❌ Add wholesale tier button NOT FOUND!')
+    }
+    
+    console.log('✅ Wholesale pricing initialization complete')
+
     productForm.addEventListener('submit', async (e) => {
       e.preventDefault()
 
@@ -18796,6 +18890,32 @@
           return
         }
 
+        // ============================================
+        // COLLECT WHOLESALE PRICING DATA
+        // ============================================
+        console.log('💾 Collecting wholesale pricing data...')
+        const showWholesale = document.getElementById('edit-product-showWholesale').checked
+        console.log('  - Checkbox checked:', showWholesale)
+        
+        const wholesaleTierRows = document.querySelectorAll('.wholesale-tier-row')
+        console.log('  - Found', wholesaleTierRows.length, 'tier rows in DOM')
+        
+        const wholesaleTiers = Array.from(wholesaleTierRows).map(row => {
+          const qtyInput = row.querySelector('.tier-qty')
+          const priceInput = row.querySelector('.tier-price')
+          const qty = qtyInput ? Number(qtyInput.value) : 0
+          const price = priceInput ? Number(priceInput.value) : 0
+          console.log('    - Tier: qty =', qty, 'price =', price)
+          return { minQty: qty, price: price }
+        }).filter(tier => tier.minQty > 0 && tier.price > 0) // Only valid tiers
+          .sort((a, b) => a.minQty - b.minQty) // Sort by quantity ascending
+        
+        console.log('✅ Final wholesale data:', { 
+          showWholesale: showWholesale, 
+          wholesaleTiers: wholesaleTiers,
+          count: wholesaleTiers.length 
+        })
+
         const productData = {
           name: document.getElementById('p-name').value,
           price: Number(document.getElementById('p-price').value),
@@ -18814,37 +18934,10 @@
           isHot: document.getElementById('p-hot').checked,
           is_expected: document.getElementById('p-expected').checked,
           arrival_date: document.getElementById('p-expected').checked ? calculateArrivalDate() : null,
+          showWholesale: showWholesale,
+          wholesaleTiers: wholesaleTiers,
           updatedAt: new Date().toISOString()
         }
-
-        // ============================================
-        // COLLECT WHOLESALE PRICING DATA
-        // ============================================
-        const showWholesale = document.getElementById('edit-product-showWholesale').checked
-        productData.showWholesale = showWholesale
-        
-        // Collect wholesale tiers from DOM
-        const wholesaleTiers = []
-        const tierRows = document.querySelectorAll('.wholesale-tier-row')
-        tierRows.forEach(row => {
-          const qty = Number(row.querySelector('.tier-qty').value)
-          const price = Number(row.querySelector('.tier-price').value)
-          
-          // Only add valid tiers (both qty and price must be > 0)
-          if (qty > 0 && price > 0) {
-            wholesaleTiers.push({
-              minQty: qty,
-              price: price
-            })
-          }
-        })
-        
-        // Sort tiers by quantity (ascending)
-        wholesaleTiers.sort((a, b) => a.minQty - b.minQty)
-        
-        // Save to productData
-        productData.wholesaleTiers = wholesaleTiers
-        console.log(`💼 Saving ${wholesaleTiers.length} wholesale tiers:`, wholesaleTiers)
 
         // ============================================
         // STOCK HANDLING - REMOVED AUTO-SET LOGIC
@@ -18877,6 +18970,12 @@
         if (!isEditMode) {
           productData.createdAt = new Date().toISOString()
         }
+
+        // Log wholesale data for debugging
+        console.log('📦 Wholesale pricing data:', {
+          showWholesale: productData.showWholesale,
+          tiers: productData.wholesaleTiers
+        })
 
         if (isEditMode) {
           console.log('💾 Updating product in Firestore...')
@@ -20539,14 +20638,228 @@
     // ============================================
     
     /**
+     * Load categories from Firestore
+     */
+    async function loadUpsellCategories() {
+      console.log('🔥 [CAT_DEBUG] Function loadUpsellCategories started!');
+      
+      // Check Firebase DB initialization
+      if (!db) {
+        console.error('❌ [CAT_DEBUG] Firebase DB is NOT initialized!');
+        return [];
+      }
+      
+      console.log('✅ [CAT_DEBUG] Firebase DB is initialized, proceeding with query...');
+      
+      try {
+        console.log('🏷️ [CAT_DEBUG] Creating Firestore query for categories...');
+        
+        const categoriesQuery = query(
+          collection(db, 'categories'),
+          where('isActive', '==', true)
+        );
+        
+        console.log('📡 [CAT_DEBUG] Executing getDocs with 5-second timeout...');
+        
+        // Wrap getDocs in a 5-second timeout
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Category fetch timeout (5s)')), 5000);
+        });
+        
+        const querySnapshot = await Promise.race([
+          getDocs(categoriesQuery),
+          timeoutPromise
+        ]);
+        
+        console.log('� [FETCH_DEBUG] Categories fetched from DB:', querySnapshot.size, 'documents');
+        
+        // Check if empty
+        if (querySnapshot.empty) {
+          console.warn('⚠️ [FETCH_DEBUG] No categories found in "categories" collection!');
+          console.warn('⚠️ [FETCH_DEBUG] The collection might be empty or the query filter is too strict');
+          return [];
+        }
+        
+        console.log('📦 [CAT_DEBUG] Raw query result:', querySnapshot.size, 'documents');
+        
+        // Log each document before filtering
+        querySnapshot.docs.forEach((doc, index) => {
+          const data = doc.data();
+          console.log(`📝 [FETCH_DEBUG] Doc ${index + 1}:`, {
+            id: doc.id,
+            name: data.name,
+            slug: data.slug,
+            isActive: data.isActive
+          });
+        });
+        
+        // Map and filter categories (handle missing isActive field)
+        const categories = querySnapshot.docs
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }))
+          .filter(cat => cat.isActive !== false); // Keep if isActive is true OR undefined
+        
+        console.log(`✅ [CAT_DEBUG] Successfully loaded ${categories.length} active categories after filtering`);
+        console.log('📋 [CAT_DEBUG] Final categories array:');
+        categories.forEach((cat, idx) => {
+          console.log(`  ${idx + 1}. ${cat.name} (slug: ${cat.slug})`);
+        });
+        
+        return categories;
+        
+      } catch (error) {
+        console.error('❌ [CAT_DEBUG] Failed to fetch categories:', error);
+        console.error('❌ [CAT_DEBUG] Error code:', error.code);
+        console.error('❌ [CAT_DEBUG] Error message:', error.message);
+        console.error('❌ [CAT_DEBUG] Full error:', error);
+        return [];
+      }
+    }
+
+    /**
+     * Render category checkboxes
+     */
+    function renderCategorySelector(categories, selectedSlugs = []) {
+      console.log('🎨 [RENDER_DEBUG] === START RENDERING CATEGORIES ===');
+      console.log('🎨 [RENDER_DEBUG] Received', categories.length, 'categories to render');
+      console.log('🎨 [RENDER_DEBUG] Pre-selected slugs:', selectedSlugs);
+      
+      const container = document.getElementById('checkout-upsell-categories');
+      
+      if (!container) {
+        console.error('❌ [RENDER_DEBUG] CRITICAL: Container #checkout-upsell-categories not found in DOM!');
+        console.error('❌ [RENDER_DEBUG] Available elements with "upsell" in ID:', 
+          Array.from(document.querySelectorAll('[id*="upsell"]')).map(el => el.id)
+        );
+        return;
+      }
+      
+      console.log('✅ [RENDER_DEBUG] Container found:', container);
+      console.log('📍 [RENDER_DEBUG] Container current innerHTML length:', container.innerHTML.length);
+      
+      if (categories.length === 0) {
+        console.warn('⚠️ [RENDER_DEBUG] No categories to display, showing error message');
+        container.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">❌ Категорії не знайдено</p>';
+        console.log('🎨 [RENDER_DEBUG] Set error message HTML');
+        return;
+      }
+      
+      let html = '';
+      
+      console.log('🔨 [RENDER_DEBUG] Starting HTML generation...');
+      
+      // "All Categories" option
+      const isAllSelected = selectedSlugs.length === 0;
+      console.log('🌟 [RENDER_DEBUG] Building "All Categories" checkbox (selected:', isAllSelected, ')');
+      html += `
+        <label class="flex items-center gap-3 p-3 bg-white border-2 ${
+          isAllSelected ? 'border-purple-500 bg-purple-50' : 'border-gray-200'
+        } rounded-lg cursor-pointer hover:border-purple-300 transition">
+          <input 
+            type="checkbox" 
+            class="w-5 h-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-400"
+            id="category-all"
+            data-slug="__ALL__"
+            ${isAllSelected ? 'checked' : ''}
+          >
+          <span class="font-semibold text-gray-900">🌟 Усі категорії</span>
+        </label>
+      `;
+      
+      // Individual categories
+      console.log('🔨 [RENDER_DEBUG] Building individual category checkboxes...');
+      categories.forEach((cat, index) => {
+        console.log(`🛠️ [RENDER_DEBUG] Creating checkbox ${index + 1}/${categories.length}:`, {
+          slug: cat.slug,
+          name: cat.name,
+          isActive: cat.isActive
+        });
+        
+        const isChecked = selectedSlugs.includes(cat.slug);
+        html += `
+          <label class="flex items-center gap-3 p-3 bg-white border-2 ${
+            isChecked ? 'border-purple-500 bg-purple-50' : 'border-gray-200'
+          } rounded-lg cursor-pointer hover:border-purple-300 transition">
+            <input 
+              type="checkbox" 
+              class="w-5 h-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-400 category-checkbox"
+              id="cat-${cat.slug}"
+              data-slug="${cat.slug}"
+              ${isChecked ? 'checked' : ''}
+              ${isAllSelected ? 'disabled' : ''}
+            >
+            <span class="font-medium text-gray-800">${cat.name}</span>
+          </label>
+        `;
+      });
+      
+      console.log('✅ [RENDER_DEBUG] HTML generation complete. Total HTML length:', html.length);
+      console.log('📝 [RENDER_DEBUG] Generated HTML preview (first 500 chars):', html.substring(0, 500));
+      
+      console.log('📌 [RENDER_DEBUG] Setting container.innerHTML...');
+      container.innerHTML = html;
+      console.log('✅ [RENDER_DEBUG] container.innerHTML set successfully');
+      
+      // Verify checkboxes are in DOM
+      const renderedCheckboxes = container.querySelectorAll('.category-checkbox');
+      console.log('🔍 [RENDER_DEBUG] Verification: Found', renderedCheckboxes.length, 'checkboxes in DOM after render');
+      renderedCheckboxes.forEach((cb, idx) => {
+        console.log(`  ✅ Checkbox ${idx + 1}: slug=${cb.dataset.slug}, checked=${cb.checked}`);
+      });
+      
+      // Add event listeners
+      console.log('🔌 [RENDER_DEBUG] Setting up event listeners...');
+      const allCheckbox = document.getElementById('category-all');
+      const categoryCheckboxes = container.querySelectorAll('.category-checkbox');
+      
+      console.log('🔌 [RENDER_DEBUG] allCheckbox element:', allCheckbox ? 'FOUND' : 'NOT FOUND');
+      console.log('🔌 [RENDER_DEBUG] categoryCheckboxes count:', categoryCheckboxes.length);
+      
+      if (allCheckbox) {
+        allCheckbox.addEventListener('change', (e) => {
+          console.log('🔄 [EVENT] "All Categories" toggled:', e.target.checked);
+          if (e.target.checked) {
+            categoryCheckboxes.forEach(cb => {
+              cb.checked = false;
+              cb.disabled = true;
+            });
+          } else {
+            categoryCheckboxes.forEach(cb => cb.disabled = false);
+          }
+        });
+      }
+      
+      categoryCheckboxes.forEach((cb, idx) => {
+        cb.addEventListener('change', () => {
+          console.log(`🔄 [EVENT] Category checkbox ${idx + 1} (${cb.dataset.slug}) toggled:`, cb.checked);
+          const anyChecked = Array.from(categoryCheckboxes).some(c => c.checked);
+          if (anyChecked && allCheckbox) {
+            allCheckbox.checked = false;
+          }
+        });
+      });
+      
+      console.log('✅ [RENDER_DEBUG] === RENDERING COMPLETE ===');
+    }
+
+    /**
      * Load checkout upsell settings from Firestore
      */
     window.loadCheckoutUpsellSettings = async function() {
       try {
-        console.log('⚡ Loading checkout upsell settings...');
+        console.log('⚡ [CAT_DEBUG] Starting loadCheckoutUpsellSettings...');
         
         const docRef = doc(db, 'settings', 'checkout_upsell');
         const docSnap = await getDoc(docRef);
+        
+        // Load categories (with full error handling)
+        console.log('🔄 [CAT_DEBUG] About to call loadUpsellCategories()...');
+        const categories = await loadUpsellCategories();
+        console.log('🔄 [CAT_DEBUG] loadUpsellCategories() returned:', categories);
+        
+        let allowedCategories = [];
         
         if (docSnap.exists()) {
           const data = docSnap.data();
@@ -20559,6 +20872,8 @@
           document.getElementById('checkout-upsell-timer-seconds').value = (data.timerSeconds || 140) % 60;
           document.getElementById('checkout-upsell-cooldown').value = data.cooldownHours || 48;
           
+          allowedCategories = data.allowedCategories || [];
+          
           // Update preview
           updateCheckoutUpsellPreview();
         } else {
@@ -20566,8 +20881,18 @@
           updateCheckoutUpsellPreview();
         }
         
+        // Render category selector
+        renderCategorySelector(categories, allowedCategories);
+        
       } catch (error) {
-        console.error('❌ Error loading checkout upsell settings:', error);
+        console.error('❌ [CAT_DEBUG] CRITICAL ERROR in loadCheckoutUpsellSettings:', error);
+        console.error('❌ [CAT_DEBUG] Error details:', error.message, error.code);
+        
+        // Force clear loading spinner even on catastrophic failure
+        const container = document.getElementById('checkout-upsell-categories');
+        if (container) {
+          container.innerHTML = '<p class="text-sm text-red-600 text-center py-4">❌ Помилка завантаження. Перезавантажте сторінку.</p>';
+        }
       }
     };
     
@@ -20614,12 +20939,49 @@
           <span>Збереження...</span>
         `;
         
+        // Get selected categories (with safe null checks)
+        console.log('💾 [SAVE_DEBUG] Collecting data for categories...');
+        
+        const categoryContainer = document.getElementById('checkout-upsell-categories');
+        const categoryCheckboxes = categoryContainer 
+          ? categoryContainer.querySelectorAll('.category-checkbox') 
+          : [];
+        const allCheckbox = document.getElementById('category-all');
+        
+        console.log('💾 [SAVE_DEBUG] Found category container:', categoryContainer ? 'YES' : 'NO');
+        console.log('💾 [SAVE_DEBUG] Found', categoryCheckboxes.length, 'category checkboxes');
+        console.log('💾 [SAVE_DEBUG] Found "All Categories" checkbox:', allCheckbox ? 'YES' : 'NO');
+        
+        let allowedCategories = [];
+        
+        // Only process categories if elements exist
+        if (allCheckbox && categoryCheckboxes.length > 0) {
+          // Check if "All Categories" is checked
+          const isAllSelected = allCheckbox.checked;
+          console.log('💾 [SAVE_DEBUG] "All Categories" is checked:', isAllSelected);
+          
+          if (!isAllSelected) {
+            // Collect individual category selections
+            categoryCheckboxes.forEach((cb, index) => {
+              if (cb && cb.checked && cb.dataset && cb.dataset.slug) {
+                allowedCategories.push(cb.dataset.slug);
+                console.log(`💾 [SAVE_DEBUG] Category ${index + 1}: ${cb.dataset.slug} (checked)`);
+              }
+            });
+          }
+        } else {
+          console.warn('⚠️ [SAVE_DEBUG] Categories not loaded yet - defaulting to empty array (all categories)');
+        }
+        
+        console.log('📦 [SAVE_DEBUG] Final allowedCategories:', allowedCategories.length === 0 ? 'ALL' : allowedCategories);
+        
         // Save to Firestore
         await setDoc(doc(db, 'settings', 'checkout_upsell'), {
           isEnabled: isEnabled,
           discountPercent: discountPercent,
           timerSeconds: timerSeconds,
           cooldownHours: cooldownHours,
+          allowedCategories: allowedCategories,
           updatedAt: serverTimestamp()
         });
         
@@ -20646,7 +21008,20 @@
         lucide.createIcons();
         
       } catch (error) {
-        console.error('❌ Error saving checkout upsell settings:', error);
+        console.error('❌ [SAVE_DEBUG] Error saving checkout upsell settings:', error);
+        console.error('❌ [SAVE_DEBUG] Error details:', error.message, error.stack);
+        
+        // Restore button even on error
+        const btn = document.getElementById('save-checkout-upsell-btn');
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `
+            <i data-lucide="save" class="w-5 h-5"></i>
+            <span>Зберегти зміни</span>
+          `;
+          lucide.createIcons();
+        }
+        
         alert('❌ Помилка збереження: ' + error.message);
       }
     };
@@ -20679,50 +21054,226 @@
     }
     
     /**
-     * Load checkout upsell analytics
+     * Load checkout upsell analytics with fail-safe error handling
      */
     window.loadCheckoutUpsellAnalytics = async function() {
-      try {
-        console.log('📊 Loading checkout upsell analytics...');
+      // 🔍 DEBUG: Function entry point
+      console.log("🔍 [STATS DEBUG] Starting fetch for settings/checkout_upsell...");
+      console.log("🔍 [STATS DEBUG] Timestamp:", new Date().toISOString());
+      
+      // ⚠️ CRITICAL: Check if Firebase DB is initialized
+      if (typeof window.db === 'undefined' || !window.db) {
+        console.error('❌ [FORCE DEBUG] Firebase DB is NOT initialized yet!');
+        console.error('window.db:', window.db);
+        showAnalyticsFallback();
+        return;
+      }
+      console.log('✅ [FORCE DEBUG] Firebase DB is initialized');
+      
+      const viewsEl = document.getElementById('checkout-upsell-views');
+      const addsEl = document.getElementById('checkout-upsell-adds');
+      const conversionEl = document.getElementById('checkout-upsell-conversion');
+      
+      console.log("🔍 [STATS DEBUG] DOM elements found:", {
+        viewsEl: !!viewsEl,
+        addsEl: !!addsEl,
+        conversionEl: !!conversionEl
+      });
+      
+      // Helper function to update UI with stats
+      const updateStatsUI = (data) => {
+        const views = parseInt(data.viewsCount) || 0;
+        const adds = parseInt(data.addsCount) || 0;
+        const conversion = views > 0 ? ((adds / views) * 100).toFixed(1) : '0.0';
         
-        // Read stats from settings/checkout_upsell document
-        const upsellRef = doc(db, 'settings', 'checkout_upsell');
-        const docSnap = await getDoc(upsellRef);
-        
-        const data = docSnap.exists() ? docSnap.data() : {};
-        const views = data.viewsCount || 0;
-        const adds = data.addsCount || 0;
-        const conversion = views > 0 ? ((adds / views) * 100).toFixed(1) : 0;
-        
-        // Update UI
-        document.getElementById('checkout-upsell-views').textContent = views;
-        document.getElementById('checkout-upsell-adds').textContent = adds;
-        document.getElementById('checkout-upsell-conversion').textContent = `${conversion}%`;
-        
-        // Apply color indicators based on conversion rate
-        const conversionEl = document.getElementById('checkout-upsell-conversion');
-        conversionEl.classList.remove('text-green-600', 'text-yellow-600', 'text-red-600', 'text-purple-600');
-        
-        const conversionNum = parseFloat(conversion);
-        if (conversionNum >= 5) {
-          conversionEl.classList.add('text-green-600');
-        } else if (conversionNum >= 2) {
-          conversionEl.classList.add('text-yellow-600');
-        } else if (views > 0) {
-          conversionEl.classList.add('text-red-600');
-        } else {
-          conversionEl.classList.add('text-purple-600');
+        if (viewsEl) viewsEl.textContent = String(views);
+        if (addsEl) addsEl.textContent = String(adds);
+        if (conversionEl) {
+          conversionEl.textContent = `${conversion}%`;
+          
+          // Apply color indicators
+          conversionEl.classList.remove('text-green-600', 'text-yellow-600', 'text-red-600', 'text-purple-600');
+          const conversionNum = parseFloat(conversion);
+          if (conversionNum >= 5) {
+            conversionEl.classList.add('text-green-600');
+          } else if (conversionNum >= 2) {
+            conversionEl.classList.add('text-yellow-600');
+          } else if (views > 0) {
+            conversionEl.classList.add('text-red-600');
+          } else {
+            conversionEl.classList.add('text-purple-600');
+          }
         }
         
-        console.log('✅ Analytics loaded:', { views, adds, conversion: `${conversion}%` });
+        console.log('✅ [FORCE DEBUG] UI updated:', { views, adds, conversion: `${conversion}%` });
+      };
+      
+      // STEP 1: IMMEDIATELY remove loading spinners and show placeholder
+      if (viewsEl) viewsEl.textContent = '0';
+      if (addsEl) addsEl.textContent = '0';
+      if (conversionEl) conversionEl.textContent = '0%';
+      console.log("✅ [STATS DEBUG] Loading spinners removed, placeholders set");
+      
+      const loadingTimeout = 2000; // 2 second timeout (reduced from 5s)
+      let timeoutId;
+      let dataFetched = false;
+      
+      // Helper function to set loading state
+      const setLoadingState = (isLoading) => {
+        dataFetched = !isLoading;
+        console.log(`🔍 [STATS DEBUG] Loading state changed: ${isLoading ? 'LOADING' : 'COMPLETE'}`);
+      };
+      
+      // Set timeout fallback
+      timeoutId = setTimeout(() => {
+        if (!dataFetched) {
+          console.warn('⚠️ [FORCE DEBUG] Analytics loading timeout (2s), showing fallback');
+          updateStatsUI({ viewsCount: 0, addsCount: 0 });
+          setLoadingState(false);
+        }
+      }, loadingTimeout);
+      
+      try {
+        console.log('📊 [STATS DEBUG] Initializing Firestore query...');
+        
+        // ✅ PATH VERIFICATION: settings/checkout_upsell
+        // This is the EXACT path we're querying - must match Firestore rules
+        // If document doesn't exist, it will be auto-created with zero values
+        const statsRef = doc(db, 'settings', 'checkout_upsell');
+        console.log('🛠️ [FORCE DEBUG] Attempting to listen to:', statsRef.path);
+        console.log('📍 [STATS DEBUG] Document Reference:', {
+          id: statsRef.id,
+          parent: statsRef.parent?.path,
+          type: statsRef.type
+        });
+        
+        // Use getDoc() with explicit catch to handle permission-denied
+        console.log('🔍 [STATS DEBUG] Calling getDoc()...');
+        const docSnap = await getDoc(statsRef).catch((err) => {
+          console.error('❌ [STATS DEBUG] CRITICAL ERROR in getDoc():');
+          console.error('Code:', err.code);
+          console.error('Message:', err.message);
+          console.error('Stack:', err.stack);
+          
+          // ⚠️ EXPLICIT PERMISSION-DENIED HANDLER
+          if (err.code === 'permission-denied') {
+            console.warn('⚠️ Access denied to stats. Showing 0 by default.');
+            console.warn('💡 Make sure you are authenticated and have admin role in Firestore rules.');
+            console.warn('💡 For emulator testing, set: allow read, write: if true;');
+            // Immediately update UI to break loading loop
+            updateStatsUI({ viewsCount: 0, addsCount: 0 });
+          }
+          
+          setLoadingState(false);
+          return null; // Return null instead of throwing
+        });
+        
+        console.log('🔍 [STATS DEBUG] getDoc() completed. Snapshot received:', docSnap ? 'YES' : 'NULL');
+        
+        // Clear timeout since we got a response (even if null)
+        clearTimeout(timeoutId);
+        setLoadingState(false);
+        
+        // STEP 2: Handle missing document (CRITICAL - don't let UI hang)
+        if (!docSnap) {
+          console.warn('⚠️ [FORCE DEBUG] Document fetch returned NULL - Permission denied or network error');
+          updateStatsUI({ viewsCount: 0, addsCount: 0 });
+          return;
+        }
+        
+        if (!docSnap.exists()) {
+          console.warn('⚠️ [FORCE DEBUG] Document MISSING. Initializing with zeros...');
+          // Set local UI state to 0 immediately
+          updateStatsUI({ viewsCount: 0, addsCount: 0 });
+          
+          // Try to create the document (optional - may fail due to permissions)
+          try {
+            console.log('🔧 [FORCE DEBUG] Attempting to create missing document...');
+            await setDoc(statsRef, {
+              viewsCount: 0,
+              addsCount: 0,
+              isEnabled: true,
+              discountPercent: 8,
+              timerSeconds: 140,
+              cooldownHours: 48,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp()
+            }, { merge: true });
+            console.log('✅ [FORCE DEBUG] Document created successfully');
+          } catch (createErr) {
+            console.warn('⚠️ [FORCE DEBUG] Could not create document (may be permission issue):', createErr.message);
+          }
+          return;
+        }
+        
+        // Document exists - extract data
+        const rawData = docSnap.data() || {};
+        console.log('✅ [STATS DEBUG] Snapshot received! Data:', rawData);
+        console.log('✅ [STATS DEBUG] Data keys:', Object.keys(rawData));
+        console.log('✅ [STATS DEBUG] viewsCount type:', typeof rawData.viewsCount, 'value:', rawData.viewsCount);
+        console.log('✅ [STATS DEBUG] addsCount type:', typeof rawData.addsCount, 'value:', rawData.addsCount);
+        
+        // Check if data is empty
+        if (Object.keys(rawData).length === 0) {
+          console.warn('⚠️ [STATS DEBUG] Document exists but has NO DATA.');
+        }
+        
+        // STEP 3: Data type enforcement - ensure numbers
+        const data = {
+          viewsCount: (typeof rawData.viewsCount === 'number' && !isNaN(rawData.viewsCount)) 
+            ? rawData.viewsCount 
+            : 0,
+          addsCount: (typeof rawData.addsCount === 'number' && !isNaN(rawData.addsCount)) 
+            ? rawData.addsCount 
+            : 0
+        };
+        
+        console.log('✅ [STATS DEBUG] Sanitized data:', data);
+        
+        // STEP 4: Update UI
+        updateStatsUI(data);
+        
+        console.log('✅ [STATS DEBUG] Analytics loading COMPLETE');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         
       } catch (error) {
-        console.error('❌ Error loading analytics:', error);
-        document.getElementById('checkout-upsell-views').textContent = '0';
-        document.getElementById('checkout-upsell-adds').textContent = '0';
-        document.getElementById('checkout-upsell-conversion').textContent = '0%';
+        console.error('❌ [STATS DEBUG] CRITICAL ERROR in loadCheckoutUpsellAnalytics:');
+        console.error('Code:', error.code);
+        console.error('Message:', error.message);
+        console.error('Stack:', error.stack);
+        console.error('Full error object:', error);
+        clearTimeout(timeoutId);
+        setLoadingState(false);
+        updateStatsUI({ viewsCount: 0, addsCount: 0 });
       }
     };
+    
+    /**
+     * Show fallback state for analytics (safe values)
+     */
+    function showAnalyticsFallback() {
+      const viewsEl = document.getElementById('checkout-upsell-views');
+      const addsEl = document.getElementById('checkout-upsell-adds');
+      const conversionEl = document.getElementById('checkout-upsell-conversion');
+      
+      if (viewsEl) viewsEl.innerHTML = '0 <span class="text-xs text-gray-400 ml-2">⚠️</span>';
+      if (addsEl) addsEl.innerHTML = '0 <span class="text-xs text-gray-400 ml-2">⚠️</span>';
+      if (conversionEl) conversionEl.innerHTML = '0% <span class="text-xs text-gray-400 ml-2">⚠️</span>';
+      
+      // Remove any existing error message
+      const existingError = document.querySelector('.analytics-error-msg');
+      if (existingError) existingError.remove();
+      
+      // Show subtle error message
+      const errorMsg = document.createElement('div');
+      errorMsg.className = 'analytics-error-msg col-span-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-700';
+      errorMsg.innerHTML = '<strong>⚠️ Дані недоступні:</strong> Статистика з\'явиться після перших переглядів upsell.';
+      
+      const analyticsGrid = document.querySelector('#view-checkout-upsell-settings .grid.grid-cols-1.md\\:grid-cols-3');
+      if (analyticsGrid) {
+        analyticsGrid.parentNode.insertBefore(errorMsg, analyticsGrid.nextSibling);
+      }
+    }
     
     // Attach real-time preview listeners
     document.addEventListener('DOMContentLoaded', () => {
@@ -26740,12 +27291,26 @@
         }, 100);
       }
       
-      // Initialize Checkout Upsell Settings view
+      // Initialize Checkout Upsell Settings view - FORCE EXPLICIT CALL
       if (view === 'checkout-upsell-settings') {
         console.log('⚡ [NAV] Detected checkout-upsell-settings view, loading...');
+        console.log('🔧 [FORCE DEBUG] FORCING explicit call to loadCheckoutUpsellAnalytics()');
         setTimeout(() => {
-          window.loadCheckoutUpsellSettings();
-          window.loadCheckoutUpsellAnalytics();
+          // Load settings first
+          if (typeof window.loadCheckoutUpsellSettings === 'function') {
+            console.log('📋 [FORCE DEBUG] Calling loadCheckoutUpsellSettings()');
+            window.loadCheckoutUpsellSettings();
+          } else {
+            console.warn('⚠️ [FORCE DEBUG] loadCheckoutUpsellSettings is not a function!');
+          }
+          
+          // Force load analytics
+          if (typeof window.loadCheckoutUpsellAnalytics === 'function') {
+            console.log('📊 [FORCE DEBUG] Calling loadCheckoutUpsellAnalytics()');
+            window.loadCheckoutUpsellAnalytics();
+          } else {
+            console.error('❌ [FORCE DEBUG] loadCheckoutUpsellAnalytics is NOT A FUNCTION!');
+          }
         }, 100);
       }
     };
@@ -27599,19 +28164,22 @@
   </div>
   
   <!-- Firebase Initialization (Synchronous for Admin Chat) -->
-  <script type="module" src="/js/firebase-init-sync.js?v=1770245460083"></script>
+  <script type="module" src="/js/firebase-init-sync.js?v=1740268800000"></script>
   
   <!-- Firebase Initialization (Original for other modules) -->
-  <script type="module" src="/js/firebase-init.js?v=1770245460083"></script>
+  <script type="module" src="/js/firebase-init.js?v=1740268800000"></script>
+
+  <!-- 🪙 Cashback Module (MUST LOAD BEFORE admin.js) -->
+  <script type="module" src="/js/admin-cashback-module.js?v=1.0.1"></script>
 
   <!-- Admin Panel Logic -->
-  <script type="module" src="/js/admin.js?v=1770245460083"></script>
+  <script type="module" src="/js/admin.js?v=999"></script>
   
   <!-- Live Chat Management -->
-  <script defer src="/js/admin-chat-v3.js?v=1770245460083"></script>
+  <script defer src="/js/admin-chat-v3.js?v=1740268800000"></script>
   
   <!-- AI Chat Logic (Gemini Integration) -->
-  <script defer src="/js/chat-logic-v2.js?v=1770245460083"></script>
+  <script defer src="/js/chat-logic-v2.js?v=1740268800000"></script>
   
   <!-- ============================================ -->
   <!-- REVIEWS MANAGEMENT MODULE -->
@@ -27646,12 +28214,19 @@
   </script>
 
   <!-- Restock Requests Module (ES6 Module) -->
-  <script type="module" src="js/admin-restock-module.js"></script>
+  <script type="module" src="/js/admin-restock-module.js"></script>
 
   <!-- ============================================ -->
   <!-- GOOGLE MERCHANT CENTER FEED GENERATOR -->
   <!-- ============================================ -->
   <script src="/js/google-merchant-feed.js"></script>
+
+  <!-- Sub-Footer Credit Bar -->
+  <div class="w-full py-2 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 text-center">
+    <p class="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 tracking-wide">
+      Треба створити сайт? <a href="https://t.me/yarus_lik" target="_blank" class="text-blue-500 hover:text-blue-600 transition-colors duration-200">Напишіть нам</a>
+    </p>
+  </div>
 
 </body>
 
