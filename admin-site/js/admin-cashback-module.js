@@ -72,6 +72,13 @@
   const itemsPerPage = 20;
   let currentSortField = null;
   let currentSortDirection = 'asc';
+  
+  // Firestore Pagination State
+  let totalClientsCount = 0;
+  let firstVisibleDoc = null;
+  let lastVisibleDoc = null;
+  let pageStack = []; // Stack to track page cursors for backward navigation
+  let hasMorePages = false;
 
   // ============================================
   // 🪙 CASHBACK SETTINGS
@@ -455,31 +462,94 @@
   // ============================================
 
   /**
-   * Load and display cashback clients list
+   * Get total count of clients with cashback
    */
-  window.loadCashbackClients = async function() {
-    console.log('👥 [Cashback Clients] Loading clients...');
+  async function getTotalCashbackClientsCount() {
+    try {
+      const usersRef = collection(db, 'users');
+      const snapshot = await getDocs(usersRef);
+      
+      let count = 0;
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const cashbackBalance = Number(data.cashbackBalance || 0);
+        const totalAwarded = Number(data.totalCashbackAwarded || 0);
+        const totalUsed = Number(data.totalCashbackUsed || 0);
+        
+        // Count users who have any cashback activity
+        if (cashbackBalance > 0 || totalAwarded > 0 || totalUsed > 0) {
+          count++;
+        }
+      });
+      
+      return count;
+    } catch (error) {
+      console.error('❌ Error counting cashback clients:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Load and display cashback clients list with pagination
+   */
+  window.loadCashbackClients = async function(pageDirection = 'first') {
+    console.log('👥 [Cashback Clients] Loading clients... (direction:', pageDirection, ')');
     
     const loadingEl = document.getElementById('cashback-clients-loading');
     const emptyEl = document.getElementById('cashback-clients-empty');
     const contentEl = document.getElementById('cashback-clients-content');
+    const paginationEl = document.getElementById('cashback-clients-pagination');
     
     if (loadingEl) loadingEl.classList.remove('hidden');
     if (emptyEl) emptyEl.classList.add('hidden');
     if (contentEl) contentEl.classList.add('hidden');
+    if (paginationEl) paginationEl.classList.add('hidden');
     
     try {
-      console.log('👥 [Cashback Clients] Fetching users...');
+      // Get total count on first load
+      if (pageDirection === 'first') {
+        console.log('👥 [Cashback Clients] Counting total clients with cashback...');
+        totalClientsCount = await getTotalCashbackClientsCount();
+        console.log('👥 [Cashback Clients] Total clients with cashback:', totalClientsCount);
+        currentPage = 1;
+        pageStack = [];
+      }
+      
+      console.log('👥 [Cashback Clients] Fetching page', currentPage);
+      
+      // Build query for users
       const usersRef = collection(db, 'users');
-      const usersSnapshot = await getDocs(usersRef);
+      let usersQuery = query(usersRef, limit(itemsPerPage + 1)); // +1 to check if there are more pages
       
-      console.log('👥 [Cashback Clients] Found', usersSnapshot.size, 'users in Firestore');
+      // If navigating to next page, start after last visible document
+      if (pageDirection === 'next' && lastVisibleDoc) {
+        usersQuery = query(usersRef, startAfter(lastVisibleDoc), limit(itemsPerPage + 1));
+      }
+      // If navigating to previous page, use the stored cursor
+      else if (pageDirection === 'prev' && pageStack.length > 0) {
+        const prevCursor = pageStack[pageStack.length - 1];
+        if (prevCursor) {
+          usersQuery = query(usersRef, startAfter(prevCursor), limit(itemsPerPage + 1));
+        } else {
+          // First page
+          usersQuery = query(usersRef, limit(itemsPerPage + 1));
+        }
+      }
       
+      const usersSnapshot = await getDocs(usersQuery);
+      console.log('👥 [Cashback Clients] Fetched', usersSnapshot.size, 'users from Firestore');
+      
+      // Check if there are more pages
+      hasMorePages = usersSnapshot.size > itemsPerPage;
+      const usersToProcess = hasMorePages ? 
+        Array.from(usersSnapshot.docs).slice(0, itemsPerPage) : 
+        usersSnapshot.docs;
+      
+      // Fetch all orders for order count (can be optimized later with a separate orders index)
       console.log('👥 [Cashback Clients] Fetching orders...');
       const ordersRef = collection(db, 'orders');
       const ordersSnapshot = await getDocs(ordersRef);
-      
-      console.log('👥 [Cashback Clients] Found', ordersSnapshot.size, 'orders in Firestore');
+      console.log('👥 [Cashback Clients] Found', ordersSnapshot.size, 'orders');
       
       const normalizePhone = (phone) => {
         if (!phone) return null;
@@ -517,13 +587,18 @@
       });
       
       const clients = [];
-      usersSnapshot.forEach((doc) => {
+      usersToProcess.forEach((doc) => {
         const userData = doc.data();
         const phone = doc.id;
         
         const cashbackBalance = Number(userData.cashbackBalance || 0);
         const totalAwarded = Number(userData.totalCashbackAwarded || 0);
         const totalUsed = Number(userData.totalCashbackUsed || 0);
+        
+        // Only include users with cashback activity
+        if (cashbackBalance === 0 && totalAwarded === 0 && totalUsed === 0) {
+          return;
+        }
         
         let orderCount = 0;
         let customerName = userData.fullName || userData.name || null;
@@ -547,26 +622,35 @@
           totalAwarded: totalAwarded,
           totalUsed: totalUsed,
           orderCount: orderCount,
-          registeredAt: userData.createdAt || userData.registeredAt || null
+          registeredAt: userData.createdAt || userData.registeredAt || null,
+          _doc: doc // Store the document for pagination
         });
       });
       
+      // Sort by balance descending
       clients.sort((a, b) => b.currentBalance - a.currentBalance);
+      
+      // Store pagination cursors
+      if (clients.length > 0) {
+        firstVisibleDoc = usersToProcess[0];
+        lastVisibleDoc = usersToProcess[usersToProcess.length - 1];
+      }
       
       allCashbackClients = clients;
       filteredCashbackClients = [...clients];
-      currentPage = 1;
       
-      console.log('✅ [Cashback Clients] Loaded', clients.length, 'clients');
+      console.log('✅ [Cashback Clients] Loaded', clients.length, 'clients for page', currentPage);
       
-      if (clients.length === 0) {
+      if (clients.length === 0 && currentPage === 1) {
         if (loadingEl) loadingEl.classList.add('hidden');
         if (emptyEl) emptyEl.classList.remove('hidden');
         if (contentEl) contentEl.classList.add('hidden');
+        if (paginationEl) paginationEl.classList.add('hidden');
       } else {
         if (loadingEl) loadingEl.classList.add('hidden');
         if (emptyEl) emptyEl.classList.add('hidden');
         if (contentEl) contentEl.classList.remove('hidden');
+        if (paginationEl) paginationEl.classList.remove('hidden');
         
         displayCashbackClients();
       }
@@ -579,25 +663,22 @@
       
       if (loadingEl) loadingEl.classList.add('hidden');
       if (emptyEl) emptyEl.classList.remove('hidden');
+      if (paginationEl) paginationEl.classList.add('hidden');
     }
   };
 
   /**
-   * Display cashback clients with pagination
+   * Display cashback clients
    */
   function displayCashbackClients() {
     const tbody = document.getElementById('cashback-clients-tbody');
     if (!tbody) return;
     
-    const totalClients = filteredCashbackClients.length;
-    const totalPages = Math.ceil(totalClients / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = Math.min(startIndex + itemsPerPage, totalClients);
-    const clientsToDisplay = filteredCashbackClients.slice(startIndex, endIndex);
-    
     tbody.innerHTML = '';
     
-    clientsToDisplay.forEach((client, index) => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    
+    filteredCashbackClients.forEach((client, index) => {
       const globalIndex = startIndex + index + 1;
       
       const row = document.createElement('tr');
@@ -633,23 +714,62 @@
       tbody.appendChild(row);
     });
     
+    // Update pagination info
+    const totalPages = Math.ceil(totalClientsCount / itemsPerPage);
+    const endIndex = Math.min(startIndex + filteredCashbackClients.length, totalClientsCount);
+    
     safeSetText('clients-showing-start', startIndex + 1, ' Pagination');
     safeSetText('clients-showing-end', endIndex, ' Pagination');
-    safeSetText('clients-total-count', totalClients, ' Pagination');
+    safeSetText('clients-total-count', totalClientsCount, ' Pagination');
     safeSetText('clients-current-page', currentPage, ' Pagination');
     safeSetText('clients-total-pages', totalPages, ' Pagination');
     
+    // Update button states
     const prevBtn = document.getElementById('clients-prev-page');
     const nextBtn = document.getElementById('clients-next-page');
     
     if (prevBtn) prevBtn.disabled = currentPage === 1;
-    if (nextBtn) nextBtn.disabled = currentPage === totalPages;
+    if (nextBtn) nextBtn.disabled = !hasMorePages;
     
     lucide.createIcons();
   }
 
   /**
+   * Navigate to next page
+   */
+  window.nextCashbackClientsPage = async function() {
+    if (!hasMorePages) return;
+    
+    console.log('📄 [Pagination] Moving to next page');
+    
+    // Store current first document for backward navigation
+    if (firstVisibleDoc) {
+      pageStack.push(firstVisibleDoc);
+    }
+    
+    currentPage++;
+    await window.loadCashbackClients('next');
+  };
+
+  /**
+   * Navigate to previous page
+   */
+  window.prevCashbackClientsPage = async function() {
+    if (currentPage === 1) return;
+    
+    console.log('📄 [Pagination] Moving to previous page');
+    
+    // Remove the last cursor from stack
+    pageStack.pop();
+    
+    currentPage--;
+    await window.loadCashbackClients('prev');
+  };
+
+  /**
    * Filter clients by search query
+   * Note: With Firestore pagination, filtering is done on current page only.
+   * For full search across all pages, consider implementing a separate search function.
    */
   function filterCashbackClients(searchQuery) {
     console.log('🔍 [Filter] Searching for:', searchQuery);
@@ -665,9 +785,8 @@
       });
     }
     
-    console.log(`🔍 [Filter] Found ${filteredCashbackClients.length} of ${allCashbackClients.length} clients`);
+    console.log(`🔍 [Filter] Found ${filteredCashbackClients.length} of ${allCashbackClients.length} clients on current page`);
     
-    currentPage = 1;
     displayCashbackClients();
   }
 

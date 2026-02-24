@@ -5292,17 +5292,38 @@
               </table>
             </div>
             
-            <!-- Pagination -->
-            <div id="cashback-clients-pagination" class="pagination-container hidden">
-              <div class="pagination-info">
-                Показано <span id="pagination-showing">1-20</span> з <span id="pagination-total">0</span> клієнтів
+            <!-- Pagination Controls -->
+            <div id="cashback-clients-pagination" class="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <!-- Pagination Info -->
+              <div class="text-sm text-gray-600 dark:text-gray-400">
+                <span class="font-medium">Показано:</span>
+                <span id="clients-showing-start">1</span>-<span id="clients-showing-end">20</span>
+                з <span id="clients-total-count" class="font-semibold text-gray-900 dark:text-gray-100">0</span> клієнтів
+                <span class="ml-2 text-xs text-gray-500">
+                  (Сторінка <span id="clients-current-page">1</span> з <span id="clients-total-pages">1</span>)
+                </span>
               </div>
-              <div class="pagination-buttons">
-                <button id="pagination-prev" class="pagination-btn" onclick="changePage(-1)">
-                  ← Попередня
+              
+              <!-- Pagination Buttons -->
+              <div class="flex items-center gap-2">
+                <button 
+                  id="clients-prev-page" 
+                  onclick="window.prevCashbackClientsPage()"
+                  class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  disabled>
+                  <span class="flex items-center gap-2">
+                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                    <span>Попередня</span>
+                  </span>
                 </button>
-                <button id="pagination-next" class="pagination-btn" onclick="changePage(1)">
-                  Наступна →
+                <button 
+                  id="clients-next-page" 
+                  onclick="window.nextCashbackClientsPage()"
+                  class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                  <span class="flex items-center gap-2">
+                    <span>Наступна</span>
+                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                  </span>
                 </button>
               </div>
             </div>
@@ -6217,12 +6238,6 @@
 
   </div>
 
-  <!-- Sub-Footer Promo Bar -->
-  <div class="sub-footer-promo py-3 bg-gray-100 dark:bg-gray-900 text-center border-t border-gray-200 dark:border-gray-800">
-    <p class="text-xs text-gray-500 dark:text-gray-400">
-      Хочете собі такий сайт? <a href="https://t.me/yarus_lik" target="_blank" class="font-medium text-blue-500 hover:text-blue-600 underline-offset-4 hover:underline transition-colors">Напишіть нам</a>
-    </p>
-  </div>
 
   <!-- ============================================ -->
   <!-- REVIEW MODAL - Add/Edit Review -->
@@ -7997,6 +8012,7 @@
       where,
       orderBy,
       limit,
+      startAfter,
       serverTimestamp,
       writeBatch,
       setDoc,
@@ -8098,6 +8114,8 @@
     window.orderBy = orderBy
     window.addDoc = addDoc
     window.setDoc = setDoc
+    window.limit = limit
+    window.startAfter = startAfter
 
     console.log('🔥 Firebase initialized')
 
@@ -22557,12 +22575,14 @@
           console.log('🪙 [Backfill] Button clicked, showing confirmation...');
           
           const confirmed = confirm(
-            '⚠️ УВАГА: Нарахування кешбеку за всі замовлення\n\n' +
+            '⚠️ УВАГА: Міграція кешбеку для всіх клієнтів\n\n' +
             'Ця функція:\n' +
-            '• Знайде всі замовлення БЕЗ нарахованого кешбеку\n' +
-            '• Розрахує кешбек (8% від суми замовлення)\n' +
-            '• Оновить баланси клієнтів\n' +
-            '• Створить записи транзакцій\n\n' +
+            '• Обробить ВСІ завершені замовлення в системі\n' +
+            '• Згрупує їх по клієнтах\n' +
+            '• Розрахує належний кешбек для кожного клієнта\n' +
+            '• Оновить баланси користувачів\n' +
+            '• Безпечно для повторного запуску (не створить дублікати)\n\n' +
+            'Це може зайняти кілька хвилин.\n\n' +
             'Продовжити?'
           );
           
@@ -22597,23 +22617,21 @@
     });
     
     // ============================================
-    // 🪙 BACKFILL CASHBACK FUNCTION
+    // 🪙 BACKFILL CASHBACK FUNCTION - FULL MIGRATION
     // ============================================
     
     /**
-     * Retroactively award cashback for all orders that don't have it yet.
+     * Migrate cashback for all customers based on their complete order history.
      * This function:
-     * 1. Gets cashback percentage from config (default 8%)
-     * 2. Fetches all orders
-     * 3. For each order without cashbackAwarded:
-     *    - Calculates cashback based on order total
-     *    - Updates order with cashbackAwarded
-     *    - Updates user's cashback balance
-     *    - Creates transaction record
+     * 1. Fetches ALL successful orders (completed/delivered)
+     * 2. Groups orders by customer
+     * 3. Calculates expected cashback per customer
+     * 4. Compares with current balance and updates if needed
+     * 5. Safe to run multiple times (idempotent)
      */
     async function backfillCashbackForAllOrders() {
-      console.log('🪙 [Backfill] Starting retroactive cashback crediting...');
-      console.time('⏱️ BackfillCashback');
+      console.log('🪙 [Migration] Starting full cashback migration...');
+      console.time('⏱️ CashbackMigration');
       
       // Show progress modal
       const modal = document.getElementById('cashback-sync-modal');
@@ -22634,76 +22652,42 @@
       lucide.createIcons();
       
       try {
-        // STEP 1: Get cashback percentage and maxEarnLimit from config
-        console.log('📋 [Backfill] Getting cashback config...');
+        // ============================================
+        // STEP 1: Get cashback configuration
+        // ============================================
+        console.log('📋 [Migration] Loading cashback config...');
         let cashbackPercent = 8; // Default
         let maxEarnLimit = 0; // 0 = no limit
         
         try {
-          const configDoc = await getDoc(doc(db, 'config', 'general_config'));
+          const configDoc = await getDoc(doc(db, 'settings', 'cashback_config'));
           if (configDoc.exists()) {
-            cashbackPercent = configDoc.data().cashbackPercent || 8;
-            maxEarnLimit = Number(configDoc.data().maxEarnLimit) || 0;
+            const data = configDoc.data();
+            cashbackPercent = Number(data.cashbackPercent || 8);
+            maxEarnLimit = Number(data.maxCashbackPerOrder || 0);
           }
         } catch (e) {
-          console.warn('⚠️ [Backfill] Could not get config, using default 8%');
+          console.warn('⚠️ [Migration] Could not load config, using defaults:', e.message);
         }
         
-        console.log(`📋 [Backfill] Cashback percentage: ${cashbackPercent}%`);
-        console.log(`📋 [Backfill] Max earn limit: ${maxEarnLimit > 0 ? maxEarnLimit + ' грн' : 'немає'}`);
-        if (statusText) statusText.textContent = `Завантаження замовлень (${cashbackPercent}% кешбек${maxEarnLimit > 0 ? ', макс ' + maxEarnLimit + ' грн' : ''})...`;
+        console.log(`📋 [Migration] Cashback rate: ${cashbackPercent}%`);
+        console.log(`📋 [Migration] Max per order: ${maxEarnLimit > 0 ? maxEarnLimit + ' грн' : 'немає'}`);
         
-        // STEP 2: Fetch all orders
+        // ============================================
+        // STEP 2: Fetch ALL orders
+        // ============================================
+        if (statusText) statusText.textContent = 'Завантаження замовлень...';
+        console.log('📦 [Migration] Fetching all orders...');
+        
         const ordersRef = collection(db, 'orders');
         const ordersSnapshot = await getDocs(ordersRef);
         const totalOrders = ordersSnapshot.size;
         
-        console.log(`📦 [Backfill] Found ${totalOrders} orders total`);
+        console.log(`📦 [Migration] Found ${totalOrders} orders`);
         
-        // STEP 3: Filter orders without cashbackAwarded
-        const ordersToProcess = [];
-        ordersSnapshot.forEach((docSnapshot) => {
-          const order = docSnapshot.data();
-          
-          // Skip if already has cashback awarded
-          if (order.cashbackAwarded && order.cashbackAwarded > 0) {
-            return;
-          }
-          
-          // Get order total
-          const orderTotal = Number(order.summary?.total || order.total || order.totalAmount || 0);
-          if (orderTotal <= 0) {
-            return;
-          }
-          
-          // Get customer phone
-          const phone = order.customer?.phone || order.phone || order.userId;
-          if (!phone) {
-            return;
-          }
-          
-          ordersToProcess.push({
-            id: docSnapshot.id,
-            ref: docSnapshot.ref,
-            order: order,
-            total: orderTotal,
-            phone: phone
-          });
-        });
-        
-        console.log(`🪙 [Backfill] Orders to process (without cashback): ${ordersToProcess.length}`);
-        
-        if (ordersToProcess.length === 0) {
-          if (statusText) statusText.textContent = '✅ Всі замовлення вже мають кешбек!';
-          if (closeBtn) closeBtn.classList.remove('hidden');
-          console.log('🪙 [Backfill] No orders need cashback, done.');
-          console.timeEnd('⏱️ BackfillCashback');
-          return;
-        }
-        
-        if (statusText) statusText.textContent = `Обробка ${ordersToProcess.length} замовлень...`;
-        
-        // STEP 4: Helper function to normalize phone
+        // ============================================
+        // STEP 3: Phone normalization helper
+        // ============================================
         const normalizePhone = (phone) => {
           if (!phone) return null;
           const digits = phone.replace(/\D/g, '');
@@ -22712,135 +22696,245 @@
           return phone;
         };
         
-        // STEP 5: Process each order
-        let processed = 0;
-        let totalAwarded = 0;
-        let usersUpdated = new Set();
+        // ============================================
+        // STEP 4: Group orders by customer and calculate expected cashback
+        // ============================================
+        if (statusText) statusText.textContent = 'Аналіз замовлень по клієнтах...';
+        console.log('📊 [Migration] Grouping orders by customer...');
         
-        // Track user balances for batch updates
-        const userBalances = {};
-        const orderUpdates = [];
-        const transactionCreates = [];
+        const customerData = {};
+        let validOrderCount = 0;
         
-        for (const item of ordersToProcess) {
-          processed++;
-          const percent = Math.round((processed / ordersToProcess.length) * 100);
+        ordersSnapshot.forEach((docSnapshot) => {
+          const order = docSnapshot.data();
+          const orderId = docSnapshot.id;
           
-          if (progressBar) progressBar.style.width = `${percent}%`;
-          if (progressText) progressText.textContent = `${processed} / ${ordersToProcess.length} замовлень`;
-          
-          const normalizedPhone = normalizePhone(item.phone);
-          if (!normalizedPhone) continue;
-          
-          if (currentUserName) {
-            currentUserName.textContent = item.order.customer?.fullName || item.order.customer?.name || normalizedPhone;
+          // Only process successful orders
+          const status = order.status?.toLowerCase();
+          if (status !== 'completed' && status !== 'delivered' && status !== 'успішно' && status !== 'доставлено') {
+            return;
           }
           
-          // Calculate cashback with maxEarnLimit cap
-          const calculatedCashback = Math.floor(item.total * (cashbackPercent / 100));
-          const earnedCashback = (maxEarnLimit > 0) ? Math.min(calculatedCashback, maxEarnLimit) : calculatedCashback;
-          
-          // Log if capped
-          if (maxEarnLimit > 0 && calculatedCashback > maxEarnLimit) {
-            console.log(`⚠️ [Backfill] Order ${item.id}: Capped at max limit ${maxEarnLimit} грн (was ${calculatedCashback} грн)`);
+          // Get customer phone
+          let phone = order.customer?.phone || order.phone || order.userId;
+          if (!phone) {
+            console.warn('⚠️ [Migration] Order without phone:', orderId);
+            return;
           }
           
-          if (earnedCashback <= 0) continue;
+          phone = normalizePhone(phone);
+          if (!phone) return;
           
-          totalAwarded += earnedCashback;
-          usersUpdated.add(normalizedPhone);
+          // Get order total
+          const orderTotal = Number(order.summary?.total || order.total || order.totalAmount || 0);
+          if (orderTotal <= 0) return;
           
-          // Track user balance increment
-          if (!userBalances[normalizedPhone]) {
-            userBalances[normalizedPhone] = {
-              cashbackBalance: 0,
-              totalCashbackAwarded: 0,
-              name: item.order.customer?.fullName || item.order.customer?.name || null
+          // Calculate cashback for this order
+          const calculatedCashback = Math.floor(orderTotal * (cashbackPercent / 100));
+          const cappedCashback = (maxEarnLimit > 0) ? Math.min(calculatedCashback, maxEarnLimit) : calculatedCashback;
+          
+          if (cappedCashback <= 0) return;
+          
+          // Initialize customer data if needed
+          if (!customerData[phone]) {
+            customerData[phone] = {
+              phone: phone,
+              name: null,
+              orders: [],
+              expectedTotalAwarded: 0,
+              expectedTotalUsed: 0,
+              currentBalance: 0,
+              currentTotalAwarded: 0,
+              currentTotalUsed: 0
             };
           }
-          userBalances[normalizedPhone].cashbackBalance += earnedCashback;
-          userBalances[normalizedPhone].totalCashbackAwarded += earnedCashback;
           
-          // Queue order update (also update pointsEarned for consistency)
-          orderUpdates.push({
-            ref: item.ref,
+          // Store customer name
+          const name = order.customer?.fullName || order.customer?.name || order.customerName;
+          if (name && !customerData[phone].name) {
+            customerData[phone].name = name;
+          }
+          
+          // Track this order
+          customerData[phone].orders.push({
+            id: orderId,
+            total: orderTotal,
+            cashback: cappedCashback,
+            date: order.createdAt || order.orderDate
+          });
+          
+          customerData[phone].expectedTotalAwarded += cappedCashback;
+          
+          // Track if cashback was used in this order
+          let usedInOrder = 0;
+          if (typeof order.cashbackUsed === 'number') {
+            usedInOrder = order.cashbackUsed;
+          } else if (order.cashbackUsed?.amount) {
+            usedInOrder = Number(order.cashbackUsed.amount) || 0;
+          } else if (order.appliedCashback) {
+            usedInOrder = Number(order.appliedCashback) || 0;
+          } else if (order.payment?.cashbackUsed) {
+            usedInOrder = Number(order.payment.cashbackUsed) || 0;
+          }
+          
+          customerData[phone].expectedTotalUsed += usedInOrder;
+          validOrderCount++;
+        });
+        
+        const customerPhones = Object.keys(customerData);
+        console.log(`📊 [Migration] Found ${customerPhones.length} unique customers with ${validOrderCount} successful orders`);
+        
+        if (customerPhones.length === 0) {
+          if (statusText) statusText.textContent = '✅ Не знайдено замовлень для обробки';
+          if (closeBtn) closeBtn.classList.remove('hidden');
+          console.log('ℹ️ [Migration] No orders to process');
+          console.timeEnd('⏱️ CashbackMigration');
+          return;
+        }
+        
+        // ============================================
+        // STEP 5: Fetch current user balances
+        // ============================================
+        if (statusText) statusText.textContent = 'Завантаження поточних балансів...';
+        console.log('👥 [Migration] Fetching current user balances...');
+        
+        const usersRef = collection(db, 'users');
+        const usersSnapshot = await getDocs(usersRef);
+        
+        usersSnapshot.forEach((docSnapshot) => {
+          const phone = normalizePhone(docSnapshot.id);
+          if (!phone || !customerData[phone]) return;
+          
+          const userData = docSnapshot.data();
+          customerData[phone].currentBalance = Number(userData.cashbackBalance || 0);
+          customerData[phone].currentTotalAwarded = Number(userData.totalCashbackAwarded || 0);
+          customerData[phone].currentTotalUsed = Number(userData.totalCashbackUsed || 0);
+        });
+        
+        console.log('👥 [Migration] Loaded existing balances');
+        
+        // ============================================
+        // STEP 6: Calculate differences and prepare updates
+        // ============================================
+        if (statusText) statusText.textContent = 'Розрахунок оновлень...';
+        console.log('🔄 [Migration] Calculating required updates...');
+        
+        const usersToUpdate = [];
+        const ordersToUpdate = [];
+        const transactionsToCreate = [];
+        
+        let totalClientsUpdated = 0;
+        let totalCashbackAdded = 0;
+        
+        for (const phone in customerData) {
+          const customer = customerData[phone];
+          
+          // Calculate expected balance
+          const expectedBalance = customer.expectedTotalAwarded - customer.expectedTotalUsed;
+          
+          // Determine if update is needed
+          const awardedDiff = customer.expectedTotalAwarded - customer.currentTotalAwarded;
+          const usedDiff = customer.expectedTotalUsed - customer.currentTotalUsed;
+          const balanceDiff = expectedBalance - customer.currentBalance;
+          
+          // Only update if there's a meaningful difference (> 0.01 грн)
+          if (Math.abs(balanceDiff) < 0.01 && Math.abs(awardedDiff) < 0.01 && Math.abs(usedDiff) < 0.01) {
+            console.log(`✓ [Migration] ${customer.name || phone}: Already correct (${customer.currentBalance} грн)`);
+            continue;
+          }
+          
+          console.log(`🔄 [Migration] ${customer.name || phone}:`, {
+            current: customer.currentBalance,
+            expected: expectedBalance,
+            diff: balanceDiff,
+            awardedDiff,
+            usedDiff
+          });
+          
+          // Prepare user update
+          usersToUpdate.push({
+            phone: phone,
             data: {
-              cashbackAwarded: earnedCashback,
-              pointsEarned: earnedCashback,
-              cashbackPercent: cashbackPercent,
-              cashbackCreditedAt: serverTimestamp(),
-              ...(maxEarnLimit > 0 && calculatedCashback > maxEarnLimit ? { cashbackCapped: true, cashbackOriginalAmount: calculatedCashback } : {})
+              cashbackBalance: expectedBalance,
+              totalCashbackAwarded: customer.expectedTotalAwarded,
+              totalCashbackUsed: customer.expectedTotalUsed,
+              orderCount: customer.orders.length,
+              cashbackMigratedAt: serverTimestamp(),
+              ...(customer.name ? { fullName: customer.name } : {})
             }
           });
           
-          // Queue transaction creation
-          transactionCreates.push({
-            userId: normalizedPhone,
-            userName: item.order.customer?.fullName || item.order.customer?.name || 'Клієнт',
-            amount: earnedCashback,
-            type: 'order_reward',
-            description: `Нараховано за замовлення #${item.id.slice(-8)}`,
-            orderId: item.id,
-            createdAt: serverTimestamp(),
-            status: 'completed',
-            isBackfill: true
-          });
+          totalClientsUpdated++;
+          totalCashbackAdded += balanceDiff;
           
-          // Update UI every 10 orders
-          if (processed % 10 === 0) {
-            await new Promise(resolve => setTimeout(resolve, 5));
+          // Create transaction record for the migration
+          if (Math.abs(balanceDiff) >= 0.01) {
+            transactionsToCreate.push({
+              userId: phone,
+              userName: customer.name || 'Клієнт',
+              amount: Math.round(balanceDiff),
+              type: 'ADMIN_ADJUSTMENT',
+              description: `Міграція історичного кешбеку (${customer.orders.length} замовлень)`,
+              createdAt: serverTimestamp(),
+              status: 'completed',
+              isMigration: true,
+              ordersProcessed: customer.orders.length
+            });
           }
         }
         
-        console.log(`🪙 [Backfill] Prepared updates for ${usersUpdated.size} users, ${orderUpdates.length} orders`);
-        if (statusText) statusText.textContent = 'Збереження змін...';
+        console.log(`📊 [Migration] Prepared ${usersToUpdate.length} user updates`);
         
-        // STEP 6: Batch write all updates
+        if (usersToUpdate.length === 0) {
+          if (statusText) statusText.textContent = '✅ Всі баланси вже актуальні!';
+          if (closeBtn) closeBtn.classList.remove('hidden');
+          console.log('✅ [Migration] All balances are already correct');
+          console.timeEnd('⏱️ CashbackMigration');
+          return;
+        }
+        
+        // ============================================
+        // STEP 7: Apply updates using batched writes
+        // ============================================
+        if (statusText) statusText.textContent = 'Збереження оновлень...';
+        console.log('💾 [Migration] Applying updates in batches...');
+        
         const BATCH_SIZE = 500;
         const batches = [];
         let currentBatch = writeBatch(db);
         let batchCount = 0;
+        let processedCount = 0;
         
-        // Update orders
-        for (const update of orderUpdates) {
-          currentBatch.update(update.ref, update.data);
+        // Update users
+        for (const update of usersToUpdate) {
+          processedCount++;
+          if (progressBar) progressBar.style.width = `${Math.round((processedCount / usersToUpdate.length) * 100)}%`;
+          if (progressText) progressText.textContent = `${processedCount} / ${usersToUpdate.length} клієнтів`;
+          if (currentUserName) currentUserName.textContent = update.data.fullName || update.phone;
+          
+          const userRef = doc(db, 'users', update.phone);
+          currentBatch.set(userRef, update.data, { merge: true });
           batchCount++;
           
           if (batchCount >= BATCH_SIZE) {
             batches.push(currentBatch.commit());
             currentBatch = writeBatch(db);
             batchCount = 0;
+            console.log(`📦 [Migration] Queued batch ${batches.length}`);
           }
         }
         
-        // Create transactions
-        for (const trans of transactionCreates) {
+        // Create transaction records
+        for (const transaction of transactionsToCreate) {
           const transRef = doc(collection(db, 'cashback_transactions'));
-          currentBatch.set(transRef, trans);
+          currentBatch.set(transRef, transaction);
           batchCount++;
           
           if (batchCount >= BATCH_SIZE) {
             batches.push(currentBatch.commit());
             currentBatch = writeBatch(db);
             batchCount = 0;
-          }
-        }
-        
-        // Update user balances
-        for (const [phone, data] of Object.entries(userBalances)) {
-          const userRef = doc(db, 'users', phone);
-          currentBatch.set(userRef, {
-            cashbackBalance: increment(data.cashbackBalance),
-            totalCashbackAwarded: increment(data.totalCashbackAwarded),
-            updatedAt: serverTimestamp(),
-            ...(data.name ? { fullName: data.name } : {})
-          }, { merge: true });
-          batchCount++;
-          
-          if (batchCount >= BATCH_SIZE) {
-            batches.push(currentBatch.commit());
-            currentBatch = writeBatch(db);
-            batchCount = 0;
+            console.log(`📦 [Migration] Queued batch ${batches.length}`);
           }
         }
         
@@ -22849,35 +22943,40 @@
           batches.push(currentBatch.commit());
         }
         
-        console.log(`💾 [Backfill] Committing ${batches.length} batches...`);
+        console.log(`💾 [Migration] Committing ${batches.length} batches...`);
         await Promise.all(batches);
         
-        console.log('✅ [Backfill] All batches committed!');
-        console.timeEnd('⏱️ BackfillCashback');
+        console.log('✅ [Migration] All batches committed successfully!');
+        console.timeEnd('⏱️ CashbackMigration');
         
-        // STEP 7: Update UI with results
-        if (statusText) statusText.textContent = '✅ Кешбек нараховано успішно!';
+        // ============================================
+        // STEP 8: Update UI with results
+        // ============================================
+        if (statusText) statusText.textContent = '✅ Міграцію завершено!';
         if (progressBar) progressBar.style.width = '100%';
         if (currentUserDiv) currentUserDiv.classList.add('hidden');
         
-        // Update summary
-        document.getElementById('sync-result-clients').textContent = usersUpdated.size.toLocaleString('uk-UA');
-        document.getElementById('sync-result-orders').textContent = orderUpdates.length.toLocaleString('uk-UA');
-        document.getElementById('sync-result-awarded').textContent = totalAwarded.toLocaleString('uk-UA') + ' грн';
-        document.getElementById('sync-result-used').textContent = '0 грн';
+        // Update summary stats
+        document.getElementById('sync-result-clients').textContent = totalClientsUpdated.toLocaleString('uk-UA');
+        document.getElementById('sync-result-orders').textContent = validOrderCount.toLocaleString('uk-UA');
+        document.getElementById('sync-result-awarded').textContent = Math.round(totalCashbackAdded).toLocaleString('uk-UA') + ' грн';
+        document.getElementById('sync-result-used').textContent = '0 грн (з історії)';
         
         if (statsSummary) statsSummary.classList.remove('hidden');
         if (closeBtn) closeBtn.classList.remove('hidden');
         lucide.createIcons();
         
-        console.log('📊 [Backfill] Summary:', {
-          ordersProcessed: orderUpdates.length,
-          usersUpdated: usersUpdated.size,
-          totalAwarded: totalAwarded.toLocaleString('uk-UA') + ' грн'
+        console.log('📊 [Migration] Summary:', {
+          clientsProcessed: customerPhones.length,
+          clientsUpdated: totalClientsUpdated,
+          ordersAnalyzed: validOrderCount,
+          totalCashbackAdded: Math.round(totalCashbackAdded).toLocaleString('uk-UA') + ' грн'
         });
         
         // Refresh clients table
-        await loadCashbackClients();
+        if (typeof window.loadCashbackClients === 'function') {
+          await window.loadCashbackClients();
+        }
         
         // Success toast
         const toast = document.createElement('div');
@@ -22885,19 +22984,20 @@
         toast.innerHTML = `
           <i data-lucide="check-circle" class="w-6 h-6"></i>
           <div>
-            <p class="font-bold">✅ Кешбек нараховано!</p>
-            <p class="text-sm text-green-100">${orderUpdates.length} замовлень • ${totalAwarded} грн</p>
+            <p class="font-bold">✅ Міграція завершена!</p>
+            <p class="text-sm text-green-100">${totalClientsUpdated} клієнтів • +${Math.round(totalCashbackAdded)} грн</p>
           </div>
         `;
         document.body.appendChild(toast);
         lucide.createIcons();
-        setTimeout(() => toast.remove(), 4000);
+        setTimeout(() => toast.remove(), 5000);
         
       } catch (error) {
-        console.error('❌ [Backfill] Error:', error);
-        console.timeEnd('⏱️ BackfillCashback');
+        console.error('❌ [Migration] Error:', error);
+        console.error('❌ [Migration] Stack:', error.stack);
+        console.timeEnd('⏱️ CashbackMigration');
         
-        if (statusText) statusText.textContent = '❌ Помилка нарахування';
+        if (statusText) statusText.textContent = '❌ Помилка міграції';
         if (closeBtn) closeBtn.classList.remove('hidden');
         
         const errorToast = document.createElement('div');
@@ -22905,7 +23005,7 @@
         errorToast.innerHTML = `
           <i data-lucide="alert-circle" class="w-6 h-6"></i>
           <div>
-            <p class="font-bold">Помилка</p>
+            <p class="font-bold">Помилка міграції</p>
             <p class="text-sm text-red-100">${error.message}</p>
           </div>
         `;
@@ -26889,12 +26989,6 @@
   <!-- ============================================ -->
   <script src="/js/google-merchant-feed.js"></script>
 
-  <!-- Sub-Footer Credit Bar -->
-  <div class="w-full py-2 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 text-center">
-    <p class="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 tracking-wide">
-      Треба створити сайт? <a href="https://t.me/yarus_lik" target="_blank" class="text-blue-500 hover:text-blue-600 transition-colors duration-200">Напишіть нам</a>
-    </p>
-  </div>
 
 </body>
 
