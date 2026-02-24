@@ -1467,30 +1467,25 @@
     // GLOBAL EVENT DELEGATION FOR ADD TO CART BUTTONS
     // ============================================
     // This handles clicks on dynamically rendered buttons
-    document.addEventListener('click', (e) => {
+    document.addEventListener('click', async (e) => {
       // Check if clicked element or its parent is an add-to-cart button
       const btn = e.target.closest('.add-to-cart-btn');
 
       if (btn && !btn.disabled) {
         e.preventDefault();
 
-        // Extract product data from data attributes
-        const product = {
-          id: btn.dataset.id,
-          name: btn.dataset.name,
-          price: parseFloat(btn.dataset.price),
-          image: btn.dataset.image,
-          stock: parseInt(btn.dataset.stock) || 0,
-          spiciness: parseInt(btn.dataset.spiciness) || 1,
-          sku: btn.dataset.sku
-        };
+        // Use addToCartFromStorefront to fetch full product data including wholesale fields
+        const productId = btn.dataset.id;
+        const name = btn.dataset.name;
+        const price = parseFloat(btn.dataset.price);
+        const image = btn.dataset.image;
+        const sku = btn.dataset.sku;
 
-        // Call the global addToCart function from layout.js
-        if (window.addToCart) {
-          window.addToCart(product, 'category');
-          console.log('✅ Item added via delegated click:', product.name);
+        if (window.addToCartFromStorefront) {
+          await window.addToCartFromStorefront(productId, name, price, image, 'category', sku);
+          console.log('✅ Item added via delegated click:', name);
         } else {
-          console.error('❌ window.addToCart function not found!');
+          console.error('❌ window.addToCartFromStorefront function not found!');
         }
       }
     });

@@ -961,7 +961,11 @@
 
     // Calculate totals
     function calculateTotal() {
-      return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      return cart.reduce((sum, item) => {
+        const qty = item.quantity || 1;
+        const unitPrice = getProductPrice(item, qty);
+        return sum + (unitPrice * qty);
+      }, 0);
     }
 
     function calculateItemsCount() {
@@ -973,56 +977,78 @@
     // ============================================
 
     /**
-     * Calculate effective price based on wholesale tiers
-     * Tiers match product page: 2+: 5%, 5+: 10%, 10+: 15%
-     * @param {number} basePrice - Original product price
-     * @param {number} quantity - Current quantity in cart
-     * @returns {object} - { effectivePrice, discount, tierApplied }
+     * Get product price based on quantity and wholesale tiers from Firestore
+     * Returns the actual price to charge per unit
+     * @param {Object} product - Product object from Firestore (with showWholesale, wholesaleTiers, price fields)
+     * @param {number} selectedQty - Quantity being purchased
+     * @returns {number} - Price per unit
      */
-    function calculateEffectivePrice(basePrice, quantity) {
-      const wholesaleTiers = [
-        { quantity: 10, discount: 0.15 }, // 15% discount (check highest first)
-        { quantity: 5, discount: 0.10 },  // 10% discount
-        { quantity: 2, discount: 0.05 }   // 5% discount
-      ];
-
-      // Find applicable tier
-      const applicableTier = wholesaleTiers.find(tier => quantity >= tier.quantity);
-
-      if (applicableTier) {
-        const effectivePrice = parseFloat((basePrice * (1 - applicableTier.discount)).toFixed(2));
-        return {
-          effectivePrice,
-          discount: applicableTier.discount,
-          tierApplied: applicableTier.quantity
-        };
+    function getProductPrice(product, selectedQty) {
+      const qty = Number(selectedQty);
+      const basePrice = Number(product.price || 0);
+      
+      console.log('📦 [Price Debug] Current Product Data:', {
+        name: product.name,
+        basePrice: basePrice,
+        showWholesale: product.showWholesale,
+        wholesaleTiers: product.wholesaleTiers,
+        quantity: qty
+      });
+      
+      // 1. Check if wholesale is enabled and tiers exist
+      if (product.showWholesale === true && Array.isArray(product.wholesaleTiers) && product.wholesaleTiers.length > 0) {
+        
+        // 2. Sort tiers by minQty descending to find the highest threshold met
+        const sortedTiers = [...product.wholesaleTiers].sort((a, b) => Number(b.minQty) - Number(a.minQty));
+        
+        // 3. Find the first tier where current quantity is >= minQty
+        const applicableTier = sortedTiers.find(tier => qty >= Number(tier.minQty));
+        
+        if (applicableTier) {
+          const wholesalePrice = Number(applicableTier.price);
+          console.log(`✅ Wholesale applied for ${product.name}: ${wholesalePrice} UAH (Qty: ${qty}, Tier: ${applicableTier.minQty}+)`);
+          return wholesalePrice;
+        }
       }
-
-      // No tier applies
-      return {
-        effectivePrice: basePrice,
-        discount: 0,
-        tierApplied: null
-      };
+      
+      console.log(`ℹ️ Using base price for ${product.name}: ${basePrice} UAH`);
+      return basePrice;
     }
 
     /**
      * Apply wholesale pricing to a cart item
-     * Updates the item.price to the effective price
-     * Stores original price in item.basePrice for reference
+     * Updates the item.price to the effective wholesale price based on quantity
+     * @param {Object} item - Cart item to update
      */
     function applyWholesalePricing(item) {
       // Ensure we have a base price stored
       if (!item.basePrice) {
-        item.basePrice = item.price;
+        item.basePrice = Number(item.price);
       }
 
-      const result = calculateEffectivePrice(item.basePrice, item.quantity);
-      item.price = result.effectivePrice;
-      item.wholesaleDiscount = result.discount;
-      item.wholesaleTier = result.tierApplied;
+      // Calculate effective price using the new function
+      const effectivePrice = getProductPrice(item, item.quantity);
+      const oldPrice = item.price;
+      item.price = effectivePrice;
+      
+      // Calculate discount and tier info for UI display
+      const basePrice = Number(item.basePrice);
+      if (effectivePrice < basePrice) {
+        item.wholesaleDiscount = (basePrice - effectivePrice) / basePrice;
+        // Find which tier was applied
+        if (item.wholesaleTiers && Array.isArray(item.wholesaleTiers)) {
+          const sortedTiers = [...item.wholesaleTiers].sort((a, b) => Number(b.minQty) - Number(a.minQty));
+          const appliedTier = sortedTiers.find(t => item.quantity >= Number(t.minQty));
+          item.wholesaleTier = appliedTier ? Number(appliedTier.minQty) : null;
+        }
+      } else {
+        item.wholesaleDiscount = 0;
+        item.wholesaleTier = null;
+      }
 
-      console.log(`📦 [Wholesale] ${item.name}: qty=${item.quantity}, base=${item.basePrice}, effective=${item.price}, discount=${result.discount * 100}%`);
+      if (oldPrice !== effectivePrice) {
+        console.log(`💰 [Price Update] ${item.name}: ${oldPrice} → ${effectivePrice} UAH (qty: ${item.quantity})`);
+      }
     }
 
     // ============================================

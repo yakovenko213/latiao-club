@@ -770,6 +770,53 @@ async function getProductStockFromFirestore(productId) {
 }
 
 /**
+ * Fetch full product data from Firestore including wholesale fields
+ * @param {string} productId - Product ID
+ * @returns {Promise<Object|null>} - Product data or null
+ */
+async function fetchFullProductData(productId) {
+  try {
+    // Wait for Firebase to be ready
+    let attempts = 0;
+    while (!window.firebaseInit && attempts < 20) {
+      await new Promise(r => setTimeout(r, 100));
+      attempts++;
+    }
+
+    if (!window.firebaseInit) {
+      console.warn('⚠️ [Product] Firebase not ready');
+      return null;
+    }
+
+    const { db, doc, getDoc } = window.firebaseInit;
+    if (!db || !doc || !getDoc) {
+      console.warn('⚠️ [Product] Missing Firestore functions');
+      return null;
+    }
+
+    const productRef = doc(db, 'products', productId);
+    const productSnap = await getDoc(productRef);
+
+    if (!productSnap.exists()) {
+      console.warn(`⚠️ [Product] Product ${productId} not found in Firestore`);
+      return null;
+    }
+
+    const data = productSnap.data();
+    console.log(`✅ [Product] Fetched data for ${productId}:`, {
+      showWholesale: data.showWholesale,
+      wholesaleTiers: data.wholesaleTiers
+    });
+    
+    return data;
+
+  } catch (error) {
+    console.error('❌ [Product] Failed to fetch product data:', error);
+    return null;
+  }
+}
+
+/**
  * Validate and adjust cart quantities on page load
  * Auto-fixes quantities that exceed current stock
  */
@@ -826,48 +873,47 @@ async function validateCartStockOnLoad() {
 // ============================================
 
 /**
- * Get effective price based on quantity and wholesale tiers
- * @param {Object} product - Product object with base price
- * @param {number} quantity - Quantity being purchased
- * @returns {Object} - { effectivePrice, discount, tierApplied, basePrice }
+ * Get product price based on quantity and wholesale tiers from Firestore
+ * Returns the actual price to charge per unit
+ * @param {Object} product - Product object from Firestore (with showWholesale, wholesaleTiers, price fields)
+ * @param {number} selectedQty - Quantity being purchased
+ * @returns {number} - Price per unit
  */
-window.getEffectivePrice = function(product, quantity) {
-  // Standard wholesale tiers (matches product page)
-  const wholesaleTiers = [
-    { quantity: 10, discount: 0.15 }, // 15% discount (check highest first)
-    { quantity: 5, discount: 0.10 },  // 10% discount
-    { quantity: 2, discount: 0.05 }   // 5% discount
-  ];
-
-  // Get base price (use basePrice if available, otherwise use current price)
-  const basePrice = product.basePrice || product.price;
-
-  // Find applicable tier (highest quantity that qualifies)
-  const applicableTier = wholesaleTiers.find(tier => quantity >= tier.quantity);
-
-  if (applicableTier) {
-    const effectivePrice = parseFloat((basePrice * (1 - applicableTier.discount)).toFixed(2));
-    return {
-      effectivePrice,
-      discount: applicableTier.discount,
-      tierApplied: applicableTier.quantity,
-      basePrice
-    };
+window.getProductPrice = function(product, selectedQty) {
+  const qty = Number(selectedQty);
+  const basePrice = Number(product.price || 0);
+  
+  console.log('📦 [Price Debug] Current Product Data:', {
+    name: product.name,
+    basePrice: basePrice,
+    showWholesale: product.showWholesale,
+    wholesaleTiers: product.wholesaleTiers,
+    quantity: qty
+  });
+  
+  // 1. Check if wholesale is enabled and tiers exist
+  if (product.showWholesale === true && Array.isArray(product.wholesaleTiers) && product.wholesaleTiers.length > 0) {
+    
+    // 2. Sort tiers by minQty descending to find the highest threshold met
+    const sortedTiers = [...product.wholesaleTiers].sort((a, b) => Number(b.minQty) - Number(a.minQty));
+    
+    // 3. Find the first tier where current quantity is >= minQty
+    const applicableTier = sortedTiers.find(tier => qty >= Number(tier.minQty));
+    
+    if (applicableTier) {
+      const wholesalePrice = Number(applicableTier.price);
+      console.log(`✅ Wholesale applied for ${product.name}: ${wholesalePrice} UAH (Qty: ${qty}, Tier: ${applicableTier.minQty}+)`);
+      return wholesalePrice;
+    }
   }
-
-  // No tier applies - return base price
-  return {
-    effectivePrice: basePrice,
-    discount: 0,
-    tierApplied: null,
-    basePrice
-  };
+  
+  console.log(`ℹ️ Using base price for ${product.name}: ${basePrice} UAH`);
+  return basePrice;
 };
 
 /**
  * Apply wholesale pricing to a cart item
- * Updates the item.price to the effective price
- * Stores original price in item.basePrice for reference
+ * Updates the item.price to the effective wholesale price based on quantity
  * @param {Object} item - Cart item to update
  */
 window.applyWholesalePricing = function(item) {
@@ -876,27 +922,108 @@ window.applyWholesalePricing = function(item) {
     return;
   }
 
-  // Ensure we have a base price stored
+  // Store original base price if not already stored
   if (!item.basePrice) {
-    item.basePrice = item.price;
+    item.basePrice = Number(item.price);
   }
 
-  const result = window.getEffectivePrice(item, item.quantity);
-  item.price = result.effectivePrice;
-  item.wholesaleDiscount = result.discount;
-  item.wholesaleTier = result.tierApplied;
+  // Calculate effective price using the new function
+  const effectivePrice = window.getProductPrice(item, item.quantity);
+  const oldPrice = item.price;
+  item.price = effectivePrice;
+  
+  // Calculate discount and tier info for UI display
+  const basePrice = Number(item.basePrice);
+  if (effectivePrice < basePrice) {
+    item.wholesaleDiscount = (basePrice - effectivePrice) / basePrice;
+    // Find which tier was applied
+    if (item.wholesaleTiers && Array.isArray(item.wholesaleTiers)) {
+      const sortedTiers = [...item.wholesaleTiers].sort((a, b) => Number(b.minQty) - Number(a.minQty));
+      const appliedTier = sortedTiers.find(t => item.quantity >= Number(t.minQty));
+      item.wholesaleTier = appliedTier ? Number(appliedTier.minQty) : null;
+    }
+  } else {
+    item.wholesaleDiscount = 0;
+    item.wholesaleTier = null;
+  }
 
-  console.log(`📦 [Wholesale] ${item.name}: qty=${item.quantity}, base=${item.basePrice}, effective=${item.price}, discount=${result.discount * 100}%`);
+  if (oldPrice !== effectivePrice) {
+    console.log(`💰 [Price Update] ${item.name}: ${oldPrice} → ${effectivePrice} UAH (qty: ${item.quantity})`);
+  }
 };
 
 // Initialize cart from localStorage
 window.cart = JSON.parse(localStorage.getItem('latiao_cart') || '[]');
 
-// Apply wholesale pricing to all cart items on load
-window.cart.forEach(item => {
-  if (!item.isGift) {
-    window.applyWholesalePricing(item);
+// ============================================
+// REFRESH CART ITEMS WITH LATEST FIRESTORE DATA
+// ============================================
+// This ensures cart items have the latest wholesale pricing data
+async function refreshCartWithFirestoreData() {
+  if (window.cart.length === 0) return;
+  
+  console.log('🔄 [Cart] Refreshing cart items with latest Firestore data...');
+  
+  // Wait for Firebase to be ready
+  let attempts = 0;
+  while (!window.firebaseInit && attempts < 20) {
+    await new Promise(r => setTimeout(r, 100));
+    attempts++;
   }
+  
+  if (!window.firebaseInit) {
+    console.warn('⚠️ [Cart] Firebase not ready, skipping refresh');
+    return;
+  }
+  
+  const { db, doc, getDoc } = window.firebaseInit;
+  
+  // Update each cart item with latest data
+  for (let item of window.cart) {
+    if (item.isGift || !item.id) continue;
+    
+    // Check if item is missing wholesale data
+    const needsRefresh = typeof item.showWholesale === 'undefined' || !item.wholesaleTiers;
+    
+    if (needsRefresh) {
+      try {
+        const productRef = doc(db, 'products', item.id);
+        const productSnap = await getDoc(productRef);
+        
+        if (productSnap.exists()) {
+          const data = productSnap.data();
+          
+          // Update wholesale fields
+          item.showWholesale = data.showWholesale || false;
+          item.wholesaleTiers = data.wholesaleTiers || [];
+          
+          console.log(`✅ [Cart] Refreshed ${item.name} with wholesale data:`, {
+            showWholesale: item.showWholesale,
+            tiersCount: item.wholesaleTiers.length
+          });
+        }
+      } catch (error) {
+        console.error(`❌ [Cart] Failed to refresh ${item.name}:`, error);
+      }
+    }
+  }
+}
+
+// Refresh cart data and apply wholesale pricing
+refreshCartWithFirestoreData().then(() => {
+  // Apply wholesale pricing to all cart items after refresh
+  window.cart.forEach(item => {
+    if (!item.isGift) {
+      window.applyWholesalePricing(item);
+    }
+  });
+  
+  // Save updated cart
+  if (window.cart.length > 0) {
+    saveCart();
+  }
+  
+  console.log('✅ [Cart] Initialization complete');
 });
 
 // Save cart to localStorage
@@ -995,7 +1122,11 @@ async function fetchAndInjectGifts() {
 
 // Calculate total price
 function calculateTotal() {
-  return window.cart.reduce((sum, item) => sum + (item.price * (item.quantity || item.qty || 1)), 0);
+  return window.cart.reduce((sum, item) => {
+    const qty = item.quantity || item.qty || 1;
+    const unitPrice = window.getProductPrice(item, qty);
+    return sum + (unitPrice * qty);
+  }, 0);
 }
 
 // Calculate total items count
@@ -1519,6 +1650,42 @@ window.trackAddToCart = async function (product, source) {
     // Non-blocking - don't affect user experience
     console.error('📊 Analytics FAILED:', e.code, e.message, e);
   }
+};
+
+// ============================================
+// ADD TO CART FROM STOREFRONT (WRAPPER)
+// ============================================
+/**
+ * Add product to cart by fetching full data from Firestore
+ * This ensures wholesale pricing data is included
+ * @param {string} productId - Product ID
+ * @param {string} name - Product name (fallback)
+ * @param {number} price - Product price (fallback)
+ * @param {string} image - Product image (fallback)
+ * @param {string} source - Source of add-to-cart action
+ * @param {string} sku - Product SKU (fallback)
+ */
+window.addToCartFromStorefront = async function (productId, name, price, image, source, sku) {
+  // Fetch full product data from Firestore to get wholesale fields
+  const fullProductData = await fetchFullProductData(productId);
+  
+  // Merge with provided data (Firestore data takes priority)
+  const productData = {
+    id: productId,
+    name: fullProductData?.name || name,
+    price: fullProductData?.price || price,
+    image: fullProductData?.images?.[0] || fullProductData?.image || image,
+    sku: fullProductData?.sku || sku || '',
+    stock: fullProductData?.available_stock || fullProductData?.stock || 999,
+    spiciness: fullProductData?.spiciness || 1,
+    // 🔥 WHOLESALE DATA FROM FIRESTORE
+    showWholesale: fullProductData?.showWholesale || false,
+    wholesaleTiers: fullProductData?.wholesaleTiers || []
+  };
+  
+  console.log('🛒 [Cart] Product data from DB:', productData);
+  
+  await window.addToCart(productData, source);
 };
 
 // Add product to cart

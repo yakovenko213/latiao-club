@@ -99,20 +99,80 @@ async function measurePerformance(operation, fn) {
 // ============================================
 // ADD TO CART FROM STOREFRONT (with analytics)
 // ============================================
-window.addToCartFromStorefront = function (productId, name, price, image, source, sku) {
+window.addToCartFromStorefront = async function (productId, name, price, image, source, sku) {
     if (window.addToCart) {
-        window.addToCart({
+        // Fetch full product data from Firestore to get wholesale fields
+        const fullProductData = await fetchFullProductData(productId);
+        
+        // Merge with provided data (Firestore data takes priority)
+        const productData = {
             id: productId,
-            name: name,
-            price: price,
-            image: image,
-            sku: sku || '' // Save SKU
-        }, source);
+            name: fullProductData?.name || name,
+            price: fullProductData?.price || price,
+            image: fullProductData?.images?.[0] || fullProductData?.image || image,
+            sku: fullProductData?.sku || sku || '',
+            stock: fullProductData?.available_stock || fullProductData?.stock || 999,
+            spiciness: fullProductData?.spiciness || 1,
+            // 🔥 WHOLESALE DATA FROM FIRESTORE
+            showWholesale: fullProductData?.showWholesale || false,
+            wholesaleTiers: fullProductData?.wholesaleTiers || []
+        };
+        
+        console.log('🛒 [Cart] Product data from DB:', productData);
+        
+        window.addToCart(productData, source);
 
         // Track time to cart (fire-and-forget, non-blocking)
         trackTimeToCartFromStorefront(productId, name, source);
     }
 };
+
+/**
+ * Fetch full product data from Firestore including wholesale fields
+ * @param {string} productId - Product ID
+ * @returns {Promise<Object|null>} - Product data or null
+ */
+async function fetchFullProductData(productId) {
+    try {
+        // Wait for Firebase to be ready
+        let attempts = 0;
+        while (!window.firebaseInit && attempts < 20) {
+            await new Promise(r => setTimeout(r, 100));
+            attempts++;
+        }
+
+        if (!window.firebaseInit) {
+            console.warn('⚠️ [Cart] Firebase not ready');
+            return null;
+        }
+
+        const { db, doc, getDoc } = window.firebaseInit;
+        if (!db || !doc || !getDoc) {
+            console.warn('⚠️ [Cart] Missing Firestore functions');
+            return null;
+        }
+
+        const productRef = doc(db, 'products', productId);
+        const productSnap = await getDoc(productRef);
+
+        if (!productSnap.exists()) {
+            console.warn(`⚠️ [Cart] Product ${productId} not found in Firestore`);
+            return null;
+        }
+
+        const data = productSnap.data();
+        console.log(`✅ [Cart] Fetched product data for ${productId}:`, {
+            showWholesale: data.showWholesale,
+            wholesaleTiers: data.wholesaleTiers
+        });
+        
+        return data;
+
+    } catch (error) {
+        console.error('❌ [Cart] Failed to fetch product data:', error);
+        return null;
+    }
+}
 
 /**
  * Track time from page load to add-to-cart action
