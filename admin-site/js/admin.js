@@ -19,7 +19,8 @@ import {
     query, 
     where, 
     orderBy, 
-    limit, 
+    limit,
+    startAfter,
     serverTimestamp,
     onSnapshot,
     writeBatch,
@@ -81,6 +82,13 @@ window.onSnapshot = onSnapshot;
 
 console.log('✅ Global Firebase exports initialized (for external modules)');
 console.log('✅ Firestore query helpers exported: query, where, orderBy, limit, onSnapshot');
+
+// ============================================
+// ABANDONED CARTS PAGINATION STATE
+// ============================================
+let lastAbandonedCartDoc = null;
+let hasMoreAbandonedCarts = true;
+const ABANDONED_CARTS_PAGE_SIZE = 50;
 
 // ============================================
 // GLOBAL NOTIFICATION FUNCTION
@@ -1295,30 +1303,60 @@ window.updateStock = async function(productId) {
 // ============================================
 // LOAD ABANDONED CARTS (FIXED WITH BACKTICKS)
 // ============================================
-window.loadAbandonedCarts = async function() {
+window.loadAbandonedCarts = async function(loadMore = false) {
     const list = document.getElementById('abandoned-carts-list');
+    const loadMoreBtn = document.getElementById('load-more-abandoned-carts-btn');
     
     if (!list) {
         console.warn('⚠️ abandoned-carts-list element not found');
         return;
     }
     
-    list.innerHTML = '<tr><td colspan="6" class="text-center py-10"><div class="animate-spin w-8 h-8 border-4 border-spicy border-t-transparent rounded-full mx-auto"></div></td></tr>';
+    if (!loadMore) {
+        list.innerHTML = '<tr><td colspan="6" class="text-center py-10"><div class="animate-spin w-8 h-8 border-4 border-spicy border-t-transparent rounded-full mx-auto"></div></td></tr>';
+        lastAbandonedCartDoc = null;
+        hasMoreAbandonedCarts = true;
+        if (loadMoreBtn) loadMoreBtn.classList.add('hidden');
+    }
     
     try {
-        // Calculate 7 days ago
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        // Get date filter value
+        const dateFilterSelect = document.getElementById('abandoned-carts-date-filter');
+        const dateFilterValue = dateFilterSelect ? dateFilterSelect.value : 'all';
         
-        // Query abandoned_carts collection
-        const cartsQuery = query(
+        let dateThreshold = null;
+        if (dateFilterValue !== 'all') {
+            dateThreshold = new Date();
+            dateThreshold.setDate(dateThreshold.getDate() - parseInt(dateFilterValue));
+        }
+        
+        // Query abandoned_carts collection with pagination
+        let cartsQuery = query(
             collection(db, 'abandoned_carts'),
-            orderBy('updatedAt', 'desc')
+            orderBy('updatedAt', 'desc'),
+            limit(ABANDONED_CARTS_PAGE_SIZE)
         );
+        
+        if (loadMore && lastAbandonedCartDoc) {
+            cartsQuery = query(
+                collection(db, 'abandoned_carts'),
+                orderBy('updatedAt', 'desc'),
+                startAfter(lastAbandonedCartDoc),
+                limit(ABANDONED_CARTS_PAGE_SIZE)
+            );
+        }
         
         const snapshot = await getDocs(cartsQuery);
         
-        if (snapshot.empty) {
+        // Store last document for pagination
+        if (snapshot.docs.length > 0) {
+            lastAbandonedCartDoc = snapshot.docs[snapshot.docs.length - 1];
+            hasMoreAbandonedCarts = snapshot.docs.length === ABANDONED_CARTS_PAGE_SIZE;
+        } else {
+            hasMoreAbandonedCarts = false;
+        }
+        
+        if (snapshot.empty && !loadMore) {
             list.innerHTML = `
                 <tr>
                     <td colspan="6" class="text-center py-10">
@@ -1330,10 +1368,11 @@ window.loadAbandonedCarts = async function() {
                 </tr>
             `;
             if (typeof lucide !== 'undefined') lucide.createIcons();
+            if (loadMoreBtn) loadMoreBtn.classList.add('hidden');
             return;
         }
         
-        // Filter carts from last 7 days
+        // Filter carts by date and archive status
         const filteredCarts = [];
         snapshot.forEach(docSnap => {
             const cart = docSnap.data();
@@ -1344,8 +1383,10 @@ window.loadAbandonedCarts = async function() {
             if (showArchivedCarts && !isArchived) return;
             if (!showArchivedCarts && isArchived) return;
             
-            // Only show carts from last 7 days
-            if (cartDate && cartDate >= sevenDaysAgo) {
+            // Apply date filter if set
+            if (dateThreshold && cartDate && cartDate < dateThreshold) return;
+            
+            if (cartDate) {
                 filteredCarts.push({
                     phone: docSnap.id,
                     data: cart,
@@ -1354,10 +1395,10 @@ window.loadAbandonedCarts = async function() {
             }
         });
         
-        if (filteredCarts.length === 0) {
+        if (filteredCarts.length === 0 && !loadMore) {
             const emptyMessage = showArchivedCarts 
                 ? 'Немає архівованих кошиків'
-                : 'Немає покинутих кошиків за останні 7 днів';
+                : 'Немає покинутих кошиків за обраний період';
             list.innerHTML = `
                 <tr>
                     <td colspan="6" class="text-center py-10">
@@ -1365,6 +1406,7 @@ window.loadAbandonedCarts = async function() {
                     </td>
                 </tr>
             `;
+            if (loadMoreBtn) loadMoreBtn.classList.add('hidden');
             return;
         }
         
@@ -1447,14 +1489,34 @@ window.loadAbandonedCarts = async function() {
             `;
         });
         
-        list.innerHTML = html;
+        if (loadMore) {
+            list.innerHTML += html;
+        } else {
+            list.innerHTML = html;
+        }
         
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
         
-        // Reset selection state after loading
-        if (typeof deselectAllAbandonedCarts === 'function') {
+        // Update count text
+        const countText = document.getElementById('abandoned-carts-count-text');
+        if (countText) {
+            const currentCount = document.querySelectorAll('.abandoned-cart-checkbox').length;
+            countText.textContent = `(${currentCount} ${currentCount === 1 ? 'кошик' : currentCount < 5 ? 'кошики' : 'кошиків'})`;
+        }
+        
+        // Show/hide Load More button
+        if (loadMoreBtn) {
+            if (hasMoreAbandonedCarts && filteredCarts.length === ABANDONED_CARTS_PAGE_SIZE) {
+                loadMoreBtn.classList.remove('hidden');
+            } else {
+                loadMoreBtn.classList.add('hidden');
+            }
+        }
+        
+        // Reset selection state after loading (only if not loading more)
+        if (!loadMore && typeof deselectAllAbandonedCarts === 'function') {
             deselectAllAbandonedCarts();
         }
         
