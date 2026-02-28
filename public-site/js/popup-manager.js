@@ -305,63 +305,64 @@
         const hasButton = popup.buttonText && popup.buttonText.trim() !== '';
 
         modal.innerHTML = `
-            <div class="relative flex flex-col bg-white rounded-2xl w-full max-w-md max-w-[90vw] max-h-[85vh] shadow-2xl overflow-hidden transform transition-all" 
+            <div class="relative flex flex-col bg-white rounded-2xl w-full max-w-[90vw] sm:max-w-md max-h-[90vh] shadow-2xl overflow-hidden mx-auto" 
                  style="animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)">
                 
-                <!-- Close Button - Top Right Corner -->
+                <!-- Close Button - White Circle Over Image -->
                 <button onclick="closePopup('${popup.id}', true)" 
-                        class="absolute top-3 right-3 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-white/90 hover:bg-gray-100 shadow-lg transition-all duration-200 group"
+                        class="absolute top-3 right-3 z-30 w-11 h-11 flex items-center justify-center rounded-full bg-white shadow-xl hover:shadow-2xl transition-all duration-200 group"
+                        style="min-width: 44px; min-height: 44px;"
                         aria-label="Закрити">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-500 group-hover:text-gray-700 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-700 group-hover:text-gray-900 transition-colors">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                 </button>
 
                 ${hasImage ? `
-                    <!-- Hero Image Banner (Fixed Height) -->
-                    <div class="relative w-full h-40 sm:h-48 md:h-56 flex-shrink-0 bg-gradient-to-br from-orange-50 to-orange-100 overflow-hidden">
+                    <!-- Hero Image Banner - Full Width Top -->
+                    <div class="relative w-full h-48 max-h-[200px] flex-shrink-0 bg-gradient-to-br from-orange-50 to-orange-100 overflow-hidden">
                         <img src="${popup.imageUrl}" 
                              alt="${escapeHtml(popup.title)}" 
-                             class="w-full h-full object-cover"
+                             class="w-full h-full object-cover object-center"
                              loading="lazy"
                              onerror="this.style.display='none'">
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
                     </div>
                 ` : ''}
                 
-                <!-- Content Section (Scrollable) -->
-                <div class="flex-1 overflow-y-auto p-6 md:p-8">
-                    <div class="space-y-4 text-center">
+                <!-- Content Section - Perfectly Centered -->
+                <div class="flex-1 overflow-y-auto px-6 py-5">
+                    <div class="w-full max-w-full mx-auto space-y-4 text-center">
                         
-                        <!-- Title -->
-                        <h2 class="text-xl md:text-2xl font-bold text-gray-900 leading-tight">
+                        <!-- Title - Bold & Clear -->
+                        <h2 class="text-xl sm:text-2xl font-bold text-gray-900 leading-tight m-0 p-0">
                             ${escapeHtml(popup.title)}
                         </h2>
                         
-                        <!-- Description -->
-                        <p class="text-sm md:text-base text-gray-600 leading-relaxed whitespace-pre-wrap">
+                        <!-- Description - Muted & Readable -->
+                        <p class="text-sm sm:text-base text-gray-600 leading-relaxed whitespace-pre-wrap m-0 p-0">
                             ${escapeHtml(popup.content)}
                         </p>
                     </div>
                 </div>
                 
-                <!-- Footer with CTA Button (Fixed at bottom) -->
+                <!-- Footer with CTA Button - Full Width on Mobile -->
                 ${hasButton ? `
-                    <div class="flex-shrink-0 p-6 pt-0 md:p-8 md:pt-0">
+                    <div class="flex-shrink-0 px-6 pb-6 pt-2">
                         ${popup.buttonLink ? `
                             <a href="${popup.buttonLink}" 
                                onclick="trackPopupClick('${popup.id}')"
-                               class="block w-full bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-4 rounded-xl font-semibold text-base md:text-lg text-center
-                                      hover:from-orange-600 hover:to-red-600 hover:-translate-y-0.5 hover:shadow-xl
-                                      active:translate-y-0 transition-all duration-200">
+                               class="popup-cta-btn block w-full bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-4 rounded-xl font-semibold text-base text-center
+                                      hover:from-orange-600 hover:to-red-600 hover:scale-[1.02] hover:shadow-2xl
+                                      active:scale-[0.98] transition-all duration-300 shadow-lg m-0">
                                 ${escapeHtml(popup.buttonText)}
                             </a>
                         ` : `
                             <button onclick="closePopup('${popup.id}', false, true)" 
-                                    class="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-4 rounded-xl font-semibold text-base md:text-lg
-                                           hover:from-orange-600 hover:to-red-600 hover:-translate-y-0.5 hover:shadow-xl
-                                           active:translate-y-0 transition-all duration-200">
+                                    class="popup-cta-btn w-full bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-4 rounded-xl font-semibold text-base
+                                           hover:from-orange-600 hover:to-red-600 hover:scale-[1.02] hover:shadow-2xl
+                                           active:scale-[0.98] transition-all duration-300 shadow-lg m-0">
                                 ${escapeHtml(popup.buttonText)}
                             </button>
                         `}
@@ -503,13 +504,87 @@
                 opacity: 1; 
             }
         }
+        @keyframes ctaPulse {
+            0%, 100% { 
+                box-shadow: 0 4px 14px rgba(251, 146, 60, 0.4); 
+            }
+            50% { 
+                box-shadow: 0 6px 20px rgba(251, 146, 60, 0.6), 0 0 0 3px rgba(251, 146, 60, 0.1); 
+            }
+        }
         
-        /* Mobile responsive adjustments */
+        /* CTA Button Pulse Animation */
+        .popup-cta-btn {
+            animation: ctaPulse 2s ease-in-out infinite;
+        }
+        
+        .popup-cta-btn:hover {
+            animation: none;
+        }
+        
+        /* Mobile responsive adjustments - Perfect Centering */
         @media (max-width: 640px) {
             [id^="popup-modal-"] > div {
-                max-width: calc(100vw - 2rem);
-                margin: 0 1rem;
+                max-width: 90vw;
+                margin-left: auto;
+                margin-right: auto;
             }
+            
+            /* Remove any default margins/padding that might cause shifts */
+            [id^="popup-modal-"] h2,
+            [id^="popup-modal-"] p {
+                margin: 0;
+                padding: 0;
+                text-align: center;
+            }
+            
+            /* Optimize content spacing on mobile */
+            [id^="popup-modal-"] .flex-1 {
+                min-height: 0;
+            }
+            
+            /* Ensure proper image aspect ratio on mobile */
+            [id^="popup-modal-"] img {
+                object-position: center;
+                display: block;
+                width: 100%;
+            }
+            
+            /* Full-width button on mobile */
+            [id^="popup-modal-"] .popup-cta-btn {
+                width: 100%;
+                display: block;
+                text-align: center;
+            }
+        }
+        
+        /* Ensure text is always centered */
+        [id^="popup-modal-"] .text-center {
+            text-align: center !important;
+        }
+        
+        [id^="popup-modal-"] .text-center * {
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
+        
+        /* Smooth scrolling for content */
+        [id^="popup-modal-"] .overflow-y-auto {
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+        }
+        
+        /* Premium backdrop blur effect */
+        [id^="popup-modal-"] {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        
+        /* Ensure modal is perfectly centered */
+        [id^="popup-modal-"] {
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     `;
     document.head.appendChild(style);
