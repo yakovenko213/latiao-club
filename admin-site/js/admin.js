@@ -1529,6 +1529,156 @@ window.loadAbandonedCarts = async function(loadMore = false) {
 };
 
 // ============================================
+// SMART CLEANUP ABANDONED CARTS
+// ============================================
+/**
+ * Smart Cleanup: Delete abandoned carts from users who already completed at least one order
+ * This keeps the abandoned carts list clean by focusing only on new potential customers
+ */
+window.smartCleanupAbandonedCarts = async function() {
+    // Confirmation dialog
+    const confirmed = confirm(
+        'Ця дія видалить покинуті кошики користувачів, які вже є вашими клієнтами.\n\n' +
+        'Перевірка буде виконана через колекції "users" та "orders".\n\n' +
+        'Продовжити?'
+    );
+    
+    if (!confirmed) {
+        console.log('⚠️ Smart cleanup cancelled by user');
+        return;
+    }
+    
+    try {
+        console.log('🧹 Starting smart cleanup of abandoned carts...');
+        
+        // Show loading indicator
+        if (typeof window.showNotification === 'function') {
+            window.showNotification('Розпочато розумне очищення...', 'info');
+        }
+        
+        // Step 1: Fetch all abandoned carts
+        console.log('📦 Fetching all abandoned carts...');
+        const cartsSnapshot = await getDocs(collection(db, 'abandoned_carts'));
+        const totalCarts = cartsSnapshot.size;
+        console.log(`📊 Found ${totalCarts} abandoned carts to check`);
+        
+        if (totalCarts === 0) {
+            alert('Немає покинутих кошиків для очищення');
+            return;
+        }
+        
+        // Step 2: Fetch all users to build a phone lookup set
+        console.log('👥 Fetching all users...');
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        const existingUserPhones = new Set();
+        
+        usersSnapshot.forEach(userDoc => {
+            const userData = userDoc.data();
+            const phone = userData.phone || userData.phoneNumber || userDoc.id;
+            if (phone) {
+                // Normalize phone number (remove spaces, dashes, etc.)
+                const normalizedPhone = phone.replace(/[\s\-\(\)]/g, '');
+                existingUserPhones.add(normalizedPhone);
+            }
+        });
+        console.log(`✅ Found ${existingUserPhones.size} existing user phones`);
+        
+        // Step 3: Fetch all orders to check for completed purchases
+        console.log('📦 Fetching all orders...');
+        const ordersSnapshot = await getDocs(collection(db, 'orders'));
+        const phonesWithOrders = new Set();
+        
+        ordersSnapshot.forEach(orderDoc => {
+            const orderData = orderDoc.data();
+            const phone = orderData.customer?.phone || 
+                         orderData.phone || 
+                         orderData.customerPhone;
+            if (phone) {
+                const normalizedPhone = phone.replace(/[\s\-\(\)]/g, '');
+                phonesWithOrders.add(normalizedPhone);
+            }
+        });
+        console.log(`✅ Found ${phonesWithOrders.size} phones with orders`);
+        
+        // Step 4: Identify carts to delete
+        const cartsToDelete = [];
+        
+        cartsSnapshot.forEach(cartDoc => {
+            const cartId = cartDoc.id;
+            const cartData = cartDoc.data();
+            const phone = cartData.customer?.phone || cartId;
+            const normalizedPhone = phone.replace(/[\s\-\(\)]/g, '');
+            
+            // Check if this phone exists in users or has orders
+            const isExistingCustomer = existingUserPhones.has(normalizedPhone) || 
+                                      phonesWithOrders.has(normalizedPhone);
+            
+            if (isExistingCustomer) {
+                console.log(`🗑️ Marking cart for deletion: ${phone} - Already a customer`);
+                cartsToDelete.push(cartId);
+            } else {
+                console.log(`✅ Keeping cart: ${phone} - Not yet a customer`);
+            }
+        });
+        
+        console.log(`📊 Analysis complete: ${cartsToDelete.length} of ${totalCarts} carts marked for deletion`);
+        
+        if (cartsToDelete.length === 0) {
+            alert('Всі покинуті кошики належать новим потенційним клієнтам.\nНічого не потрібно видаляти! 🎉');
+            return;
+        }
+        
+        // Step 5: Delete in batches (Firestore limit is 500 operations per batch)
+        console.log('🗑️ Starting batch deletion...');
+        const BATCH_SIZE = 500;
+        let deletedCount = 0;
+        
+        for (let i = 0; i < cartsToDelete.length; i += BATCH_SIZE) {
+            const batch = writeBatch(db);
+            const batchItems = cartsToDelete.slice(i, i + BATCH_SIZE);
+            
+            batchItems.forEach(cartId => {
+                const cartRef = doc(db, 'abandoned_carts', cartId);
+                batch.delete(cartRef);
+            });
+            
+            await batch.commit();
+            deletedCount += batchItems.length;
+            console.log(`✅ Batch ${Math.floor(i / BATCH_SIZE) + 1} committed: ${batchItems.length} carts deleted`);
+        }
+        
+        // Step 6: Show summary and refresh
+        const summary = `Очищення завершено! ✨\n\n` +
+                       `📊 Перевірено: ${totalCarts} кошиків\n` +
+                       `🗑️ Видалено: ${deletedCount} кошиків\n` +
+                       `✅ Залишилось: ${totalCarts - deletedCount} кошиків\n\n` +
+                       `Покинуті кошики тепер показують лише нових потенційних клієнтів!`;
+        
+        alert(summary);
+        console.log('✅ Smart cleanup completed successfully');
+        console.log(`📊 Summary: Deleted ${deletedCount} of ${totalCarts} abandoned carts`);
+        
+        // Refresh the table
+        if (typeof window.showNotification === 'function') {
+            window.showNotification(`Видалено ${deletedCount} кошиків`, 'success');
+        }
+        
+        // Reload the abandoned carts list
+        if (typeof window.loadAbandonedCarts === 'function') {
+            await window.loadAbandonedCarts();
+        }
+        
+    } catch (error) {
+        console.error('❌ Error during smart cleanup:', error);
+        alert(`Помилка при очищенні: ${error.message}`);
+        
+        if (typeof window.showNotification === 'function') {
+            window.showNotification(`Помилка: ${error.message}`, 'error');
+        }
+    }
+};
+
+// ============================================
 // VIEW ABANDONED CART DETAILS (FIXED)
 // ============================================
 window.viewAbandonedCartDetails = async function(phone) {
