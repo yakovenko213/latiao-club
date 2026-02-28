@@ -1569,6 +1569,10 @@
           <i data-lucide="gamepad-2" class="w-5 h-5"></i>
           <span>🌶️ Гра Перчики</span>
         </a>
+        <a href="#upsell" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+          <i data-lucide="trending-up" class="w-5 h-5"></i>
+          <span>💰 Допродаж (Upsell)</span>
+        </a>
 
         <!-- Collapsible: Cashback Menu -->
         <div class="cashback-category">
@@ -4846,6 +4850,187 @@
       </div>
       <!-- PEPPERS GAME VIEW - Гра Перчики -->
       <!-- ============================================ -->
+
+      <!-- ============================================ -->
+      <!-- UPSELL MANAGEMENT VIEW -->
+      <!-- ============================================ -->
+      <div id="view-upsell" class="view p-8">
+        <div class="max-w-7xl mx-auto">
+          
+          <!-- Header -->
+          <div class="mb-6">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+              <span>💰</span>
+              Допродаж (Upsell)
+            </h1>
+            <p class="text-gray-600">Налаштуйте спеціальні пропозиції, які показуються клієнтам після додавання товару в кошик</p>
+          </div>
+
+          <!-- Statistics Dashboard -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <!-- Views Card -->
+            <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border-2 border-blue-200 shadow-sm p-6 hover:shadow-lg transition-shadow">
+              <div class="flex items-center justify-between mb-4">
+                <div class="p-3 bg-blue-500 rounded-xl shadow-md">
+                  <i data-lucide="eye" class="w-6 h-6 text-white"></i>
+                </div>
+                <span class="text-xs bg-blue-200 text-blue-800 px-3 py-1 rounded-full font-semibold">Перегляди</span>
+              </div>
+              <p class="text-4xl font-bold text-blue-900 mb-1" id="upsell-stat-views">
+                <div class="inline-block animate-spin w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full"></div>
+              </p>
+              <p class="text-sm text-blue-700 font-medium">Показів пропозиції</p>
+            </div>
+
+            <!-- Conversions Card -->
+            <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl border-2 border-green-200 shadow-sm p-6 hover:shadow-lg transition-shadow">
+              <div class="flex items-center justify-between mb-4">
+                <div class="p-3 bg-green-500 rounded-xl shadow-md">
+                  <i data-lucide="check-circle" class="w-6 h-6 text-white"></i>
+                </div>
+                <span class="text-xs bg-green-200 text-green-800 px-3 py-1 rounded-full font-semibold">Конверсії</span>
+              </div>
+              <p class="text-4xl font-bold text-green-900 mb-1" id="upsell-stat-conversions">
+                <div class="inline-block animate-spin w-6 h-6 border-3 border-green-600 border-t-transparent rounded-full"></div>
+              </p>
+              <p class="text-sm text-green-700 font-medium">
+                Прийнято пропозицій
+                <span class="ml-2 text-xs font-bold" id="upsell-conversion-rate">(0%)</span>
+              </p>
+            </div>
+
+            <!-- Revenue Card -->
+            <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl border-2 border-orange-200 shadow-sm p-6 hover:shadow-lg transition-shadow">
+              <div class="flex items-center justify-between mb-4">
+                <div class="p-3 bg-orange-500 rounded-xl shadow-md">
+                  <i data-lucide="dollar-sign" class="w-6 h-6 text-white"></i>
+                </div>
+                <span class="text-xs bg-orange-200 text-orange-800 px-3 py-1 rounded-full font-semibold">Дохід</span>
+              </div>
+              <p class="text-4xl font-bold text-orange-900 mb-1" id="upsell-stat-revenue">
+                <div class="inline-block animate-spin w-6 h-6 border-3 border-orange-600 border-t-transparent rounded-full"></div>
+              </p>
+              <p class="text-sm text-orange-700 font-medium">Виручка від допродажів</p>
+            </div>
+          </div>
+
+          <!-- Configuration Panel -->
+          <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-white">
+              <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <i data-lucide="settings" class="w-5 h-5 text-orange-600"></i>
+                Налаштування Upsell
+              </h3>
+            </div>
+
+            <div class="p-6 space-y-6">
+              
+              <!-- Enable/Disable Toggle -->
+              <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <div>
+                  <h4 class="text-lg font-semibold text-gray-900 mb-1">Статус функції</h4>
+                  <p class="text-sm text-gray-600">Увімкніть або вимкніть показ upsell-пропозицій клієнтам</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="upsell-enabled-toggle" class="sr-only peer" onchange="toggleUpsellStatus()">
+                  <div class="w-14 h-8 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-orange-500"></div>
+                </label>
+              </div>
+
+              <!-- Discount Input -->
+              <div>
+                <label class="block text-sm font-semibold text-gray-900 mb-2">
+                  <i data-lucide="percent" class="w-4 h-4 inline mr-1"></i>
+                  Знижка на товари Upsell (%)
+                </label>
+                <input 
+                  type="number" 
+                  id="upsell-discount" 
+                  min="0" 
+                  max="100" 
+                  step="1"
+                  class="w-full border-2 border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition"
+                  placeholder="Наприклад: 10"
+                >
+                <p class="text-xs text-gray-500 mt-1">Введіть відсоток знижки, який буде застосовано до товарів з обраної категорії</p>
+              </div>
+
+              <!-- Timer Setting -->
+              <div>
+                <label class="block text-sm font-semibold text-gray-900 mb-2">
+                  <i data-lucide="timer" class="w-4 h-4 inline mr-1"></i>
+                  Тривалість пропозиції (секунди)
+                </label>
+                <input 
+                  type="number" 
+                  id="upsell-timer" 
+                  min="10" 
+                  max="300" 
+                  step="5"
+                  class="w-full border-2 border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition"
+                  placeholder="Наприклад: 60"
+                >
+                <p class="text-xs text-gray-500 mt-1">Скільки секунд буде відображатися пропозиція (від 10 до 300 секунд)</p>
+              </div>
+
+              <!-- Category Selector -->
+              <div>
+                <label class="block text-sm font-semibold text-gray-900 mb-2">
+                  <i data-lucide="folder" class="w-4 h-4 inline mr-1"></i>
+                  Категорія товарів для Upsell
+                </label>
+                <select 
+                  id="upsell-category" 
+                  class="w-full border-2 border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-white"
+                >
+                  <option value="">Завантаження категорій...</option>
+                </select>
+                <p class="text-xs text-gray-500 mt-1">Оберіть категорію, товари з якої будуть показані в upsell-пропозиції</p>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="flex items-center gap-4 pt-4 border-t border-gray-200">
+                <button 
+                  onclick="saveUpsellSettings()" 
+                  id="save-upsell-btn"
+                  class="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg font-semibold hover:from-orange-600 hover:to-orange-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <i data-lucide="save" class="w-5 h-5"></i>
+                  <span>Зберегти налаштування</span>
+                </button>
+                
+                <button 
+                  onclick="previewUpsell()" 
+                  id="preview-upsell-btn"
+                  class="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-all shadow-md hover:shadow-lg"
+                >
+                  <i data-lucide="eye" class="w-5 h-5"></i>
+                  <span>Попередній перегляд</span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Info Card -->
+          <div class="mt-6 bg-blue-50 border-2 border-blue-200 rounded-xl p-5">
+            <div class="flex items-start gap-3">
+              <i data-lucide="info" class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"></i>
+              <div>
+                <h4 class="font-bold text-blue-900 mb-2">Як це працює?</h4>
+                <ul class="text-sm text-blue-800 space-y-1.5">
+                  <li>✓ Коли клієнт додає товар у кошик, автоматично з'являється спливаюче вікно з пропозицією</li>
+                  <li>✓ Пропозиція містить товари з обраної категорії зі знижкою</li>
+                  <li>✓ Таймер створює ефект терміновості та збільшує конверсію</li>
+                  <li>✓ Всі дані відслідковуються та відображаються в статистиці вище</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
       <!-- ============================================ -->
       <!-- CASHBACK SETTINGS VIEW -->
       <!-- ============================================ -->
@@ -8293,7 +8478,8 @@
       'merchandising': '🎯 Мерчандайзинг',
       'live-chat': '💬 Онлайн чат | ШІ',
       'reviews': '⭐ Відгуки',
-      'restock-requests': '🔔 Сповіщення про наявність'
+      'restock-requests': '🔔 Сповіщення про наявність',
+      'upsell': '💰 Допродаж (Upsell)'
     }
 
     sidebarLinks.forEach(link => {
@@ -8401,6 +8587,12 @@
           }, 100)
         } else if (target === 'favorites-analytics') {
           loadFavoritesAnalytics()
+        } else if (target === 'upsell') {
+          if (typeof loadUpsellView === 'function') {
+            loadUpsellView()
+          } else {
+            console.error('❌ loadUpsellView not found!')
+          }
         }
 
         // Reinit icons
@@ -12862,6 +13054,373 @@
     
     // Expose function globally for retry button
     window.loadFavoritesAnalytics = loadFavoritesAnalytics;
+    
+    // ============================================
+    // UPSELL MANAGEMENT - Допродаж
+    // ============================================
+    
+    /**
+     * Load upsell view with configuration and statistics
+     */
+    window.loadUpsellView = async function() {
+      console.log('💰 [Upsell] Loading view...');
+      
+      try {
+        // Load categories for the dropdown
+        await loadUpsellCategories();
+        
+        // Load current settings
+        await loadUpsellSettings();
+        
+        // Load statistics
+        await loadUpsellStatistics();
+        
+        console.log('✅ [Upsell] View loaded successfully');
+      } catch (error) {
+        console.error('❌ [Upsell] Error loading view:', error);
+        showNotification('Помилка завантаження Upsell', 'error');
+      }
+    };
+    
+    /**
+     * Load all categories into the dropdown
+     */
+    async function loadUpsellCategories() {
+      try {
+        console.log('📁 [Upsell] Loading categories...');
+        const categorySelect = document.getElementById('upsell-category');
+        
+        if (!categorySelect) {
+          console.error('❌ [Upsell] Category select not found');
+          return;
+        }
+        
+        // Fetch categories from Firestore
+        const categoriesSnapshot = await getDocs(collection(db, 'categories'));
+        const categories = [];
+        
+        categoriesSnapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.active !== false) { // Only show active categories
+            categories.push({
+              id: doc.id,
+              name: data.name || doc.id,
+              slug: data.slug || doc.id
+            });
+          }
+        });
+        
+        // Sort alphabetically
+        categories.sort((a, b) => a.name.localeCompare(b.name, 'uk'));
+        
+        // Populate dropdown
+        categorySelect.innerHTML = '<option value="">Оберіть категорію...</option>';
+        categories.forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat.slug;
+          option.textContent = cat.name;
+          categorySelect.appendChild(option);
+        });
+        
+        console.log(`✅ [Upsell] Loaded ${categories.length} categories`);
+      } catch (error) {
+        console.error('❌ [Upsell] Error loading categories:', error);
+        const categorySelect = document.getElementById('upsell-category');
+        if (categorySelect) {
+          categorySelect.innerHTML = '<option value="">Помилка завантаження категорій</option>';
+        }
+      }
+    }
+    
+    /**
+     * Load current upsell settings from Firestore
+     */
+    async function loadUpsellSettings() {
+      try {
+        console.log('⚙️ [Upsell] Loading settings...');
+        
+        const settingsDoc = await getDoc(doc(db, 'upsell_settings', 'config'));
+        
+        if (settingsDoc.exists()) {
+          const data = settingsDoc.data();
+          
+          // Update UI with loaded settings
+          const enabledToggle = document.getElementById('upsell-enabled-toggle');
+          const discountInput = document.getElementById('upsell-discount');
+          const timerInput = document.getElementById('upsell-timer');
+          const categorySelect = document.getElementById('upsell-category');
+          
+          if (enabledToggle) enabledToggle.checked = data.enabled || false;
+          if (discountInput) discountInput.value = data.discount || 0;
+          if (timerInput) timerInput.value = data.timer || 60;
+          if (categorySelect) categorySelect.value = data.category || '';
+          
+          console.log('✅ [Upsell] Settings loaded:', data);
+        } else {
+          console.log('ℹ️ [Upsell] No settings found, using defaults');
+          // Set defaults
+          const enabledToggle = document.getElementById('upsell-enabled-toggle');
+          const discountInput = document.getElementById('upsell-discount');
+          const timerInput = document.getElementById('upsell-timer');
+          
+          if (enabledToggle) enabledToggle.checked = false;
+          if (discountInput) discountInput.value = 10;
+          if (timerInput) timerInput.value = 60;
+        }
+      } catch (error) {
+        console.error('❌ [Upsell] Error loading settings:', error);
+      }
+    }
+    
+    /**
+     * Load upsell statistics from Firestore
+     */
+    async function loadUpsellStatistics() {
+      try {
+        console.log('📊 [Upsell] Loading statistics...');
+        
+        // Try to get the stats document
+        const statsDoc = await getDoc(doc(db, 'upsell_settings', 'stats'));
+        
+        const viewsEl = document.getElementById('upsell-stat-views');
+        const conversionsEl = document.getElementById('upsell-stat-conversions');
+        const revenueEl = document.getElementById('upsell-stat-revenue');
+        const conversionRateEl = document.getElementById('upsell-conversion-rate');
+        
+        if (statsDoc.exists()) {
+          const data = statsDoc.data();
+          const views = data.views || 0;
+          const conversions = data.conversions || 0;
+          const revenue = data.revenue || 0;
+          const conversionRate = views > 0 ? ((conversions / views) * 100).toFixed(1) : 0;
+          
+          if (viewsEl) viewsEl.textContent = views.toLocaleString('uk-UA');
+          if (conversionsEl) conversionsEl.textContent = conversions.toLocaleString('uk-UA');
+          if (revenueEl) revenueEl.textContent = `₴${revenue.toLocaleString('uk-UA')}`;
+          if (conversionRateEl) conversionRateEl.textContent = `(${conversionRate}%)`;
+          
+          console.log('✅ [Upsell] Statistics loaded:', { views, conversions, revenue, conversionRate });
+        } else {
+          // No stats yet, show zeros
+          if (viewsEl) viewsEl.textContent = '0';
+          if (conversionsEl) conversionsEl.textContent = '0';
+          if (revenueEl) revenueEl.textContent = '₴0';
+          if (conversionRateEl) conversionRateEl.textContent = '(0%)';
+          
+          console.log('ℹ️ [Upsell] No statistics found, showing zeros');
+        }
+      } catch (error) {
+        console.error('❌ [Upsell] Error loading statistics:', error);
+        
+        // Show error in UI
+        const viewsEl = document.getElementById('upsell-stat-views');
+        const conversionsEl = document.getElementById('upsell-stat-conversions');
+        const revenueEl = document.getElementById('upsell-stat-revenue');
+        
+        if (viewsEl) viewsEl.textContent = 'Помилка';
+        if (conversionsEl) conversionsEl.textContent = 'Помилка';
+        if (revenueEl) revenueEl.textContent = 'Помилка';
+      }
+    }
+    
+    /**
+     * Toggle upsell feature on/off
+     */
+    window.toggleUpsellStatus = async function() {
+      const toggle = document.getElementById('upsell-enabled-toggle');
+      if (!toggle) return;
+      
+      const isEnabled = toggle.checked;
+      console.log(`🔄 [Upsell] ${isEnabled ? 'Enabling' : 'Disabling'} upsell feature...`);
+      
+      try {
+        // Update Firestore
+        await setDoc(doc(db, 'upsell_settings', 'config'), {
+          enabled: isEnabled,
+          updatedAt: new Date()
+        }, { merge: true });
+        
+        showNotification(
+          isEnabled ? 'Upsell увімкнено ✅' : 'Upsell вимкнено', 
+          'success'
+        );
+        
+        console.log(`✅ [Upsell] Feature ${isEnabled ? 'enabled' : 'disabled'}`);
+      } catch (error) {
+        console.error('❌ [Upsell] Error toggling status:', error);
+        showNotification('Помилка оновлення статусу', 'error');
+        // Revert toggle
+        toggle.checked = !isEnabled;
+      }
+    };
+    
+    /**
+     * Save all upsell settings to Firestore
+     */
+    window.saveUpsellSettings = async function() {
+      const saveBtn = document.getElementById('save-upsell-btn');
+      if (!saveBtn) return;
+      
+      try {
+        // Disable button
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i><span>Збереження...</span>';
+        lucide.createIcons();
+        
+        // Get values from UI
+        const enabled = document.getElementById('upsell-enabled-toggle').checked;
+        const discount = parseInt(document.getElementById('upsell-discount').value) || 0;
+        const timer = parseInt(document.getElementById('upsell-timer').value) || 60;
+        const category = document.getElementById('upsell-category').value;
+        
+        // Validate inputs
+        if (!category) {
+          showNotification('⚠️ Оберіть категорію для Upsell', 'error');
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = '<i data-lucide="save" class="w-5 h-5"></i><span>Зберегти налаштування</span>';
+          lucide.createIcons();
+          return;
+        }
+        
+        if (discount < 0 || discount > 100) {
+          showNotification('⚠️ Знижка повинна бути від 0 до 100%', 'error');
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = '<i data-lucide="save" class="w-5 h-5"></i><span>Зберегти налаштування</span>';
+          lucide.createIcons();
+          return;
+        }
+        
+        if (timer < 10 || timer > 300) {
+          showNotification('⚠️ Таймер повинен бути від 10 до 300 секунд', 'error');
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = '<i data-lucide="save" class="w-5 h-5"></i><span>Зберегти налаштування</span>';
+          lucide.createIcons();
+          return;
+        }
+        
+        console.log('💾 [Upsell] Saving settings:', { enabled, discount, timer, category });
+        
+        // Save to Firestore
+        await setDoc(doc(db, 'upsell_settings', 'config'), {
+          enabled,
+          discount,
+          timer,
+          category,
+          updatedAt: new Date()
+        });
+        
+        showNotification('✅ Налаштування збережено успішно!', 'success');
+        console.log('✅ [Upsell] Settings saved successfully');
+        
+      } catch (error) {
+        console.error('❌ [Upsell] Error saving settings:', error);
+        showNotification('Помилка збереження налаштувань', 'error');
+      } finally {
+        // Re-enable button
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i data-lucide="save" class="w-5 h-5"></i><span>Зберегти налаштування</span>';
+        lucide.createIcons();
+      }
+    };
+    
+    /**
+     * Preview the upsell offer
+     */
+    window.previewUpsell = function() {
+      const discount = document.getElementById('upsell-discount').value || 0;
+      const timer = document.getElementById('upsell-timer').value || 60;
+      const category = document.getElementById('upsell-category').value;
+      const categoryText = document.getElementById('upsell-category').selectedOptions[0]?.text || 'категорія не обрана';
+      
+      if (!category) {
+        showNotification('⚠️ Спочатку оберіть категорію', 'error');
+        return;
+      }
+      
+      console.log('👁️ [Upsell] Opening preview with:', { discount, timer, category, categoryText });
+      
+      // Create preview modal
+      const modal = document.createElement('div');
+      modal.id = 'upsell-preview-modal';
+      modal.className = 'fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in';
+      modal.innerHTML = `
+        <div class="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden animate-slide-up">
+          <!-- Header -->
+          <div class="bg-gradient-to-r from-orange-500 to-red-500 p-6 text-white">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                  <span class="text-2xl">🎁</span>
+                </div>
+                <div>
+                  <h3 class="text-2xl font-bold">Спеціальна пропозиція!</h3>
+                  <p class="text-white/90 text-sm">Лише зараз для вас</p>
+                </div>
+              </div>
+              <button onclick="document.getElementById('upsell-preview-modal').remove()" 
+                class="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition">
+                <i data-lucide="x" class="w-6 h-6"></i>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Content -->
+          <div class="p-8">
+            <div class="text-center mb-6">
+              <div class="inline-flex items-center gap-2 px-6 py-3 bg-orange-100 text-orange-800 rounded-full font-bold text-xl mb-4">
+                <i data-lucide="percent" class="w-6 h-6"></i>
+                <span>${discount}% ЗНИЖКА</span>
+              </div>
+              <h4 class="text-2xl font-bold text-gray-900 mb-2">
+                Додайте товар з категорії "${categoryText}"
+              </h4>
+              <p class="text-gray-600">
+                Спеціальна знижка ${discount}% на товари з вибраної категорії!
+              </p>
+            </div>
+            
+            <!-- Timer -->
+            <div class="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-orange-200 rounded-xl p-6 text-center mb-6">
+              <p class="text-sm text-gray-600 mb-2">Пропозиція діє ще:</p>
+              <div class="text-5xl font-bold text-orange-600" id="preview-timer">${timer}</div>
+              <p class="text-xs text-gray-500 mt-2">секунд</p>
+            </div>
+            
+            <!-- Product Preview Placeholder -->
+            <div class="bg-gray-50 rounded-xl p-6 mb-6">
+              <p class="text-center text-gray-500 text-sm">
+                📦 Тут відображатимуться товари з категорії "${categoryText}"
+              </p>
+            </div>
+            
+            <!-- Actions -->
+            <div class="flex gap-4">
+              <button class="flex-1 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-xl hover:from-orange-600 hover:to-red-600 transition-all shadow-lg">
+                Додати зі знижкою
+              </button>
+              <button onclick="document.getElementById('upsell-preview-modal').remove()" 
+                class="px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-300 transition">
+                Пропустити
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      lucide.createIcons();
+      
+      // Animate timer countdown (just for demo)
+      let timeLeft = parseInt(timer);
+      const timerEl = document.getElementById('preview-timer');
+      const countdown = setInterval(() => {
+        timeLeft--;
+        if (timerEl) timerEl.textContent = timeLeft;
+        if (timeLeft <= 0) {
+          clearInterval(countdown);
+        }
+      }, 1000);
+    };
     
     // ============================================
     // RESET: Clear behavior analytics data
