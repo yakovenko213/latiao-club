@@ -175,6 +175,24 @@ service cloud.firestore {
       allow write: if request.auth != null;
     }
     
+    // =============================================
+    // 💰 UPSELL SETTINGS & STATISTICS (Admin Panel Integration)
+    // =============================================
+    
+    // Upsell Settings - Configuration and Statistics
+    // Documents: 'config' (settings), 'stats' (tracking data)
+    match /upsell_settings/{document} {
+      // ✅ PUBLIC READ - Customers need to see if upsell is enabled and settings
+      allow read: if true;
+      
+      // ✅ WRITE rules vary by document:
+      // - 'config': Only authenticated admins can update settings
+      // - 'stats': Anyone can update (for tracking views/conversions/revenue)
+      allow create, delete: if request.auth != null; // Only admins can create/delete documents
+      allow update: if request.auth != null  // Admins can update anything
+                    || document == 'stats';   // OR anyone can update stats for tracking
+    }
+    
     // ============================================
     // ⭐ USER FAVORITES - Cloud Sync Storage
     // ============================================

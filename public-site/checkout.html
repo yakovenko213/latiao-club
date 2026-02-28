@@ -947,45 +947,76 @@
 
           <p class="text-xs text-gray-500 mb-6">🚚 Доставка оплачується окремо при отриманні</p>
 
-          <!-- 🎁 UPSELL COMPONENT (One More Snack Before Checkout) -->
-          <div id="checkout-upsell-container" class="hidden mb-6 bg-green-50 border-2 border-dashed border-green-200 rounded-2xl p-4 animate-fade-in">
-            <!-- Badge with Timer -->
+          <!-- 🎁 UPSELL COMPONENT (Special Offer Before Checkout) -->
+          <div id="checkout-upsell-container" class="hidden mb-6 bg-gradient-to-br from-amber-50 via-orange-50 to-pink-50 border-2 border-dashed border-orange-300 rounded-2xl p-4 shadow-lg animate-fade-in">
+            
+            <!-- Header with Timer Badge -->
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center gap-2">
-                <span class="text-lg">🎁</span>
-                <p class="text-sm font-bold text-green-700">Спеціальна пропозиція тільки для цього замовлення</p>
+                <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center animate-pulse shadow-md">
+                  <span class="text-xl">🎁</span>
+                </div>
+                <div>
+                  <p class="text-sm font-extrabold text-gray-900 leading-tight">Спеціальна пропозиція</p>
+                  <p class="text-xs text-orange-600 font-medium">тільки для цього замовлення</p>
+                </div>
               </div>
-              <div class="flex items-center gap-1.5">
-                <span class="text-xs text-red-600 font-semibold">⏰</span>
-                <span id="upsell-timer" class="text-sm font-mono font-bold text-red-600 animate-pulse">2:20</span>
-              </div>
-            </div>
-            
-            <!-- Timer Message -->
-            <div class="mb-3 -mt-1">
-              <p class="text-xs text-red-600 font-medium">⚡ Пропозиція діє лише: <span id="upsell-timer-text" class="font-bold">2:20</span></p>
-            </div>
-            
-            <!-- Product Card -->
-            <div id="upsell-product-card" class="bg-white rounded-xl p-3 flex items-center gap-3 mb-3 transition-all hover:shadow-md">
-              <!-- Loading State -->
-              <div class="flex items-center gap-3 w-full">
-                <div class="w-16 h-16 bg-gray-100 rounded-lg animate-pulse flex-shrink-0"></div>
-                <div class="flex-1">
-                  <div class="h-4 bg-gray-100 rounded animate-pulse mb-2 w-3/4"></div>
-                  <div class="h-3 bg-gray-100 rounded animate-pulse w-1/2"></div>
+              
+              <!-- Countdown Timer -->
+              <div class="bg-gradient-to-r from-red-500 to-orange-500 text-white px-3 py-1.5 rounded-full shadow-md">
+                <div class="flex items-center gap-1.5">
+                  <svg class="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  <span id="upsell-timer" class="text-sm font-mono font-bold">1:00</span>
                 </div>
               </div>
             </div>
             
+            <!-- Urgency Message -->
+            <div class="mb-3 bg-white bg-opacity-70 rounded-lg p-2 border border-orange-200">
+              <p class="text-xs text-red-600 font-bold text-center flex items-center justify-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                <span>Пропозиція зникне через <span id="upsell-timer-text" class="font-extrabold">1:00</span></span>
+              </p>
+            </div>
+            
+            <!-- Product Card -->
+            <div id="upsell-product-card" class="bg-white rounded-xl p-3 shadow-md border-2 border-orange-200 mb-3 transition-all hover:shadow-lg hover:border-orange-400">
+              <!-- Loading State -->
+              <div class="flex items-center gap-3 w-full">
+                <div class="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg animate-pulse flex-shrink-0"></div>
+                <div class="flex-1 space-y-2">
+                  <div class="h-4 bg-gradient-to-r from-gray-100 to-gray-200 rounded animate-pulse w-3/4"></div>
+                  <div class="h-3 bg-gradient-to-r from-gray-100 to-gray-200 rounded animate-pulse w-1/2"></div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Discount Badge -->
+            <div class="flex items-center justify-center gap-2 mb-3 p-2 bg-gradient-to-r from-green-100 to-emerald-100 rounded-lg border border-green-300">
+              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span class="text-sm font-bold text-green-700">Ексклюзивна знижка для вас</span>
+            </div>
+            
             <!-- Add Button -->
             <button id="upsell-add-btn" disabled
-              class="w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-bold py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 disabled:bg-gray-300 disabled:cursor-not-allowed">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-              </svg>
+              class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 active:from-green-800 active:to-emerald-800 text-white font-bold py-3.5 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed disabled:shadow-none transform hover:scale-[1.02] active:scale-[0.98]">
+              <div class="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
               <span>Завантаження...</span>
             </button>
+            
+            <!-- Trust Badge -->
+            <div class="mt-3 flex items-center justify-center gap-2 text-xs text-gray-600">
+              <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              <span class="font-medium">Гарантована якість та швидка доставка</span>
+            </div>
           </div>
 
           <!-- CTA Button (Desktop) -->
@@ -1493,118 +1524,75 @@
     // 🎁 CHECKOUT UPSELL FUNCTIONS
     // ============================================
     
-    // Timer Configuration (Will be loaded from Firestore)
+    // Upsell Configuration (Will be loaded from Firestore)
     let UPSELL_IS_ENABLED = true; // Default
-    let UPSELL_DISCOUNT_PERCENT = 8; // Default
-    let UPSELL_TIMER_DURATION = 140; // Default 2:20 in seconds
-    let UPSELL_LOCKOUT_HOURS = 48; // Default
-    const UPSELL_EXPIRY_KEY = 'upsell_expiry';
-    const UPSELL_LOCKOUT_KEY = 'upsell_locked_until';
+    let UPSELL_DISCOUNT_PERCENT = 10; // Default
+    let UPSELL_TIMER_DURATION = 60; // Default 60 seconds
+    let UPSELL_CATEGORY = ''; // Will be loaded from admin settings
     
     let currentUpsellProduct = null;
-    let upsellTimerInterval = null;
 
     /**
-     * Load upsell settings from Firestore
+     * Load upsell settings from Firestore (Admin Panel Integration)
+     * Collection: upsell_settings/config
      */
     async function loadUpsellSettings() {
       try {
-        console.log('⚡ Loading upsell settings from Firestore...');
+        console.log('💰 [Upsell] Loading settings from Admin Panel...');
         
-        const docRef = doc(db, 'settings', 'checkout_upsell');
+        const docRef = doc(db, 'upsell_settings', 'config');
         const docSnap = await getDoc(docRef);
         
         if (docSnap.exists()) {
           const data = docSnap.data();
           
-          UPSELL_IS_ENABLED = data.isEnabled !== false; // Default true
-          UPSELL_DISCOUNT_PERCENT = data.discountPercent || 8;
-          UPSELL_TIMER_DURATION = data.timerSeconds || 140;
-          UPSELL_LOCKOUT_HOURS = data.cooldownHours || 48;
+          UPSELL_IS_ENABLED = data.enabled || false;
+          UPSELL_DISCOUNT_PERCENT = data.discount || 10;
+          UPSELL_TIMER_DURATION = data.timer || 60;
+          UPSELL_CATEGORY = data.category || '';
           
-          console.log('✅ Upsell settings loaded:', {
-            isEnabled: UPSELL_IS_ENABLED,
+          console.log('✅ [Upsell] Settings loaded:', {
+            enabled: UPSELL_IS_ENABLED,
             discount: UPSELL_DISCOUNT_PERCENT + '%',
             timer: UPSELL_TIMER_DURATION + 's',
-            lockout: UPSELL_LOCKOUT_HOURS + 'h'
+            category: UPSELL_CATEGORY
           });
         } else {
-          console.log('ℹ️ Using default upsell settings');
+          console.log('ℹ️ [Upsell] No settings found - using defaults');
+          UPSELL_IS_ENABLED = false; // Don't show if not configured
         }
       } catch (error) {
-        console.error('❌ Error loading upsell settings:', error);
-        // Continue with defaults
+        console.error('❌ [Upsell] Error loading settings:', error);
+        UPSELL_IS_ENABLED = false; // Fail safe
       }
     }
 
     /**
-     * Check if upsell is currently locked (48-hour lockout)
-     */
-    function isUpsellLocked() {
-      const lockoutUntil = localStorage.getItem(UPSELL_LOCKOUT_KEY);
-      if (!lockoutUntil) return false;
-      
-      const now = Date.now();
-      const lockoutTime = parseInt(lockoutUntil, 10);
-      
-      if (now < lockoutTime) {
-        const remainingHours = Math.ceil((lockoutTime - now) / (1000 * 60 * 60));
-        console.log(`🔒 Upsell locked for ${remainingHours} more hours`);
-        return true;
-      }
-      
-      // Lockout expired, clear it
-      localStorage.removeItem(UPSELL_LOCKOUT_KEY);
-      localStorage.removeItem(UPSELL_EXPIRY_KEY);
-      console.log('🔓 Upsell lockout expired');
-      return false;
-    }
-
-    /**
-     * Start or resume the countdown timer
+     * Start the countdown timer display
      */
     function startUpsellTimer() {
-      // Stop any existing timer
-      if (upsellTimerInterval) {
-        clearInterval(upsellTimerInterval);
-      }
-      
-      const now = Date.now();
-      let expiryTime = localStorage.getItem(UPSELL_EXPIRY_KEY);
-      
-      // If no expiry time exists, create one
-      if (!expiryTime) {
-        expiryTime = now + (UPSELL_TIMER_DURATION * 1000);
-        localStorage.setItem(UPSELL_EXPIRY_KEY, expiryTime.toString());
-        console.log('⏰ Upsell timer started:', new Date(expiryTime));
-      } else {
-        expiryTime = parseInt(expiryTime, 10);
-        console.log('⏰ Upsell timer resumed:', new Date(expiryTime));
-      }
+      let timeLeft = UPSELL_TIMER_DURATION;
       
       // Update timer display immediately
-      updateTimerDisplay(expiryTime);
+      updateTimerDisplay(timeLeft);
       
       // Update every second
-      upsellTimerInterval = setInterval(() => {
-        updateTimerDisplay(expiryTime);
+      const timerInterval = setInterval(() => {
+        timeLeft--;
+        
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          console.log('⏰ Upsell timer expired (display only)');
+        } else {
+          updateTimerDisplay(timeLeft);
+        }
       }, 1000);
     }
 
     /**
      * Update timer display
      */
-    function updateTimerDisplay(expiryTime) {
-      const now = Date.now();
-      const timeLeft = Math.max(0, Math.floor((expiryTime - now) / 1000));
-      
-      if (timeLeft <= 0) {
-        // Timer expired!
-        onTimerExpired();
-        return;
-      }
-      
-      // Format as MM:SS
+    function updateTimerDisplay(timeLeft) {
       const minutes = Math.floor(timeLeft / 60);
       const seconds = timeLeft % 60;
       const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
@@ -1618,167 +1606,215 @@
     }
 
     /**
-     * Handle timer expiration
-     */
-    function onTimerExpired() {
-      console.log('⏰ Upsell timer expired!');
-      
-      // Stop the timer
-      if (upsellTimerInterval) {
-        clearInterval(upsellTimerInterval);
-        upsellTimerInterval = null;
-      }
-      
-      // Set 48-hour lockout (precise calculation using dynamic hours)
-      const lockoutUntil = Date.now() + (UPSELL_LOCKOUT_HOURS * 60 * 60 * 1000);
-      localStorage.setItem(UPSELL_LOCKOUT_KEY, lockoutUntil.toString());
-      localStorage.removeItem(UPSELL_EXPIRY_KEY);
-      
-      console.log(`🔒 Upsell locked (timeout) until:`, new Date(lockoutUntil));
-      console.log(`🔒 Lockout duration: ${UPSELL_LOCKOUT_HOURS} hours`);
-      
-      // Remove the upsell block from DOM
-      const container = document.getElementById('checkout-upsell-container');
-      if (container) {
-        container.style.opacity = '0';
-        container.style.transform = 'translateY(-20px)';
-        container.style.transition = 'all 0.3s ease-out';
-        setTimeout(() => {
-          container.remove();
-          console.log('✅ Upsell block removed from DOM');
-        }, 300);
-      }
-    }
-
-    /**
-     * Stop timer (when product is added to cart)
-     */
-    function stopUpsellTimer() {
-      if (upsellTimerInterval) {
-        clearInterval(upsellTimerInterval);
-        upsellTimerInterval = null;
-        console.log('⏰ Upsell timer stopped');
-      }
-      
-      // Clear timer state
-      localStorage.removeItem(UPSELL_EXPIRY_KEY);
-    }
-
-    /**
      * Fetch one random product from Firestore for upsell
-     * Filters: stock > 0, isVisible == true, not already in cart
+     * SIMPLIFIED: Uses single-field queries and filters locally to avoid index requirements
+     * Filters: from selected category, stock > 0, active == true, not already in cart
+     * FALLBACK: If no products match category, pick ANY available product
      */
     async function fetchUpsellProduct() {
       try {
-        console.log('🎁 Fetching upsell product...');
+        console.log('🎁 [Upsell] Starting product fetch...');
+        console.log('📁 [Upsell] Target category:', UPSELL_CATEGORY);
         
-        // Get all products from Firestore
-        const productsQuery = query(
-          collection(db, 'products'),
-          where('stock', '>', 0),
-          where('isVisible', '==', true)
-        );
-        
-        const querySnapshot = await getDocs(productsQuery);
-        
-        if (querySnapshot.empty) {
-          console.warn('⚠️ No products available for upsell');
-          return null;
-        }
-        
-        // Get current cart product IDs
+        // Get current cart product IDs for exclusion
         const cartProductIds = cartItems.map(item => item.id);
+        console.log('🛒 [Upsell] Cart product IDs to exclude:', cartProductIds);
         
-        // Filter out products already in cart
-        const availableProducts = [];
-        querySnapshot.forEach(doc => {
-          const productData = doc.data();
-          if (!cartProductIds.includes(doc.id)) {
-            availableProducts.push({
-              id: doc.id,
-              ...productData
-            });
-          }
-        });
+        let availableProducts = [];
         
+        // STEP 1: Try to get products from selected category (SIMPLIFIED QUERY - NO INDEX NEEDED)
+        if (UPSELL_CATEGORY) {
+          console.log('🔍 [Upsell] Fetching category products (simple query)...');
+          
+          // SIMPLIFIED: Only filter by category in Firestore query
+          const categoryQuery = query(
+            collection(db, 'products'),
+            where('category', '==', UPSELL_CATEGORY)
+          );
+          
+          const categorySnapshot = await getDocs(categoryQuery);
+          console.log('📦 [Upsell] Found', categorySnapshot.size, 'products in category (before filtering)');
+          
+          // FILTER LOCALLY in JavaScript (no index required!)
+          const allCategoryProducts = categorySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          
+          availableProducts = allCategoryProducts.filter(p => 
+            p.active !== false &&           // Product must be active
+            p.stock > 0 &&                  // Must have stock
+            !cartProductIds.includes(p.id)  // Not already in cart
+          );
+          
+          console.log('✅ [Upsell] Available products after LOCAL filter:', availableProducts.length);
+        }
+        
+        // STEP 2: FALLBACK - If no products in category, get random products from entire collection
         if (availableProducts.length === 0) {
-          console.log('ℹ️ All available products are already in cart');
+          console.warn('⚠️ [Upsell] No products in category, trying FALLBACK (fetch all)...');
+          
+          // SIMPLIFIED: Fetch ALL products (no where clause at all - zero index requirements)
+          const fallbackQuery = query(collection(db, 'products'));
+          
+          const fallbackSnapshot = await getDocs(fallbackQuery);
+          console.log('🔄 [Upsell] Fallback fetched', fallbackSnapshot.size, 'total products');
+          
+          // FILTER LOCALLY
+          const allProducts = fallbackSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          
+          availableProducts = allProducts.filter(p => 
+            p.active !== false &&           // Product must be active
+            p.stock > 0 &&                  // Must have stock
+            !cartProductIds.includes(p.id)  // Not already in cart
+          );
+          
+          console.log('🆘 [Upsell] Fallback available products after LOCAL filter:', availableProducts.length);
+        }
+        
+        // STEP 3: Check if we have any products
+        if (availableProducts.length === 0) {
+          console.error('❌ [Upsell] NO PRODUCTS AVAILABLE (all in cart or no stock)');
           return null;
         }
         
-        // Pick a random product
+        // STEP 4: Pick a random product
         const randomIndex = Math.floor(Math.random() * availableProducts.length);
         const selectedProduct = availableProducts[randomIndex];
         
-        console.log('✅ Upsell product selected:', selectedProduct.name);
+        console.log('✅ [Upsell] Product selected:', selectedProduct.title || selectedProduct.name);
+        console.log('💰 [Upsell] Product price:', selectedProduct.price, 'грн');
+        console.log('📦 [Upsell] Product stock:', selectedProduct.stock);
+        
         return selectedProduct;
         
       } catch (error) {
-        console.error('❌ Error fetching upsell product:', error);
+        console.error('❌ [Upsell] Error fetching product:', error);
+        console.error('🔍 [Upsell] Error details:', error.message);
+        console.error('🔍 [Upsell] Error code:', error.code);
         return null;
       }
     }
 
     /**
-     * Render the upsell product card
+     * Render the upsell product card (ROBUST VERSION)
      */
-    function renderUpsellProduct(product) {
-      if (!product) {
-        document.getElementById('checkout-upsell-container').classList.add('hidden');
+    async function renderUpsellProduct(product) {
+      console.log('🎨 [Upsell] renderUpsellProduct called');
+      console.log('📦 [Upsell] Product data:', product);
+      
+      // Get container
+      const container = document.getElementById('checkout-upsell-container');
+      
+      if (!container) {
+        console.error('❌ [Upsell] Container #checkout-upsell-container NOT FOUND in HTML!');
+        console.error('🔍 [Upsell] Available IDs:', [...document.querySelectorAll('[id]')].map(el => el.id));
         return;
       }
       
-      const container = document.getElementById('checkout-upsell-container');
+      console.log('✅ [Upsell] Container found:', container);
+      
+      // Check if product is valid
+      if (!product) {
+        console.warn('⚠️ [Upsell] No product provided - hiding container');
+        container.classList.add('hidden');
+        container.style.display = 'none';
+        return;
+      }
+      
       const productCard = document.getElementById('upsell-product-card');
       const addButton = document.getElementById('upsell-add-btn');
+      
+      if (!productCard) {
+        console.error('❌ [Upsell] Product card element not found!');
+        return;
+      }
+      
+      if (!addButton) {
+        console.error('❌ [Upsell] Add button element not found!');
+        return;
+      }
       
       // Calculate discounted price (using dynamic discount from Firestore)
       const originalPrice = product.price;
       const discountedPrice = Math.round(originalPrice * (1 - UPSELL_DISCOUNT_PERCENT / 100));
       
-      // Render product card
+      // Support both 'title' and 'name' fields
+      const productName = product.title || product.name || 'Товар';
+      const productImage = product.image || product.imageUrl || 'https://placehold.co/100x100/fff3e8/ff6b00?text=Latiao';
+      
+      // Render product card with enhanced design
       productCard.innerHTML = `
-        <div class="w-16 h-16 flex-shrink-0 bg-orange-50 rounded-lg overflow-hidden">
-          <img src="${product.imageUrl || product.image || 'https://placehold.co/100x100/fff3e8/ff6b00?text=Latiao'}" 
-               alt="${product.name}" 
-               class="w-full h-full object-cover">
-        </div>
-        <div class="flex-1 min-w-0">
-          <h4 class="text-sm font-bold text-gray-900 line-clamp-2 mb-1">${product.name}</h4>
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-400 line-through">${originalPrice} грн</span>
-            <span class="text-base font-extrabold text-green-600">${discountedPrice} грн</span>
-            <span class="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full font-bold">-${UPSELL_DISCOUNT_PERCENT}%</span>
+        <div class="flex items-center gap-3 w-full">
+          <div class="w-20 h-20 flex-shrink-0 bg-gradient-to-br from-orange-100 to-pink-100 rounded-xl overflow-hidden shadow-md ring-2 ring-orange-300">
+            <img src="${productImage}" 
+                 alt="${productName}" 
+                 class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+          </div>
+          <div class="flex-1 min-w-0">
+            <h4 class="text-sm font-extrabold text-gray-900 line-clamp-2 mb-2 leading-tight">${productName}</h4>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-sm text-gray-400 line-through font-medium">${originalPrice} грн</span>
+              <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+              </svg>
+              <span class="text-lg font-black text-green-600 drop-shadow">${discountedPrice} грн</span>
+            </div>
+            <div class="mt-1.5 inline-flex items-center gap-1 bg-gradient-to-r from-red-500 to-orange-500 text-white px-2.5 py-1 rounded-full shadow-md">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clip-rule="evenodd"/>
+              </svg>
+              <span class="text-xs font-bold">Знижка ${UPSELL_DISCOUNT_PERCENT}%</span>
+            </div>
           </div>
         </div>
       `;
       
-      // Update button
+      // Update button with better styling
       addButton.disabled = false;
       addButton.innerHTML = `
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
         </svg>
-        <span>Додати за ${discountedPrice} грн</span>
+        <span class="font-extrabold">Додати за ${discountedPrice} грн</span>
+        <svg class="w-5 h-5 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+        </svg>
       `;
       
-      // Show container
-      container.classList.remove('hidden');
+      // FORCE SHOW CONTAINER - Remove all hiding classes and force display
+      console.log('👁️ [Upsell] Forcing container visibility...');
+      container.classList.remove('hidden', 'd-none', 'opacity-0');
+      container.style.display = 'block';
+      container.style.opacity = '1';
+      container.style.visibility = 'visible';
+      
+      console.log('✅ [Upsell] Container should now be VISIBLE');
+      console.log('🎨 [Upsell] Container classes:', container.className);
+      console.log('🎨 [Upsell] Container display:', container.style.display);
       
       // Store product for later use
       currentUpsellProduct = { ...product, discountedPrice };
       
-      // 📊 TRACK VIEW (once per page load)
+      // 📊 TRACK VIEW (once per page load) - Admin Panel Integration
       if (!sessionStorage.getItem('upsell_view_tracked')) {
         sessionStorage.setItem('upsell_view_tracked', 'true');
-        const upsellRef = doc(db, 'settings', 'checkout_upsell');
-        updateDoc(upsellRef, {
-          viewsCount: increment(1)
-        }).catch(err => console.error('Failed to track upsell view:', err));
-        console.log('📊 Upsell view tracked');
+        
+        try {
+          const statsRef = doc(db, 'upsell_settings', 'stats');
+          await setDoc(statsRef, {
+            views: increment(1)
+          }, { merge: true });
+          console.log('📊 [Upsell] View tracked');
+        } catch (err) {
+          console.warn('⚠️ [Upsell] Stats tracking skipped (permissions):', err.message);
+        }
       }
       
-      // ⏰ START THE COUNTDOWN TIMER
+      // ⏰ START THE COUNTDOWN TIMER (visual only)
       startUpsellTimer();
       console.log('⏰ Upsell timer activated!');
     }
@@ -1786,7 +1822,7 @@
     /**
      * Add upsell product to cart instantly
      */
-    function addUpsellToCart() {
+    async function addUpsellToCart() {
       if (!currentUpsellProduct) return;
       
       const product = currentUpsellProduct;
@@ -1802,11 +1838,14 @@
         existingItem.quantity = (existingItem.quantity || 1) + 1;
       } else {
         // Add new item with discounted price
+        const productTitle = product.title || product.name || 'Товар';
+        const productImage = product.image || product.imageUrl || '';
+        
         cart.push({
           id: product.id,
-          name: product.name,
+          name: productTitle,
           price: product.discountedPrice, // Use discounted price
-          image: product.imageUrl || product.image,
+          image: productImage,
           stock: product.stock,
           spiciness: product.spiciness || 0,
           quantity: 1,
@@ -1817,12 +1856,17 @@
       // Save to localStorage
       localStorage.setItem('latiao_cart', JSON.stringify(cart));
       
-      // 📊 TRACK ADD TO CART
-      const upsellRef = doc(db, 'settings', 'checkout_upsell');
-      updateDoc(upsellRef, {
-        addsCount: increment(1)
-      }).catch(err => console.error('Failed to track upsell add:', err));
-      console.log('📊 Upsell add-to-cart tracked');
+      // 📊 TRACK CONVERSION & REVENUE - Admin Panel Integration
+      try {
+        const statsRef = doc(db, 'upsell_settings', 'stats');
+        await setDoc(statsRef, {
+          conversions: increment(1),
+          revenue: increment(product.discountedPrice)
+        }, { merge: true });
+        console.log('📊 [Upsell] Conversion tracked - Revenue: ₴' + product.discountedPrice);
+      } catch (err) {
+        console.warn('⚠️ [Upsell] Stats tracking skipped (permissions):', err.message);
+      }
       
       // Update global cartItems and re-render
       cartItems = cart;
@@ -1830,43 +1874,21 @@
       calculateTotals();
       validateForm();
       
-      // 🔒 SET 48-HOUR LOCKOUT (User accepted the offer) - using dynamic hours
-      const lockoutUntil = Date.now() + (UPSELL_LOCKOUT_HOURS * 60 * 60 * 1000);
-      localStorage.setItem(UPSELL_LOCKOUT_KEY, lockoutUntil.toString());
-      localStorage.removeItem(UPSELL_EXPIRY_KEY); // Clear timer state
-      console.log(`🔒 Upsell lockout activated (purchase) until:`, new Date(lockoutUntil));
-      console.log(`🔒 Lockout duration: ${UPSELL_LOCKOUT_HOURS} hours`);
-      
-      // Update button state
+      // Update button state with success styling
       addButton.disabled = true;
-      addButton.classList.add('bg-gray-300', '!bg-gray-300');
-      addButton.classList.remove('bg-green-600', 'hover:bg-green-700');
+      addButton.className = 'w-full bg-gradient-to-r from-gray-400 to-gray-500 text-white font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-lg cursor-not-allowed';
       addButton.innerHTML = `
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
         </svg>
-        <span>Додано зі знижкою!</span>
+        <span class="font-extrabold">Додано зі знижкою!</span>
+        <svg class="w-5 h-5 text-yellow-300" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+        </svg>
       `;
-      
-      // ⏰ STOP THE TIMER
-      stopUpsellTimer();
       
       // Show success toast with discount message
       showToast(`🎉 Товар додано зі знижкою -${UPSELL_DISCOUNT_PERCENT}%!`, 'success');
-      
-      // Hide the upsell block after showing success message
-      const container = document.getElementById('checkout-upsell-container');
-      if (container) {
-        setTimeout(() => {
-          container.style.opacity = '0';
-          container.style.transform = 'translateY(-20px)';
-          container.style.transition = 'all 0.3s ease-out';
-          setTimeout(() => {
-            container.remove(); // Remove from DOM completely
-            console.log('✅ Upsell block removed (user purchased)');
-          }, 300);
-        }, 1800); // Slightly longer delay to show the success state
-      }
       
       console.log('✅ Upsell product added to cart:', product.name);
     }
@@ -1875,19 +1897,33 @@
      * Initialize upsell component
      */
     async function initializeCheckoutUpsell() {
+      console.log('🚀 [Upsell] ========================================');
+      console.log('🚀 [Upsell] INITIALIZATION STARTED');
+      console.log('🚀 [Upsell] ========================================');
+      
       // ⚡ LOAD SETTINGS FROM FIRESTORE FIRST
+      console.log('⚙️ [Upsell] Loading settings from Firestore...');
       await loadUpsellSettings();
+      
+      console.log('📋 [Upsell] Settings loaded:');
+      console.log('  - Enabled:', UPSELL_IS_ENABLED);
+      console.log('  - Discount:', UPSELL_DISCOUNT_PERCENT + '%');
+      console.log('  - Timer:', UPSELL_TIMER_DURATION + 's');
+      console.log('  - Category:', UPSELL_CATEGORY);
       
       // ❌ CHECK IF ENABLED
       if (!UPSELL_IS_ENABLED) {
-        console.log('⚡ Upsell is disabled in settings - not showing');
+        console.log('⚠️ [Upsell] Feature is DISABLED in admin settings - not showing');
         return;
       }
       
-      // 🔒 CHECK 48-HOUR LOCKOUT
-      if (isUpsellLocked()) {
-        console.log('🚫 Upsell is locked - not showing');
-        return;
+      console.log('✅ [Upsell] Enabled - proceeding to render...');
+      
+      // 🎨 FORCE CONTAINER VISIBILITY EARLY
+      const container = document.getElementById('checkout-upsell-container');
+      if (container) {
+        container.style.display = 'block';
+        console.log('👁️ [Upsell] Container visibility forced to block');
       }
       
       const addButton = document.getElementById('upsell-add-btn');
@@ -1895,11 +1931,30 @@
       // Attach click handler
       if (addButton) {
         addButton.addEventListener('click', addUpsellToCart);
+        console.log('✅ [Upsell] Click handler attached to button');
+      } else {
+        console.error('❌ [Upsell] Add button not found!');
       }
       
       // Fetch and render product
+      console.log('🔍 [Upsell] Fetching product...');
       const upsellProduct = await fetchUpsellProduct();
-      renderUpsellProduct(upsellProduct);
+      
+      if (!upsellProduct) {
+        console.warn('⚠️ [Upsell] No product available - hiding container');
+        if (container) {
+          container.style.display = 'none';
+        }
+        console.log('🚀 [Upsell] INITIALIZATION ABORTED (no product)');
+        return;
+      }
+      
+      console.log('🎨 [Upsell] Rendering product...');
+      await renderUpsellProduct(upsellProduct);
+      
+      console.log('🚀 [Upsell] ========================================');
+      console.log('🚀 [Upsell] INITIALIZATION COMPLETE ✅');
+      console.log('🚀 [Upsell] ========================================');
     }
 
     // ============================================
