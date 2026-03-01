@@ -750,6 +750,38 @@
             </div>
           </div>
 
+          <!-- 🔥 UPSELL COMPONENT - Vertical Thumb-Friendly Layout -->
+          <div id="checkout-upsell-container" class="hidden my-4 bg-amber-50 border-2 border-dashed border-amber-300 rounded-lg p-3 hover:bg-amber-100 hover:border-amber-400 transition-all duration-300">
+            <!-- Header with Timer -->
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold text-amber-900 uppercase tracking-wide">🔥 Спецпропозиція тільки зараз!</span>
+              <div class="flex items-center gap-1 text-red-600 font-bold text-xs animate-pulse">
+                <span>⏱️</span>
+                <span id="upsell-timer-inline">04:59</span>
+              </div>
+            </div>
+            
+            <!-- Main Content Area - Vertical Stack -->
+            <div class="flex flex-col gap-3">
+              <!-- Top Row: Product Info (Image + Details horizontal) -->
+              <div id="upsell-product-card" class="flex items-center gap-3">
+                <!-- Loading State (will be replaced) -->
+                <div class="w-14 h-14 bg-gray-200 rounded-lg animate-pulse flex-shrink-0"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="h-4 bg-gray-200 rounded w-full animate-pulse mb-1"></div>
+                  <div class="h-3 bg-gray-200 rounded w-2/3 animate-pulse"></div>
+                </div>
+              </div>
+              
+              <!-- Bottom Row: Full-Width Add Button -->
+              <button id="upsell-add-btn" disabled 
+                class="w-full bg-green-600 hover:bg-green-700 active:scale-95 text-white font-bold py-3 rounded-xl shadow-sm transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                <span>Завантаження...</span>
+              </button>
+            </div>
+          </div>
+
           <!-- Divider -->
           <div class="border-t border-gray-100 my-5"></div>
 
@@ -814,41 +846,6 @@
                 Використати кешбек для цього замовлення
               </span>
             </label>
-          </div>
-
-          <!-- 🎁 UPSELL COMPONENT - Sleek Horizontal Special Offer Bar -->
-          <div id="checkout-upsell-container" class="hidden mb-4 bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-dashed border-orange-300 rounded-lg overflow-hidden shadow-sm hover:border-orange-400 hover:shadow-md transition-all duration-300">
-            <!-- Stylish Ribbon Header -->
-            <div class="bg-gradient-to-r from-orange-400 to-amber-400 px-3 py-1.5 lg:py-1">
-              <div class="flex items-center justify-center lg:justify-start gap-2">
-                <span class="text-white text-xs lg:text-sm font-extrabold tracking-wider">✨ СПЕЦПРОПОЗИЦІЯ ДЛЯ ЦЬОГО ЗАМОВЛЕННЯ</span>
-              </div>
-            </div>
-            
-            <!-- Main Content Area: Flex Container for Product + Button -->
-            <div class="p-3">
-              <!-- Flex Wrapper: Column on Mobile, Row on Desktop -->
-              <div class="flex flex-col sm:flex-row items-center gap-4">
-                
-                <!-- Content Wrapper: Product Card -->
-                <div id="upsell-product-card" class="flex-1 w-full sm:w-auto flex items-center gap-3">
-                  <!-- Loading State (will be replaced by renderUpsellProduct) -->
-                  <div class="w-14 h-14 lg:w-16 lg:h-16 bg-gray-200 rounded-lg animate-pulse flex-shrink-0"></div>
-                  <div class="flex-1 space-y-1">
-                    <div class="h-3 bg-gray-200 rounded w-3/4 animate-pulse"></div>
-                    <div class="h-2 bg-gray-200 rounded w-1/2 animate-pulse"></div>
-                  </div>
-                </div>
-                
-                <!-- ALWAYS VISIBLE Add Button: Full-width on Mobile, Auto-width on Desktop -->
-                <button id="upsell-add-btn" disabled 
-                  class="w-full sm:w-auto sm:ml-auto bg-green-600 hover:bg-green-700 active:scale-95 text-white font-bold py-3 sm:py-2 px-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2 flex-shrink-0 text-base">
-                  <div class="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                  <span>Завантаження...</span>
-                </button>
-                
-              </div>
-            </div>
           </div>
 
           <!-- Total - Standard View (Online Payment) -->
@@ -1711,40 +1708,31 @@
       const productName = product.title || product.name || 'Товар';
       const productImage = product.image || product.imageUrl || 'https://placehold.co/100x100/fff3e8/ff6b00?text=Latiao';
       
-      // Render product card content ONLY (button stays separate in HTML)
+      // Render product card content for VERTICAL THUMB-FRIENDLY layout
       productCard.innerHTML = `
-        <!-- Image (larger on desktop) -->
-        <div class="w-14 h-14 lg:w-16 lg:h-16 flex-shrink-0 rounded-lg overflow-hidden shadow-sm ring-2 ring-orange-200">
+        <!-- Product Image (Larger) -->
+        <div class="w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden shadow-sm ring-2 ring-amber-200">
           <img src="${productImage}" 
                alt="${productName}" 
                class="w-full h-full object-cover">
         </div>
         
-        <!-- Product Info with Timer -->
+        <!-- Product Info (Name + Prices) -->
         <div class="flex-1 min-w-0">
-          <div class="flex items-start justify-between gap-2 mb-1">
-            <h4 class="text-sm lg:text-base font-bold text-gray-900 truncate">${productName}</h4>
-            <div class="flex items-center gap-1 text-red-600 font-bold text-xs lg:text-sm animate-pulse flex-shrink-0">
-              <span>⏱️</span>
-              <span id="upsell-timer-inline">${document.getElementById('upsell-timer')?.textContent || '04:59'}</span>
-            </div>
-          </div>
+          <h4 class="text-sm font-semibold text-gray-900 mb-1 leading-tight">${productName}</h4>
           <div class="flex items-center gap-2 flex-wrap">
-            <span class="text-xs lg:text-sm text-gray-400 line-through">${originalPrice} грн</span>
-            <span class="text-red-600 font-extrabold text-lg lg:text-xl">${discountedPrice} грн</span>
-            <span class="text-[10px] lg:text-xs bg-red-100 text-red-700 px-1.5 lg:px-2 py-0.5 rounded-full font-bold">-${UPSELL_DISCOUNT_PERCENT}%</span>
+            <span class="text-xs text-gray-400 line-through">${originalPrice} грн</span>
+            <span class="text-red-600 font-extrabold text-base">${discountedPrice} грн</span>
+            <span class="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold">-${UPSELL_DISCOUNT_PERCENT}%</span>
           </div>
         </div>
       `;
       
-      // Update button with SOLID GREEN styling (no gradients) and ensure visibility
+      // Update button for VERTICAL LAYOUT (full-width, prominent)
       addButton.disabled = false;
-      addButton.className = 'w-full sm:w-auto sm:ml-auto bg-green-600 hover:bg-green-700 active:scale-95 text-white font-bold py-3 sm:py-2 px-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 flex-shrink-0 text-base';
+      addButton.className = 'w-full bg-green-600 hover:bg-green-700 active:scale-95 text-white font-bold py-3 rounded-xl shadow-sm transition-all duration-200 flex items-center justify-center gap-2';
       addButton.innerHTML = `
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
-        </svg>
-        <span class="font-bold">Додати до замовлення</span>
+        <span class="font-bold">Додати до замовлення +</span>
       `;
       
       // FORCE button visibility
@@ -1802,11 +1790,11 @@
       const product = currentUpsellProduct;
       const addButton = document.getElementById('upsell-add-btn');
       
-      // Show loading state
+      // Show loading state (vertical full-width)
       addButton.disabled = true;
-      addButton.className = 'w-full sm:w-auto sm:ml-auto bg-gray-400 text-white font-bold py-3 sm:py-2 px-6 rounded-xl shadow-md cursor-not-allowed flex items-center justify-center gap-2 flex-shrink-0 text-base';
+      addButton.className = 'w-full bg-gray-400 text-white font-bold py-3 rounded-xl shadow-sm cursor-not-allowed flex items-center justify-center gap-2';
       addButton.innerHTML = `
-        <div class="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+        <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
         <span>Додається...</span>
       `;
       
@@ -1856,11 +1844,11 @@
       calculateTotals();
       validateForm();
       
-      // Update button state with success styling
+      // Update button state with success styling (vertical full-width)
       addButton.disabled = true;
-      addButton.className = 'w-full sm:w-auto sm:ml-auto bg-green-600 text-white font-bold py-3 sm:py-2 px-6 rounded-xl flex items-center justify-center gap-2 shadow-lg cursor-not-allowed animate-pulse flex-shrink-0 text-base';
+      addButton.className = 'w-full bg-green-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-md cursor-not-allowed animate-pulse';
       addButton.innerHTML = `
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
         </svg>
         <span class="font-bold">Додано! ✅</span>
