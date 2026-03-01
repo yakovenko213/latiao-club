@@ -816,6 +816,41 @@
             </label>
           </div>
 
+          <!-- 🎁 UPSELL COMPONENT - Sleek Horizontal Special Offer Bar -->
+          <div id="checkout-upsell-container" class="hidden mb-4 bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-dashed border-orange-300 rounded-lg overflow-hidden shadow-sm hover:border-orange-400 hover:shadow-md transition-all duration-300">
+            <!-- Stylish Ribbon Header -->
+            <div class="bg-gradient-to-r from-orange-400 to-amber-400 px-3 py-1.5 lg:py-1">
+              <div class="flex items-center justify-center lg:justify-start gap-2">
+                <span class="text-white text-xs lg:text-sm font-extrabold tracking-wider">✨ СПЕЦПРОПОЗИЦІЯ ДЛЯ ЦЬОГО ЗАМОВЛЕННЯ</span>
+              </div>
+            </div>
+            
+            <!-- Main Content Area: Flex Container for Product + Button -->
+            <div class="p-3">
+              <!-- Flex Wrapper: Column on Mobile, Row on Desktop -->
+              <div class="flex flex-col sm:flex-row items-center gap-4">
+                
+                <!-- Content Wrapper: Product Card -->
+                <div id="upsell-product-card" class="flex-1 w-full sm:w-auto flex items-center gap-3">
+                  <!-- Loading State (will be replaced by renderUpsellProduct) -->
+                  <div class="w-14 h-14 lg:w-16 lg:h-16 bg-gray-200 rounded-lg animate-pulse flex-shrink-0"></div>
+                  <div class="flex-1 space-y-1">
+                    <div class="h-3 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+                    <div class="h-2 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+                  </div>
+                </div>
+                
+                <!-- ALWAYS VISIBLE Add Button: Full-width on Mobile, Auto-width on Desktop -->
+                <button id="upsell-add-btn" disabled 
+                  class="w-full sm:w-auto sm:ml-auto bg-green-600 hover:bg-green-700 active:scale-95 text-white font-bold py-3 sm:py-2 px-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2 flex-shrink-0 text-base">
+                  <div class="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                  <span>Завантаження...</span>
+                </button>
+                
+              </div>
+            </div>
+          </div>
+
           <!-- Total - Standard View (Online Payment) -->
           <div id="summary-standard" class="mb-2">
             <!-- Subtotal (before discount) -->
@@ -946,78 +981,6 @@
           </div>
 
           <p class="text-xs text-gray-500 mb-6">🚚 Доставка оплачується окремо при отриманні</p>
-
-          <!-- 🎁 UPSELL COMPONENT (Special Offer Before Checkout) -->
-          <div id="checkout-upsell-container" class="hidden mb-6 bg-gradient-to-br from-amber-50 via-orange-50 to-pink-50 border-2 border-dashed border-orange-300 rounded-2xl p-4 shadow-lg animate-fade-in">
-            
-            <!-- Header with Timer Badge -->
-            <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-2">
-                <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center animate-pulse shadow-md">
-                  <span class="text-xl">🎁</span>
-                </div>
-                <div>
-                  <p class="text-sm font-extrabold text-gray-900 leading-tight">Спеціальна пропозиція</p>
-                  <p class="text-xs text-orange-600 font-medium">тільки для цього замовлення</p>
-                </div>
-              </div>
-              
-              <!-- Countdown Timer -->
-              <div class="bg-gradient-to-r from-red-500 to-orange-500 text-white px-3 py-1.5 rounded-full shadow-md">
-                <div class="flex items-center gap-1.5">
-                  <svg class="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                  </svg>
-                  <span id="upsell-timer" class="text-sm font-mono font-bold">1:00</span>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Urgency Message -->
-            <div class="mb-3 bg-white bg-opacity-70 rounded-lg p-2 border border-orange-200">
-              <p class="text-xs text-red-600 font-bold text-center flex items-center justify-center gap-1">
-                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                </svg>
-                <span>Пропозиція зникне через <span id="upsell-timer-text" class="font-extrabold">1:00</span></span>
-              </p>
-            </div>
-            
-            <!-- Product Card -->
-            <div id="upsell-product-card" class="bg-white rounded-xl p-3 shadow-md border-2 border-orange-200 mb-3 transition-all hover:shadow-lg hover:border-orange-400">
-              <!-- Loading State -->
-              <div class="flex items-center gap-3 w-full">
-                <div class="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg animate-pulse flex-shrink-0"></div>
-                <div class="flex-1 space-y-2">
-                  <div class="h-4 bg-gradient-to-r from-gray-100 to-gray-200 rounded animate-pulse w-3/4"></div>
-                  <div class="h-3 bg-gradient-to-r from-gray-100 to-gray-200 rounded animate-pulse w-1/2"></div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Discount Badge -->
-            <div class="flex items-center justify-center gap-2 mb-3 p-2 bg-gradient-to-r from-green-100 to-emerald-100 rounded-lg border border-green-300">
-              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-              <span class="text-sm font-bold text-green-700">Ексклюзивна знижка для вас</span>
-            </div>
-            
-            <!-- Add Button -->
-            <button id="upsell-add-btn" disabled
-              class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 active:from-green-800 active:to-emerald-800 text-white font-bold py-3.5 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed disabled:shadow-none transform hover:scale-[1.02] active:scale-[0.98]">
-              <div class="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-              <span>Завантаження...</span>
-            </button>
-            
-            <!-- Trust Badge -->
-            <div class="mt-3 flex items-center justify-center gap-2 text-xs text-gray-600">
-              <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-              </svg>
-              <span class="font-medium">Гарантована якість та швидка доставка</span>
-            </div>
-          </div>
 
           <!-- CTA Button (Desktop) -->
           <button id="submitBtnDesktop" disabled
@@ -1597,11 +1560,13 @@
       const seconds = timeLeft % 60;
       const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
       
-      // Update both timer displays
+      // Update all timer displays (header timer, inline timer in product info)
       const timerEl = document.getElementById('upsell-timer');
+      const timerInlineEl = document.getElementById('upsell-timer-inline');
       const timerTextEl = document.getElementById('upsell-timer-text');
       
       if (timerEl) timerEl.textContent = formattedTime;
+      if (timerInlineEl) timerInlineEl.textContent = formattedTime;
       if (timerTextEl) timerTextEl.textContent = formattedTime;
     }
 
@@ -1746,44 +1711,46 @@
       const productName = product.title || product.name || 'Товар';
       const productImage = product.image || product.imageUrl || 'https://placehold.co/100x100/fff3e8/ff6b00?text=Latiao';
       
-      // Render product card with enhanced design
+      // Render product card content ONLY (button stays separate in HTML)
       productCard.innerHTML = `
-        <div class="flex items-center gap-3 w-full">
-          <div class="w-20 h-20 flex-shrink-0 bg-gradient-to-br from-orange-100 to-pink-100 rounded-xl overflow-hidden shadow-md ring-2 ring-orange-300">
-            <img src="${productImage}" 
-                 alt="${productName}" 
-                 class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+        <!-- Image (larger on desktop) -->
+        <div class="w-14 h-14 lg:w-16 lg:h-16 flex-shrink-0 rounded-lg overflow-hidden shadow-sm ring-2 ring-orange-200">
+          <img src="${productImage}" 
+               alt="${productName}" 
+               class="w-full h-full object-cover">
+        </div>
+        
+        <!-- Product Info with Timer -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-start justify-between gap-2 mb-1">
+            <h4 class="text-sm lg:text-base font-bold text-gray-900 truncate">${productName}</h4>
+            <div class="flex items-center gap-1 text-red-600 font-bold text-xs lg:text-sm animate-pulse flex-shrink-0">
+              <span>⏱️</span>
+              <span id="upsell-timer-inline">${document.getElementById('upsell-timer')?.textContent || '04:59'}</span>
+            </div>
           </div>
-          <div class="flex-1 min-w-0">
-            <h4 class="text-sm font-extrabold text-gray-900 line-clamp-2 mb-2 leading-tight">${productName}</h4>
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-sm text-gray-400 line-through font-medium">${originalPrice} грн</span>
-              <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-              </svg>
-              <span class="text-lg font-black text-green-600 drop-shadow">${discountedPrice} грн</span>
-            </div>
-            <div class="mt-1.5 inline-flex items-center gap-1 bg-gradient-to-r from-red-500 to-orange-500 text-white px-2.5 py-1 rounded-full shadow-md">
-              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clip-rule="evenodd"/>
-              </svg>
-              <span class="text-xs font-bold">Знижка ${UPSELL_DISCOUNT_PERCENT}%</span>
-            </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-xs lg:text-sm text-gray-400 line-through">${originalPrice} грн</span>
+            <span class="text-red-600 font-extrabold text-lg lg:text-xl">${discountedPrice} грн</span>
+            <span class="text-[10px] lg:text-xs bg-red-100 text-red-700 px-1.5 lg:px-2 py-0.5 rounded-full font-bold">-${UPSELL_DISCOUNT_PERCENT}%</span>
           </div>
         </div>
       `;
       
-      // Update button with better styling
+      // Update button with SOLID GREEN styling (no gradients) and ensure visibility
       addButton.disabled = false;
+      addButton.className = 'w-full sm:w-auto sm:ml-auto bg-green-600 hover:bg-green-700 active:scale-95 text-white font-bold py-3 sm:py-2 px-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 flex-shrink-0 text-base';
       addButton.innerHTML = `
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
         </svg>
-        <span class="font-extrabold">Додати за ${discountedPrice} грн</span>
-        <svg class="w-5 h-5 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-        </svg>
+        <span class="font-bold">Додати до замовлення</span>
       `;
+      
+      // FORCE button visibility
+      addButton.style.display = 'flex';
+      addButton.style.visibility = 'visible';
+      addButton.style.opacity = '1';
       
       // FORCE SHOW CONTAINER - Remove all hiding classes and force display
       console.log('👁️ [Upsell] Forcing container visibility...');
@@ -1795,6 +1762,13 @@
       console.log('✅ [Upsell] Container should now be VISIBLE');
       console.log('🎨 [Upsell] Container classes:', container.className);
       console.log('🎨 [Upsell] Container display:', container.style.display);
+      console.log('👁️ [Upsell] Button visibility check:', {
+        element: addButton,
+        display: addButton.style.display,
+        visibility: addButton.style.visibility,
+        className: addButton.className,
+        disabled: addButton.disabled
+      });
       
       // Store product for later use
       currentUpsellProduct = { ...product, discountedPrice };
@@ -1827,6 +1801,14 @@
       
       const product = currentUpsellProduct;
       const addButton = document.getElementById('upsell-add-btn');
+      
+      // Show loading state
+      addButton.disabled = true;
+      addButton.className = 'w-full sm:w-auto sm:ml-auto bg-gray-400 text-white font-bold py-3 sm:py-2 px-6 rounded-xl shadow-md cursor-not-allowed flex items-center justify-center gap-2 flex-shrink-0 text-base';
+      addButton.innerHTML = `
+        <div class="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+        <span>Додається...</span>
+      `;
       
       // Get current cart from localStorage
       let cart = JSON.parse(localStorage.getItem('latiao_cart') || '[]');
@@ -1876,15 +1858,12 @@
       
       // Update button state with success styling
       addButton.disabled = true;
-      addButton.className = 'w-full bg-gradient-to-r from-gray-400 to-gray-500 text-white font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-lg cursor-not-allowed';
+      addButton.className = 'w-full sm:w-auto sm:ml-auto bg-green-600 text-white font-bold py-3 sm:py-2 px-6 rounded-xl flex items-center justify-center gap-2 shadow-lg cursor-not-allowed animate-pulse flex-shrink-0 text-base';
       addButton.innerHTML = `
-        <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
         </svg>
-        <span class="font-extrabold">Додано зі знижкою!</span>
-        <svg class="w-5 h-5 text-yellow-300" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-        </svg>
+        <span class="font-bold">Додано! ✅</span>
       `;
       
       // Show success toast with discount message
