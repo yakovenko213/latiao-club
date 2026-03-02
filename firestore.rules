@@ -108,11 +108,20 @@ service cloud.firestore {
       allow read, update, delete: if request.auth != null; // ❌ Only admins can manage
     }
     
+    // =============================================
+    // 👥 LIVE VISITORS - Real-time presence tracking
+    // =============================================
+    match /free_latyao_visitors/{visitorId} {
+      allow read: if true;                    // ✅ PUBLIC - anyone can see visitor count
+      allow create, update: if true;          // ✅ PUBLIC - visitors can register/heartbeat
+      allow delete: if true;                  // ✅ PUBLIC - visitors can leave & cleanup old records
+    }
+    
     // =============================================    // 📊 STATS - Page View Tracking
     // =============================================
     // Public write access for tracking page views and statistics
     match /stats/{docId} {
-      allow read: if request.auth != null;    // ❌ Only admins can read stats
+      allow read: if true;                    // ✅ PUBLIC - anyone can see view counts
       // Allow public to write to free_page_views document
       allow write: if docId == 'free_page_views';
     }

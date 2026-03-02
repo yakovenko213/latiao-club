@@ -3054,7 +3054,7 @@
 
         <!-- Real-Time Stats Widget -->
         <div class="mb-6 bg-gradient-to-br from-red-500 to-orange-600 p-6 rounded-2xl shadow-lg text-white">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between flex-wrap gap-4">
             <div class="flex items-center gap-4">
               <div class="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
                 <i data-lucide="eye" class="w-8 h-8 text-white"></i>
@@ -3067,6 +3067,27 @@
                 </div>
               </div>
             </div>
+            
+            <!-- Live Visitors Stats -->
+            <div class="flex items-center gap-6">
+              <!-- Currently Online -->
+              <div class="text-center">
+                <div class="flex items-center justify-center gap-2 mb-1">
+                  <span class="relative flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-green-300"></span>
+                  </span>
+                  <p class="text-sm text-white/80 font-medium">Зараз онлайн</p>
+                </div>
+                <p id="live-visitors-display" class="text-3xl font-bold">-</p>
+              </div>
+              <!-- Last 15 min -->
+              <div class="text-center">
+                <p class="text-sm text-white/80 font-medium mb-1">За 15 хв</p>
+                <p id="last-15min-display" class="text-3xl font-bold">-</p>
+              </div>
+            </div>
+            
             <div class="text-right">
               <p class="text-sm text-white/80 font-medium">Конверсія</p>
               <p id="conversion-rate-display" class="text-3xl font-bold">-%</p>
@@ -27244,6 +27265,64 @@
       
       // Store unsubscribe function for cleanup if needed
       window.freeOrdersStatsUnsubscribe = unsubscribe;
+      
+      // Also initialize live visitors listener
+      initLiveVisitorsListener();
+    }
+    
+    /**
+     * Initialize Real-Time Listener for Live Visitors
+     * Listens to free_latyao_visitors collection
+     */
+    function initLiveVisitorsListener() {
+      console.log('👥 [LIVE VISITORS] Initializing real-time visitors listener...');
+      
+      const VISITOR_TIMEOUT = 30000; // 30 seconds
+      const LAST_15_MIN = 15 * 60 * 1000; // 15 minutes
+      
+      const visitorsRef = collection(db, 'free_latyao_visitors');
+      
+      const unsubscribe = onSnapshot(visitorsRef, (snapshot) => {
+        const now = Date.now();
+        let liveCount = 0;
+        let last15minCount = 0;
+        
+        snapshot.docs.forEach(docSnap => {
+          const data = docSnap.data();
+          if (data.lastSeen) {
+            const lastSeen = data.lastSeen.toDate ? data.lastSeen.toDate().getTime() : Date.now();
+            const timeDiff = now - lastSeen;
+            
+            // Count as live if seen in last 30 seconds
+            if (timeDiff < VISITOR_TIMEOUT) {
+              liveCount++;
+            }
+            
+            // Count if seen in last 15 minutes
+            if (timeDiff < LAST_15_MIN) {
+              last15minCount++;
+            }
+          }
+        });
+        
+        console.log(`👥 [LIVE VISITORS] Live: ${liveCount}, Last 15min: ${last15minCount}`);
+        
+        // Update UI
+        const liveDisplay = document.getElementById('live-visitors-display');
+        const last15Display = document.getElementById('last-15min-display');
+        
+        if (liveDisplay) liveDisplay.textContent = liveCount;
+        if (last15Display) last15Display.textContent = last15minCount;
+        
+      }, (error) => {
+        console.error('❌ [LIVE VISITORS] Error:', error);
+        const liveDisplay = document.getElementById('live-visitors-display');
+        const last15Display = document.getElementById('last-15min-display');
+        if (liveDisplay) liveDisplay.textContent = '—';
+        if (last15Display) last15Display.textContent = '—';
+      });
+      
+      window.liveVisitorsUnsubscribe = unsubscribe;
     }
     
     /**
