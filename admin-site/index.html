@@ -3052,6 +3052,34 @@
           <p class="text-gray-600">Управління замовленнями безкоштовних роздач латяо (не плутати з платними замовленнями)</p>
         </div>
 
+        <!-- Real-Time Stats Widget -->
+        <div class="mb-6 bg-gradient-to-br from-red-500 to-orange-600 p-6 rounded-2xl shadow-lg text-white">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <div class="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                <i data-lucide="eye" class="w-8 h-8 text-white"></i>
+              </div>
+              <div>
+                <p class="text-sm text-white/80 font-medium uppercase tracking-wide">Перегляди промо-сторінки</p>
+                <div class="flex items-baseline gap-3">
+                  <p id="total-views-display" class="text-4xl font-bold">-</p>
+                  <p class="text-sm text-white/70">в реальному часі</p>
+                </div>
+              </div>
+            </div>
+            <div class="text-right">
+              <p class="text-sm text-white/80 font-medium">Конверсія</p>
+              <p id="conversion-rate-display" class="text-3xl font-bold">-%</p>
+            </div>
+          </div>
+          <div class="mt-4 pt-4 border-t border-white/20">
+            <div class="flex items-center gap-2 text-sm text-white/80">
+              <i data-lucide="activity" class="w-4 h-4"></i>
+              <span>Оновлюється автоматично з бази даних Firestore</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
@@ -3104,10 +3132,29 @@
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
             <h3 class="text-lg font-bold text-gray-900">Заявки на безкоштовне латяо</h3>
-            <button onclick="loadFreeOrders()" class="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
-              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-              <span>Оновити</span>
-            </button>
+            <div class="flex items-center gap-3">
+              <!-- Giveaway Status Indicator -->
+              <div class="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                <div id="giveaway-status-dot" class="w-3 h-3 rounded-full bg-gray-400"></div>
+                <span id="giveaway-status-text" class="text-sm font-semibold text-gray-600">Поточний статус: Завантаження...</span>
+              </div>
+              
+              <!-- Toggle Giveaway Button -->
+              <button 
+                id="toggle-giveaway-btn" 
+                onclick="toggleGiveawayStatus()" 
+                class="flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shadow-md"
+                data-active="true"
+              >
+                <span id="toggle-giveaway-text">Завантаження...</span>
+              </button>
+              
+              <!-- Refresh Button -->
+              <button onclick="loadFreeOrders()" class="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                <span>Оновити</span>
+              </button>
+            </div>
           </div>
 
           <!-- Horizontal Scrollable Table -->
@@ -8684,6 +8731,8 @@
           loadGiftsView()
         } else if (target === 'free-orders') {
           loadFreeOrders()
+          initFreeOrdersRealTimeStats()
+          initGiveawayStatusListener()
         } else if (target === 'cashback-settings') {
           loadCashbackSettings()
         } else if (target === 'cashback-statistics') {
@@ -27140,6 +27189,82 @@
       if (pendingEl) pendingEl.textContent = pending || 0;
       if (sentEl) sentEl.textContent = sent || 0;
       if (todayEl) todayEl.textContent = today || 0;
+      
+      // Store total orders for conversion rate calculation
+      window.freeOrdersTotalCount = total || 0;
+      
+      // Update conversion rate if we have page views data
+      updateConversionRate();
+    }
+    
+    /**
+     * Initialize Real-Time Stats Listener for Page Views from stats/free_page_views
+     * Listens to Firestore document in real-time using onSnapshot
+     */
+    function initFreeOrdersRealTimeStats() {
+      console.log('📊 [REAL-TIME STATS] Initializing real-time page views listener...');
+      
+      const statsDocRef = doc(db, 'stats', 'free_page_views');
+      
+      // Set up real-time listener
+      const unsubscribe = onSnapshot(statsDocRef, (docSnapshot) => {
+        const viewsDisplay = document.getElementById('total-views-display');
+        
+        if (docSnapshot.exists()) {
+          const data = docSnapshot.data();
+          const totalViews = data.totalViews || 0;
+          
+          console.log(`📊 [REAL-TIME STATS] Page views updated: ${totalViews}`);
+          
+          if (viewsDisplay) {
+            viewsDisplay.textContent = totalViews.toLocaleString('uk-UA');
+          }
+          
+          // Store page views globally for conversion calculation
+          window.freeOrdersPageViews = totalViews;
+          
+          // Update conversion rate
+          updateConversionRate();
+          
+        } else {
+          console.log('📊 [REAL-TIME STATS] No stats document found');
+          if (viewsDisplay) {
+            viewsDisplay.textContent = '0';
+          }
+          window.freeOrdersPageViews = 0;
+          updateConversionRate();
+        }
+      }, (error) => {
+        console.error('❌ [REAL-TIME STATS] Error listening to page views:', error);
+        const viewsDisplay = document.getElementById('total-views-display');
+        if (viewsDisplay) {
+          viewsDisplay.textContent = 'Помилка';
+        }
+      });
+      
+      // Store unsubscribe function for cleanup if needed
+      window.freeOrdersStatsUnsubscribe = unsubscribe;
+    }
+    
+    /**
+     * Update conversion rate display (orders / views * 100)
+     */
+    function updateConversionRate() {
+      const conversionDisplay = document.getElementById('conversion-rate-display');
+      if (!conversionDisplay) return;
+      
+      const totalOrders = window.freeOrdersTotalCount || 0;
+      const totalViews = window.freeOrdersPageViews || 0;
+      
+      if (totalViews === 0) {
+        conversionDisplay.textContent = '-%';
+        return;
+      }
+      
+      const conversionRate = (totalOrders / totalViews * 100).toFixed(1);
+      conversionDisplay.textContent = `${conversionRate}%`;
+      
+      console.log(`📊 [CONVERSION] ${totalOrders} orders / ${totalViews} views = ${conversionRate}%`);
     }
     
     /**
@@ -27167,11 +27292,13 @@
         const managerComment = order.managerComment || '';
         const sent = order.sent === true;
         
-        // Alternate row colors for better readability
-        const rowClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+        // Conditional row styling based on sent status
+        const rowClass = sent 
+          ? 'bg-green-50/50 text-gray-500' 
+          : 'bg-red-50/50 border-red-100';
         
         html += `
-          <tr class="${rowClass} hover:bg-blue-50 transition-colors border-b border-gray-200" data-order-id="${order.id}">
+          <tr class="${rowClass} hover:brightness-95 transition-all border-b border-gray-200" data-order-id="${order.id}" data-sent="${sent}">
             <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
               ${dateStr}
             </td>
@@ -27283,8 +27410,10 @@
         // Show success notification
         showNotification(`Оновлено: ${field === 'ttn' ? 'ТТН' : field === 'managerComment' ? 'Коментар' : 'Статус'}`, 'success');
         
-        // If sent status changed, reload to update stats
+        // If sent status changed, update row styling immediately
         if (field === 'sent') {
+          updateFreeOrderRowStyle(orderId, value);
+          // Reload to update stats after a short delay
           setTimeout(() => {
             loadFreeOrders();
           }, 500);
@@ -27303,9 +27432,272 @@
       }
     }
     
+    /**
+     * Toggle Giveaway Status (Active/Inactive)
+     * Uses exact same path as public page: doc(db, "config", "giveaway")
+     */
+    async function toggleGiveawayStatus() {
+      // Confirmation dialog
+      if (!confirm('Ви впевнені, що хочете змінити статус роздачі?')) {
+        console.log('🎁 [GIVEAWAY] Toggle cancelled by user');
+        return;
+      }
+      
+      const btn = document.getElementById('toggle-giveaway-btn');
+      const btnText = document.getElementById('toggle-giveaway-text');
+      const currentStatus = btn.getAttribute('data-active') === 'true';
+      const newStatus = !currentStatus;
+      
+      console.log(`🎁 [GIVEAWAY] Toggling status from ${currentStatus} to ${newStatus}`);
+      console.log(`📄 [GIVEAWAY] Target path: config/giveaway`);
+      
+      // Save original button state
+      const originalText = btnText.textContent;
+      const originalClasses = btn.className;
+      
+      // Show loading state
+      btn.disabled = true;
+      btn.classList.add('opacity-50', 'cursor-not-allowed');
+      btnText.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span> Оновлення...';
+      
+      console.log('🔄 [GIVEAWAY] Button in loading state...');
+      
+      try {
+        // CRITICAL: Use exact same path as public page
+        const configRef = doc(db, 'config', 'giveaway');
+        console.log('📄 [GIVEAWAY] Document reference created: config/giveaway');
+        
+        // Use setDoc with merge: true to ensure document is created if missing
+        await setDoc(
+          configRef,
+          {
+            isActive: newStatus,
+            updatedAt: serverTimestamp(),
+            updatedBy: 'admin'
+          },
+          { merge: true }  // Creates document if it doesn't exist, updates if it does
+        );
+        
+        console.log(`✅ [GIVEAWAY] Status updated successfully to ${newStatus} using setDoc with merge`);
+        console.log(`📊 [GIVEAWAY] Document data written: { isActive: ${newStatus}, updatedAt: serverTimestamp(), updatedBy: 'admin' }`);
+        
+        // Show success notification
+        const statusText = newStatus ? 'відкрита' : 'закрита';
+        showNotification(`Роздача ${statusText}`, 'success');
+        
+        // The onSnapshot listener will update the button UI automatically
+        console.log('🔔 [GIVEAWAY] Waiting for onSnapshot to update UI...');
+        
+      } catch (error) {
+        console.error('❌ [GIVEAWAY] Error toggling status:', error);
+        console.error('❌ [GIVEAWAY] Error code:', error.code);
+        console.error('❌ [GIVEAWAY] Error message:', error.message);
+        
+        // Specific error handling
+        if (error.code === 'permission-denied') {
+          console.error('🔒 [GIVEAWAY] PERMISSION DENIED');
+          alert('Помилка: Перевірте правила Firestore Database!');
+        } else {
+          showNotification(`Помилка: ${error.message}`, 'error');
+        }
+        
+        // Restore button state on error
+        btnText.textContent = originalText;
+        
+      } finally {
+        // Re-enable button after a short delay (let onSnapshot update first)
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.classList.remove('opacity-50', 'cursor-not-allowed');
+          console.log('✅ [GIVEAWAY] Button re-enabled');
+        }, 500);
+      }
+    }
+    
+    /**
+     * Initialize Real-Time Giveaway Status Listener
+     * Updates button UI based on Firestore config/giveaway document
+     * Uses exact same path as public page: doc(db, "config", "giveaway")
+     */
+    async function initGiveawayStatusListener() {
+      console.log('🎁 [GIVEAWAY] Initializing real-time status listener...');
+      console.log('📄 [GIVEAWAY] Target path: config/giveaway');
+      
+      // CRITICAL: Use exact same path as public page
+      const configRef = doc(db, 'config', 'giveaway');
+      
+      // First, ensure document exists with default values
+      try {
+        console.log('🔍 [GIVEAWAY] Checking if document exists...');
+        const docSnap = await getDoc(configRef);
+        
+        if (!docSnap.exists()) {
+          console.log('🎁 [GIVEAWAY] Document does not exist, creating with default values...');
+          
+          // Use setDoc with merge: true (same method as toggle)
+          await setDoc(
+            configRef,
+            {
+              isActive: true,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+              updatedBy: 'system'
+            },
+            { merge: true }
+          );
+          
+          console.log('✅ [GIVEAWAY] Document created with isActive: true using setDoc with merge');
+        } else {
+          console.log('✅ [GIVEAWAY] Document already exists');
+          const data = docSnap.data();
+          console.log('📊 [GIVEAWAY] Current data:', data);
+        }
+      } catch (error) {
+        console.error('❌ [GIVEAWAY] Error checking/creating document:', error);
+        console.error('❌ [GIVEAWAY] Error code:', error.code);
+        
+        if (error.code === 'permission-denied') {
+          const statusText = document.getElementById('giveaway-status-text');
+          if (statusText) {
+            statusText.textContent = 'Поточний статус: Помилка доступу';
+          }
+          alert('Помилка: Перевірте правила Firestore Database!');
+          return;
+        }
+      }
+      
+      // Set up real-time listener with onSnapshot
+      console.log('👂 [GIVEAWAY] Setting up onSnapshot listener...');
+      const unsubscribe = onSnapshot(
+        configRef,
+        (docSnapshot) => {
+          console.log('🔔 [GIVEAWAY] Snapshot received in admin panel!');
+          
+          if (docSnapshot.exists()) {
+            const data = docSnapshot.data();
+            const isActive = data.isActive !== false; // Default to true if not set
+            
+            console.log(`🎁 [GIVEAWAY] Status from Firestore: ${isActive ? 'ACTIVE ✅' : 'INACTIVE ❌'}`);
+            console.log('📊 [GIVEAWAY] Full document data:', data);
+            
+            // Update button and status indicator
+            updateGiveawayButtonUI(isActive);
+            
+          } else {
+            console.warn('⚠️ [GIVEAWAY] Document disappeared, defaulting to active');
+            // Default to active if document doesn't exist
+            updateGiveawayButtonUI(true);
+          }
+        },
+        (error) => {
+          console.error('❌ [GIVEAWAY] Error in onSnapshot listener:', error);
+          console.error('❌ [GIVEAWAY] Error code:', error.code);
+          
+          const textEl = document.getElementById('toggle-giveaway-text');
+          const statusText = document.getElementById('giveaway-status-text');
+          
+          if (textEl) {
+            textEl.textContent = 'Помилка завантаження';
+          }
+          if (statusText) {
+            statusText.textContent = 'Поточний статус: Помилка';
+          }
+          
+          if (error.code === 'permission-denied') {
+            console.error('🔒 [GIVEAWAY] PERMISSION DENIED in onSnapshot');
+            alert('Помилка: Перевірте правила Firestore Database!');
+          }
+        }
+      );
+      
+      // Store unsubscribe function for cleanup if needed
+      window.giveawayStatusUnsubscribe = unsubscribe;
+      console.log('✅ [GIVEAWAY] Listener setup complete');
+    }
+    
+    /**
+     * Update Giveaway Button UI and Status Indicator based on status
+     */
+    function updateGiveawayButtonUI(isActive) {
+      const btn = document.getElementById('toggle-giveaway-btn');
+      const textEl = document.getElementById('toggle-giveaway-text');
+      const statusText = document.getElementById('giveaway-status-text');
+      const statusDot = document.getElementById('giveaway-status-dot');
+      
+      if (!btn || !textEl) return;
+      
+      // Remove all status classes from button
+      btn.classList.remove('bg-red-600', 'hover:bg-red-700', 'text-white', 
+                          'bg-green-600', 'hover:bg-green-700');
+      
+      // Update button and status indicator based on status
+      if (isActive) {
+        // Active - show close option (red)
+        btn.classList.add('bg-red-600', 'hover:bg-red-700', 'text-white');
+        textEl.textContent = 'Закрити роздачу 🔒';
+        btn.setAttribute('data-active', 'true');
+        
+        // Update status indicator
+        if (statusText) {
+          statusText.textContent = 'Поточний статус: ВІДКРИТО';
+          statusText.classList.remove('text-red-600');
+          statusText.classList.add('text-green-600');
+        }
+        if (statusDot) {
+          statusDot.classList.remove('bg-red-500', 'bg-gray-400');
+          statusDot.classList.add('bg-green-500');
+        }
+      } else {
+        // Inactive - show open option (green)
+        btn.classList.add('bg-green-600', 'hover:bg-green-700', 'text-white');
+        textEl.textContent = 'Відкрити роздачу 🚀';
+        btn.setAttribute('data-active', 'false');
+        
+        // Update status indicator
+        if (statusText) {
+          statusText.textContent = 'Поточний статус: ЗАКРИТО';
+          statusText.classList.remove('text-green-600');
+          statusText.classList.add('text-red-600');
+        }
+        if (statusDot) {
+          statusDot.classList.remove('bg-green-500', 'bg-gray-400');
+          statusDot.classList.add('bg-red-500');
+        }
+      }
+      
+      // Re-initialize Lucide icons
+      lucide.createIcons();
+    }
+    
+    /**
+     * Update row style immediately when sent status changes
+     */
+    function updateFreeOrderRowStyle(orderId, isSent) {
+      const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
+      if (!row) return;
+      
+      // Remove old status classes
+      row.classList.remove('bg-red-50/50', 'border-red-100', 'bg-green-50/50', 'text-gray-500');
+      
+      // Apply new status classes
+      if (isSent) {
+        row.classList.add('bg-green-50/50', 'text-gray-500');
+        row.setAttribute('data-sent', 'true');
+      } else {
+        row.classList.add('bg-red-50/50', 'border-red-100');
+        row.setAttribute('data-sent', 'false');
+      }
+      
+      console.log(`🎨 [FREE ORDERS] Row style updated for order ${orderId} - sent: ${isSent}`);
+    }
+    
     // Make function globally accessible
     window.loadFreeOrders = loadFreeOrders;
     window.handleFreeOrderFieldUpdate = handleFreeOrderFieldUpdate;
+    window.updateFreeOrderRowStyle = updateFreeOrderRowStyle;
+    window.toggleGiveawayStatus = toggleGiveawayStatus;
+    window.initGiveawayStatusListener = initGiveawayStatusListener;
+    window.updateGiveawayButtonUI = updateGiveawayButtonUI;
 
   </script>
 

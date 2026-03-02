@@ -180,30 +180,63 @@
   <!-- Main Content (Scrollable) -->
   <div class="relative z-10 min-h-screen flex items-center justify-center px-4 py-10 overflow-y-auto">
     
+    <!-- Debug Status Indicator (only visible during development) -->
+    <div id="debugStatusIndicator" class="fixed top-4 right-4 z-50 hidden">
+      <div class="bg-black/80 backdrop-blur-sm text-white px-4 py-2 rounded-lg text-xs font-mono shadow-lg">
+        <div class="flex items-center gap-2">
+          <div id="debugStatusDot" class="w-2 h-2 rounded-full bg-gray-400"></div>
+          <span id="debugStatusText">Checking...</span>
+        </div>
+      </div>
+    </div>
+    
     <!-- Card Container -->
     <div class="bg-white/95 backdrop-blur-sm rounded-[2rem] p-6 mb-10 shadow-2xl w-[92%] max-w-md mx-auto border border-gray-200">
       
-      <!-- Emoji Badge -->
-      <div class="text-center mb-4">
-        <span class="inline-block text-6xl">🎁</span>
+      <!-- Loading State (shown while checking giveaway status) -->
+      <div id="loadingState" class="text-center py-10">
+        <div class="animate-spin w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p class="text-gray-600 text-base font-medium">Завантаження...</p>
       </div>
 
-      <!-- Header -->
-      <h1 class="text-3xl font-black text-gray-900 text-center mb-2">
-        Пачка латяо <span class="marker-underline">за наш рахунок</span>
-      </h1>
-
-      <!-- Handwritten Bonus Text -->
-      <div class="text-center">
-        <span class="bonus-text text-xl sm:text-2xl text-red-600 font-bold -rotate-3 mt-2 block">
-          + промо-код на -10% знижки на перше замовлення
-        </span>
+      <!-- Giveaway Closed Message (shown when giveaway is inactive) -->
+      <div id="closedMessage" class="hidden text-center text-xl font-bold p-10 bg-white/90 rounded-3xl shadow-xl">
+        <span class="inline-block text-6xl mb-4">🌶️</span>
+        <p class="text-gray-900 leading-relaxed">
+          Вибачте, все Латяо вже розібрали!
+        </p>
+        <p class="text-gray-700 text-base mt-4">
+          Слідкуйте за новинами, скоро буде нова роздача.
+        </p>
+        <p class="text-orange-600 font-bold text-lg mt-4">
+          Дякуємо, що ви з нами! 🙏
+        </p>
       </div>
 
-      <!-- Subheader -->
-      <p class="text-base font-medium text-gray-700 text-center mb-8">
-        Заповни форму нижче, і ми відправимо тобі смаколик!
-      </p>
+      <!-- Active Giveaway Content (shown when giveaway is active) -->
+      <div id="activeGiveawayContent" class="hidden">
+        
+        <!-- Emoji Badge -->
+        <div class="text-center mb-4">
+          <span class="inline-block text-6xl">🎁</span>
+        </div>
+
+        <!-- Header -->
+        <h1 class="text-3xl font-black text-gray-900 text-center mb-2">
+          Пачка латяо <span class="marker-underline">за наш рахунок</span>
+        </h1>
+
+        <!-- Handwritten Bonus Text -->
+        <div class="text-center">
+          <span class="bonus-text text-xl sm:text-2xl text-red-600 font-bold -rotate-3 mt-2 block">
+            + промо-код на -10% знижки на перше замовлення
+          </span>
+        </div>
+
+        <!-- Subheader -->
+        <p class="text-base font-medium text-gray-700 text-center mb-8">
+          Заповни форму нижче, і ми відправимо тобі смаколик!
+        </p>
 
       <!-- Success Message (Hidden by default) -->
       <div id="successMessage" class="hidden mb-6 p-5 bg-green-50 rounded-2xl text-center">
@@ -337,6 +370,9 @@
         *доставку сплачує отримувач
       </p>
 
+      </div>
+      <!-- End of Active Giveaway Content -->
+
     </div>
 
   </div>
@@ -344,7 +380,7 @@
   <!-- Firebase & Form Logic -->
   <script type="module">
     import { db } from './js/firebase-init.js';
-    import { collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    import { collection, addDoc, doc, updateDoc, setDoc, increment, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
     // Get form elements
     const form = document.getElementById('freeOrderForm');
@@ -352,6 +388,292 @@
     const successMessage = document.getElementById('successMessage');
     const errorMessage = document.getElementById('errorMessage');
     const errorText = document.getElementById('errorText');
+
+    // Global variable to store giveaway status
+    let isGiveawayActive = true;
+    let isStatusLoaded = false;
+    let unsubscribeListener = null;
+
+    // Get UI elements
+    const loadingState = document.getElementById('loadingState');
+    const closedMessage = document.getElementById('closedMessage');
+    const activeContent = document.getElementById('activeGiveawayContent');
+
+    console.log('🚀 [GIVEAWAY] Page loaded, initializing...');
+    console.log('🔍 [GIVEAWAY] Elements check:', {
+      loadingState: !!loadingState,
+      closedMessage: !!closedMessage,
+      activeContent: !!activeContent,
+      db: !!db
+    });
+
+    // ============================================
+    // GIVEAWAY STATUS CHECK
+    // ============================================
+    /**
+     * Initialize real-time listener for giveaway status (starts immediately)
+     * Listens to doc(db, "config", "giveaway") for instant updates
+     */
+    function initGiveawayStatusListener() {
+      console.log('🎁 [GIVEAWAY] Initializing real-time status listener...');
+      
+      if (!db) {
+        console.error('❌ [GIVEAWAY] Firebase db not initialized!');
+        // Fallback to showing form
+        updateFormVisibility(true);
+        return;
+      }
+      
+      try {
+        // CRITICAL: Exact path must be doc(db, "config", "giveaway")
+        const configRef = doc(db, 'config', 'giveaway');
+        console.log('📄 [GIVEAWAY] Config reference: config/giveaway');
+        
+        // Set up real-time listener with onSnapshot
+        unsubscribeListener = onSnapshot(
+          configRef,
+          (snapshot) => {
+            console.log('🔔 [GIVEAWAY] Snapshot received from Firestore!');
+            console.log('📋 [GIVEAWAY] Document exists:', snapshot.exists());
+            
+            let isActive;
+            
+            if (snapshot.exists()) {
+              // Document exists - read isActive field
+              const data = snapshot.data();
+              isActive = data.isActive;
+              
+              console.log('📊 [GIVEAWAY] Document data:', JSON.stringify(data));
+              console.log('🔍 [GIVEAWAY] isActive field value:', isActive);
+              
+              // If isActive is undefined or null, default to true
+              if (isActive === undefined || isActive === null) {
+                console.warn('⚠️ [GIVEAWAY] isActive field is missing, defaulting to true');
+                isActive = true;
+              }
+            } else {
+              // Document does not exist - default to true
+              console.warn('⚠️ [GIVEAWAY] Document does NOT exist, defaulting to isActive = true');
+              isActive = true;
+            }
+            
+            // Update global state
+            isGiveawayActive = isActive;
+            
+            // Log final parsed status
+            if (isActive === true) {
+              console.log('✅ [GIVEAWAY] Status is ACTIVE. Page is OPEN.');
+            } else if (isActive === false) {
+              console.log('🚫 [GIVEAWAY] Status is INACTIVE. Closing page.');
+            }
+            
+            // Update UI immediately
+            updateFormVisibility(isActive);
+            
+            // Mark as loaded (hides loading state)
+            if (!isStatusLoaded) {
+              isStatusLoaded = true;
+              console.log('✅ [GIVEAWAY] Initial status loaded successfully');
+            }
+          },
+          (error) => {
+            console.error('❌ [GIVEAWAY] Listener error occurred!');
+            console.error('❌ [GIVEAWAY] Error code:', error.code);
+            console.error('❌ [GIVEAWAY] Error message:', error.message);
+            console.error('❌ [GIVEAWAY] Full error:', error);
+            
+            // Handle specific error types
+            if (error.code === 'permission-denied') {
+              console.error('🔒 [GIVEAWAY] PERMISSION DENIED - Check Firestore security rules!');
+              console.error('🔒 [GIVEAWAY] Rule needed: allow read: if true; for config/giveaway');
+            } else if (error.code === 'unavailable') {
+              console.error('📡 [GIVEAWAY] Network unavailable - check internet connection');
+            }
+            
+            // On error, default to active (fail-open to not block users)
+            console.warn('⚠️ [GIVEAWAY] Defaulting to ACTIVE due to error');
+            isGiveawayActive = true;
+            updateFormVisibility(true);
+            isStatusLoaded = true;
+          }
+        );
+        
+        console.log('👂 [GIVEAWAY] Real-time listener attached successfully');
+        console.log('🔄 [GIVEAWAY] Listener will now monitor config/giveaway in real-time');
+        
+      } catch (ex) {
+        console.error('❌ [GIVEAWAY] Exception during listener setup:', ex);
+        // Fallback
+        isGiveawayActive = true;
+        updateFormVisibility(true);
+        isStatusLoaded = true;
+      }
+    }
+
+    /**
+     * Update UI based on giveaway status
+     * Instantly switches between form and closed message
+     */
+    function updateFormVisibility(isActive) {
+      console.log('🎨 [GIVEAWAY] updateFormVisibility called with isActive =', isActive);
+      
+      // Validate UI elements exist
+      if (!loadingState || !closedMessage || !activeContent) {
+        console.error('❌ [GIVEAWAY] Critical: UI elements missing!', {
+          loadingState: !!loadingState,
+          closedMessage: !!closedMessage,
+          activeContent: !!activeContent
+        });
+        return;
+      }
+      
+      // Always hide loading state first
+      if (!loadingState.classList.contains('hidden')) {
+        loadingState.classList.add('hidden');
+        console.log('🔄 [GIVEAWAY] Loading state hidden');
+      }
+      
+      // INSTANT UI SWITCH based on status
+      if (isActive === false) {
+        // ========================================
+        // GIVEAWAY IS CLOSED
+        // ========================================
+        console.log('🚫 [GIVEAWAY] Status is INACTIVE. Closing page.');
+        
+        // Hide form container (active-content)
+        if (!activeContent.classList.contains('hidden')) {
+          activeContent.classList.add('hidden');
+          console.log('🔒 [GIVEAWAY] Form container hidden (activeGiveawayContent)');
+        }
+        
+        // Show closed message
+        if (closedMessage.classList.contains('hidden')) {
+          closedMessage.classList.remove('hidden');
+          console.log('📢 [GIVEAWAY] Closed message displayed');
+        }
+        
+        console.log('🚫 [GIVEAWAY] Page is now CLOSED to users');
+        
+      } else {
+        // ========================================
+        // GIVEAWAY IS OPEN
+        // ========================================
+        console.log('✅ [GIVEAWAY] Status is ACTIVE. Opening page.');
+        
+        // Hide closed message
+        if (!closedMessage.classList.contains('hidden')) {
+          closedMessage.classList.add('hidden');
+          console.log('🔓 [GIVEAWAY] Closed message hidden');
+        }
+        
+        // Show form container (active-content)
+        if (activeContent.classList.contains('hidden')) {
+          activeContent.classList.remove('hidden');
+          console.log('✅ [GIVEAWAY] Form container displayed (activeGiveawayContent)');
+        }
+        
+        console.log('✅ [GIVEAWAY] Page is now OPEN to users');
+      }
+      
+      // Update debug indicator if enabled
+      updateDebugIndicator(isActive);
+      
+      // Log final visibility state for verification
+      const finalState = {
+        loading: !loadingState.classList.contains('hidden'),
+        closed: !closedMessage.classList.contains('hidden'),
+        active: !activeContent.classList.contains('hidden')
+      };
+      console.log('📐 [GIVEAWAY] Final UI state:', JSON.stringify(finalState));
+      
+      // Verify correct state
+      if (isActive === false && finalState.closed === false) {
+        console.error('⚠️ [GIVEAWAY] WARNING: Status is closed but closed message not shown!');
+      }
+      if (isActive === true && finalState.active === false) {
+        console.error('⚠️ [GIVEAWAY] WARNING: Status is active but form not shown!');
+      }
+    }
+
+    /**
+     * Update debug status indicator
+     */
+    function updateDebugIndicator(isActive) {
+      const indicator = document.getElementById('debugStatusIndicator');
+      const dot = document.getElementById('debugStatusDot');
+      const text = document.getElementById('debugStatusText');
+      
+      if (!indicator || !dot || !text) return;
+      
+      // Show indicator (comment out this line in production)
+      // indicator.classList.remove('hidden');
+      
+      if (isActive) {
+        dot.classList.remove('bg-red-500', 'bg-gray-400');
+        dot.classList.add('bg-green-500');
+        text.textContent = 'Status: OPEN';
+      } else {
+        dot.classList.remove('bg-green-500', 'bg-gray-400');
+        dot.classList.add('bg-red-500');
+        text.textContent = 'Status: CLOSED';
+      }
+    }
+
+    // Start real-time listener immediately on page load
+    console.log('⏱️ [GIVEAWAY] Starting listener initialization...');
+    console.log('🔍 [GIVEAWAY] Database instance:', db ? 'Available ✅' : 'Missing ❌');
+    console.log('🔍 [GIVEAWAY] Document path: config/giveaway');
+    initGiveawayStatusListener();
+    console.log('🎯 [GIVEAWAY] Listener initialization complete');
+    console.log('💡 [GIVEAWAY] Use window.checkGiveawayStatus() to debug');
+
+    // ============================================
+    // PAGE VIEW TRACKING
+    // ============================================
+    /**
+     * Track page views in Firestore
+     * Uses sessionStorage to count only once per session
+     */
+    async function trackPageView() {
+      // Check if already tracked in this session
+      const sessionKey = 'free_latyao_viewed';
+      if (sessionStorage.getItem(sessionKey)) {
+        console.log('📊 [PAGE VIEW] Already tracked in this session');
+        return;
+      }
+
+      try {
+        const statsRef = doc(db, 'stats', 'free_page_views');
+        
+        // Increment the totalViews counter
+        await updateDoc(statsRef, {
+          totalViews: increment(1),
+          lastViewed: serverTimestamp()
+        }).catch(async (error) => {
+          // If document doesn't exist, create it
+          if (error.code === 'not-found') {
+            await setDoc(statsRef, {
+              totalViews: 1,
+              lastViewed: serverTimestamp(),
+              createdAt: serverTimestamp()
+            });
+            console.log('📊 [PAGE VIEW] Stats document created with first view');
+          } else {
+            throw error;
+          }
+        });
+
+        // Mark as viewed in this session
+        sessionStorage.setItem(sessionKey, 'true');
+        console.log('📊 [PAGE VIEW] Successfully tracked');
+
+      } catch (error) {
+        console.error('❌ [PAGE VIEW] Error tracking page view:', error);
+      }
+    }
+
+    // Track page view on load
+    trackPageView();
 
     // Submit form handler
     // Maps form fields to Firestore document: fullName, phone, telegram, city, novaPoshtaBranch, source
@@ -362,6 +684,12 @@
       event.preventDefault();
       
       console.log('🚀 [FREE ORDER] Form submission started');
+
+      // Check if giveaway is active (double-check before submission)
+      if (!isGiveawayActive) {
+        console.log('❌ [FREE ORDER] Submission blocked - giveaway is closed');
+        return;
+      }
 
       // Get form input elements
       const fullNameInput = document.getElementById('fullName');
@@ -628,6 +956,58 @@
         page_path: window.location.pathname
       });
     }
+
+    // ============================================
+    // DEBUG HELPERS (for development/testing)
+    // ============================================
+    
+    /**
+     * Manual status check for debugging
+     * Usage in console: window.checkGiveawayStatus()
+     */
+    window.checkGiveawayStatus = function() {
+      console.log('🔍 [DEBUG] Current giveaway status:', {
+        isActive: isGiveawayActive,
+        isLoaded: isStatusLoaded,
+        hasListener: !!unsubscribeListener,
+        elements: {
+          loadingState: !!loadingState,
+          closedMessage: !!closedMessage,
+          activeContent: !!activeContent
+        },
+        visibility: {
+          loading: loadingState ? !loadingState.classList.contains('hidden') : 'N/A',
+          closed: closedMessage ? !closedMessage.classList.contains('hidden') : 'N/A',
+          active: activeContent ? !activeContent.classList.contains('hidden') : 'N/A'
+        }
+      });
+      return isGiveawayActive;
+    };
+
+    /**
+     * Force UI refresh for debugging
+     * Usage in console: window.refreshGiveawayUI()
+     */
+    window.refreshGiveawayUI = function() {
+      console.log('🔄 [DEBUG] Force refreshing UI...');
+      updateFormVisibility(isGiveawayActive);
+    };
+
+    /**
+     * Cleanup listener on page unload
+     */
+    window.addEventListener('beforeunload', () => {
+      if (unsubscribeListener) {
+        console.log('🧹 [GIVEAWAY] Cleaning up listener...');
+        unsubscribeListener();
+      }
+    });
+
+    // Log initial state
+    console.log('✅ [GIVEAWAY] Script fully initialized');
+    console.log('💡 [GIVEAWAY] Debug commands available:');
+    console.log('   - window.checkGiveawayStatus() - Check current status');
+    console.log('   - window.refreshGiveawayUI() - Force refresh UI');
 
   </script>
 
