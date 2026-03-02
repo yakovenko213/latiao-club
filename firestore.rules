@@ -113,11 +113,8 @@ service cloud.firestore {
     // Public write access for tracking page views and statistics
     match /stats/{docId} {
       allow read: if request.auth != null;    // ❌ Only admins can read stats
-      // Allow public to update specific stat documents (e.g., free_page_views)
-      allow update: if docId == 'free_page_views' 
-                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['totalViews', 'lastViewed']);
-      // Allow creating stats documents if they don't exist
-      allow create: if docId == 'free_page_views';
+      // Allow public to write to free_page_views document
+      allow write: if docId == 'free_page_views';
     }
     
     // =============================================    // �🌐 PUBLIC COLLECTIONS (Anyone can read)
