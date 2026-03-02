@@ -1546,6 +1546,10 @@
           <i data-lucide="gift" class="w-5 h-5"></i>
           <span>🎁 Подарунки</span>
         </a>
+        <a href="#free-orders" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+          <i data-lucide="gift" class="w-5 h-5"></i>
+          <span>🎁 Безкоштовне латяо</span>
+        </a>
         <a href="#merchandising" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
           <i data-lucide="layout-grid" class="w-5 h-5"></i>
           <span>🎯 Мерчандайзинг</span>
@@ -3040,6 +3044,133 @@
 
         </div>
 
+      </div>
+      <!-- Free Latyao Orders View -->
+      <div id="view-free-orders" class="view p-8">
+        <div class="mb-6">
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">🎁 Безкоштовне латяо</h1>
+          <p class="text-gray-600">Управління замовленнями безкоштовних роздач латяо (не плутати з платними замовленнями)</p>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+            <div class="flex items-center gap-3">
+              <div class="p-2 bg-blue-100 rounded-lg">
+                <i data-lucide="package" class="w-5 h-5 text-blue-600"></i>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600">Всього заявок</p>
+                <p id="free-orders-total" class="text-2xl font-bold text-gray-900">0</p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+            <div class="flex items-center gap-3">
+              <div class="p-2 bg-yellow-100 rounded-lg">
+                <i data-lucide="clock" class="w-5 h-5 text-yellow-600"></i>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600">Не відправлено</p>
+                <p id="free-orders-pending" class="text-2xl font-bold text-gray-900">0</p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+            <div class="flex items-center gap-3">
+              <div class="p-2 bg-green-100 rounded-lg">
+                <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600">Відправлено</p>
+                <p id="free-orders-sent" class="text-2xl font-bold text-gray-900">0</p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+            <div class="flex items-center gap-3">
+              <div class="p-2 bg-purple-100 rounded-lg">
+                <i data-lucide="calendar" class="w-5 h-5 text-purple-600"></i>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600">Сьогодні</p>
+                <p id="free-orders-today" class="text-2xl font-bold text-gray-900">0</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Excel-like Table Container -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-lg font-bold text-gray-900">Заявки на безкоштовне латяо</h3>
+            <button onclick="loadFreeOrders()" class="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+              <span>Оновити</span>
+            </button>
+          </div>
+
+          <!-- Horizontal Scrollable Table -->
+          <div class="overflow-x-auto">
+            <div id="free-orders-table-container" class="min-w-full">
+              <!-- Loading State -->
+              <div id="free-orders-loading" class="text-center py-10">
+                <div class="animate-spin w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p class="text-gray-600">Завантаження заявок...</p>
+              </div>
+
+              <!-- Table will be rendered here -->
+              <table id="free-orders-table" class="w-full border-collapse hidden">
+                <thead class="sticky top-0 bg-gray-100 z-10">
+                  <tr>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-300 whitespace-nowrap">
+                      Дата створення
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-300 whitespace-nowrap">
+                      Ім'я та Прізвище
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-300 whitespace-nowrap">
+                      Телефон
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-300 whitespace-nowrap">
+                      Telegram
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-300 whitespace-nowrap">
+                      Місто/Село
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-300 whitespace-nowrap">
+                      Відділення НП
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-300 whitespace-nowrap">
+                      Джерело
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-300 whitespace-nowrap">
+                      ТТН
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-300 whitespace-nowrap">
+                      Коментар менеджера
+                    </th>
+                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-300 whitespace-nowrap">
+                      Відправлено
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="free-orders-tbody">
+                  <!-- Rows will be rendered here -->
+                </tbody>
+              </table>
+
+              <!-- Empty State -->
+              <div id="free-orders-empty" class="hidden text-center py-10">
+                <div class="text-gray-400 mb-4">
+                  <i data-lucide="inbox" class="w-16 h-16 mx-auto"></i>
+                </div>
+                <p class="text-gray-600 font-medium">Заявок поки немає</p>
+                <p class="text-gray-500 text-sm mt-1">Нові заявки з'являться тут автоматично</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       <!-- Statistics View -->
       <div id="view-stats" class="view p-8">
@@ -8475,6 +8606,7 @@
       'pages': 'Сторінки',
       'popups': '📢 Pop-ups',
       'gifts': '🎁 Подарунки',
+      'free-orders': '🎁 Безкоштовне латяо',
       'merchandising': '🎯 Мерчандайзинг',
       'live-chat': '💬 Онлайн чат | ШІ',
       'reviews': '⭐ Відгуки',
@@ -8550,6 +8682,8 @@
           loadPopups()
         } else if (target === 'gifts') {
           loadGiftsView()
+        } else if (target === 'free-orders') {
+          loadFreeOrders()
         } else if (target === 'cashback-settings') {
           loadCashbackSettings()
         } else if (target === 'cashback-statistics') {
@@ -26900,6 +27034,278 @@
     } else {
       console.error('❌ [OBSERVER] view-peppers-game element not found!');
     }
+
+    // ============================================
+    // FREE LATYAO ORDERS MANAGEMENT
+    // ============================================
+    
+    /**
+     * Load Free Orders from Firestore collection 'free_orders'
+     * Sorts by creation date (descending) and renders an Excel-like table
+     */
+    async function loadFreeOrders() {
+      console.log('🎁 [FREE ORDERS] Loading free orders...');
+      
+      const loadingEl = document.getElementById('free-orders-loading');
+      const tableEl = document.getElementById('free-orders-table');
+      const emptyEl = document.getElementById('free-orders-empty');
+      const tbodyEl = document.getElementById('free-orders-tbody');
+      
+      // Show loading state
+      if (loadingEl) loadingEl.classList.remove('hidden');
+      if (tableEl) tableEl.classList.add('hidden');
+      if (emptyEl) emptyEl.classList.add('hidden');
+      
+      try {
+        // Query free orders from Firestore, ordered by creation date descending
+        const freeOrdersQuery = query(
+          collection(db, 'free_orders'),
+          orderBy('createdAt', 'desc')
+        );
+        
+        const snapshot = await getDocs(freeOrdersQuery);
+        
+        // Hide loading
+        if (loadingEl) loadingEl.classList.add('hidden');
+        
+        if (snapshot.empty) {
+          // Show empty state
+          if (emptyEl) emptyEl.classList.remove('hidden');
+          updateFreeOrdersStats([], 0, 0, 0);
+          console.log('🎁 [FREE ORDERS] No orders found');
+          lucide.createIcons();
+          return;
+        }
+        
+        // Parse orders data
+        const orders = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        
+        console.log(`🎁 [FREE ORDERS] Loaded ${orders.length} orders`);
+        
+        // Calculate stats
+        const totalOrders = orders.length;
+        const sentOrders = orders.filter(o => o.sent === true).length;
+        const pendingOrders = totalOrders - sentOrders;
+        
+        // Today's orders (Ukraine timezone)
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayOrders = orders.filter(o => {
+          const orderDate = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+          return orderDate >= todayStart;
+        }).length;
+        
+        // Update stats cards
+        updateFreeOrdersStats(orders, totalOrders, pendingOrders, sentOrders, todayOrders);
+        
+        // Render table rows
+        renderFreeOrdersTable(orders);
+        
+        // Show table
+        if (tableEl) tableEl.classList.remove('hidden');
+        
+        // Re-initialize Lucide icons
+        lucide.createIcons();
+        
+      } catch (error) {
+        console.error('❌ [FREE ORDERS] Error loading orders:', error);
+        if (loadingEl) loadingEl.classList.add('hidden');
+        if (tbodyEl) {
+          tbodyEl.innerHTML = `
+            <tr>
+              <td colspan="10" class="px-4 py-10 text-center text-red-500">
+                <i data-lucide="alert-circle" class="w-8 h-8 mx-auto mb-2"></i>
+                <p>Помилка завантаження: ${error.message}</p>
+              </td>
+            </tr>
+          `;
+        }
+        lucide.createIcons();
+      }
+    }
+    
+    /**
+     * Update statistics cards
+     */
+    function updateFreeOrdersStats(orders, total, pending, sent, today) {
+      const totalEl = document.getElementById('free-orders-total');
+      const pendingEl = document.getElementById('free-orders-pending');
+      const sentEl = document.getElementById('free-orders-sent');
+      const todayEl = document.getElementById('free-orders-today');
+      
+      if (totalEl) totalEl.textContent = total || 0;
+      if (pendingEl) pendingEl.textContent = pending || 0;
+      if (sentEl) sentEl.textContent = sent || 0;
+      if (todayEl) todayEl.textContent = today || 0;
+    }
+    
+    /**
+     * Render Free Orders Table
+     */
+    function renderFreeOrdersTable(orders) {
+      const tbodyEl = document.getElementById('free-orders-tbody');
+      if (!tbodyEl) return;
+      
+      let html = '';
+      
+      orders.forEach((order, index) => {
+        // Format date
+        const createdAt = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt);
+        const dateStr = formatFreeOrderDate(createdAt);
+        
+        // Extract data with fallbacks
+        const fullName = order.fullName || order.name || 'Не вказано';
+        const phone = order.phone || 'Не вказано';
+        const telegram = order.telegram || order.telegramUsername || '—';
+        const city = order.city || 'Не вказано';
+        const novaPoshtaBranch = order.novaPoshtaBranch || order.branch || 'Не вказано';
+        const source = order.source || order.referralSource || '—';
+        const ttn = order.ttn || '';
+        const managerComment = order.managerComment || '';
+        const sent = order.sent === true;
+        
+        // Alternate row colors for better readability
+        const rowClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+        
+        html += `
+          <tr class="${rowClass} hover:bg-blue-50 transition-colors border-b border-gray-200" data-order-id="${order.id}">
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+              ${dateStr}
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">
+              ${fullName}
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+              <a href="tel:${phone}" class="hover:text-blue-600 transition">${phone}</a>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+              ${telegram.startsWith('@') ? telegram : (telegram !== '—' ? '@' + telegram : '—')}
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-700 max-w-xs truncate" title="${city}">
+              ${city}
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-700 max-w-xs truncate" title="${novaPoshtaBranch}">
+              ${novaPoshtaBranch}
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+              ${source}
+            </td>
+            <td class="px-4 py-3 text-sm">
+              <input 
+                type="text" 
+                value="${ttn}" 
+                placeholder="Введіть ТТН"
+                class="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
+                data-field="ttn"
+                data-order-id="${order.id}"
+                onchange="handleFreeOrderFieldUpdate(this)"
+              />
+            </td>
+            <td class="px-4 py-3 text-sm">
+              <input 
+                type="text" 
+                value="${managerComment}" 
+                placeholder="Додати коментар"
+                class="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
+                data-field="managerComment"
+                data-order-id="${order.id}"
+                onchange="handleFreeOrderFieldUpdate(this)"
+              />
+            </td>
+            <td class="px-4 py-3 text-center">
+              <input 
+                type="checkbox" 
+                ${sent ? 'checked' : ''} 
+                class="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-2 focus:ring-green-500 transition cursor-pointer"
+                data-field="sent"
+                data-order-id="${order.id}"
+                onchange="handleFreeOrderFieldUpdate(this)"
+              />
+            </td>
+          </tr>
+        `;
+      });
+      
+      tbodyEl.innerHTML = html;
+    }
+    
+    /**
+     * Format date to DD.MM.YYYY HH:MM for Free Orders
+     */
+    function formatFreeOrderDate(date) {
+      if (!date) return '—';
+      
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      
+      return `${day}.${month}.${year} ${hours}:${minutes}`;
+    }
+    
+    /**
+     * Handle inline field updates with auto-save to Firestore
+     */
+    async function handleFreeOrderFieldUpdate(inputElement) {
+      const orderId = inputElement.getAttribute('data-order-id');
+      const field = inputElement.getAttribute('data-field');
+      let value;
+      
+      // Get value based on input type
+      if (inputElement.type === 'checkbox') {
+        value = inputElement.checked;
+      } else {
+        value = inputElement.value.trim();
+      }
+      
+      console.log(`🎁 [FREE ORDERS] Updating ${field} for order ${orderId}:`, value);
+      
+      try {
+        // Update Firestore document
+        const orderRef = doc(db, 'free_orders', orderId);
+        await updateDoc(orderRef, {
+          [field]: value,
+          updatedAt: serverTimestamp()
+        });
+        
+        console.log(`✅ [FREE ORDERS] Successfully updated ${field}`);
+        
+        // Visual feedback - flash green
+        inputElement.classList.add('bg-green-50');
+        setTimeout(() => {
+          inputElement.classList.remove('bg-green-50');
+        }, 500);
+        
+        // Show success notification
+        showNotification(`Оновлено: ${field === 'ttn' ? 'ТТН' : field === 'managerComment' ? 'Коментар' : 'Статус'}`, 'success');
+        
+        // If sent status changed, reload to update stats
+        if (field === 'sent') {
+          setTimeout(() => {
+            loadFreeOrders();
+          }, 500);
+        }
+        
+      } catch (error) {
+        console.error(`❌ [FREE ORDERS] Error updating ${field}:`, error);
+        
+        // Visual feedback - flash red
+        inputElement.classList.add('bg-red-50');
+        setTimeout(() => {
+          inputElement.classList.remove('bg-red-50');
+        }, 1000);
+        
+        showNotification(`Помилка оновлення: ${error.message}`, 'error');
+      }
+    }
+    
+    // Make function globally accessible
+    window.loadFreeOrders = loadFreeOrders;
+    window.handleFreeOrderFieldUpdate = handleFreeOrderFieldUpdate;
 
   </script>
 

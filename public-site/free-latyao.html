@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+  <title>🎁 Пачка латяо за наш рахунок</title>
+
+  <!-- Google Tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-KE8MZNKEYH"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-KE8MZNKEYH');
+    gtag('config', 'AW-17389864689');
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'latiao-orange': '#ff6b35',
+            'latiao-red': '#d32f2f',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom Styles -->
+  <style>
+    /* Clean mobile-first design - no fancy animations */
+    body {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
+    /* Static background layer performance optimization */
+    .static-bg-layer {
+      will-change: transform;
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+    }
+
+    /* Red Marker Underline Animation */
+    .marker-underline {
+      position: relative;
+      display: inline-block;
+    }
+
+    .marker-underline::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 8px;
+      background: linear-gradient(90deg, #dc2626 0%, #ef4444 50%, #dc2626 100%);
+      border-radius: 2px;
+      opacity: 0;
+      animation: drawMarker 0.8s ease-out 0.5s forwards;
+      z-index: -1;
+    }
+
+    @keyframes drawMarker {
+      0% {
+        width: 0%;
+        opacity: 0;
+      }
+      20% {
+        opacity: 0.7;
+      }
+      100% {
+        width: 100%;
+        opacity: 0.8;
+      }
+    }
+
+    /* Success Message Marker Underline (thinner, delayed) */
+    .success-marker-underline {
+      position: relative;
+      display: inline;
+    }
+
+    .success-marker-underline::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 6px;
+      background: linear-gradient(90deg, #dc2626 0%, #ef4444 50%, #dc2626 100%);
+      border-radius: 9999px;
+      opacity: 0;
+      animation: drawMarker 0.8s ease-out 1.5s forwards;
+      z-index: -1;
+    }
+
+    /* Fallback gradient if image fails to load */
+    #fallbackBg {
+      background: linear-gradient(135deg, #ff6b35 0%, #d32f2f 50%, #ff1744 100%);
+    }
+
+    /* Remove spinner from number inputs */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input[type="number"] {
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+
+    /* Bonus Text Animation (delayed fade-in) */
+    @keyframes bonusFadeIn {
+      0% {
+        opacity: 0;
+        transform: translateY(-5px) rotate(-3deg);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) rotate(-3deg);
+      }
+    }
+
+    .bonus-text {
+      font-family: 'Caveat', cursive;
+      animation: bonusFadeIn 0.6s ease-out 1.3s forwards;
+      opacity: 0;
+    }
+
+    /* Success Message Animation */
+    @keyframes fadeInScale {
+      0% {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .success-card-enter {
+      animation: fadeInScale 0.5s ease-out forwards;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen">
+  
+  <!-- Static Background Layer (Absolutely Fixed - Never Moves) -->
+  <div class="fixed inset-0 -z-50 w-full h-full static-bg-layer">
+    <!-- Background Image -->
+    <img 
+      src="./images/free-bg.jpg" 
+      alt="" 
+      class="w-full h-full object-cover"
+      onerror="this.style.display='none'; document.getElementById('fallbackBg').style.opacity='1';"
+    >
+    <!-- Fallback gradient background if image not found -->
+    <div id="fallbackBg" class="absolute inset-0 opacity-0 transition-opacity duration-300"></div>
+    <!-- Dark overlay for contrast -->
+    <div class="absolute inset-0 bg-black/40"></div>
+  </div>
+
+  <!-- Main Content (Scrollable) -->
+  <div class="relative z-10 min-h-screen flex items-center justify-center px-4 py-10 overflow-y-auto">
+    
+    <!-- Card Container -->
+    <div class="bg-white/95 backdrop-blur-sm rounded-[2rem] p-6 mb-10 shadow-2xl w-[92%] max-w-md mx-auto border border-gray-200">
+      
+      <!-- Emoji Badge -->
+      <div class="text-center mb-4">
+        <span class="inline-block text-6xl">🎁</span>
+      </div>
+
+      <!-- Header -->
+      <h1 class="text-3xl font-black text-gray-900 text-center mb-2">
+        Пачка латяо <span class="marker-underline">за наш рахунок</span>
+      </h1>
+
+      <!-- Handwritten Bonus Text -->
+      <div class="text-center">
+        <span class="bonus-text text-xl sm:text-2xl text-red-600 font-bold -rotate-3 mt-2 block">
+          + промо-код на -10% знижки на перше замовлення
+        </span>
+      </div>
+
+      <!-- Subheader -->
+      <p class="text-base font-medium text-gray-700 text-center mb-8">
+        Заповни форму нижче, і ми відправимо тобі смаколик!
+      </p>
+
+      <!-- Success Message (Hidden by default) -->
+      <div id="successMessage" class="hidden mb-6 p-5 bg-green-50 rounded-2xl text-center">
+        <span class="text-3xl mb-2 block">✅</span>
+        <p class="text-green-800 font-bold text-base">
+          Дякуємо! Твоє замовлення прийнято.
+        </p>
+        <p class="text-green-700 mt-1 text-sm">
+          Очікуй ТТН у Телеграм! 📦
+        </p>
+      </div>
+
+      <!-- Error Message (Hidden by default) -->
+      <div id="errorMessage" class="hidden mb-6 p-5 bg-red-50 rounded-2xl text-center">
+        <span class="text-3xl mb-2 block">❌</span>
+        <p class="text-red-800 font-bold text-base" id="errorText">
+          Помилка! Спробуйте ще раз.
+        </p>
+      </div>
+
+      <!-- Order Form -->
+      <form id="freeOrderForm" class="space-y-4">
+        
+        <!-- Full Name -->
+        <div>
+          <label for="fullName" class="text-sm font-bold text-gray-900 ml-1 mb-2 block uppercase tracking-tight">
+            👤 Повне ім'я<span class="text-red-500 ml-0.5">*</span>
+          </label>
+          <input 
+            type="text" 
+            id="fullName" 
+            name="fullName" 
+            required
+            placeholder="Введіть ваше ім'я та прізвище"
+            class="w-full border border-gray-300 bg-white/50 rounded-xl py-4 px-5 text-base text-black font-semibold placeholder-gray-400 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:bg-white transition-all outline-none"
+          >
+        </div>
+
+        <!-- Phone Number -->
+        <div>
+          <label for="phone" class="text-sm font-bold text-gray-900 ml-1 mb-2 block uppercase tracking-tight">
+            📱 Номер телефону<span class="text-red-500 ml-0.5">*</span>
+          </label>
+          <input 
+            type="tel" 
+            id="phone" 
+            name="phone" 
+            required
+            placeholder="+380XXXXXXXXX"
+            pattern="^\+?380[0-9]{9}$"
+            class="w-full border border-gray-300 bg-white/50 rounded-xl py-4 px-5 text-base text-black font-semibold placeholder-gray-400 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:bg-white transition-all outline-none"
+          >
+        </div>
+
+        <!-- Telegram Nickname -->
+        <div>
+          <label for="telegram" class="text-sm font-bold text-gray-900 ml-1 mb-2 block uppercase tracking-tight">
+            ✈️ Telegram нікнейм<span class="text-red-500 ml-0.5">*</span>
+          </label>
+          <input 
+            type="text" 
+            id="telegram" 
+            name="telegram" 
+            required
+            placeholder="@your_nickname"
+            class="w-full border border-gray-300 bg-white/50 rounded-xl py-4 px-5 text-base text-black font-semibold placeholder-gray-400 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:bg-white transition-all outline-none"
+          >
+        </div>
+
+        <!-- City/Village -->
+        <div>
+          <label for="city" class="text-sm font-bold text-gray-900 ml-1 mb-2 block uppercase tracking-tight">
+            🏙️ Місто/Село<span class="text-red-500 ml-0.5">*</span>
+          </label>
+          <input 
+            type="text" 
+            id="city" 
+            name="city" 
+            required
+            placeholder="Наприклад: Київ"
+            class="w-full border border-gray-300 bg-white/50 rounded-xl py-4 px-5 text-base text-black font-semibold placeholder-gray-400 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:bg-white transition-all outline-none"
+          >
+        </div>
+
+        <!-- Nova Poshta -->
+        <div>
+          <label for="novaPoshta" class="text-sm font-bold text-gray-900 ml-1 mb-2 block uppercase tracking-tight">
+            📦 Нова Пошта (Відділення/Поштомат)<span class="text-red-500 ml-0.5">*</span>
+          </label>
+          <input 
+            type="text" 
+            id="novaPoshta" 
+            name="novaPoshta" 
+            required
+            placeholder="Наприклад: Відділення №1 або Поштомат №123"
+            class="w-full border border-gray-300 bg-white/50 rounded-xl py-4 px-5 text-base text-black font-semibold placeholder-gray-400 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:bg-white transition-all outline-none"
+          >
+        </div>
+
+        <!-- Source -->
+        <div>
+          <label for="source" class="text-sm font-bold text-gray-900 ml-1 mb-2 block uppercase tracking-tight">
+            💡 Звідки дізналися про нас?<span class="text-red-500 ml-0.5">*</span>
+          </label>
+          <select 
+            id="source" 
+            name="source" 
+            required
+            class="w-full border border-gray-300 bg-white/50 rounded-xl py-4 px-5 text-base text-black font-semibold shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:bg-white transition-all outline-none cursor-pointer"
+          >
+            <option value="" disabled selected>Оберіть варіант</option>
+            <option value="Instagram">📸 Instagram</option>
+            <option value="TikTok">🎵 TikTok</option>
+            <option value="Google">🔍 Google</option>
+          </select>
+        </div>
+
+        <!-- Submit Button -->
+        <button 
+          type="submit" 
+          id="submitBtn"
+          class="w-full py-5 bg-orange-600 text-white font-black text-lg rounded-2xl shadow-lg active:bg-orange-700 active:scale-95 transition-colors"
+        >
+          Отримати пачку латяо 🚀
+        </button>
+
+      </form>
+
+      <!-- Shipping Info -->
+      <p class="text-center text-red-600/70 text-sm mt-4">
+        *доставку сплачує отримувач
+      </p>
+
+    </div>
+
+  </div>
+
+  <!-- Firebase & Form Logic -->
+  <script type="module">
+    import { db } from './js/firebase-init.js';
+    import { collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    // Get form elements
+    const form = document.getElementById('freeOrderForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const successMessage = document.getElementById('successMessage');
+    const errorMessage = document.getElementById('errorMessage');
+    const errorText = document.getElementById('errorText');
+
+    // Submit form handler
+    // Maps form fields to Firestore document: fullName, phone, telegram, city, novaPoshtaBranch, source
+    // Uses addDoc(collection(db, "free_orders"), {...data, createdAt: serverTimestamp()})
+    // On success: Replaces form with success message "✅ Заявку прийнято! Очікуй ТТН у Телеграм."
+    // On error: Shows specific error message, especially for permission-denied errors
+    window.submitFreeOrder = async function(event) {
+      event.preventDefault();
+      
+      console.log('🚀 [FREE ORDER] Form submission started');
+
+      // Get form input elements
+      const fullNameInput = document.getElementById('fullName');
+      const phoneInput = document.getElementById('phone');
+      const telegramInput = document.getElementById('telegram');
+      const cityInput = document.getElementById('city');
+      const novaPoshtaInput = document.getElementById('novaPoshta');
+      const sourceInput = document.getElementById('source');
+
+      // Get form values
+      const fullName = fullNameInput.value.trim();
+      const phone = phoneInput.value.trim();
+      const telegram = telegramInput.value.trim();
+      const city = cityInput.value.trim();
+      const novaPoshta = novaPoshtaInput.value.trim();
+      const source = sourceInput.value;
+
+      // Clear any previous error borders
+      [fullNameInput, phoneInput, telegramInput, cityInput, novaPoshtaInput, sourceInput].forEach(input => {
+        input.classList.remove('border-red-500', 'border-2');
+      });
+
+      // Validation: Check all fields are filled
+      const emptyFields = [];
+      if (!fullName) emptyFields.push(fullNameInput);
+      if (!phone) emptyFields.push(phoneInput);
+      if (!telegram) emptyFields.push(telegramInput);
+      if (!city) emptyFields.push(cityInput);
+      if (!novaPoshta) emptyFields.push(novaPoshtaInput);
+      if (!source) emptyFields.push(sourceInput);
+
+      if (emptyFields.length > 0) {
+        console.error('❌ [FREE ORDER] Validation failed: Empty fields detected');
+        
+        // Highlight empty fields with red border
+        emptyFields.forEach(field => {
+          field.classList.add('border-red-500', 'border-2');
+        });
+        
+        errorText.textContent = 'Будь ласка, заповніть усі поля перед відправкою';
+        errorMessage.classList.remove('hidden');
+        errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      // Validate phone format
+      if (!phone.match(/^\+?380[0-9]{9}$/)) {
+        console.error('❌ [FREE ORDER] Validation failed: Invalid phone format');
+        phoneInput.classList.add('border-red-500', 'border-2');
+        errorText.textContent = 'Невірний формат телефону. Використовуйте формат +380XXXXXXXXX';
+        errorMessage.classList.remove('hidden');
+        errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      console.log('✅ [FREE ORDER] Validation passed');
+
+      // Disable button and show loading state
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '⏳ Надсилаємо...';
+      submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+      // Hide messages
+      successMessage.classList.add('hidden');
+      errorMessage.classList.add('hidden');
+
+      try {
+        // Prepare order data
+        let telegramFormatted = telegram;
+        if (!telegramFormatted.startsWith('@')) {
+          telegramFormatted = '@' + telegramFormatted;
+        }
+
+        // Build order object
+        const orderData = {
+          fullName: fullName,
+          phone: phone,
+          telegram: telegramFormatted,
+          city: city,
+          novaPoshtaBranch: novaPoshta,
+          source: source,
+          createdAt: serverTimestamp(),
+          sent: false,
+          ttn: '',
+          managerComment: '',
+          ip: 'unknown',
+          userAgent: navigator.userAgent || 'unknown'
+        };
+
+        // Get IP address (non-blocking)
+        try {
+          const ipResponse = await fetch('https://api.ipify.org?format=json');
+          const ipData = await ipResponse.json();
+          orderData.ip = ipData.ip;
+        } catch (ipError) {
+          console.warn('⚠️ [FREE ORDER] Could not fetch IP address:', ipError);
+        }
+
+        console.log('🚀 [FREE ORDER] Attempting to save free order...', orderData);
+
+        // Save to Firestore collection "free_orders"
+        const docRef = await addDoc(collection(db, 'free_orders'), orderData);
+        
+        console.log('✅ [FREE ORDER] Successfully created with ID:', docRef.id);
+
+        // Track conversion with Google Analytics
+        if (typeof gtag !== 'undefined') {
+          gtag('event', 'conversion', {
+            'send_to': 'AW-17389864689/free_giveaway',
+            'value': 1.0,
+            'currency': 'UAH'
+          });
+          console.log('📊 [FREE ORDER] Google Analytics conversion tracked');
+        }
+
+        // Replace form with success message
+        const formContainer = form.parentElement;
+        formContainer.innerHTML = `
+          <div class="success-card-enter">
+            <!-- Header -->
+            <h1 class="text-3xl font-black text-gray-900 text-center mb-4">
+              Заявку прийнято 🙌🏻
+            </h1>
+            
+            <!-- Body Text -->
+            <div class="text-base text-gray-800 text-center leading-relaxed space-y-4 mb-6">
+              <p>Ми вже передали її в обробку.</p>
+              <p>Відправляємо Латяо щодня о 12:00 та 17:00 — тож зовсім скоро воно буде у вас 🌶</p>
+              <p>Після успішного опрацювання заявки ви отримаєте SMS на телефон з ТТН для відстеження посилки.</p>
+              <p class="font-bold text-gray-900">
+                <span class="success-marker-underline">Latiao Snack — це найбільший магазин Latiao в Україні, і ми працюємо напряму з Китаю.</span>
+              </p>
+              <p class="font-semibold">Поки очікуєте відправку — можете переглянути наш сайт, там багато цікавих позицій 👇</p>
+            </div>
+            
+            <!-- Buttons -->
+            <div class="space-y-3">
+              <a 
+                href="https://latiao-snack.com.ua" 
+                target="_blank"
+                class="w-full py-4 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-2xl block text-center transition-colors shadow-lg active:scale-95 transform duration-150"
+              >
+                Глянути сайт
+              </a>
+              
+              <p class="text-gray-400 text-center text-sm italic">
+                або
+              </p>
+              
+              <a 
+                href="https://latiao-snack.com.ua/category.html?slug=us-tovari" 
+                target="_blank"
+                class="w-full py-4 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-2xl block text-center transition-colors shadow-lg active:scale-95 transform duration-150"
+              >
+                Глянути латяо
+              </a>
+            </div>
+          </div>
+        `;
+        
+        // Scroll to success message
+        formContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        console.log('🎉 [FREE ORDER] Form submission completed successfully');
+
+      } catch (error) {
+        console.error('❌ [FREE ORDER] Error submitting free order:', error);
+        console.error('❌ [FREE ORDER] Error details:', {
+          code: error.code,
+          message: error.message,
+          stack: error.stack
+        });
+        
+        // Show specific error message based on error type
+        let errorMsg = '';
+        
+        if (error.code === 'permission-denied') {
+          errorMsg = 'Помилка доступу. Будь ласка, повідомте адміністратора.';
+          console.error('🔒 [FREE ORDER] PERMISSION DENIED - Firestore rules may need updating');
+        } else if (error.code === 'unavailable') {
+          errorMsg = 'Сервер недоступний. Перевірте інтернет-з\'єднання та спробуйте ще раз.';
+        } else if (error.code === 'unauthenticated') {
+          errorMsg = 'Помилка автентифікації. Оновіть сторінку та спробуйте знову.';
+        } else {
+          errorMsg = 'Помилка при відправці форми. ' + (error.message || 'Спробуйте ще раз пізніше.');
+        }
+        
+        errorText.textContent = errorMsg;
+        errorMessage.classList.remove('hidden');
+        errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // Re-enable button
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Отримати пачку латяо 🚀';
+        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    };
+
+    // Attach submit handler to form
+    form.addEventListener('submit', submitFreeOrder);
+
+    // Remove error border when user starts typing in any field
+    const allInputs = [
+      document.getElementById('fullName'),
+      document.getElementById('phone'),
+      document.getElementById('telegram'),
+      document.getElementById('city'),
+      document.getElementById('novaPoshta'),
+      document.getElementById('source')
+    ];
+
+    allInputs.forEach(input => {
+      if (input) {
+        input.addEventListener('input', function() {
+          this.classList.remove('border-red-500', 'border-2');
+        });
+        input.addEventListener('change', function() {
+          this.classList.remove('border-red-500', 'border-2');
+        });
+      }
+    });
+
+    // Auto-format phone number
+    const phoneInput = document.getElementById('phone');
+    phoneInput.addEventListener('input', function(e) {
+      let value = e.target.value.replace(/\D/g, '');
+      
+      if (value.length > 0 && value[0] !== '3') {
+        if (value[0] === '0') {
+          value = '38' + value;
+        } else if (value.length === 9) {
+          value = '380' + value;
+        }
+      }
+      
+      if (value.length > 12) {
+        value = value.slice(0, 12);
+      }
+      
+      e.target.value = value ? '+' + value : '';
+    });
+
+    // Auto-format Telegram nickname
+    const telegramInput = document.getElementById('telegram');
+    telegramInput.addEventListener('input', function(e) {
+      let value = e.target.value;
+      
+      // Remove multiple @ symbols
+      value = value.replace(/@+/g, '@');
+      
+      // Ensure @ is at the start if text exists
+      if (value.length > 0 && !value.startsWith('@')) {
+        value = '@' + value.replace(/@/g, '');
+      }
+      
+      e.target.value = value;
+    });
+
+    // Page view tracking
+    if (typeof gtag !== 'undefined') {
+      gtag('event', 'page_view', {
+        page_title: 'Free Latyao Giveaway',
+        page_location: window.location.href,
+        page_path: window.location.pathname
+      });
+    }
+
+  </script>
+
+</body>
+</html>

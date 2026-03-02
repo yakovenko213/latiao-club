@@ -99,7 +99,17 @@ service cloud.firestore {
     }
     
     // =============================================
-    // 🌐 PUBLIC COLLECTIONS (Anyone can read)
+    // � FREE ORDERS - Public Giveaway Submissions
+    // =============================================
+    // Anyone can submit a free order request (for giveaway campaigns)
+    // Only admins can read/manage these orders
+    match /free_orders/{orderId} {
+      allow create: if true;                  // ✅ PUBLIC - anyone can submit giveaway form
+      allow read, update, delete: if request.auth != null; // ❌ Only admins can manage
+    }
+    
+    // =============================================
+    // �🌐 PUBLIC COLLECTIONS (Anyone can read)
     // =============================================
     
     // Products - PUBLIC READ for storefront
