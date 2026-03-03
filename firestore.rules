@@ -426,8 +426,8 @@ service cloud.firestore {
       // ✅ Anyone can create new posts (with validation)
       allow create: if isValidLatiaoPost(request.resource.data);
       
-      // ✅ Anyone can increment likes (with validation)
-      allow update: if onlyLikeIncrement(resource.data, request.resource.data);
+      // ✅ Anyone can toggle likes (with validation)
+      allow update: if onlyLikeToggle(resource.data, request.resource.data);
       
       // ❌ No direct deletion (only admins via backend)
       allow delete: if false;
@@ -443,14 +443,21 @@ service cloud.firestore {
         && data.imageUrl is string
         && (data.imageUrl.matches("^https://.*") || data.imageUrl.matches("^data:image/.*"))
         && data.likes == 0
+        && data.likedBy is list
+        && data.likedBy.size() == 0
         && data.createdAt is timestamp;
     }
     
-    // Function to only allow like increments
-    function onlyLikeIncrement(before, after) {
-      return before.diff(after).affectedKeys().hasOnly(['likes'])
-        && after.likes >= before.likes  // Only allow increases
-        && after.likes <= before.likes + 1;  // Only increment by 1
+    // Function to only allow like toggles (add or remove)
+    function onlyLikeToggle(before, after) {
+      // Allow updates that only modify likes and/or likedBy fields
+      return before.diff(after).affectedKeys().hasOnly(['likes', 'likedBy'])
+        && after.likes >= 0  // Likes cannot be negative
+        && (after.likedBy == null || after.likedBy is list)  // likedBy must be a list or null
+        && (
+          // Simple like increment/decrement (for backward compatibility)
+          (after.likes >= before.likes - 1 && after.likes <= before.likes + 1)
+        );
     }
 
   }

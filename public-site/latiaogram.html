@@ -126,7 +126,10 @@
       updateDoc,
       doc,
       serverTimestamp,
-      increment
+      increment,
+      arrayUnion,
+      arrayRemove,
+      getDoc
     } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
     import { 
       getStorage, 
@@ -222,7 +225,7 @@
                           class="flex items-center gap-2 group transition-all duration-200 cursor-pointer"
                           id="like-btn-${postId}"
                         >
-                          <span class="text-gray-400 group-hover:text-red-400 transition-all duration-300">
+                          <span class="${(postData.likedBy || []).includes(getUserId()) ? 'text-red-500' : 'text-gray-400'} group-hover:text-red-400 transition-all duration-300">
                             ${icons.heart}
                           </span>
                           <span class="text-sm font-medium text-gray-500">
@@ -434,10 +437,31 @@
       });
     }
 
+    // Generate unique user identifier
+    function getUserId() {
+      let userId = localStorage.getItem('latiaogram_user_id');
+      if (!userId) {
+        userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('latiaogram_user_id', userId);
+      }
+      return userId;
+    }
+
     // Handle like functionality with Firestore
     async function handleLike(postId) {
       try {
+        const userId = getUserId();
         const btn = document.getElementById(`like-btn-${postId}`);
+        const postRef = doc(db, 'latiaogram_feed', postId);
+        
+        // Get current post data
+        const postSnap = await getDoc(postRef);
+        if (!postSnap.exists()) return;
+        
+        const postData = postSnap.data();
+        const likedBy = postData.likedBy || [];
+        const userHasLiked = likedBy.includes(userId);
+        
         if (btn) {
           btn.querySelector('span').classList.add('heart-beat');
           setTimeout(() => {
@@ -445,10 +469,19 @@
           }, 300);
         }
         
-        const postRef = doc(db, 'latiaogram_feed', postId);
-        await updateDoc(postRef, {
-          likes: increment(1)
-        });
+        if (userHasLiked) {
+          // Remove like
+          await updateDoc(postRef, {
+            likes: increment(-1),
+            likedBy: arrayRemove(userId)
+          });
+        } else {
+          // Add like
+          await updateDoc(postRef, {
+            likes: increment(1),
+            likedBy: arrayUnion(userId)
+          });
+        }
         
       } catch (error) {
         console.error('Error updating like:', error);
@@ -573,6 +606,7 @@
           caption: description || '', // Ensure caption is always a string
           imageUrl: processedImage, // Store base64 directly
           likes: 0,
+          likedBy: [], // Array to track who liked the post
           createdAt: serverTimestamp()
         });
         
