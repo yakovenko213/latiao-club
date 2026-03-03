@@ -414,6 +414,44 @@ service cloud.firestore {
       // ❌ Only admins can update/delete
       allow update, delete: if request.auth != null;
     }
+
+    // =============================================
+    // 📱 LATIAOGRAM SOCIAL MEDIA
+    // =============================================
     
+    match /latiaogram_feed/{postId} {
+      // ✅ Everyone can read posts (public feed)
+      allow read: if true;
+      
+      // ✅ Anyone can create new posts (with validation)
+      allow create: if isValidLatiaoPost(request.resource.data);
+      
+      // ✅ Anyone can increment likes (with validation)
+      allow update: if onlyLikeIncrement(resource.data, request.resource.data);
+      
+      // ❌ No direct deletion (only admins via backend)
+      allow delete: if false;
+    }
+    
+    // Validation function for LatiaoGRAM posts
+    function isValidLatiaoPost(data) {
+      return data.nickname is string
+        && data.nickname.size() >= 2 
+        && data.nickname.size() <= 30
+        && data.caption is string
+        && data.caption.size() <= 500
+        && data.imageUrl is string
+        && (data.imageUrl.matches("^https://.*") || data.imageUrl.matches("^data:image/.*"))
+        && data.likes == 0
+        && data.createdAt is timestamp;
+    }
+    
+    // Function to only allow like increments
+    function onlyLikeIncrement(before, after) {
+      return before.diff(after).affectedKeys().hasOnly(['likes'])
+        && after.likes >= before.likes  // Only allow increases
+        && after.likes <= before.likes + 1;  // Only increment by 1
+    }
+
   }
 }

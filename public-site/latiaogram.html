@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LatiaoGRAM</title>
+  <meta name="description" content="Соціальна мережа для фото та Latiao">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+    
+    :root {
+      --background: #f8f7fc;
+      --foreground: #1a1a2e;
+      --card: #ffffff;
+      --card-foreground: #1a1a2e;
+      --primary: #e11d48;
+      --primary-foreground: #ffffff;
+      --muted: #f1f0f7;
+      --muted-foreground: #6b7280;
+      --border: #e5e4ed;
+      --input: #f4f3fa;
+      --accent: #f97316;
+    }
+    
+    body {
+      background: var(--background);
+      color: var(--foreground);
+    }
+    
+    .gradient-text {
+      background: linear-gradient(to right, #f43f5e, #ec4899, #f97316);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .gradient-btn {
+      background: linear-gradient(to right, #f43f5e, #ec4899, #f97316);
+    }
+    
+    .animate-in {
+      animation: fadeSlideIn 0.5s ease-out forwards;
+    }
+    
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes zoomIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+    
+    .modal-animate {
+      animation: zoomIn 0.4s ease-out forwards;
+    }
+    
+    @keyframes heartBeat {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.25); }
+    }
+    
+    .heart-beat {
+      animation: heartBeat 0.3s ease-in-out;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .animate-pulse {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    
+    .backdrop-blur {
+      backdrop-filter: blur(8px);
+    }
+    
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div id="app"></div>
+
+  <script type="module">
+    // Firebase imports
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { 
+      getFirestore, 
+      collection, 
+      addDoc, 
+      onSnapshot, 
+      orderBy, 
+      query, 
+      updateDoc,
+      doc,
+      serverTimestamp,
+      increment
+    } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    import { 
+      getStorage, 
+      ref, 
+      uploadBytes, 
+      getDownloadURL 
+    } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDpgHo-T7EqfDl0vA4wH5rnZxSsj3hQqNY",
+      authDomain: "my-magazin-81c96.firebaseapp.com",
+      projectId: "my-magazin-81c96",
+      storageBucket: "my-magazin-81c96.appspot.com",
+      messagingSenderId: "123456789012",
+      appId: "1:123456789012:web:abcdefghijklmnop"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    // Global state
+    let posts = [];
+    let isModalOpen = false;
+    let isRulesOpen = false;
+    let isUploading = false;
+
+    // Icons as SVG
+    const icons = {
+      heart: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`,
+      heartFilled: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`,
+      plus: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`,
+      x: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`,
+      imagePlus: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"/><line x1="16" x2="22" y1="5" y2="5"/><line x1="19" x2="19" y1="2" y2="8"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`,
+      camera: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>`,
+      ban: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>`,
+      shield: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>`,
+      users: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`
+    };
+
+    function render() {
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <!-- Header -->
+        <header class="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-gray-100">
+          <div class="max-w-lg mx-auto px-4 py-4 flex items-center justify-center gap-3">
+            <h1 class="text-2xl font-bold gradient-text">LatiaoGRAM</h1>
+            <button 
+              onclick="openRules()"
+              class="px-3 py-1 text-xs font-semibold text-white bg-red-500 rounded-full hover:bg-red-600 transition-all duration-200 hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+            >
+              Правила LatiaoGRAM
+            </button>
+          </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-lg mx-auto px-4 py-6 pb-24">
+          ${posts.length === 0 ? `
+            <!-- Loading State -->
+            <div class="text-center py-12">
+              <div class="flex justify-center items-center space-x-2 mb-4">
+                <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
+                <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style="animation-delay: 0.2s;"></div>
+                <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style="animation-delay: 0.4s;"></div>
+              </div>
+              <p class="text-gray-500">Завантажуємо пости...</p>
+            </div>
+          ` : `
+            <div class="space-y-6">
+              ${posts.map((post, index) => {
+                const postData = post.data();
+                const postId = post.id;
+                return `
+                  <article 
+                    class="animate-in bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100"
+                    style="animation-delay: ${index * 100}ms"
+                  >
+                    <div class="relative aspect-square overflow-hidden">
+                      <img
+                        src="${postData.imageUrl}"
+                        alt="Фото від ${postData.nickname}"
+                        class="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div class="p-4">
+                      <div class="flex items-center gap-3 mb-2">
+                        <button
+                          onclick="handleLike('${postId}')"
+                          class="flex items-center gap-2 group transition-all duration-200 cursor-pointer"
+                          id="like-btn-${postId}"
+                        >
+                          <span class="text-gray-400 group-hover:text-red-400 transition-all duration-300">
+                            ${icons.heart}
+                          </span>
+                          <span class="text-sm font-medium text-gray-500">
+                            ${postData.likes || 0}
+                          </span>
+                        </button>
+                        <h3 class="font-semibold text-gray-900 text-lg">${postData.nickname}</h3>
+                      </div>
+                      <p class="text-gray-500 text-sm leading-relaxed">${postData.caption || ''}</p>
+                    </div>
+                  </article>
+                `;
+              }).join('')}
+            </div>
+          `}
+        </main>
+
+        <!-- Floating Button -->
+        <div class="fixed bottom-6 left-0 right-0 z-40 flex justify-center pointer-events-none">
+          <button
+            onclick="openModal()"
+            class="pointer-events-auto flex items-center gap-2 px-6 py-3 rounded-full gradient-btn text-white font-semibold shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200"
+            style="box-shadow: 0 10px 25px -5px rgba(236, 72, 153, 0.4);"
+          >
+            ${icons.plus}
+            <span>Додати фото</span>
+          </button>
+        </div>
+
+        <!-- Add Post Modal -->
+        ${isModalOpen ? `
+          <div class="fixed inset-0 z-50 flex items-center justify-center p-4" style="animation: fadeIn 0.2s ease-out">
+            <div class="absolute inset-0 bg-black/20 backdrop-blur" onclick="closeModal()"></div>
+            <div class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden modal-animate">
+              <div class="flex items-center justify-between p-4 border-b border-gray-100">
+                <h2 class="text-lg font-semibold text-gray-900">Нова публікація</h2>
+                <button onclick="closeModal()" class="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500">
+                  ${icons.x}
+                </button>
+              </div>
+              
+              <div class="mx-4 mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-blue-600">📁</span>
+                  <span class="text-sm font-medium text-blue-900">Обмеження файлу</span>
+                </div>
+                <p class="text-xs text-blue-700">
+                  Максимальний розмір: 5MB. 
+                </p>
+              </div>
+              
+              <form onsubmit="submitPost(event)" class="p-4 space-y-4">
+                <div>
+                  <label for="nickname" class="block text-sm font-medium text-gray-900 mb-1.5">Нікнейм</label>
+                  <input
+                    id="nickname"
+                    type="text"
+                    class="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 focus:border-pink-500 focus:ring-2 focus:ring-pink-200 outline-none transition-all text-gray-900 placeholder:text-gray-400"
+                    placeholder="Ваш нікнейм"
+                    required
+                  />
+                </div>
+                <div>
+                  <label for="description" class="block text-sm font-medium text-gray-900 mb-1.5">Опис</label>
+                  <textarea
+                    id="description"
+                    rows="3"
+                    class="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 focus:border-pink-500 focus:ring-2 focus:ring-pink-200 outline-none transition-all resize-none text-gray-900 placeholder:text-gray-400"
+                    placeholder="Напишіть опис..."
+                    required
+                  ></textarea>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-900 mb-1.5">Обрати фото (макс. 5MB)</label>
+                  <input type="file" id="fileInput" accept="image/*" onchange="previewImage(event)" class="hidden" />
+                  <button
+                    type="button"
+                    onclick="document.getElementById('fileInput').click()"
+                    class="relative w-full aspect-video rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 hover:border-pink-500 hover:bg-pink-50/50 transition-all duration-200 overflow-hidden"
+                    id="imagePreviewContainer"
+                  >
+                    <span class="text-gray-400">${icons.imagePlus}</span>
+                    <span class="text-sm text-gray-400">Натисніть, щоб обрати фото</span>
+                  </button>
+                </div>
+                <button
+                  type="submit"
+                  id="submitBtn"
+                  disabled
+                  class="w-full py-3 rounded-xl font-semibold text-white gradient-btn hover:opacity-90 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                  style="box-shadow: 0 10px 25px -5px rgba(236, 72, 153, 0.25);"
+                >
+                  Опублікувати
+                </button>
+              </form>
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- Rules Modal -->
+        ${isRulesOpen ? `
+          <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-black/40 backdrop-blur" onclick="closeRules()" style="animation: fadeIn 0.3s ease-out"></div>
+            <div class="relative w-full max-w-md max-h-[85vh] overflow-y-auto bg-white rounded-2xl shadow-2xl modal-animate scrollbar-hide">
+              <div class="sticky top-0 z-10 bg-red-500 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+                <h2 class="text-xl font-bold text-white">Правила LatiaoGRAM</h2>
+                <button onclick="closeRules()" class="p-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors text-white">
+                  ${icons.x}
+                </button>
+              </div>
+              <div class="p-6 space-y-6">
+                <p class="text-gray-500 leading-relaxed animate-in" style="animation-delay: 100ms">
+                  LatiaoGRAM — це простір для публікацій, пов'язаних із латяо та вашим досвідом. 
+                  Ми підтримуємо свободу самовираження в межах здорового контенту.
+                </p>
+
+                <section class="animate-in" style="animation-delay: 200ms">
+                  <div class="flex items-center gap-2 mb-3">
+                    <div class="p-2 rounded-lg bg-green-100">
+                      <span class="text-green-600">${icons.camera}</span>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 text-lg">Що можна публікувати</h3>
+                  </div>
+                  <ul class="space-y-2 ml-11">
+                    <li class="text-gray-500 flex items-start gap-2"><span class="text-green-500 mt-1">•</span>Фото латяо</li>
+                    <li class="text-gray-500 flex items-start gap-2"><span class="text-green-500 mt-1">•</span>Фото своїх замовлень з будь-якого магазину</li>
+                    <li class="text-gray-500 flex items-start gap-2"><span class="text-green-500 mt-1">•</span>Фото латяо, знайдені в інтернеті</li>
+                    <li class="text-gray-500 flex items-start gap-2"><span class="text-green-500 mt-1">•</span>Власні фото, пов'язані з вашим досвідом</li>
+                  </ul>
+                  <p class="text-sm text-gray-500 mt-3 ml-11 italic">Головне — дотримуватися поваги до інших користувачів.</p>
+                </section>
+
+                <section class="animate-in" style="animation-delay: 300ms">
+                  <div class="flex items-center gap-2 mb-3">
+                    <div class="p-2 rounded-lg bg-red-100">
+                      <span class="text-red-600">${icons.ban}</span>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 text-lg">Що заборонено</h3>
+                  </div>
+                  <ul class="space-y-2 ml-11">
+                    <li class="text-gray-500 flex items-start gap-2"><span class="text-red-500 mt-1">•</span>Порнографічний контент</li>
+                    <li class="text-gray-500 flex items-start gap-2"><span class="text-red-500 mt-1">•</span>Нецензурна лексика</li>
+                    <li class="text-gray-500 flex items-start gap-2"><span class="text-red-500 mt-1">•</span>Образи, приниження, агресія</li>
+                    <li class="text-gray-500 flex items-start gap-2"><span class="text-red-500 mt-1">•</span>Провокаційний або неприйнятний вміст</li>
+                  </ul>
+                  <p class="text-sm text-gray-500 mt-3 ml-11">Ці обмеження стосуються: <span class="font-medium text-gray-900">нікнейму</span>, <span class="font-medium text-gray-900">опису</span>, <span class="font-medium text-gray-900">зображення</span></p>
+                </section>
+
+                <section class="animate-in" style="animation-delay: 400ms">
+                  <div class="flex items-center gap-2 mb-3">
+                    <div class="p-2 rounded-lg bg-blue-100">
+                      <span class="text-blue-600">${icons.shield}</span>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 text-lg">Модерація</h3>
+                  </div>
+                  <p class="text-gray-500 ml-11">
+                    Якщо в публікації (нікнейм, опис або фото) буде порушення правил, 
+                    модератор має право видалити її без попередження.
+                  </p>
+                </section>
+
+                <section class="bg-gradient-to-r from-rose-50 to-orange-50 rounded-xl p-4 animate-in" style="animation-delay: 500ms">
+                  <div class="flex items-center gap-2 mb-2">
+                    <div class="p-2 rounded-lg bg-white shadow-sm">
+                      <span class="text-rose-500">${icons.users}</span>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 text-lg">Підтримуйте одне одного</h3>
+                  </div>
+                  <p class="text-gray-500 ml-11">LatiaoGRAM створений для взаємної підтримки.</p>
+                  <div class="flex items-center gap-2 mt-3 ml-11">
+                    <span class="text-red-500 animate-pulse">${icons.heartFilled}</span>
+                    <p class="text-sm text-gray-900 font-medium">
+                      Ставте лайки публікаціям, які вам подобаються — так ви допомагаєте авторам отримувати більше уваги.
+                    </p>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </div>
+        ` : ''}
+      `;
+    }
+
+    let selectedImage = null;
+    let selectedFile = null;
+
+    // Firebase Functions
+    
+    // Initialize Firebase listeners
+    function initializeFirebase() {
+      // Listen for real-time updates from Firestore
+      const postsQuery = query(
+        collection(db, 'latiaogram_feed'),
+        orderBy('createdAt', 'desc')
+      );
+      
+      onSnapshot(postsQuery, (snapshot) => {
+        posts = snapshot.docs;
+        render();
+      }, (error) => {
+        console.error('Error listening to posts:', error);
+        
+        // Check if this is a CORS-related issue
+        if (error.message && error.message.includes('CORS')) {
+          showToast('Проблема з доступом. Перейдіть на https://my-magazin-81c96.web.app/latiaogram.html', 'error');
+        } else {
+          showToast('Помилка завантаження постів', 'error');
+        }
+      });
+    }
+
+    // Handle like functionality with Firestore
+    async function handleLike(postId) {
+      try {
+        const btn = document.getElementById(`like-btn-${postId}`);
+        if (btn) {
+          btn.querySelector('span').classList.add('heart-beat');
+          setTimeout(() => {
+            btn.querySelector('span').classList.remove('heart-beat');
+          }, 300);
+        }
+        
+        const postRef = doc(db, 'latiaogram_feed', postId);
+        await updateDoc(postRef, {
+          likes: increment(1)
+        });
+        
+      } catch (error) {
+        console.error('Error updating like:', error);
+        showToast('Помилка при лайку', 'error');
+      }
+    }
+
+    function openModal() {
+      isModalOpen = true;
+      selectedImage = null;
+      selectedFile = null;
+      render();
+    }
+
+    function closeModal() {
+      isModalOpen = false;
+      selectedImage = null;
+      selectedFile = null;
+      render();
+    }
+
+    function openRules() {
+      isRulesOpen = true;
+      document.body.style.overflow = 'hidden';
+      render();
+    }
+
+    function closeRules() {
+      isRulesOpen = false;
+      document.body.style.overflow = 'unset';
+      render();
+    }
+
+    function previewImage(event) {
+      const file = event.target.files[0];
+      if (file && file.type.startsWith('image/')) {
+        // Check file size (5MB limit)
+        const maxSize = 5 * 1024 * 1024;
+        if (file.size > maxSize) {
+          showToast('Розмір файлу має бути менше 5MB. Спробуйте стиснути зображення.', 'error');
+          return;
+        }
+        
+        selectedFile = file;
+        const reader = new FileReader();
+        reader.onloadend = function() {
+          selectedImage = reader.result;
+          const container = document.getElementById('imagePreviewContainer');
+          const sizeText = `${(file.size / 1024).toFixed(1)}KB`;
+          container.innerHTML = `
+            <img src="${selectedImage}" alt="Попередній перегляд" class="w-full h-full object-cover" />
+            <div class="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+              ${sizeText}
+            </div>
+          `;
+          checkFormValidity();
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function checkFormValidity() {
+      const nickname = document.getElementById('nickname')?.value;
+      const description = document.getElementById('description')?.value;
+      const submitBtn = document.getElementById('submitBtn');
+      if (submitBtn) {
+        submitBtn.disabled = !(nickname && description && selectedFile) || isUploading;
+      }
+    }
+
+    async function submitPost(event) {
+      event.preventDefault();
+      
+      if (isUploading) return;
+      
+      const nickname = document.getElementById('nickname').value.trim();
+      const description = document.getElementById('description').value.trim();
+      
+      if (!nickname || !selectedFile) {
+        showToast('Будь ласка, заповніть всі поля', 'error');
+        return;
+      }
+      
+      isUploading = true;
+      const submitBtn = document.getElementById('submitBtn');
+      const originalText = submitBtn.textContent;
+      
+      try {
+        // Update button to show loading
+        submitBtn.innerHTML = `
+          <div class="flex items-center justify-center gap-2">
+            <div class="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+            <span>Завантаження...</span>
+          </div>
+        `;
+        submitBtn.disabled = true;
+        
+        // Check file size (limit to 5MB for direct base64 storage)
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        if (selectedFile.size > maxSize) {
+          showToast('Розмір файлу має бути менше 5MB', 'error');
+          return;
+        }
+        
+        showToast('Обробляємо зображення...', 'success');
+        
+        // Convert image to base64 and compress if needed
+        const processedImage = await processImageForDirectStorage(selectedFile);
+        
+        // Check final size
+        const finalSize = processedImage.length * 0.75; // Approximate byte size
+        if (finalSize > 1024 * 1024) {
+          showToast('Зображення занадто велике навіть після стиснення. Спробуйте менше фото.', 'error');
+          return;
+        }
+        
+        showToast('Зберігаємо пост...', 'success');
+        
+        // Save post directly to Firestore with base64 image
+        await addDoc(collection(db, 'latiaogram_feed'), {
+          nickname: nickname,
+          caption: description || '', // Ensure caption is always a string
+          imageUrl: processedImage, // Store base64 directly
+          likes: 0,
+          createdAt: serverTimestamp()
+        });
+        
+        // Success feedback
+        showToast('Пост успішно опубліковано!', 'success');
+        closeModal();
+        
+      } catch (error) {
+        console.error('Error uploading post:', error);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        
+        if (error.message.includes('size')) {
+          showToast('Зображення занадто велике. Спробуйте менше фото.', 'error');
+        } else if (error.code === 'permission-denied') {
+          showToast('Помилка дозволів. Перевірте підключення і спробуйте ще раз.', 'error');
+        } else {
+          showToast('Помилка завантаження. Спробуйте ще раз.', 'error');
+        }
+      } finally {
+        isUploading = false;
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+      }
+    }
+
+    // Process image for direct storage (compress and convert to base64)
+    async function processImageForDirectStorage(file) {
+      return new Promise((resolve, reject) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        
+        img.onload = function() {
+          // Start with aggressive compression for large files
+          let maxSize = file.size > 2 * 1024 * 1024 ? 600 : 800; // Smaller dimensions for large files
+          let quality = file.size > 2 * 1024 * 1024 ? 0.5 : 0.7; // Lower quality for large files
+          
+          function compressImage(targetSize, targetQuality) {
+            // Calculate new dimensions
+            let { width, height } = img;
+            
+            if (width > height) {
+              if (width > targetSize) {
+                height *= targetSize / width;
+                width = targetSize;
+              }
+            } else {
+              if (height > targetSize) {
+                width *= targetSize / height;
+                height = targetSize;
+              }
+            }
+            
+            // Set canvas size
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Draw and compress image
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Convert to base64 with compression
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', targetQuality);
+            
+            // Check if result is under Firestore 1MB limit (with some buffer)
+            const base64Size = compressedDataUrl.length * 0.75; // Approximate size in bytes
+            const maxFirestoreSize = 800 * 1024; // 800KB buffer for other fields
+            
+            if (base64Size > maxFirestoreSize && (targetSize > 400 || targetQuality > 0.3)) {
+              // Need more compression
+              if (targetQuality > 0.3) {
+                return compressImage(targetSize, targetQuality - 0.1);
+              } else {
+                return compressImage(Math.max(400, targetSize - 100), 0.3);
+              }
+            }
+            
+            return compressedDataUrl;
+          }
+          
+          try {
+            const result = compressImage(maxSize, quality);
+            resolve(result);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        
+        img.onerror = () => {
+          reject(new Error('Failed to process image'));
+        };
+        
+        // Load image
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          img.src = e.target.result;
+        };
+        reader.onerror = () => {
+          reject(new Error('Failed to read file'));
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Toast notification system
+    function showToast(message, type = 'success') {
+      const toast = document.createElement('div');
+      const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+      
+      toast.className = `fixed top-20 left-1/2 transform -translate-x-1/2 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300`;
+      toast.textContent = message;
+      
+      document.body.appendChild(toast);
+      
+      // Auto remove after 3 seconds
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translate(-50%, -100%)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // Check domain and show info if on custom domain
+    function checkDomainCompatibility() {
+      // Domain compatibility message removed per user request
+    }
+
+    // Listen for input changes
+    document.addEventListener('input', function(e) {
+      if (e.target.id === 'nickname' || e.target.id === 'description') {
+        checkFormValidity();
+      }
+    });
+
+    // Initialize Firebase and render
+    checkDomainCompatibility();
+    initializeFirebase();
+    render();
+    
+    // Make functions globally available
+    window.handleLike = handleLike;
+    window.openModal = openModal;
+    window.closeModal = closeModal;
+    window.openRules = openRules;
+    window.closeRules = closeRules;
+    window.previewImage = previewImage;
+    window.submitPost = submitPost;
+  </script>
+</body>
+</html>
