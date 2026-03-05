@@ -441,6 +441,30 @@
     <p class="text-gray-500 text-sm md:text-base lg:text-lg">Залишилось кілька кроків до гострого задоволення 🌶️</p>
   </div>
 
+  <!-- Mode Toggle -->
+  <div class="max-w-6xl mx-auto px-4 mb-4 lg:mb-6">
+    <div class="flex items-center gap-3">
+      <span class="text-sm font-medium text-gray-500 hidden sm:inline">Режим:</span>
+      <div class="inline-flex rounded-xl border-2 border-gray-200 bg-gray-50 p-1 gap-1">
+        <button id="mode-btn-full"
+          onclick="setCheckoutMode('full')"
+          class="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 bg-white text-gray-900 shadow-sm border border-gray-200">
+          📋 Повна форма
+        </button>
+        <button id="mode-btn-quick"
+          onclick="setCheckoutMode('quick')"
+          class="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 text-gray-500 hover:text-gray-700">
+          ⚡ Швидке оформлення
+        </button>
+      </div>
+    </div>
+    <!-- Quick mode banner -->
+    <div id="quick-mode-banner" class="hidden mt-3 flex items-center gap-2 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
+      <span class="text-base">⚡</span>
+      <span>Швидке оформлення: оплата онлайн, доставка Новою Поштою. <button onclick="setCheckoutMode('full')" class="underline font-medium hover:text-amber-900">Повернутись до повної форми</button></span>
+    </div>
+  </div>
+
   <!-- Main Content -->
   <div class="max-w-6xl mx-auto px-4" id="checkout-container">
     <div class="flex flex-col lg:grid lg:grid-cols-3 gap-4 lg:gap-6">
@@ -448,7 +472,7 @@
       <div class="lg:col-span-2 space-y-4 lg:space-y-6" id="checkout-form-column">
 
         <!-- Customer Info -->
-        <div class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm fade-in">
+        <div id="customer-info-section" class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm fade-in">
           <h2 class="text-base lg:text-lg font-bold text-gray-900 mb-4 lg:mb-5 flex items-center gap-2">
             <span
               class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 text-sm font-bold">1</span>
@@ -487,7 +511,7 @@
         </div>
 
         <!-- No Call Policy Notice -->
-        <div class="mt-6 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4">
+        <div id="no-call-policy-banner" class="mt-6 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4">
           <div class="flex-shrink-0">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
               class="h-6 w-6 text-blue-600">
@@ -505,7 +529,7 @@
         </div>
 
         <!-- Delivery Method -->
-        <div class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm fade-in">
+        <div id="delivery-section" class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm fade-in">
           <h2 class="text-base lg:text-lg font-bold text-gray-900 mb-4 lg:mb-5 flex items-center gap-2">
             <span
               class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 text-sm font-bold">2</span>
@@ -630,7 +654,7 @@
         </div>
 
         <!-- Payment Method -->
-        <div class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm fade-in">
+        <div id="payment-method-section" class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm fade-in">
           <h2 class="text-base lg:text-lg font-bold text-gray-900 mb-4 lg:mb-5 flex items-center gap-2">
             <span
               class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 text-sm font-bold">3</span>
@@ -704,7 +728,7 @@
         </div>
 
         <!-- Comment -->
-        <div class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm fade-in">
+        <div id="comment-section" class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm fade-in">
           <h2 class="text-base lg:text-lg font-bold text-gray-900 mb-4 lg:mb-5 flex items-center gap-2">
             <span
               class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 text-sm font-bold">4</span>
@@ -719,6 +743,106 @@
           <textarea id="comment" rows="3" placeholder="p.s ми не дзвонимо для підтвердження замовлення))"
             class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300 resize-none"></textarea>
         </div>
+
+        <!-- ⚡ QUICK FORM BLOCK (shown only in quick mode) -->
+        <div id="quick-form-block" class="hidden space-y-4 fade-in">
+
+          <!-- Format example banner -->
+          <div class="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4">
+            <div class="flex items-start gap-3">
+              <span class="text-xl flex-shrink-0 mt-0.5">💡</span>
+              <div class="flex-1">
+                <p class="font-bold text-blue-900 text-sm mb-2">Приклад заповнення:</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-xs text-blue-800 bg-white rounded-xl p-3 border border-blue-100">
+                  <div class="flex gap-2">
+                    <span class="text-blue-400 font-semibold w-24 flex-shrink-0">ПІБ:</span>
+                    <span class="font-mono">Іван Іванов</span>
+                  </div>
+                  <div class="flex gap-2">
+                    <span class="text-blue-400 font-semibold w-24 flex-shrink-0">Телефон:</span>
+                    <span class="font-mono">+380501234567</span>
+                  </div>
+                  <div class="flex gap-2">
+                    <span class="text-blue-400 font-semibold w-24 flex-shrink-0">Telegram:</span>
+                    <span class="font-mono">@ivan_snack</span>
+                  </div>
+                  <div class="flex gap-2">
+                    <span class="text-blue-400 font-semibold w-24 flex-shrink-0">Місто НП:</span>
+                    <span class="font-mono">Київ</span>
+                  </div>
+                  <div class="flex gap-2 sm:col-span-2">
+                    <span class="text-blue-400 font-semibold w-24 flex-shrink-0">Відділення:</span>
+                    <span class="font-mono">Відділення №5 або Поштомат №1234</span>
+                  </div>
+                </div>
+                <p class="mt-2 text-xs text-blue-700">📦 Доставка тільки Новою Поштою &bull; ніяких дзвінків — тільки Telegram</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Single textarea input -->
+          <div class="bg-white rounded-2xl p-4 lg:p-6 shadow-sm">
+            <h2 class="text-base font-bold text-gray-900 mb-1 flex items-center gap-2">
+              <span class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 text-sm font-bold">1</span>
+              Ваші дані
+            </h2>
+            <p class="text-xs text-gray-400 mb-3 ml-10">Введіть кожен пункт з нового рядка, як у прикладі вище</p>
+            <textarea id="q-quick-text" rows="5"
+              placeholder="Іван Іванов&#10;+380501234567&#10;@ivan_snack&#10;Київ&#10;Відділення №5"
+              class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300 resize-none font-mono"></textarea>
+          </div>
+
+          <!-- Quick payment methods -->
+          <div class="bg-white rounded-2xl p-4 lg:p-6 shadow-sm">
+            <h2 class="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <span class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 text-sm font-bold">2</span>
+              Спосіб оплати
+            </h2>
+            <div class="space-y-3">
+              <!-- Online -->
+              <div class="q-pay-card card-select border-2 border-gray-200 rounded-xl lg:rounded-2xl p-4 cursor-pointer relative selected" data-q-payment="online" onclick="quickSelectPayment(this,'online')">
+                <div class="checkmark absolute top-3 right-3 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <div class="flex items-center gap-4">
+                  <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-blue-600">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+                    </svg>
+                  </div>
+                  <div class="flex-1">
+                    <p class="font-semibold text-gray-900">Онлайн оплата</p>
+                    <div class="flex items-center flex-wrap gap-2 mt-2">
+                      <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" class="h-6 w-auto bg-white px-1.5 py-0.5 rounded" />
+                      <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" class="h-6 w-auto" />
+                      <img src="https://upload.wikimedia.org/wikipedia/commons/b/b0/Apple_Pay_logo.svg" alt="Apple Pay" class="h-6 w-auto" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- COD -->
+              <div class="q-pay-card card-select border-2 border-gray-200 rounded-xl lg:rounded-2xl p-4 cursor-pointer relative" data-q-payment="cod" onclick="quickSelectPayment(this,'cod')">
+                <div class="checkmark absolute top-3 right-3 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <div class="flex items-center gap-4">
+                  <div class="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600 flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0015.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-gray-900">Оплата при отриманні</p>
+                    <p class="text-sm text-gray-500 mt-1">Мінімальна передоплата — 100 грн</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <!-- /⚡ QUICK FORM BLOCK -->
+
       </div>
 
       <!-- Order Summary -->
@@ -5009,6 +5133,264 @@
         btn.disabled = false
       }
     }
+
+    // ============================================
+    // CHECKOUT MODE TOGGLE (Quick / Full)
+    // ============================================
+    window._quickMode = false;
+
+    window.setCheckoutMode = function setCheckoutMode(mode) {
+      const isQuick = mode === 'quick';
+      window._quickMode = isQuick;
+
+      // Toggle top banner
+      const banner = document.getElementById('quick-mode-banner');
+      if (banner) banner.classList.toggle('hidden', !isQuick);
+
+      // Toggle standard form sections
+      const sections = [
+        'customer-info-section',
+        'no-call-policy-banner',
+        'delivery-section',
+        'payment-method-section',
+        'comment-section'
+      ];
+      sections.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('hidden', isQuick);
+      });
+
+      // Toggle quick form block
+      const quickBlock = document.getElementById('quick-form-block');
+      if (quickBlock) quickBlock.classList.toggle('hidden', !isQuick);
+
+      // In quick mode: force Nova Poshta + Online on standard cards
+      if (isQuick) {
+        const novaCard = document.querySelector('[data-delivery="nova"]');
+        if (novaCard && !novaCard.classList.contains('selected')) novaCard.click();
+        const onlineCard = document.querySelector('[data-payment="online"]');
+        if (onlineCard && !onlineCard.classList.contains('selected')) onlineCard.click();
+      }
+
+      // Update toggle button styles
+      const btnFull  = document.getElementById('mode-btn-full');
+      const btnQuick = document.getElementById('mode-btn-quick');
+      const activeClass   = 'px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 bg-white text-gray-900 shadow-sm border border-gray-200';
+      const inactiveClass = 'px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 text-gray-500 hover:text-gray-700';
+      if (btnFull)  btnFull.className  = isQuick ? inactiveClass : activeClass;
+      if (btnQuick) btnQuick.className = isQuick ? activeClass   : inactiveClass;
+    }
+
+    // ============================================
+    // QUICK FORM — parse textarea → standard fields
+    // ============================================
+    function _syncQuickInputs() {
+      const ta = document.getElementById('q-quick-text');
+      if (!ta) return;
+      const raw = ta.value;
+      const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+
+      let name = '', phone = '', telegram = '', city = '', warehouse = '';
+
+      // ── helpers ──────────────────────────────────────────────────
+      const PHONE_RE      = /(\+?38)?[\s\-()]*(0\d{2})[\s\-()]*(\d{3})[\s\-]*(\d{2})[\s\-]*(\d{2})/;
+      const PHONE_CLEAN   = /[\s\-()]/g;
+      // Warehouse: "відділення", "поштомат", "відд.", "пошт." OR "№<digits>" OR pure number 1–5 digits anywhere in line
+      const WAREHOUSE_RE  = /відділ|поштомат|відд\.|пошт\.|warehouse|№\s*\d|^\d{1,5}$/i;
+      // Telegram: @handle OR "tg:", "telegram:", "tg " prefix
+      const TG_PREFIX_RE  = /^(tg|telegram|tg:|telegram:)\s*@?/i;
+      // Ukrainian-style name: 2–3 words, each starting with a capital Cyrillic letter
+      const NAME_WORD_RE  = /^[А-ЯІЇЄҐ][а-яіїєґ'ʼ]+$/;
+      // City: single Cyrillic word (possibly with dash/space), no digits, length 2–30
+      const CITY_RE       = /^[А-ЯІЇЄҐа-яіїєґ'\s\-]{2,30}$/;
+
+      const isPhone = str => {
+        const clean = str.replace(PHONE_CLEAN, '');
+        return PHONE_RE.test(str) || /^(\+?380\d{9}|0\d{9})$/.test(clean);
+      };
+
+      const normalizePhone = str => {
+        const clean = str.replace(PHONE_CLEAN, '').replace(/^\+?38/, '');
+        return '+38' + clean;
+      };
+
+      const isTelegram = str => str.startsWith('@') || TG_PREFIX_RE.test(str);
+
+      const extractTelegram = str => {
+        let t = str.replace(TG_PREFIX_RE, '').replace('@', '').trim();
+        // keep only valid telegram chars
+        t = t.replace(/[^a-zA-Z0-9_]/g, '');
+        return t;
+      };
+
+      const isWarehouse = str => WAREHOUSE_RE.test(str) || /поштомат|відд/i.test(str);
+
+      const isName = str => {
+        const words = str.split(/\s+/);
+        return words.length >= 2 && words.length <= 4 && words.every(w => NAME_WORD_RE.test(w));
+      };
+
+      lines.forEach(line => {
+        // 1. Phone — highest priority for digit-heavy lines
+        if (!phone && isPhone(line)) {
+          phone = normalizePhone(line);
+          return;
+        }
+        // 2. Telegram
+        if (!telegram && isTelegram(line)) {
+          const t = extractTelegram(line);
+          if (t.length >= 3) { telegram = t; return; }
+        }
+        // 3. Warehouse — before city to avoid swallowing "Відділення 5" as city
+        if (!warehouse && isWarehouse(line)) {
+          warehouse = line;
+          return;
+        }
+        // 4. Name — 2–4 Cyrillic capitalised words
+        if (!name && isName(line)) {
+          name = line;
+          return;
+        }
+        // 5. City — Cyrillic text, no digits, not yet taken, after name is found
+        if (!city && CITY_RE.test(line) && !/^\d/.test(line)) {
+          city = line;
+          return;
+        }
+      });
+
+      // ── write simple fields directly ──────────────────────────
+      const set = (id, val) => {
+        const el = document.getElementById(id);
+        if (el && val) el.value = val;
+      };
+      set('fullName', name);
+      set('phone',    phone);
+      set('telegram', telegram);
+
+      // ── city + warehouse: go through NP API (debounced) ───────
+      if (city && city !== _qLastCity) {
+        _qLastCity = city;
+        clearTimeout(_qCityTimer);
+        _qCityTimer = setTimeout(() => _quickAutoSelectCity(city, warehouse), 700);
+      } else if (warehouse && allWarehouses && allWarehouses.length > 0) {
+        // City already loaded — just filter warehouse
+        _quickAutoSelectWarehouse(warehouse);
+      }
+
+      // Visual feedback: show parsed values under textarea
+      _renderQuickPreview({ name, phone, telegram, city, warehouse });
+    }
+
+    // ── NP auto-selection helpers for quick form ─────────────────
+    let _qLastCity  = '';
+    let _qCityTimer = null;
+
+    async function _quickAutoSelectCity(cityName, warehouseHint) {
+      if (!cityName || cityName.length < 2) return;
+      try {
+        const res = await fetch(NP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            apiKey: NP_API_KEY,
+            modelName: 'Address',
+            calledMethod: 'searchSettlements',
+            methodProperties: { CityName: cityName, Limit: 5, Page: 1 }
+          })
+        });
+        const data = await res.json();
+        if (!data.success || !data.data?.[0]?.Addresses?.length) return;
+
+        const best = data.data[0].Addresses[0];
+        document.getElementById('np-city-input').value = best.Present;
+        selectedCityRef = best.DeliveryCity;
+
+        // Load warehouses, then auto-select
+        await loadNovaPoshtaWarehouses(selectedCityRef);
+        if (warehouseHint) _quickAutoSelectWarehouse(warehouseHint);
+      } catch (e) {
+        console.error('[QuickForm] City auto-select error:', e);
+      }
+    }
+
+    function _quickAutoSelectWarehouse(hint) {
+      if (!allWarehouses || !allWarehouses.length || !hint) return;
+      const nums = hint.match(/\d+/g);
+      let found = null;
+
+      // 1. Match by branch number (e.g. "5" → "Відділення №5")
+      if (nums) {
+        const lastNum = nums[nums.length - 1];
+        found = allWarehouses.find(w => {
+          const m = w.Description.match(/№\s*(\d+)/);
+          return m && m[1] === lastNum;
+        });
+      }
+      // 2. Fallback: substring match in description
+      if (!found) {
+        const q = hint.toLowerCase().trim();
+        found = allWarehouses.find(w => w.Description.toLowerCase().includes(q));
+      }
+
+      if (found) {
+        document.getElementById('np-warehouse-input').value = found.Description;
+        selectedWarehouse = found;
+      }
+    }
+
+    // Show parsed result below the textarea so user can verify
+    function _renderQuickPreview(data) {
+      let box = document.getElementById('q-preview');
+      if (!box) {
+        box = document.createElement('div');
+        box.id = 'q-preview';
+        box.className = 'mt-2 text-xs rounded-xl px-3 py-2 bg-gray-50 border border-gray-200 space-y-0.5 text-gray-600';
+        const ta = document.getElementById('q-quick-text');
+        if (ta) ta.parentNode.insertBefore(box, ta.nextSibling);
+      }
+      const has = v => v && v.length > 0;
+      const row = (icon, label, val) =>
+        has(val)
+          ? `<div><span class="text-gray-400">${icon} ${label}:</span> <span class="font-medium text-gray-800">${val}</span></div>`
+          : `<div class="text-gray-300">${icon} ${label}: —</div>`;
+
+      const anyFound = has(data.name) || has(data.phone) || has(data.telegram) || has(data.city) || has(data.warehouse);
+      if (!anyFound) { box.innerHTML = ''; return; }
+
+      box.innerHTML =
+        row('👤', 'ПІБ',        data.name)      +
+        row('📱', 'Телефон',    data.phone)     +
+        row('✈️', 'Telegram',   data.telegram ? '@' + data.telegram : '') +
+        row('📍', 'Місто',      data.city)      +
+        row('📦', 'Відділення', data.warehouse);
+    }
+
+    // Live-mirror as user types
+    const _qTextEl = document.getElementById('q-quick-text');
+    if (_qTextEl) _qTextEl.addEventListener('input', _syncQuickInputs);
+
+    // Quick payment card selector (delegates to standard selectPayment)
+    window.quickSelectPayment = function(qCard, method) {
+      // Update quick card UI
+      document.querySelectorAll('.q-pay-card').forEach(c => c.classList.remove('selected'));
+      qCard.classList.add('selected');
+      // Delegate to standard payment logic
+      const stdCard = document.querySelector('[data-payment="' + method + '"]');
+      if (stdCard) stdCard.click();
+    };
+
+    // Before submit: ensure quick inputs are mirrored if quick mode is active
+    (function() {
+      const origSubmit = window.submitOrder;
+      if (typeof origSubmit === 'function') {
+        // patch only if already defined; otherwise _syncQuickInputs is called from live listeners
+      }
+      // Ensure sync on every submit button click
+      document.addEventListener('click', function(e) {
+        const btn = e.target.closest('#submitBtnDesktop, #submitBtnMobile');
+        if (btn && window._quickMode) _syncQuickInputs();
+      }, true);
+    })();
   </script>
 
   <!-- Load Pop-up Manager -->
