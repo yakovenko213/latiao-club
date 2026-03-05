@@ -235,7 +235,7 @@
 
         <!-- Subheader -->
         <p class="text-base font-medium text-gray-700 text-center mb-8">
-          Заповни форму нижче, і ми відправимо тобі смаколик!
+          Заповни форму нижче — і ти станеш учасником роздачі.
         </p>
 
       <!-- Success Message (Hidden by default) -->
@@ -336,22 +336,19 @@
           >
         </div>
 
-        <!-- Source -->
+        <!-- Usual Purchase Place -->
         <div>
-          <label for="source" class="text-sm font-bold text-gray-900 ml-1 mb-2 block uppercase tracking-tight">
-            💡 Звідки дізналися про нас?<span class="text-red-500 ml-0.5">*</span>
+          <label for="usualPurchasePlace" class="text-sm font-bold text-gray-900 ml-1 mb-2 block uppercase tracking-tight">
+            🛒 Де ви зазвичай купуєте латяо?<span class="text-red-500 ml-0.5">*</span>
           </label>
-          <select 
-            id="source" 
-            name="source" 
+          <input 
+            type="text"
+            id="usualPurchasePlace" 
+            name="usualPurchasePlace" 
             required
-            class="w-full border border-gray-300 bg-white/50 rounded-xl py-4 px-5 text-base text-black font-semibold shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:bg-white transition-all outline-none cursor-pointer"
+            placeholder="Вкажіть назву магазину, сайт або соцмережі..."
+            class="w-full border border-gray-300 bg-white/50 rounded-xl py-4 px-5 text-base text-black font-semibold placeholder-gray-400 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:bg-white transition-all outline-none"
           >
-            <option value="" disabled selected>Оберіть варіант</option>
-            <option value="Instagram">📸 Instagram</option>
-            <option value="TikTok">🎵 TikTok</option>
-            <option value="Google">🔍 Google</option>
-          </select>
         </div>
 
         <!-- Submit Button -->
@@ -679,7 +676,7 @@
     trackPageView();
 
     // Submit form handler
-    // Maps form fields to Firestore document: fullName, phone, telegram, city, novaPoshtaBranch, source
+    // Maps form fields to Firestore document: fullName, phone, telegram, city, novaPoshtaBranch, whereBoughtBefore
     // Uses addDoc(collection(db, "free_orders"), {...data, createdAt: serverTimestamp()})
     // On success: Replaces form with success message "✅ Заявку прийнято! Очікуй ТТН у Телеграм."
     // On error: Shows specific error message, especially for permission-denied errors
@@ -700,7 +697,7 @@
       const telegramInput = document.getElementById('telegram');
       const cityInput = document.getElementById('city');
       const novaPoshtaInput = document.getElementById('novaPoshta');
-      const sourceInput = document.getElementById('source');
+      const usualPurchasePlaceInput = document.getElementById('usualPurchasePlace');
 
       // Get form values
       const fullName = fullNameInput.value.trim();
@@ -708,10 +705,10 @@
       const telegram = telegramInput.value.trim();
       const city = cityInput.value.trim();
       const novaPoshta = novaPoshtaInput.value.trim();
-      const source = sourceInput.value;
+      const whereBoughtBefore = usualPurchasePlaceInput.value.trim();
 
       // Clear any previous error borders
-      [fullNameInput, phoneInput, telegramInput, cityInput, novaPoshtaInput, sourceInput].forEach(input => {
+      [fullNameInput, phoneInput, telegramInput, cityInput, novaPoshtaInput, usualPurchasePlaceInput].forEach(input => {
         input.classList.remove('border-red-500', 'border-2');
       });
 
@@ -722,7 +719,7 @@
       if (!telegram) emptyFields.push(telegramInput);
       if (!city) emptyFields.push(cityInput);
       if (!novaPoshta) emptyFields.push(novaPoshtaInput);
-      if (!source) emptyFields.push(sourceInput);
+      if (!whereBoughtBefore) emptyFields.push(usualPurchasePlaceInput);
 
       if (emptyFields.length > 0) {
         console.error('❌ [FREE ORDER] Validation failed: Empty fields detected');
@@ -773,7 +770,7 @@
           telegram: telegramFormatted,
           city: city,
           novaPoshtaBranch: novaPoshta,
-          source: source,
+          whereBoughtBefore: whereBoughtBefore,
           createdAt: serverTimestamp(),
           sent: false,
           ttn: '',
