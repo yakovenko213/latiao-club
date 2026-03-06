@@ -19,6 +19,9 @@
   <!-- ⚡ CONSOLE SILENCER - Must be first to catch all logs -->
   <script src="./js/console-silencer.js"></script>
 
+  <!-- 🛑 IP BLACKLIST HARD BLOCK - must run before any page content renders -->
+  <script type="module" src="./js/blacklist-check.js"></script>
+
   <!-- 🔀 DOMAIN REDIRECT - Redirect Firebase domains to primary domain -->
   <script src="./js/domain-redirect.js"></script>
 

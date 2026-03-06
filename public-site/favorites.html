@@ -22,6 +22,9 @@
   <!-- 🔀 DOMAIN REDIRECT - Redirect Firebase domains to primary domain -->
   <script src="./js/domain-redirect.js"></script>
 
+  <!-- 🛑 IP BLACKLIST HARD BLOCK - must run before any page content renders -->
+  <script type="module" src="./js/blacklist-check.js"></script>
+
   <!-- ⚡ PERFORMANCE: Priority Loading for Critical Resources -->
   <link rel="modulepreload" href="./js/layout.js" as="script" fetchpriority="high">
 

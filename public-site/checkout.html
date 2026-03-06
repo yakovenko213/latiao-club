@@ -28,6 +28,9 @@
   <!-- 🔀 DOMAIN REDIRECT - Redirect Firebase domains to primary domain -->
   <script src="./js/domain-redirect.js"></script>
 
+  <!-- 🛑 IP BLACKLIST HARD BLOCK - must run before any page content renders -->
+  <script type="module" src="./js/blacklist-check.js"></script>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script>
@@ -4026,7 +4029,20 @@
         }
 
         // ============================================
-        // STEP 1: Save to Firestore (for recovery links)
+        // STEP 1: Capture visitor IP address
+        // ============================================
+        try {
+          const ipResponse = await fetch('https://api.ipify.org?format=json')
+          const ipData = await ipResponse.json()
+          if (ipData && ipData.ip) {
+            abandonedCartData.user_ip = ipData.ip
+          }
+        } catch (ipError) {
+          console.warn('⚠️ Could not fetch IP address:', ipError.message)
+        }
+
+        // ============================================
+        // STEP 2: Save to Firestore (for recovery links)
         // ============================================
         const { doc: firestoreDoc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')
         const cartRef = firestoreDoc(db, 'abandoned_carts', phone)

@@ -10122,6 +10122,20 @@
         const items = cart.items || []
         const total = cart.total || 0
         const comment = cart.comment || ''
+        const userIp = cart.user_ip || null
+
+        // ============================================
+        // CHECK IF THIS IP IS ALREADY BLACKLISTED
+        // ============================================
+        let ipIsBlocked = false
+        if (userIp) {
+          try {
+            const blacklistDoc = await getDoc(doc(db, 'blacklist', userIp))
+            ipIsBlocked = blacklistDoc.exists()
+          } catch (e) {
+            console.warn('⚠️ Could not check blacklist:', e.message)
+          }
+        }
 
         // ============================================
         // HISTORY HANDLING WITH LEGACY DATA FALLBACK
@@ -10350,6 +10364,31 @@
                                           </div>
                                       </div>
                                       
+                                      <!-- Section 6: Security / IP Blocking -->
+                                      <div class="bg-gray-900 rounded-xl p-4 border-2 border-gray-700">
+                                          <h4 class="font-bold text-white mb-3 flex items-center gap-2">
+                                              <i data-lucide="shield-alert" class="w-5 h-5 text-red-400"></i>
+                                              Безпека
+                                          </h4>
+                                          <div class="flex items-center justify-between flex-wrap gap-3">
+                                              <div class="text-sm">
+                                                  <span class="text-gray-400">IP клієнта:</span>
+                                                  <span class="ml-2 font-mono font-semibold text-white">${userIp || '<span class="text-gray-500 italic font-sans font-normal">Не визначено</span>'}</span>
+                                              </div>
+                                              ${userIp ? `
+                                              <button
+                                                  id="ip-block-btn-${userIp.replace(/\./g, '-')}"
+                                                  onclick="window.toggleIpBlock('${userIp}')"
+                                                  class="flex items-center gap-2 px-5 py-2 rounded-lg font-bold text-sm transition-all shadow-md ${ipIsBlocked
+                                                    ? 'bg-green-500 hover:bg-green-600 text-white'
+                                                    : 'bg-red-500 hover:bg-red-600 text-white'
+                                                  }">
+                                                  ${ipIsBlocked ? '✅ Розблокувати IP' : '🚫 Заблокувати IP'}
+                                              </button>
+                                              ` : '<span class="text-gray-500 text-sm italic">Блокування недоступне — IP невідомий</span>'}
+                                          </div>
+                                      </div>
+                                      
                                       <!-- CRM Transfer Button -->
                                       <div class="bg-gradient-to-r from-green-50 to-teal-50 border-2 border-green-200 rounded-xl p-4">
                                           <div class="flex items-center justify-between">
@@ -10378,6 +10417,100 @@
       } catch (e) {
         console.error('❌ Error viewing cart details:', e)
         alert(`Помилка: ${e.message}`)
+      }
+    }
+
+    // ============================================
+    // IP BLACKLIST MANAGEMENT
+    // ============================================
+
+    // Refresh button to reflect actual Firestore state
+    async function refreshIpBlockButton(ip) {
+      const btnId = `ip-block-btn-${ip.replace(/\./g, '-')}`
+      const btn = document.getElementById(btnId)
+      if (!btn) return
+
+      try {
+        const snap = await getDoc(doc(db, 'blacklist', ip))
+        const isBlocked = snap.exists()
+        _applyIpButtonState(btn, ip, isBlocked)
+      } catch (e) {
+        console.warn('⚠️ Could not refresh IP button:', e.message)
+      }
+    }
+
+    // Apply visual state to button
+    function _applyIpButtonState(btn, ip, isBlocked) {
+      btn.textContent = isBlocked ? '✅ Розблокувати IP' : '🚫 Заблокувати IP'
+      btn.style.background = isBlocked ? '#22c55e' : '#ef4444'
+      btn.style.color = '#fff'
+      btn.style.border = 'none'
+      btn.style.cursor = 'pointer'
+      btn.style.padding = '8px 20px'
+      btn.style.borderRadius = '8px'
+      btn.style.fontWeight = '700'
+      btn.style.fontSize = '14px'
+      btn.style.display = 'inline-flex'
+      btn.style.alignItems = 'center'
+      btn.style.gap = '8px'
+      // Detach old handler and attach fresh one
+      btn.onclick = null
+      btn.onclick = () => window.toggleIpBlock(ip)
+    }
+
+    window.toggleIpBlock = async function (ip) {
+      const btnId = `ip-block-btn-${ip.replace(/\./g, '-')}`
+      const btn = document.getElementById(btnId)
+
+      try {
+        // ─── 1. Always fetch fresh state from Firestore ───
+        const freshSnap = await getDoc(doc(db, 'blacklist', ip))
+        const isCurrentlyBlocked = freshSnap.exists()
+
+        if (isCurrentlyBlocked) {
+          // ─── UNBLOCK ───
+          // Delete ALL documents where blocked_ip == ip (handles both setDoc & addDoc)
+          const q = query(collection(db, 'blacklist'), where('blocked_ip', '==', ip))
+          const found = await getDocs(q)
+          const batch = writeBatch(db)
+          found.forEach(d => batch.delete(d.ref))
+          // Also delete by IP-as-ID in case blocked_ip field is missing
+          batch.delete(doc(db, 'blacklist', ip))
+          await batch.commit()
+          console.log('✅ IP unblocked:', ip)
+
+          const toast = document.createElement('div')
+          toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-xl shadow-2xl z-[100] flex items-center gap-3'
+          toast.innerHTML = `<span class="font-bold">✅ IP ${ip} розблоковано!</span>`
+          document.body.appendChild(toast)
+          setTimeout(() => toast.remove(), 3000)
+        } else {
+          // ─── BLOCK ───
+          // setDoc with IP as document ID — idempotent, no duplicates
+          await setDoc(doc(db, 'blacklist', ip), {
+            blocked_ip: ip,
+            timestamp: serverTimestamp()
+          })
+          console.log('🚫 IP blocked:', ip)
+
+          const toast = document.createElement('div')
+          toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-2xl z-[100] flex items-center gap-3'
+          toast.innerHTML = `<span class="font-bold">🚫 IP ${ip} заблоковано!</span>`
+          document.body.appendChild(toast)
+          setTimeout(() => toast.remove(), 3000)
+        }
+
+        // ─── 2. Re-query Firestore to get ground truth, then update button ───
+        if (btn) {
+          const verifySnap = await getDoc(doc(db, 'blacklist', ip))
+          _applyIpButtonState(btn, ip, verifySnap.exists())
+        }
+
+      } catch (e) {
+        console.error('❌ Error toggling IP block:', e)
+        alert(`Помилка: ${e.message}`)
+        // Even on error, refresh button to show real state
+        await refreshIpBlockButton(ip)
       }
     }
 

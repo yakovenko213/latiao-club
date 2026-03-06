@@ -1693,7 +1693,21 @@ window.viewAbandonedCartDetails = async function(phone) {
         const customer = cart.customer || {};
         const items = cart.items || [];
         const total = cart.total || 0;
-        
+        const userIp = cart.user_ip || null;
+
+        // ============================================
+        // CHECK IF THIS IP IS ALREADY BLACKLISTED
+        // ============================================
+        let ipIsBlocked = false;
+        if (userIp) {
+            try {
+                const blacklistDocSnap = await getDoc(doc(db, 'blacklist', userIp));
+                ipIsBlocked = blacklistDocSnap.exists();
+            } catch (e) {
+                console.warn('⚠️ Could not check blacklist:', e.message);
+            }
+        }
+
         // Extract payment method from multiple possible locations
         let paymentMethodRaw = '';
         let paymentMethodDisplay = 'Не обрано';
@@ -1785,6 +1799,26 @@ window.viewAbandonedCartDetails = async function(phone) {
                             <div class="flex items-center justify-between">
                                 <span class="text-lg font-bold text-gray-900">Загальна сума:</span>
                                 <span class="text-2xl font-extrabold text-blue-600">₴${total}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-900 rounded-xl p-4 border-2 border-gray-700">
+                            <h4 class="font-bold text-white mb-3 flex items-center gap-2">
+                                🛡️ Безпека
+                            </h4>
+                            <div class="flex items-center justify-between flex-wrap gap-3">
+                                <div class="text-sm">
+                                    <span class="text-gray-400">IP клієнта:</span>
+                                    <span class="ml-2 font-mono font-semibold text-white">${userIp || '<span style="color:#6b7280;font-style:italic;font-family:sans-serif;font-weight:normal">Не визначено</span>'}</span>
+                                </div>
+                                ${userIp ? `
+                                <button
+                                    id="ip-block-btn-${userIp.replace(/\./g, '-')}"
+                                    onclick="window.toggleIpBlock('${userIp}')"
+                                    style="display:flex;align-items:center;gap:8px;padding:8px 20px;border-radius:8px;font-weight:700;font-size:14px;border:none;cursor:pointer;background:${ipIsBlocked ? '#22c55e' : '#ef4444'};color:#fff">
+                                    ${ipIsBlocked ? '✅ Розблокувати IP' : '🚫 Заблокувати IP'}
+                                </button>
+                                ` : '<span style="color:#6b7280;font-size:14px;font-style:italic">Блокування недоступне — IP невідомий</span>'}
                             </div>
                         </div>
                     </div>

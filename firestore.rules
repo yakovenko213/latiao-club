@@ -460,5 +460,15 @@ service cloud.firestore {
         );
     }
 
+    // =============================================
+    // 🚫 BLACKLIST - IP-based blocking
+    // =============================================
+    // Admins can block/unblock IPs; clients can read to check if they're blocked
+    
+    match /blacklist/{ipAddress} {
+      allow read: if true;                     // ✅ Public read - client gatekeeper checks its own IP
+      allow write: if request.auth != null;    // ❌ Only authenticated admins can block/unblock
+    }
+
   }
 }
