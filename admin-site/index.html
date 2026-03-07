@@ -15636,7 +15636,75 @@
             evt.item.appendChild(spinner);
             
             try {
-              // Update Firestore
+              // ============================================
+              // 🪙 CASHBACK REVERSAL FOR CANCELLED ORDERS
+              // ============================================
+              let cashbackRevoked = 0;
+              let cashbackMessage = '';
+              let revokedUserId = '';
+              let userNotFound = false;
+              
+              if (newStatus === 'cancelled') {
+                try {
+                  // Fetch the order document to get userId and cashbackAwarded
+                  const orderDoc = await getDoc(doc(db, 'orders', orderId));
+                  
+                  if (orderDoc.exists()) {
+                    const orderData = orderDoc.data();
+                    const userId = orderData.userId;
+                    const amountToReverse = orderData.cashbackAwarded || 0;
+                    
+                    // Normalize phone number: add '+' prefix if missing (orders have '380...', users have '+380...')
+                    const normalizedUserId = userId && !userId.startsWith('+') ? '+' + userId : userId;
+                    
+                    console.log(`🪙 [Cashback Reversal] Order ${orderId}: userId=${userId}, normalizedUserId=${normalizedUserId}, cashbackAwarded=${amountToReverse}`);
+                    
+                    if (normalizedUserId && amountToReverse > 0) {
+                      console.log("Searching for user with ID:", normalizedUserId);
+                      console.log("Reversing cashback:", amountToReverse, "for user:", normalizedUserId);
+                      
+                      // Check if user document exists before updating
+                      const userDocRef = doc(db, 'users', normalizedUserId);
+                      const userSnap = await getDoc(userDocRef);
+                      
+                      if (userSnap.exists()) {
+                        // Atomically decrement the user's cashback balance
+                        await updateDoc(userDocRef, {
+                          balance: increment(-amountToReverse),
+                          updatedAt: serverTimestamp()
+                        });
+                        
+                        cashbackRevoked = amountToReverse;
+                        revokedUserId = normalizedUserId;
+                        cashbackMessage = `Кешбек ${amountToReverse} грн анульовано`;
+                        console.log(`✅ [Cashback Reversal] Successfully revoked ${amountToReverse} грн from user ${normalizedUserId}`);
+                      } else {
+                        // User document doesn't exist (guest order or deleted user)
+                        console.warn("Skipping cashback reversal: User doc " + normalizedUserId + " does not exist in Firestore.");
+                        cashbackMessage = `Профіль клієнта ${normalizedUserId.substring(0, 8)}... не знайдено`;
+                        userNotFound = true;
+                        // Show specific warning notification (handled separately)
+                        showUserNotFoundWarning(normalizedUserId, amountToReverse);
+                      }
+                    } else if (!userId) {
+                      console.warn(`⚠️ [Cashback Reversal] No userId found for order ${orderId}`);
+                      alert('Помилка: Поле userId не знайдено в замовленні');
+                      cashbackMessage = 'userId не знайдено';
+                    } else {
+                      console.log(`ℹ️ [Cashback Reversal] No cashback to revoke for order ${orderId} (cashbackAwarded: ${amountToReverse})`);
+                      cashbackMessage = 'Кешбек не нараховувався';
+                    }
+                  } else {
+                    console.warn(`⚠️ [Cashback Reversal] Order document not found: ${orderId}`);
+                    cashbackMessage = 'Замовлення не знайдено';
+                  }
+                } catch (cashbackError) {
+                  console.error('❌ [Cashback Reversal] Error:', cashbackError);
+                  cashbackMessage = 'Помилка анулювання кешбеку';
+                }
+              }
+              
+              // Update Firestore order status
               await updateDoc(doc(db, 'orders', orderId), {
                 status: newStatus,
                 updatedAt: serverTimestamp()
@@ -15651,8 +15719,20 @@
                 'cancelled': '❌ Відмова/Скасовано'
               };
               
-              // Show success toast
-              showKanbanToast(`Замовлення #${orderId.substring(0,8).toUpperCase()} → ${statusLabels[newStatus]}`, 'success');
+              // Show toast based on status and cashback result
+              if (newStatus === 'cancelled') {
+                if (cashbackRevoked > 0) {
+                  // Show red-themed cancellation toast with cashback info and userId
+                  showCancellationToast(orderId, cashbackRevoked, revokedUserId);
+                } else if (!userNotFound) {
+                  // Show warning that status changed but no cashback found (only if user wasn't found separately)
+                  showKanbanToast(`Замовлення скасовано. ${cashbackMessage}`, 'warning');
+                }
+                // If userNotFound is true, the showUserNotFoundWarning was already called
+              } else {
+                // Regular status change toast
+                showKanbanToast(`Замовлення #${orderId.substring(0,8).toUpperCase()} → ${statusLabels[newStatus]}`, 'success');
+              }
               
               console.log(`✅ Order ${orderId} status updated to ${newStatus}`);
               
@@ -15723,8 +15803,24 @@
     // Show toast notification for Kanban actions
     function showKanbanToast(message, type = 'success') {
       const toast = document.createElement('div');
-      const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
-      const icon = type === 'success' ? 'check-circle' : 'alert-circle';
+      
+      // Support multiple toast types
+      let bgColor, icon;
+      switch(type) {
+        case 'success':
+          bgColor = 'bg-green-500';
+          icon = 'check-circle';
+          break;
+        case 'warning':
+          bgColor = 'bg-yellow-500';
+          icon = 'alert-triangle';
+          break;
+        case 'error':
+        default:
+          bgColor = 'bg-red-500';
+          icon = 'alert-circle';
+          break;
+      }
       
       toast.className = `fixed bottom-4 right-4 ${bgColor} text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3 animate-slide-in`;
       toast.innerHTML = `
@@ -15742,6 +15838,60 @@
         toast.style.transition = 'all 0.3s ease';
         setTimeout(() => toast.remove(), 300);
       }, 3000);
+    }
+    
+    // Show special cancellation toast with cashback info (top-center, red theme)
+    function showCancellationToast(orderId, cashbackAmount, userId) {
+      const toast = document.createElement('div');
+      
+      toast.className = `fixed top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-red-600 to-red-500 text-white px-8 py-5 rounded-xl shadow-2xl z-[100] flex items-center gap-4 animate-slide-in`;
+      toast.innerHTML = `
+        <div class="p-2 bg-white/20 rounded-full">
+          <i data-lucide="x-circle" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <div class="font-bold text-lg">❌ Замовлення скасовано</div>
+          <div class="text-white/90 text-sm mt-1">Кешбек <strong>${cashbackAmount} грн</strong> анульовано для користувача <strong>${userId ? userId.substring(0, 8) + '...' : 'N/A'}</strong></div>
+        </div>
+      `;
+      
+      document.body.appendChild(toast);
+      lucide.createIcons();
+      
+      // Auto-remove after 5 seconds (longer for important info)
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translate(-50%, -100%)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 5000);
+    }
+    
+    // Show warning when user profile not found for cashback reversal
+    function showUserNotFoundWarning(userId, cashbackAmount) {
+      const toast = document.createElement('div');
+      
+      toast.className = `fixed top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-8 py-5 rounded-xl shadow-2xl z-[100] flex items-center gap-4 animate-slide-in`;
+      toast.innerHTML = `
+        <div class="p-2 bg-white/20 rounded-full">
+          <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <div class="font-bold text-lg">⚠️ Статус змінено на Скасовано</div>
+          <div class="text-white/90 text-sm mt-1">Профіль клієнта <strong>${userId || 'N/A'}</strong> не знайдено. Списання кешбеку пропущено.</div>
+        </div>
+      `;
+      
+      document.body.appendChild(toast);
+      lucide.createIcons();
+      
+      // Auto-remove after 6 seconds (longer for warning)
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translate(-50%, -100%)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 6000);
     }
     
     // Legacy drag handlers (keeping for backward compatibility)
