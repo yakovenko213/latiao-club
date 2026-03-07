@@ -697,7 +697,7 @@
                 </div>
                 <div>
                   <p class="font-semibold text-gray-900">Оплата при отриманні</p>
-                  <p class="text-sm text-gray-500 mt-1">Мінімальна передоплата — 100 грн</p>
+                  <p id="cod-subtitle" class="text-sm text-gray-500 mt-1">Мінімальна передоплата — 100 грн</p>
                   <p id="codRestriction" class="text-xs text-orange-600 font-medium mt-1 hidden">⚠️ Тільки для Нової
                     Пошти</p>
                 </div>
@@ -928,6 +928,17 @@
               </div>
             </div>
             <p class="text-xs text-gray-500 mt-2 italic">💡 Онлайн оплачуєте тільки 100 грн, решту - при отриманні</p>
+          </div>
+
+          <!-- Total - COD Simple View (No Deposit Required) -->
+          <div id="summary-cod-simple" class="hidden mb-2">
+            <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border-2 border-green-200">
+              <div class="flex justify-between items-center">
+                <span class="text-lg font-bold text-gray-900">Загальна вартість:</span>
+                <span class="text-2xl font-extrabold text-orange-500" id="cod-simple-total">0 грн</span>
+              </div>
+            </div>
+            <p class="text-xs text-gray-500 mt-2 italic">📦 Повна сума сплачується при отриманні</p>
           </div>
 
           <!-- 🪙 TASK 1-4: Enhanced Cashback Summary Block - Product Page Style -->
@@ -1414,6 +1425,11 @@
     let promoApplied = false
     let promoDiscount = 0
     let appliedPromoCode = null // Store full promo details
+
+    // ============================================
+    // PAYMENT DEPOSIT SETTING (loaded from Firestore)
+    // ============================================
+    let requireDeposit = true // default: safe fallback — require deposit
     const FREE_DELIVERY_THRESHOLD = 1100
     const DELIVERY_COST = 70
 
@@ -2025,6 +2041,9 @@
       initializeDeliveryMethod()
       initializePaymentMethod()
       updatePaymentAvailability()
+
+      // Load deposit setting from Firestore and refresh summary (non-blocking)
+      loadRequireDepositSetting().catch(e => console.warn('⚠️ requireDeposit load error:', e))
 
       // ============================================
       // ⭐ ATTACH EVENT LISTENERS PROGRAMMATICALLY
@@ -2835,6 +2854,10 @@
       if (totalPriceEl) totalPriceEl.textContent = `${finalTotal} грн`
       if (totalPriceMobileEl) totalPriceMobileEl.textContent = `${finalTotal} грн`
 
+      // Keep simple COD total in sync (shown when requireDeposit=false)
+      const codSimpleTotalEl = document.getElementById('cod-simple-total')
+      if (codSimpleTotalEl) codSimpleTotalEl.textContent = `${finalTotal} грн`
+
       // ============================================
       // 🪙 TASK 2-4: UPDATE CASHBACK SUMMARY (Using calculateOrderCashback)
       // ============================================
@@ -3341,25 +3364,46 @@
     function updatePaymentSummary(paymentMethod) {
       const standardSummary = document.getElementById('summary-standard')
       const depositSummary = document.getElementById('summary-deposit')
-      const totalPriceEl = document.getElementById('totalPrice')
+      const codSimpleSummary = document.getElementById('summary-cod-simple')
       const depositTotalEl = document.getElementById('deposit-total')
       const depositDueEl = document.getElementById('deposit-due')
+      const codSimpleTotalEl = document.getElementById('cod-simple-total')
 
       if (!standardSummary || !depositSummary) {
         console.error('Summary elements not found!')
         return
       }
 
-      // Get current cart total
+      // Get current cart total (with cashback applied)
       const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
       const discount = promoApplied ? promoDiscount : 0
-      const total = cartTotal - discount
+      const total = Math.max(0, cartTotal - discount - appliedCashback)
 
       const DEPOSIT_AMOUNT = 100
 
+      // Helper: hide all three summary variants
+      function hideAll() {
+        standardSummary.classList.add('hidden')
+        depositSummary.classList.add('hidden')
+        if (codSimpleSummary) codSimpleSummary.classList.add('hidden')
+      }
+
       if (paymentMethod === 'cod') {
+        if (!requireDeposit) {
+          // ============================================
+          // COD WITHOUT DEPOSIT - SIMPLE VIEW
+          // ============================================
+          hideAll()
+          if (codSimpleSummary) {
+            if (codSimpleTotalEl) codSimpleTotalEl.textContent = `${total} грн`
+            codSimpleSummary.classList.remove('hidden')
+          }
+          console.log(`📦 COD (no deposit): Total ${total} грн — full amount on delivery`)
+          return
+        }
+
         // ============================================
-        // SHOW COD BREAKDOWN
+        // COD WITH DEPOSIT BREAKDOWN
         // ============================================
 
         // Check if cart total is less than deposit
@@ -3373,10 +3417,8 @@
               card.classList.remove('selected')
             })
             onlineCard.classList.add('selected')
-
-            // Show standard view
+            hideAll()
             standardSummary.classList.remove('hidden')
-            depositSummary.classList.add('hidden')
           }
           return
         }
@@ -3388,8 +3430,8 @@
         if (depositTotalEl) depositTotalEl.textContent = `${total} грн`
         if (depositDueEl) depositDueEl.textContent = `${amountDue} грн`
 
-        // Show deposit breakdown, hide standard
-        standardSummary.classList.add('hidden')
+        // Show deposit breakdown, hide others
+        hideAll()
         depositSummary.classList.remove('hidden')
 
         console.log(`💰 COD Breakdown: Total ${total} грн, Deposit 100 грн, Due ${amountDue} грн`)
@@ -3397,12 +3439,39 @@
         // ============================================
         // SHOW STANDARD ONLINE PAYMENT
         // ============================================
-
-        // Show standard view, hide deposit breakdown
+        hideAll()
         standardSummary.classList.remove('hidden')
-        depositSummary.classList.add('hidden')
 
         console.log(`💳 Online Payment: Total ${total} грн`)
+      }
+    }
+
+    // ============================================
+    // LOAD requireDeposit SETTING FROM FIRESTORE
+    // ============================================
+    async function loadRequireDepositSetting() {
+      try {
+        const paymentDoc = await getDoc(doc(db, 'settings', 'payment'))
+        if (paymentDoc.exists() && paymentDoc.data().requireDeposit !== undefined) {
+          requireDeposit = paymentDoc.data().requireDeposit
+        }
+        console.log('💳 requireDeposit setting loaded:', requireDeposit)
+
+        // Update COD card subtitle to reflect the actual setting
+        const codSubtitle = document.getElementById('cod-subtitle')
+        if (codSubtitle) {
+          codSubtitle.textContent = requireDeposit
+            ? 'Мінімальна передоплата — 100 грн'
+            : 'Повна сума сплачується при отриманні'
+        }
+
+        // Refresh summary for currently selected payment method
+        const selectedCard = document.querySelector('[data-payment].selected')
+        if (selectedCard) {
+          updatePaymentSummary(selectedCard.getAttribute('data-payment'))
+        }
+      } catch (e) {
+        console.warn('⚠️ Could not load requireDeposit setting, using default (true):', e)
       }
     }
 
@@ -4669,14 +4738,18 @@
         orderData.orderId = orderId;
 
         // ============================================
-        // CHECK PREPAYMENT SETTING FOR COD ORDERS
-        // (before saving to set correct status)
+        // CHECK PREPAYMENT SETTING FROM FIRESTORE
         // ============================================
-        // ============================================
-        // CHECK PREPAYMENT SETTING FOR COD ORDERS
-        // ============================================
-        let isPrepaymentEnabled = true; // FORCE ENABLED as per requirement
-        console.log('💳 Prepayment setting: FORCE ENABLED');
+        let isPrepaymentEnabled = true; // default: require deposit
+        try {
+          const paymentSettingDoc = await getDoc(doc(db, 'settings', 'payment'))
+          if (paymentSettingDoc.exists() && paymentSettingDoc.data().requireDeposit !== undefined) {
+            isPrepaymentEnabled = paymentSettingDoc.data().requireDeposit
+          }
+        } catch (e) {
+          console.warn('⚠️ Could not load payment setting, defaulting to prepayment enabled:', e)
+        }
+        console.log('💳 Prepayment setting loaded from Firestore:', isPrepaymentEnabled)
 
         console.log('💾 Saving order to Firestore...', { orderId, orderData })
 
@@ -4932,8 +5005,9 @@
             // CONDITIONAL: PREPAYMENT DISABLED - SKIP PAYMENT
             // ============================================
             if (!isPrepaymentEnabled) {
-              // This block is now unreachable but kept for safety/future toggle
-              console.log('✅ Prepayment DISABLED (Start)');
+              console.log('✅ Prepayment DISABLED - order placed without payment, status: new')
+              showSuccessMessage(orderId)
+              return
             }
 
             // ============================================

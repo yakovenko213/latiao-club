@@ -8320,19 +8320,19 @@
             <span>💳</span> Налаштування оплати
           </h4>
           
-          <div class="flex items-center justify-between p-4 bg-amber-50 border border-amber-200 rounded-xl">
+          <div class="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-xl">
             <div class="flex-1">
               <label for="setting-prepayment-toggle" class="font-semibold text-gray-800 cursor-pointer">
-                Вимагати передоплату (100 грн)
+                Ввімкнути обов'язкову передоплату (100 грн)
               </label>
               <p class="text-xs text-gray-600 mt-1">
-                Якщо увімкнено — при накладеному платежі клієнт сплачує 100 грн передоплати.
-                <br>Якщо вимкнено — замовлення оформлюється без оплати.
+                <span class="font-semibold text-green-700">Увімкнено:</span> Клієнт сплачує 100 грн передоплати при накладеному платежі.
+                <br><span class="font-semibold text-gray-500">Вимкнено:</span> Замовлення оформлюється одразу без оплати (0 грн наперед).
               </p>
             </div>
             <label class="relative inline-flex items-center cursor-pointer ml-4">
               <input type="checkbox" id="setting-prepayment-toggle" class="sr-only peer" checked>
-              <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+              <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
             </label>
           </div>
         </div>
@@ -21061,10 +21061,16 @@
           updatedAt: new Date().toISOString()
         }, { merge: true })
         
-        // Save prepayment setting to settings/general
+        // Save prepayment setting to settings/general (backward compat)
         console.log('💳 Saving prepayment setting:', isPrepaymentEnabled)
         await setDoc(doc(db, 'settings', 'general'), {
           isPrepaymentEnabled: isPrepaymentEnabled,
+          updatedAt: new Date().toISOString()
+        }, { merge: true })
+        
+        // Also save to settings/payment (requireDeposit) for checkout integration
+        await setDoc(doc(db, 'settings', 'payment'), {
+          requireDeposit: isPrepaymentEnabled,
           updatedAt: new Date().toISOString()
         }, { merge: true })
         
