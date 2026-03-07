@@ -32,6 +32,7 @@
   <script type="module" src="./js/blacklist-check.js"></script>
 
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <script src="https://unpkg.com/lucide@latest"></script>
   <script>
     tailwindcss.config = {
@@ -269,7 +270,6 @@
        ============================================ */
     #checkout-cashback-badge {
       position: relative;
-      z-index: 100;
       overflow: visible !important;
     }
     
@@ -444,6 +444,25 @@
     <p class="text-gray-500 text-sm md:text-base lg:text-lg">Залишилось кілька кроків до гострого задоволення 🌶️</p>
   </div>
 
+  <!-- Mode Toggle -->
+  <div class="max-w-6xl mx-auto px-4 mb-4 lg:mb-6">
+    <div class="flex items-center gap-3">
+      <span class="text-sm font-medium text-gray-500 hidden sm:inline">Режим:</span>
+      <div class="inline-flex rounded-xl border-2 border-gray-200 bg-gray-50 p-1 gap-1">
+        <button id="mode-btn-full"
+          onclick="setCheckoutMode('full')"
+          class="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 bg-white text-gray-900 shadow-sm border border-gray-200">
+          📋 Повна форма
+        </button>
+        <button id="mode-btn-quick"
+          onclick="setCheckoutMode('quick')"
+          class="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 text-gray-500 hover:text-gray-700">
+          ⚡ Швидке оформлення
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Main Content -->
   <div class="max-w-6xl mx-auto px-4" id="checkout-container">
     <div class="flex flex-col lg:grid lg:grid-cols-3 gap-4 lg:gap-6">
@@ -451,7 +470,7 @@
       <div class="lg:col-span-2 space-y-4 lg:space-y-6" id="checkout-form-column">
 
         <!-- Customer Info -->
-        <div class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm fade-in">
+        <div id="customer-info-section" class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm fade-in">
           <h2 class="text-base lg:text-lg font-bold text-gray-900 mb-4 lg:mb-5 flex items-center gap-2">
             <span
               class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 text-sm font-bold">1</span>
@@ -490,7 +509,7 @@
         </div>
 
         <!-- No Call Policy Notice -->
-        <div class="mt-6 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4">
+        <div id="no-call-policy-banner" class="mt-6 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4">
           <div class="flex-shrink-0">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
               class="h-6 w-6 text-blue-600">
@@ -508,7 +527,7 @@
         </div>
 
         <!-- Delivery Method -->
-        <div class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm fade-in">
+        <div id="delivery-section" class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm fade-in">
           <h2 class="text-base lg:text-lg font-bold text-gray-900 mb-4 lg:mb-5 flex items-center gap-2">
             <span
               class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 text-sm font-bold">2</span>
@@ -633,7 +652,7 @@
         </div>
 
         <!-- Payment Method -->
-        <div class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm fade-in">
+        <div id="payment-method-section" class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm fade-in">
           <h2 class="text-base lg:text-lg font-bold text-gray-900 mb-4 lg:mb-5 flex items-center gap-2">
             <span
               class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 text-sm font-bold">3</span>
@@ -661,17 +680,10 @@
                 <div class="flex-1">
                   <p class="font-semibold text-gray-900">Онлайн оплата</p>
                   <div class="flex items-center flex-wrap gap-2 md:gap-3 mt-2">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa"
-                      class="h-6 md:h-8 w-auto bg-white px-1.5 py-0.5 rounded" />
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard"
-                      class="h-6 md:h-8 w-auto" />
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/b/b0/Apple_Pay_logo.svg" alt="Apple Pay"
-                      class="h-6 md:h-8 w-auto" />
-                    <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="h-6 md:h-8 w-auto">
-                      <title>Google Pay</title>
-                      <path
-                        d="M3.963 7.235A3.963 3.963 0 00.422 9.419a3.963 3.963 0 000 3.559 3.963 3.963 0 003.541 2.184c1.07 0 1.97-.352 2.627-.957.748-.69 1.18-1.71 1.18-2.916a4.722 4.722 0 00-.07-.806H3.964v1.526h2.14a1.835 1.835 0 01-.79 1.205c-.356.241-.814.379-1.35.379-1.034 0-1.911-.697-2.225-1.636a2.375 2.375 0 010-1.517c.314-.94 1.191-1.636 2.225-1.636a2.152 2.152 0 011.52.594l1.132-1.13a3.808 3.808 0 00-2.652-1.033zm6.501.55v6.9h.886V11.89h1.465c.603 0 1.11-.196 1.522-.588a1.911 1.911 0 00.635-1.464 1.92 1.92 0 00-.635-1.456 2.125 2.125 0 00-1.522-.598zm2.427.85a1.156 1.156 0 01.823.365 1.176 1.176 0 010 1.686 1.171 1.171 0 01-.877.357H11.35V8.635h1.487a1.156 1.156 0 01.054 0zm4.124 1.175c-.842 0-1.477.308-1.907.925l.781.491c.288-.417.68-.626 1.175-.626a1.255 1.255 0 01.856.323 1.009 1.009 0 01.366.785v.202c-.34-.193-.774-.289-1.3-.289-.617 0-1.11.145-1.479.434-.37.288-.554.677-.554 1.165a1.476 1.476 0 00.525 1.156c.35.308.785.463 1.305.463.61 0 1.098-.27 1.465-.81h.038v.655h.848v-2.909c0-.61-.19-1.09-.568-1.44-.38-.35-.896-.525-1.551-.525zm2.263.154l1.946 4.422-1.098 2.38h.915L24 9.963h-.965l-1.368 3.391h-.02l-1.406-3.39zm-2.146 2.368c.494 0 .88.11 1.156.33 0 .372-.147.696-.44.973a1.413 1.413 0 01-.997.414 1.081 1.081 0 01-.69-.232.708.708 0 01-.293-.578c0-.257.12-.47.363-.647.24-.173.54-.26.9-.26Z" />
-                    </svg>
+                    <i class="fa-brands fa-cc-visa text-gray-800 text-3xl md:text-4xl"></i>
+                    <i class="fa-brands fa-cc-mastercard text-gray-800 text-3xl md:text-4xl"></i>
+                    <i class="fa-brands fa-apple-pay text-gray-800 text-3xl md:text-4xl"></i>
+                    <i class="fa-brands fa-google-pay text-gray-800 text-3xl md:text-4xl"></i>
                   </div>
                 </div>
               </div>
@@ -707,7 +719,7 @@
         </div>
 
         <!-- Comment -->
-        <div class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm fade-in">
+        <div id="comment-section" class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm fade-in">
           <h2 class="text-base lg:text-lg font-bold text-gray-900 mb-4 lg:mb-5 flex items-center gap-2">
             <span
               class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 text-sm font-bold">4</span>
@@ -722,6 +734,139 @@
           <textarea id="comment" rows="3" placeholder="p.s ми не дзвонимо для підтвердження замовлення))"
             class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300 resize-none"></textarea>
         </div>
+
+        <!-- ⚡ QUICK FORM BLOCK (shown only in quick mode) -->
+        <div id="quick-form-block" class="hidden space-y-4 fade-in">
+
+          <!-- ── СТЕП 1: ДОСТАВКА ── -->
+          <div class="bg-white rounded-2xl p-4 lg:p-6 shadow-sm">
+            <h2 class="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <span class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 text-sm font-bold">1</span>
+              Спосіб доставки
+            </h2>
+            <div class="grid grid-cols-2 gap-3">
+              <!-- Нова Пошта -->
+              <div class="q-delivery-card card-select border-2 border-gray-200 rounded-xl p-3 cursor-pointer relative selected" data-q-delivery="nova" onclick="window.quickSelectDelivery(this,'nova')">
+                <div class="checkmark absolute top-2 right-2 w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
+                  <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <div class="flex flex-col items-center gap-2 pt-1">
+                  <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRz2w7BxtR4oDjLouwXrZ_nemt0R6PUZR8qcw&s" alt="Nova Poshta" class="h-8 w-auto rounded object-contain" />
+                  <p class="text-xs font-semibold text-gray-900 text-center">Нова Пошта</p>
+                </div>
+              </div>
+              <!-- Укрпошта -->
+              <div class="q-delivery-card card-select border-2 border-gray-200 rounded-xl p-3 cursor-pointer relative" data-q-delivery="ukr" onclick="window.quickSelectDelivery(this,'ukr')">
+                <div class="checkmark absolute top-2 right-2 w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
+                  <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <div class="flex flex-col items-center gap-2 pt-1">
+                  <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR19Fzy1r4-i6x9ytwyP3p-I0E4Df7UJKQqnQ&s" alt="Ukrposhta" class="h-8 w-auto rounded object-contain" />
+                  <p class="text-xs font-semibold text-gray-900 text-center">Укрпошта</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── БАНЕР ПРИКЛАДУ (динамічний) ── -->
+          <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div class="h-1 bg-gradient-to-r from-orange-400 to-orange-300"></div>
+            <div class="px-4 pt-3 pb-4">
+              <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">📋 Приклад заповнення</p>
+
+              <!-- Нова Пошта приклад -->
+              <div id="q-example-nova" class="space-y-2">
+                <div class="flex items-center gap-2"><span class="text-orange-400 text-xs w-4 text-center flex-shrink-0">👤</span><span class="text-xs text-gray-400 w-20 flex-shrink-0">ПІБ</span><span class="text-xs font-mono text-gray-800 bg-gray-50 rounded-lg px-2 py-0.5">Іван Іванов</span></div>
+                <div class="flex items-center gap-2"><span class="text-orange-400 text-xs w-4 text-center flex-shrink-0">📱</span><span class="text-xs text-gray-400 w-20 flex-shrink-0">Телефон</span><span class="text-xs font-mono text-gray-800 bg-gray-50 rounded-lg px-2 py-0.5">+380501234567</span></div>
+                <div class="flex items-center gap-2"><span class="text-orange-400 text-xs w-4 text-center flex-shrink-0">✈️</span><span class="text-xs text-gray-400 w-20 flex-shrink-0">Telegram</span><span class="text-xs font-mono text-gray-800 bg-gray-50 rounded-lg px-2 py-0.5">@ivan_snack</span></div>
+                <div class="flex items-center gap-2"><span class="text-orange-400 text-xs w-4 text-center flex-shrink-0">📍</span><span class="text-xs text-gray-400 w-20 flex-shrink-0">Місто НП</span><span class="text-xs font-mono text-gray-800 bg-gray-50 rounded-lg px-2 py-0.5">Київ</span></div>
+                <div class="flex items-center gap-2"><span class="text-orange-400 text-xs w-4 text-center flex-shrink-0">📦</span><span class="text-xs text-gray-400 w-20 flex-shrink-0">Відділення</span><span class="text-xs font-mono text-gray-800 bg-gray-50 rounded-lg px-2 py-0.5">Відділення №5</span><span class="text-xs text-gray-300 mx-1">або</span><span class="text-xs font-mono text-gray-800 bg-gray-50 rounded-lg px-2 py-0.5">Поштомат №1234</span></div>
+              </div>
+
+              <!-- Укрпошта приклад -->
+              <div id="q-example-ukr" class="hidden space-y-2">
+                <div class="flex items-center gap-2"><span class="text-orange-400 text-xs w-4 text-center flex-shrink-0">👤</span><span class="text-xs text-gray-400 w-20 flex-shrink-0">ПІБ</span><span class="text-xs font-mono text-gray-800 bg-gray-50 rounded-lg px-2 py-0.5">Іван Іванов</span></div>
+                <div class="flex items-center gap-2"><span class="text-orange-400 text-xs w-4 text-center flex-shrink-0">📱</span><span class="text-xs text-gray-400 w-20 flex-shrink-0">Телефон</span><span class="text-xs font-mono text-gray-800 bg-gray-50 rounded-lg px-2 py-0.5">+380501234567</span></div>
+                <div class="flex items-center gap-2"><span class="text-orange-400 text-xs w-4 text-center flex-shrink-0">✈️</span><span class="text-xs text-gray-400 w-20 flex-shrink-0">Telegram</span><span class="text-xs font-mono text-gray-800 bg-gray-50 rounded-lg px-2 py-0.5">@ivan_snack</span></div>
+                <div class="flex items-center gap-2"><span class="text-orange-400 text-xs w-4 text-center flex-shrink-0">🗺️</span><span class="text-xs text-gray-400 w-20 flex-shrink-0">Область</span><span class="text-xs font-mono text-gray-800 bg-gray-50 rounded-lg px-2 py-0.5">Київська</span></div>
+                <div class="flex items-center gap-2"><span class="text-orange-400 text-xs w-4 text-center flex-shrink-0">🏘️</span><span class="text-xs text-gray-400 w-20 flex-shrink-0">Район</span><span class="text-xs font-mono text-gray-800 bg-gray-50 rounded-lg px-2 py-0.5">Білоцерківський</span></div>
+                <div class="flex items-center gap-2"><span class="text-orange-400 text-xs w-4 text-center flex-shrink-0">🏙️</span><span class="text-xs text-gray-400 w-20 flex-shrink-0">Місто</span><span class="text-xs font-mono text-gray-800 bg-gray-50 rounded-lg px-2 py-0.5">Біла Церква</span></div>
+                <div class="flex items-center gap-2"><span class="text-orange-400 text-xs w-4 text-center flex-shrink-0">📮</span><span class="text-xs text-gray-400 w-20 flex-shrink-0">Індекс</span><span class="text-xs font-mono text-gray-800 bg-gray-50 rounded-lg px-2 py-0.5">09100</span></div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ── СТЕП 2: ДАНІ ── -->
+          <div class="bg-white rounded-2xl p-4 lg:p-6 shadow-sm">
+            <h2 class="text-base font-bold text-gray-900 mb-1 flex items-center gap-2">
+              <span class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 text-sm font-bold">2</span>
+              Ваші дані
+            </h2>
+            <p class="text-xs text-gray-400 mb-3 ml-10">Введіть кожен пункт з нового рядка, як у прикладі вище</p>
+            <!-- Telegram @ hint -->
+            <div id="q-tg-hint" class="hidden mb-2 flex items-start gap-2 text-xs bg-amber-50 border border-amber-300 rounded-xl px-3 py-2 text-amber-800">
+              <span class="text-base leading-none mt-0.5">ℹ️</span>
+              <span>Додайте <strong>@</strong> перед ніком Telegram: наприклад <strong id="q-tg-hint-name"></strong></span>
+            </div>
+            <textarea id="q-quick-text" rows="6"
+              placeholder="Іван Іванов&#10;+380501234567&#10;@ivan_snack&#10;Київ&#10;Відділення №5"
+              class="w-full px-3 lg:px-4 py-2.5 lg:py-3 border-2 border-gray-200 rounded-xl lg:rounded-2xl text-base text-gray-900 placeholder-gray-400 transition-all duration-300 resize-none font-mono"></textarea>
+          </div>
+
+          <!-- ── СТЕП 3: ОПЛАТА ── -->
+          <div class="bg-white rounded-2xl p-4 lg:p-6 shadow-sm">
+            <h2 class="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <span class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 text-sm font-bold">3</span>
+              Спосіб оплати
+            </h2>
+            <div class="space-y-3">
+              <!-- Online -->
+              <div class="q-pay-card card-select border-2 border-gray-200 rounded-xl lg:rounded-2xl p-4 cursor-pointer relative selected" data-q-payment="online" onclick="window.quickSelectPayment(this,'online')">
+                <div class="checkmark absolute top-3 right-3 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <div class="flex items-center gap-4">
+                  <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-blue-600">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+                    </svg>
+                  </div>
+                  <div class="flex-1">
+                    <p class="font-semibold text-gray-900">Онлайн оплата</p>
+                    <div class="flex items-center flex-wrap gap-2 mt-2">
+                      <i class="fa-brands fa-cc-visa text-gray-800 text-3xl"></i>
+                      <i class="fa-brands fa-cc-mastercard text-gray-800 text-3xl"></i>
+                      <i class="fa-brands fa-apple-pay text-gray-800 text-3xl"></i>
+                      <i class="fa-brands fa-google-pay text-gray-800 text-3xl"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- COD -->
+              <div id="q-cod-card" class="q-pay-card card-select border-2 border-gray-200 rounded-xl lg:rounded-2xl p-4 cursor-pointer relative" data-q-payment="cod" onclick="window.quickSelectPayment(this,'cod')">
+                <div class="checkmark absolute top-3 right-3 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <div class="flex items-center gap-4">
+                  <div class="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600 flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0015.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-gray-900">Оплата при отриманні</p>
+                    <p class="text-sm text-gray-500 mt-1">Мінімальна передоплата — 100 грн</p>
+                    <p id="q-cod-restriction" class="hidden text-xs text-orange-600 font-medium mt-1">⚠️ Тільки для Нової Пошти</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <!-- /⚡ QUICK FORM BLOCK -->
+
       </div>
 
       <!-- Order Summary -->
@@ -1196,7 +1341,7 @@
   </div>
 
   <!-- Mobile Sticky Bar -->
-  <div class="fixed bottom-0 left-0 right-0 bg-white sticky-bar p-4 lg:hidden z-50">
+  <div class="fixed bottom-0 left-0 right-0 bg-white sticky-bar p-4 lg:hidden z-[10000]">
     <div class="flex items-center justify-between mb-3">
       <span class="text-sm text-gray-600">Разом:</span>
       <span id="totalPriceMobile" class="text-xl font-extrabold text-orange-500">0 грн</span>
@@ -3896,7 +4041,19 @@
 
       // Validate telegram format (only letters, numbers, underscore)
       const isTelegramValid = telegram !== '' && /^[a-zA-Z0-9_]+$/.test(telegram)
-      const isValid = fullName !== '' && phone !== '' && isTelegramValid && total >= 100
+      let isValid = fullName !== '' && phone !== '' && isTelegramValid && total >= 100
+
+      // In quick mode: also validate delivery-specific address fields
+      if (window._quickMode) {
+        if (window._quickDelivery === 'ukr') {
+          const upRegion = document.getElementById('up-region-input')?.value.trim() || '';
+          const upCity   = document.getElementById('up-city-input')?.value.trim() || '';
+          const upPost   = document.getElementById('up-postcode-input')?.value.trim() || '';
+          isValid = isValid && upRegion !== '' && upCity !== '' && /^\d{5}$/.test(upPost);
+        } else {
+          isValid = isValid && !!selectedCityRef && !!selectedWarehouse;
+        }
+      }
 
       const desktopBtn = document.getElementById('submitBtnDesktop')
       const mobileBtn = document.getElementById('submitBtnMobile')
@@ -5099,6 +5256,404 @@
         btn.disabled = false
       }
     }
+
+    // ============================================
+    // CHECKOUT MODE TOGGLE (Quick / Full)
+    // ============================================
+    window._quickMode = false;
+    window._quickDelivery = 'nova';
+
+    window.setCheckoutMode = function setCheckoutMode(mode) {
+      const isQuick = mode === 'quick';
+      window._quickMode = isQuick;
+
+      // Toggle top banner
+      const banner = document.getElementById('quick-mode-banner');
+      if (banner) banner.classList.toggle('hidden', !isQuick);
+
+      // Toggle standard form sections
+      const sections = [
+        'customer-info-section',
+        'no-call-policy-banner',
+        'delivery-section',
+        'payment-method-section',
+        'comment-section'
+      ];
+      sections.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('hidden', isQuick);
+      });
+
+      // Toggle quick form block
+      const quickBlock = document.getElementById('quick-form-block');
+      if (quickBlock) quickBlock.classList.toggle('hidden', !isQuick);
+
+      // In quick mode: reset to Nova Poshta + Online (default)
+      if (isQuick) {
+        window._quickDelivery = 'nova';
+        // Reset quick delivery cards to Nova
+        document.querySelectorAll('.q-delivery-card').forEach(c => c.classList.remove('selected'));
+        const qNovaCard = document.querySelector('.q-delivery-card[data-q-delivery="nova"]');
+        if (qNovaCard) qNovaCard.classList.add('selected');
+        // Sync standard delivery + payment cards
+        const novaCard = document.querySelector('[data-delivery="nova"]');
+        if (novaCard && !novaCard.classList.contains('selected')) novaCard.click();
+        const onlineCard = document.querySelector('[data-payment="online"]');
+        if (onlineCard && !onlineCard.classList.contains('selected')) onlineCard.click();
+        // Reset quick payment cards
+        document.querySelectorAll('.q-pay-card').forEach(c => c.classList.remove('selected'));
+        const qOnlineCard = document.querySelector('.q-pay-card[data-q-payment="online"]');
+        if (qOnlineCard) qOnlineCard.classList.add('selected');
+        // Ensure COD is available (Nova is default)
+        _quickUpdateCodAvailability('nova');
+      }
+
+      // Update toggle button styles
+      const btnFull  = document.getElementById('mode-btn-full');
+      const btnQuick = document.getElementById('mode-btn-quick');
+      const activeClass   = 'px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 bg-white text-gray-900 shadow-sm border border-gray-200';
+      const inactiveClass = 'px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 text-gray-500 hover:text-gray-700';
+      if (btnFull)  btnFull.className  = isQuick ? inactiveClass : activeClass;
+      if (btnQuick) btnQuick.className = isQuick ? activeClass   : inactiveClass;
+    }
+
+    // ============================================
+    // QUICK FORM — parse textarea → standard fields
+    // ============================================
+    function _syncQuickInputs() {
+      const ta = document.getElementById('q-quick-text');
+      if (!ta) return;
+      const raw = ta.value;
+      const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+
+      let name = '', phone = '', telegram = '', city = '', warehouse = '';
+      let region = '', district = '', postcode = '';
+
+      // ── helpers ──────────────────────────────────────────────────
+      const PHONE_RE      = /(\+?38)?[\s\-()]*(0\d{2})[\s\-()]*(\d{3})[\s\-]*(\d{2})[\s\-]*(\d{2})/;
+      const PHONE_CLEAN   = /[\s\-()]/g;
+      const WAREHOUSE_RE  = /відділ|поштомат|відд\.|пошт\.|warehouse|№\s*\d|^\d{1,5}$/i;
+      const TG_PREFIX_RE  = /^(tg|telegram|tg:|telegram:)\s*@?/i;
+      const NAME_WORD_RE  = /^[А-ЯІЇЄҐ][а-яіїєґ'ʼ]+$/;
+      const CITY_RE       = /^[А-ЯІЇЄҐа-яіїєґ'\s\-]{2,30}$/;
+      // Ukrposhta-specific
+      const OBLAST_RE     = /^[А-ЯІЇЄҐа-яіїєґ'\s\-]{2,40}(ська|зька|цька)(\s+область)?$/i;
+      const RAION_RE      = /^[А-ЯІЇЄҐа-яіїєґ'\s\-]{2,40}(ський|зький|цький)(\s+район)?$/i;
+      const POSTCODE_RE   = /^\d{5}$/;
+
+      const isPhone = str => {
+        const clean = str.replace(PHONE_CLEAN, '');
+        return PHONE_RE.test(str) || /^(\+?380\d{9}|0\d{9})$/.test(clean);
+      };
+
+      const normalizePhone = str => {
+        const clean = str.replace(PHONE_CLEAN, '').replace(/^\+?38/, '');
+        return '+38' + clean;
+      };
+
+      const isTelegram = str => str.startsWith('@') || TG_PREFIX_RE.test(str);
+
+      // Detects a bare Latin-only string that looks like a Telegram handle (no @ prefix)
+      // Valid TG: 5–32 chars, starts with letter, only letters/digits/underscores
+      const BARE_TG_RE = /^[a-zA-Z][a-zA-Z0-9_]{4,31}$/;
+      const isBareLatinHandle = str => BARE_TG_RE.test(str) && !isPhone(str);
+
+      let bareTgCandidate = '';
+
+      const extractTelegram = str => {
+        let t = str.replace(TG_PREFIX_RE, '').replace('@', '').trim();
+        // keep only valid telegram chars
+        t = t.replace(/[^a-zA-Z0-9_]/g, '');
+        return t;
+      };
+
+      const isWarehouse = str => WAREHOUSE_RE.test(str) || /поштомат|відд/i.test(str);
+
+      const isName = str => {
+        const words = str.split(/\s+/);
+        return words.length >= 2 && words.length <= 4 && words.every(w => NAME_WORD_RE.test(w));
+      };
+
+      const isUkr = window._quickDelivery === 'ukr';
+
+      lines.forEach(line => {
+        // 1. Phone — highest priority for digit-heavy lines
+        if (!phone && isPhone(line)) { phone = normalizePhone(line); return; }
+        // 2. Telegram (with @ or tg:/telegram: prefix)
+        if (!telegram && isTelegram(line)) {
+          const t = extractTelegram(line);
+          if (t.length >= 3) { telegram = t; return; }
+        }
+        // 2b. Bare latin handle candidate (no @) — collect for hint, do NOT auto-assign
+        if (!telegram && !bareTgCandidate && isBareLatinHandle(line)) {
+          bareTgCandidate = line;
+        }
+        if (isUkr) {
+          // UKR: postcode (5 digits) — must come before city/name to avoid confusion
+          if (!postcode && POSTCODE_RE.test(line)) { postcode = line; return; }
+          // UKR: Oblast (ends in ська/зька/цька)
+          if (!region && OBLAST_RE.test(line)) { region = line.replace(/\s+область$/i, '').trim(); return; }
+          // UKR: Raion (ends in ський/зький/цький)
+          if (!district && RAION_RE.test(line)) { district = line.replace(/\s+район$/i, '').trim(); return; }
+        } else {
+          // NP: warehouse — before city to avoid swallowing "Відділення 5" as city
+          if (!warehouse && isWarehouse(line)) { warehouse = line; return; }
+        }
+        // 4. Name — 2–4 Cyrillic capitalised words (both modes)
+        if (!name && isName(line)) { name = line; return; }
+        // 5. City / settlement (both modes)
+        if (!city && CITY_RE.test(line) && !/^\d/.test(line)) { city = line; return; }
+      });
+
+      // ── Telegram @ hint banner ──────────────────────────────────
+      const tgHint     = document.getElementById('q-tg-hint');
+      const tgHintName = document.getElementById('q-tg-hint-name');
+      if (tgHint) {
+        if (!telegram && bareTgCandidate) {
+          tgHintName.textContent = '@' + bareTgCandidate;
+          tgHint.classList.remove('hidden');
+        } else {
+          tgHint.classList.add('hidden');
+        }
+      }
+
+      // ── auto-detect delivery method from text ───────────────
+      const UKR_POSHTA_RE = /укрпошт|укр\s*пошт|ukrposhta|up:/i;
+      if (UKR_POSHTA_RE.test(raw)) {
+        const ukrCard = document.querySelector('.q-delivery-card[data-q-delivery="ukr"]');
+        if (ukrCard && !ukrCard.classList.contains('selected')) {
+          window.quickSelectDelivery(ukrCard, 'ukr');
+        }
+      }
+
+      // ── write contact fields (shared) ──────────────────────────
+      const set = (id, val) => {
+        const el = document.getElementById(id);
+        if (el && val) {
+          el.value = val;
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      };
+      set('fullName', name);
+      set('phone',    phone);
+      set('telegram', telegram);
+
+      if (window._quickDelivery === 'ukr') {
+        // ── Ukrposhta: fill address fields + update preview ──────────────
+        set('up-region-input',   region);
+        set('up-district-input', district);
+        set('up-city-input',     city);
+        set('up-postcode-input', postcode);
+        validateForm();
+        _renderQuickPreview({ name, phone, telegram, region, district, city, postcode, deliveryMode: 'ukr' });
+      } else {
+        // ── Nova Poshta: API debounce ─────────────────────────────
+        if (city && city !== _qLastCity) {
+          _qLastCity = city;
+          clearTimeout(_qCityTimer);
+          _qCityTimer = setTimeout(() => _quickAutoSelectCity(city, warehouse), 700);
+        } else if (warehouse && allWarehouses && allWarehouses.length > 0) {
+          _quickAutoSelectWarehouse(warehouse);
+        }
+        _renderQuickPreview({ name, phone, telegram, city, warehouse, deliveryMode: 'nova' });
+      }
+    }
+
+    // ── NP auto-selection helpers for quick form ─────────────────
+    let _qLastCity  = '';
+    let _qCityTimer = null;
+
+    async function _quickAutoSelectCity(cityName, warehouseHint) {
+      if (!cityName || cityName.length < 2) return;
+      try {
+        const res = await fetch(NP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            apiKey: NP_API_KEY,
+            modelName: 'Address',
+            calledMethod: 'searchSettlements',
+            methodProperties: { CityName: cityName, Limit: 5, Page: 1 }
+          })
+        });
+        const data = await res.json();
+
+        // City not found — clear stale state so stale warehouses are not reused
+        if (!data.success || !data.data?.[0]?.Addresses?.length) {
+          selectedCityRef = null;
+          selectedWarehouse = null;
+          allWarehouses = [];
+          _qLastCity = ''; // allow retry on next keystroke
+          const whInput = document.getElementById('np-warehouse-input');
+          if (whInput) whInput.value = '';
+          validateForm();
+          return;
+        }
+
+        const best = data.data[0].Addresses[0];
+        document.getElementById('np-city-input').value = best.Present;
+        selectedCityRef = best.DeliveryCity;
+        selectedWarehouse = null; // clear stale warehouse from previous city
+
+        // Load warehouses, then auto-select
+        await loadNovaPoshtaWarehouses(selectedCityRef);
+        if (warehouseHint) _quickAutoSelectWarehouse(warehouseHint);
+        validateForm();
+      } catch (e) {
+        console.error('[QuickForm] City auto-select error:', e);
+      }
+    }
+
+    function _quickAutoSelectWarehouse(hint) {
+      if (!allWarehouses || !allWarehouses.length || !hint) return;
+      const nums = hint.match(/\d+/g);
+      let found = null;
+
+      // 1. Strict match by branch number only (e.g. "5" → "Відділення №5", not "№15" or "№51")
+      if (nums) {
+        const lastNum = nums[nums.length - 1];
+        found = allWarehouses.find(w => {
+          const m = w.Description.match(/№\s*(\d+)/);
+          return m && m[1] === lastNum;
+        });
+      }
+      // 2. Fallback: substring match — only if hint has non-digit chars (e.g. "поштомат 5")
+      if (!found && /[а-яіїєґa-z]/i.test(hint)) {
+        const q = hint.toLowerCase().trim();
+        found = allWarehouses.find(w => w.Description.toLowerCase().includes(q));
+      }
+
+      if (found) {
+        document.getElementById('np-warehouse-input').value = found.Description;
+        selectedWarehouse = found;
+      } else {
+        // Hint given but nothing matched — clear so validation blocks submit
+        selectedWarehouse = null;
+        const whInput = document.getElementById('np-warehouse-input');
+        if (whInput) whInput.value = '';
+      }
+      validateForm();
+    }
+
+    // Show parsed result below the textarea so user can verify
+    function _renderQuickPreview(data) {
+      let box = document.getElementById('q-preview');
+      if (!box) {
+        box = document.createElement('div');
+        box.id = 'q-preview';
+        box.className = 'mt-2 text-xs rounded-xl px-3 py-2 bg-gray-50 border border-gray-200 space-y-0.5 text-gray-600';
+        const ta = document.getElementById('q-quick-text');
+        if (ta) ta.parentNode.insertBefore(box, ta.nextSibling);
+      }
+      const has = v => v && v.length > 0;
+      const row = (icon, label, val) =>
+        has(val)
+          ? `<div><span class="text-gray-400">${icon} ${label}:</span> <span class="font-medium text-gray-800">${val}</span></div>`
+          : `<div class="text-gray-300">${icon} ${label}: —</div>`;
+
+      let anyFound, rows;
+      if (data.deliveryMode === 'ukr') {
+        anyFound = has(data.name) || has(data.phone) || has(data.telegram) ||
+                   has(data.region) || has(data.district) || has(data.city) || has(data.postcode);
+        if (!anyFound) { box.innerHTML = ''; return; }
+        rows =
+          row('👤', 'ПІБ',      data.name) +
+          row('📱', 'Телефон',  data.phone) +
+          row('✈️', 'Telegram', data.telegram ? '@' + data.telegram : '') +
+          row('🗺️', 'Область',  data.region) +
+          row('🏘️', 'Район',    data.district) +
+          row('🏙️', 'Місто',    data.city) +
+          row('📮', 'Індекс',   data.postcode);
+      } else {
+        anyFound = has(data.name) || has(data.phone) || has(data.telegram) || has(data.city) || has(data.warehouse);
+        if (!anyFound) { box.innerHTML = ''; return; }
+        rows =
+          row('👤', 'ПІБ',        data.name) +
+          row('📱', 'Телефон',    data.phone) +
+          row('✈️', 'Telegram',   data.telegram ? '@' + data.telegram : '') +
+          row('📍', 'Місто',      data.city) +
+          row('📦', 'Відділення', data.warehouse);
+      }
+      box.innerHTML = rows;
+    }
+
+    // Live-mirror as user types
+    const _qTextEl = document.getElementById('q-quick-text');
+    if (_qTextEl) _qTextEl.addEventListener('input', _syncQuickInputs);
+
+    // Quick delivery card selector — syncs to standard form
+    window.quickSelectDelivery = function(qCard, method) {
+      window._quickDelivery = method;
+      // Update quick delivery card UI
+      document.querySelectorAll('.q-delivery-card').forEach(c => c.classList.remove('selected'));
+      qCard.classList.add('selected');
+
+      // Sync standard delivery cards + trigger all standard logic
+      const stdCard = document.querySelector('[data-delivery="' + method + '"]');
+      if (stdCard) stdCard.click();
+
+      // Update COD availability in quick form
+      _quickUpdateCodAvailability(method);
+
+      // Swap example banner
+      const exNova = document.getElementById('q-example-nova');
+      const exUkr  = document.getElementById('q-example-ukr');
+      if (exNova) exNova.classList.toggle('hidden', method === 'ukr');
+      if (exUkr)  exUkr.classList.toggle('hidden',  method === 'nova');
+    };
+
+    function _quickUpdateCodAvailability(method) {
+      const codCard        = document.getElementById('q-cod-card');
+      const codRestriction = document.getElementById('q-cod-restriction');
+      if (!codCard) return;
+
+      const isCodAvailable = method === 'nova';
+
+      if (!isCodAvailable) {
+        codCard.style.pointerEvents = 'none';
+        codCard.style.opacity = '0.5';
+        codCard.style.filter = 'grayscale(100%)';
+        codCard.style.cursor = 'not-allowed';
+        if (codRestriction) codRestriction.classList.remove('hidden');
+        // Auto-switch to online if COD was selected
+        if (codCard.classList.contains('selected')) {
+          codCard.classList.remove('selected');
+          const onlineCard = document.querySelector('.q-pay-card[data-q-payment="online"]');
+          if (onlineCard) onlineCard.classList.add('selected');
+          const stdOnline = document.querySelector('[data-payment="online"]');
+          if (stdOnline) stdOnline.click();
+        }
+      } else {
+        codCard.style.pointerEvents = '';
+        codCard.style.opacity = '';
+        codCard.style.filter = '';
+        codCard.style.cursor = '';
+        if (codRestriction) codRestriction.classList.add('hidden');
+      }
+    }
+
+    // Quick payment card selector (delegates to standard selectPayment)
+    window.quickSelectPayment = function(qCard, method) {
+      // Update quick card UI
+      document.querySelectorAll('.q-pay-card').forEach(c => c.classList.remove('selected'));
+      qCard.classList.add('selected');
+      // Delegate to standard payment logic
+      const stdCard = document.querySelector('[data-payment="' + method + '"]');
+      if (stdCard) stdCard.click();
+    };
+
+    // Before submit: ensure quick inputs are mirrored if quick mode is active
+    (function() {
+      const origSubmit = window.submitOrder;
+      if (typeof origSubmit === 'function') {
+        // patch only if already defined; otherwise _syncQuickInputs is called from live listeners
+      }
+      // Ensure sync on every submit button click
+      document.addEventListener('click', function(e) {
+        const btn = e.target.closest('#submitBtnDesktop, #submitBtnMobile');
+        if (btn && window._quickMode) _syncQuickInputs();
+      }, true);
+    })();
   </script>
 
   <!-- Load Pop-up Manager -->
