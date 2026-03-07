@@ -270,6 +270,55 @@
       border-width: 3px;
     }
     
+    /* Kanban horizontal scroll container */
+    .kanban-scroll-container {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 1rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+    }
+    
+    /* Kanban column fixed width */
+    .kanban-column {
+      width: 320px;
+      min-width: 320px;
+      max-width: 320px;
+      flex-shrink: 0;
+      flex-grow: 0;
+    }
+    
+    /* Cancelled order card styling */
+    .kanban-card-cancelled {
+      background: linear-gradient(to right, #fef2f2, #ffffff) !important;
+      border-left: 4px solid #dc2626 !important;
+    }
+    
+    /* Subtle horizontal scrollbar for Kanban */
+    .kanban-scroll-container::-webkit-scrollbar {
+      height: 6px;
+    }
+    
+    .kanban-scroll-container::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+    
+    .kanban-scroll-container::-webkit-scrollbar-thumb {
+      background: #c0c0c0;
+      border-radius: 10px;
+    }
+    
+    .kanban-scroll-container::-webkit-scrollbar-thumb:hover {
+      background: #a0a0a0;
+    }
+    
+    /* Firefox thin scrollbar */
+    .kanban-scroll-container {
+      scrollbar-width: thin;
+      scrollbar-color: #c0c0c0 #f1f1f1;
+    }
+    
     /* Live Chat Styles - Enhanced Design */
     .chat-tab.active {
       color: #ffffff;
@@ -1874,9 +1923,9 @@
         </div>
 
         <!-- Kanban Board View -->
-        <div id="orders-kanban-view" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div id="orders-kanban-view" class="kanban-scroll-container">
           <!-- Column: New -->
-          <div class="bg-blue-50 rounded-xl border-2 border-blue-200 min-h-[500px]" 
+          <div class="kanban-column flex-shrink-0 bg-blue-50 rounded-xl border-2 border-blue-200 min-h-[500px]" 
                ondragover="allowDrop(event)" ondrop="dropOrder(event, 'new')">
             <div class="p-4 border-b border-blue-200 bg-blue-100 rounded-t-xl">
               <div class="flex items-center justify-between">
@@ -1892,7 +1941,7 @@
           </div>
 
           <!-- Column: Paid -->
-          <div class="bg-yellow-50 rounded-xl border-2 border-yellow-200 min-h-[500px]"
+          <div class="kanban-column flex-shrink-0 bg-yellow-50 rounded-xl border-2 border-yellow-200 min-h-[500px]"
                ondragover="allowDrop(event)" ondrop="dropOrder(event, 'paid')">
             <div class="p-4 border-b border-yellow-200 bg-yellow-100 rounded-t-xl">
               <div class="flex items-center justify-between">
@@ -1908,7 +1957,7 @@
           </div>
 
           <!-- Column: Shipped -->
-          <div class="bg-purple-50 rounded-xl border-2 border-purple-200 min-h-[500px]"
+          <div class="kanban-column flex-shrink-0 bg-purple-50 rounded-xl border-2 border-purple-200 min-h-[500px]"
                ondragover="allowDrop(event)" ondrop="dropOrder(event, 'shipped')">
             <div class="p-4 border-b border-purple-200 bg-purple-100 rounded-t-xl">
               <div class="flex items-center justify-between">
@@ -1924,7 +1973,7 @@
           </div>
 
           <!-- Column: Completed -->
-          <div class="bg-green-50 rounded-xl border-2 border-green-200 min-h-[500px]"
+          <div class="kanban-column flex-shrink-0 bg-green-50 rounded-xl border-2 border-green-200 min-h-[500px]"
                ondragover="allowDrop(event)" ondrop="dropOrder(event, 'completed')">
             <div class="p-4 border-b border-green-200 bg-green-100 rounded-t-xl">
               <div class="flex items-center justify-between">
@@ -1935,6 +1984,22 @@
               </div>
             </div>
             <div id="col-completed" class="p-3 space-y-3 max-h-[600px] overflow-y-auto">
+              <!-- Cards will be inserted here -->
+            </div>
+          </div>
+
+          <!-- Column: Cancelled -->
+          <div class="kanban-column flex-shrink-0 bg-red-50 rounded-xl border-2 border-red-200 min-h-[500px]"
+               ondragover="allowDrop(event)" ondrop="dropOrder(event, 'cancelled')">
+            <div class="p-4 border-b border-red-200 bg-red-100 rounded-t-xl border-t-4 border-t-red-600">
+              <div class="flex items-center justify-between">
+                <h4 class="font-bold text-red-800 flex items-center gap-2">
+                  ❌ Відмова/Скасовано
+                </h4>
+                <span id="count-cancelled" class="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full">0</span>
+              </div>
+            </div>
+            <div id="col-cancelled" class="p-3 space-y-3 max-h-[600px] overflow-y-auto">
               <!-- Cards will be inserted here -->
             </div>
           </div>
@@ -15334,7 +15399,7 @@
         'confirmed': 'paid',
         'Підтверджено': 'paid',
         'delivered': 'completed',
-        'cancelled': 'canceled',
+        'canceled': 'cancelled',
         'delivering': 'shipped'
       };
       
@@ -15353,22 +15418,20 @@
 
     // Render Kanban Board
     function renderKanbanBoard(orders) {
-      const columns = ['new', 'paid', 'shipped', 'completed'];
+      const columns = ['new', 'paid', 'shipped', 'completed', 'cancelled'];
       
       // Group orders by status
       const grouped = {
         new: [],
         paid: [],
         shipped: [],
-        completed: []
+        completed: [],
+        cancelled: []
       };
       
       // Normalize status and group orders
       orders.forEach(order => {
         const status = normalizeOrderStatus(order);
-        
-        // Skip canceled orders
-        if (status === 'canceled') return;
         
         if (!grouped[status]) {
           grouped[status] = [];
@@ -15496,7 +15559,9 @@
     // Create Order Card for Kanban
     function createOrderCard(order) {
       const card = document.createElement('div');
-      card.className = 'kanban-card bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-grab hover:shadow-md transition-all duration-200';
+      const isCancelled = order.normalizedStatus === 'cancelled' || order.status === 'cancelled' || order.status === 'canceled';
+      const cancelledClass = isCancelled ? ' kanban-card-cancelled' : '';
+      card.className = 'kanban-card bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-grab hover:shadow-md transition-all duration-200' + cancelledClass;
       card.dataset.orderId = order.id;
       
       updateOrderCardContent(card, order);
@@ -15514,7 +15579,7 @@
       });
       sortableInstances = [];
       
-      const columns = ['new', 'paid', 'shipped', 'completed'];
+      const columns = ['new', 'paid', 'shipped', 'completed', 'cancelled'];
       
       columns.forEach(colId => {
         const colEl = document.getElementById(`col-${colId}`);
@@ -15582,7 +15647,8 @@
                 'new': '🆕 Нове',
                 'paid': '💰 Оплачено',
                 'shipped': '🚚 Відправлено',
-                'completed': '✅ Виконано'
+                'completed': '✅ Виконано',
+                'cancelled': '❌ Відмова/Скасовано'
               };
               
               // Show success toast
@@ -15628,7 +15694,7 @@
     
     // Update column counts manually
     function updateKanbanCounts() {
-      const columns = ['new', 'paid', 'shipped', 'completed'];
+      const columns = ['new', 'paid', 'shipped', 'completed', 'cancelled'];
       columns.forEach(col => {
         const colEl = document.getElementById(`col-${col}`);
         const countEl = document.getElementById(`count-${col}`);
@@ -15957,7 +16023,8 @@
           'shipped': '📦 Передано в доставку',
           'delivering': '🚚 Доставляється',
           'completed': '✔️ Виконано',
-          'canceled': '❌ Скасовано'
+          'canceled': '❌ Скасовано',
+          'cancelled': '❌ Відмова/Скасовано'
         }
 
         // Status colors for dropdown
@@ -15967,7 +16034,8 @@
           'shipped': 'bg-indigo-100 text-indigo-800',
           'delivering': 'bg-orange-100 text-orange-800',
           'completed': 'bg-gray-100 text-gray-800',
-          'canceled': 'bg-red-100 text-red-800'
+          'canceled': 'bg-red-100 text-red-800',
+          'cancelled': 'bg-red-100 text-red-800'
         }
 
         // Update dropdown color
