@@ -896,7 +896,7 @@
             <span class="font-semibold text-base sm:text-lg text-gray-900">💳 Оплата при отриманні — є?</span>
             <i data-lucide="chevron-down" class="w-5 h-5 text-gray-500 transition-transform"></i>
           </button>
-          <div class="accordion-content px-6"><p class="text-gray-600 pb-6">Так, можна!<br><br>Ми просимо передоплату 100 грн, решту — при отриманні.<br><br>⚠️ Комісія Нової Пошти — 20 грн + 2% від суми замовлення.</p></div>
+          <div class="accordion-content px-6"><p id="faq-cod-answer" class="text-gray-600 pb-6">Так, можна!<br><br>Ми просимо передоплату 100 грн, решту — при отриманні.<br><br>⚠️ Комісія Нової Пошти — 20 грн + 2% від суми замовлення.</p></div>
         </div>
         <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
           <button class="accordion-btn w-full flex items-center justify-between p-4 sm:p-6 text-left">
@@ -1139,6 +1139,35 @@
 
   <!-- Load Firebase Initialization (Must be first!) -->
   <script type="module" src="./js/firebase-init.js?v=1770245460083"></script>
+
+  <!-- 💳 Dynamic FAQ: Payment on Delivery answer based on requireDeposit setting -->
+  <script type="module">
+    import { db } from './js/firebase-init.js';
+    import { doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    const COD_ANSWER_WITH_DEPOSIT =
+      'Так, можна!<br><br>Ми просимо передоплату 100 грн, решту — при отриманні.<br><br>⚠️ Комісія Нової Пошти — 20 грн + 2% від суми замовлення.';
+
+    const COD_ANSWER_NO_DEPOSIT =
+      'Так, звичайно 🙂<br>Можна оплатити при отриманні на Новій Пошті.<br>Комісія за накладений платіж — 20 грн + 2% від суми переказу.';
+
+    function updateFaqCodAnswer(requireDeposit) {
+      const el = document.getElementById('faq-cod-answer');
+      if (!el) return;
+      el.innerHTML = requireDeposit ? COD_ANSWER_WITH_DEPOSIT : COD_ANSWER_NO_DEPOSIT;
+    }
+
+    const paymentRef = doc(db, 'settings', 'payment');
+    onSnapshot(paymentRef,
+      (snap) => {
+        const requireDeposit = snap.exists() && snap.data().requireDeposit !== undefined
+          ? snap.data().requireDeposit
+          : true; // safe fallback
+        updateFaqCodAnswer(requireDeposit);
+      },
+      (err) => console.warn('⚠️ [FAQ] Could not load payment setting:', err)
+    );
+  </script>
 
   <!-- 📊 Visitor Device Tracking - Logs ONCE per session -->
   <script src="./js/visitor-tracker.js?v=1770245460083"></script>

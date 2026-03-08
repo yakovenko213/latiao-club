@@ -16818,6 +16818,9 @@
         // ============================================
         renderUTMData(order.utm_data)
 
+        // ⚡ RENDER QUICK CHECKOUT BADGE
+        renderCheckoutModeBadge(order.checkoutMode)
+
         // Show modal
         const modal = document.getElementById('order-details-modal')
         modal.classList.remove('hidden')
@@ -17717,6 +17720,27 @@
           <p class="text-xs text-gray-600 font-medium mb-1">Джерело</p>
           <p class="text-sm text-gray-500 italic">Невідомо</p>
         `
+      }
+    }
+
+    // ============================================
+    // ⚡ QUICK CHECKOUT BADGE RENDERING
+    // ============================================
+
+    window.renderCheckoutModeBadge = function(checkoutMode) {
+      const container = document.getElementById('modal-checkout-mode-badge')
+      if (!container) return
+
+      if (checkoutMode === 'quick') {
+        container.classList.remove('hidden')
+        container.innerHTML = `
+          <span class="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold uppercase tracking-wide border border-red-200">
+            ⚡ ШВИДКЕ ОФОРМЛЕННЯ
+          </span>
+        `
+      } else {
+        container.classList.add('hidden')
+        container.innerHTML = ''
       }
     }
 
@@ -28292,6 +28316,11 @@
               <!-- 🎯 Compact UTM Source Line -->
               <div id="modal-customer-utm" class="pt-2 border-t border-blue-200">
                 <!-- Will be populated dynamically by renderUTMData() -->
+              </div>
+
+              <!-- ⚡ Quick Checkout Badge -->
+              <div id="modal-checkout-mode-badge" class="hidden pt-2">
+                <!-- Will be populated dynamically by renderCheckoutModeBadge() -->
               </div>
 
             </div>

@@ -308,6 +308,14 @@
                   </div>
                 </div>
               </div>
+
+              <!-- COD No-Deposit Breakdown (deposit disabled) -->
+              <div id="cod-no-deposit-breakdown" class="hidden mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div class="flex justify-between items-center text-base font-bold text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30 px-3 py-3 rounded-xl">
+                  <span>📦 До сплати при отриманні:</span>
+                  <span id="cod-no-deposit-total" class="text-xl font-black text-red-600 dark:text-red-300">0 грн</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1073,95 +1081,68 @@
       const prepaymentBreakdownElement = document.getElementById('prepayment-breakdown');
       const prepaymentTotalElement = document.getElementById('prepayment-total');
       const prepaymentRemainingElement = document.getElementById('prepayment-remaining');
-      
+      const codNoDepositBreakdownEl = document.getElementById('cod-no-deposit-breakdown');
+      const codNoDepositTotalEl = document.getElementById('cod-no-deposit-total');
+
       let detectedPaymentMethod = paymentInfo.method || 'cod';
-      
+      const isCodNoDeposit = !!orderData.isCodNoDeposit;
+      const isCodMethod = detectedPaymentMethod === 'Накладений платіж' ||
+                          detectedPaymentMethod === 'cod' ||
+                          detectedPaymentMethod === 'prepayment';
+
       console.log('💳 === PAYMENT INFO DEBUG START ===');
       console.log('💳 Raw payment object:', paymentInfo);
-      console.log('💳 Payment method field:', paymentInfo.method);
-      console.log('💳 Order summary:', orderSummaryContent);
-      console.log('💳 Detected payment method:', detectedPaymentMethod);
-      
-      // ============================================
-      // FORCED PREPAYMENT LOGIC: IF method === "Накладений платіж", FORCE 100 UAH logic
-      // ============================================
-      const isNakladeniyPlatizh = detectedPaymentMethod === 'Накладений платіж' || 
-                                  detectedPaymentMethod === 'cod' ||
-                                  detectedPaymentMethod === 'prepayment';
-      
+      console.log('💳 Payment method:', detectedPaymentMethod);
+      console.log('💳 isCodNoDeposit:', isCodNoDeposit);
+
       // CRITICAL: Use order.summary.total (not order.total)
       const totalFromSummary = Number(orderSummaryContent.total) || 0;
-      
-      console.log('💰 Prepayment detection:', {
-        isNakladeniyPlatizh: isNakladeniyPlatizh,
-        paymentMethod: detectedPaymentMethod,
-        totalFromSummary: totalFromSummary
-      });
-      
-      // Display payment method name
-      if (paymentMethodElement) {
-        // If it's "Накладений платіж" with 100 UAH prepayment, show as "Часткова передоплата"
-        const displayMethodName = (detectedPaymentMethod === 'Накладений платіж' || detectedPaymentMethod === 'cod') 
-                                  ? 'Часткова передоплата' 
-                                  : getPaymentMethodName(detectedPaymentMethod);
-        paymentMethodElement.textContent = displayMethodName;
-        console.log('💳 Display name set to:', displayMethodName);
-      }
-      
-      // ============================================
-      // PREPAYMENT BREAKDOWN: ALWAYS SHOW FOR "Накладений платіж"
-      // ============================================
-      if (isNakladeniyPlatizh && totalFromSummary > 0) {
-        console.log('🧮 === PREPAYMENT CALCULATIONS (FORCED) ===');
-        
-        const paid = 100; // Fixed: 100 UAH prepayment
+
+      // Hide both breakdown sections by default
+      if (prepaymentBreakdownElement) prepaymentBreakdownElement.classList.add('hidden');
+      if (codNoDepositBreakdownEl) codNoDepositBreakdownEl.classList.add('hidden');
+
+      if (isCodMethod && isCodNoDeposit) {
+        // ============================================
+        // COD WITHOUT DEPOSIT — single "pay at post office" row
+        // ============================================
+        if (paymentMethodElement) paymentMethodElement.textContent = 'При отриманні';
+        if (codNoDepositTotalEl) codNoDepositTotalEl.textContent = formatPrice(totalFromSummary);
+        if (codNoDepositBreakdownEl) codNoDepositBreakdownEl.classList.remove('hidden');
+        console.log('📦 COD no-deposit shown, total:', totalFromSummary);
+
+      } else if (isCodMethod && totalFromSummary > 0) {
+        // ============================================
+        // COD WITH 100 UAH DEPOSIT BREAKDOWN
+        // ============================================
+        if (paymentMethodElement) paymentMethodElement.textContent = 'Часткова передоплата';
+
+        const paid = 100;
         const toPay = totalFromSummary - paid;
-        
-        // Check for free delivery (already calculated above)
         const FREE_DELIVERY_THRESHOLD = 1100;
         const hasFreeDelivery = totalFromSummary >= FREE_DELIVERY_THRESHOLD;
-        
-        console.log('🧮 Calculation:', {
-          total: totalFromSummary,
-          paid: paid,
-          toPay: toPay,
-          hasFreeDelivery: hasFreeDelivery
-        });
-        
-        if (prepaymentTotalElement) {
-          prepaymentTotalElement.textContent = formatPrice(totalFromSummary);
-          console.log('✅ Set total to:', formatPrice(totalFromSummary));
-        }
-        
-        // Show free delivery notice in prepayment breakdown if applicable
+
+        if (prepaymentTotalElement) prepaymentTotalElement.textContent = formatPrice(totalFromSummary);
+        if (prepaymentRemainingElement) prepaymentRemainingElement.textContent = formatPrice(toPay);
+
         const freeDeliveryNotice = document.getElementById('free-delivery-notice');
-        if (freeDeliveryNotice) {
-          if (hasFreeDelivery) {
-            freeDeliveryNotice.classList.remove('hidden');
-            console.log('✅ Free delivery notice shown in breakdown');
-          } else {
-            freeDeliveryNotice.classList.add('hidden');
-          }
-        }
-        
-        if (prepaymentRemainingElement) {
-          prepaymentRemainingElement.textContent = formatPrice(toPay);
-          console.log('✅ Set toPay to:', formatPrice(toPay));
-        }
-        
-        if (prepaymentBreakdownElement) {
-          prepaymentBreakdownElement.classList.remove('hidden');
-          console.log('✅ Prepayment breakdown DISPLAYED (with delivery status)');
-        }
-        
-        console.log('🧮 === PREPAYMENT CALCULATIONS END ===');
+        if (freeDeliveryNotice) freeDeliveryNotice.classList.toggle('hidden', !hasFreeDelivery);
+
+        if (prepaymentBreakdownElement) prepaymentBreakdownElement.classList.remove('hidden');
+        console.log('🧮 Prepayment breakdown shown:', { total: totalFromSummary, toPay });
+
       } else {
-        console.log('ℹ️ No prepayment breakdown (standard payment or total = 0)');
-        if (prepaymentBreakdownElement) {
-          prepaymentBreakdownElement.classList.add('hidden');
+        // ============================================
+        // ONLINE / FULL PAYMENT
+        // ============================================
+        if (paymentMethodElement) {
+          paymentMethodElement.textContent = detectedPaymentMethod === 'online'
+            ? 'Повна оплата онлайн'
+            : getPaymentMethodName(detectedPaymentMethod);
         }
+        console.log('ℹ️ No breakdown (online / unknown)');
       }
-      
+
       console.log('💳 === PAYMENT INFO DEBUG END ===');
 
       // Render Customer Info

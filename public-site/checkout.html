@@ -4812,6 +4812,9 @@
           status: 'pending', // pending, confirmed, shipped, delivered, cancelled
           createdAt: serverTimestamp(),
 
+          // Checkout mode: 'quick' (simplified form) or 'full' (standard form)
+          checkoutMode: window._quickMode ? 'quick' : 'full',
+
           // Optional: Store promo code if applied
           promo: promoCodeData
         }
