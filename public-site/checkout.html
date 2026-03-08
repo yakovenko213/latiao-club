@@ -1356,7 +1356,7 @@
     // ============================================
     // FIREBASE IMPORTS - UPDATED WITH CLOUD FUNCTIONS
     // ============================================
-    import { db, collection, addDoc, serverTimestamp, getDocs, query, where, getDoc, doc } from './js/firebase-init.js'
+    import { db, collection, addDoc, serverTimestamp, getDocs, query, where, getDoc, doc, orderBy } from './js/firebase-init.js'
     // Import additional Firestore methods for Mini-CRM
     import { updateDoc, increment, arrayUnion, limit, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
     // NEW: Import Cloud Functions
@@ -2396,6 +2396,12 @@
             console.log('🔥 AGGRESSIVE SAVE: Phone blur triggered')
             saveAbandonedCart()
           }
+
+          // 🔄 RETURNING CUSTOMER: also trigger on blur
+          const blurDigits = phone.replace(/\D/g, '')
+          if (blurDigits.length >= 10) {
+            checkReturningCustomer(phone)
+          }
         })
 
         // ============================================
@@ -2426,8 +2432,188 @@
             console.log('✅ Debounce complete, fetching cashback balance...')
             await fetchUserCashbackBalance(phone)
           }, 600)
+
+          // 🔄 RETURNING CUSTOMER: separate debounce (800ms)
+          if (returningCustomerDebounceTimer) clearTimeout(returningCustomerDebounceTimer)
+          returningCustomerDebounceTimer = setTimeout(() => checkReturningCustomer(phone), 800)
         })
       }
+
+      // ============================================
+      // 🔄 RETURNING CUSTOMER: Debounce timer
+      // ============================================
+      let returningCustomerDebounceTimer = null
+      let _rcLastSearchedPhone = null   // prevent duplicate queries for same phone
+      let _rcLastFoundOrder = null      // cache last found order
+
+      /**
+       * Normalize phone to '380XXXXXXXXX' (12 digits, no +)
+       */
+      function _rcNormalizePhone(phone) {
+        const digits = phone.replace(/\D/g, '')
+        if (digits.startsWith('380') && digits.length === 12) return digits
+        if (digits.startsWith('38') && digits.length === 11) return '3' + digits  // edge: 38 + 9
+        if (digits.startsWith('0') && digits.length === 10) return '38' + digits
+        if (digits.length === 9) return '380' + digits
+        return digits
+      }
+
+      /**
+       * Build human-readable last address from an order document
+       */
+      function _rcBuildAddress(order) {
+        const d = order.delivery || {}
+        const method = (d.method || '').toLowerCase()
+        if (method.includes('нова') || method === 'nova') {
+          return [d.city, d.warehouse].filter(Boolean).join(', ') || d.address || 'Нова Пошта'
+        }
+        if (method.includes('укр') || method === 'ukr') {
+          return [d.city, d.postcode ? `індекс ${d.postcode}` : ''].filter(Boolean).join(', ') || d.address || 'Укрпошта'
+        }
+        return d.address || d.city || 'невідома адреса'
+      }
+
+      /**
+       * Query Firestore for the latest order matching this phone number.
+       * Tries both '+380...' and '380...' variants.
+       */
+      async function _rcFetchLastOrder(rawPhone) {
+        const digits = _rcNormalizePhone(rawPhone)
+        const plusPhone = '+' + digits           // '+380XXXXXXXXX'
+        const noPlus   = digits                  // '380XXXXXXXXX'
+        const localPhone = digits.startsWith('380') ? '0' + digits.slice(3) : null // '0XXXXXXXXX'
+
+        const variants = [plusPhone, noPlus]
+        if (localPhone) variants.push(localPhone)
+
+        for (const variant of variants) {
+          try {
+            const q = query(
+              collection(db, 'orders'),
+              where('customer.phone', '==', variant),
+              orderBy('createdAt', 'desc'),
+              limit(1)
+            )
+            const snap = await getDocs(q)
+            if (!snap.empty) {
+              console.log('[ReturningCustomer] Found order for phone variant:', variant)
+              return snap.docs[0].data()
+            }
+          } catch (err) {
+            // Index missing or other non-critical error — log and continue
+            console.warn('[ReturningCustomer] Query failed for', variant, ':', err.message)
+          }
+        }
+        return null
+      }
+
+      /**
+       * Auto-fill checkout form from the last order object.
+       */
+      function _rcAutofill(order) {
+        const c = order.customer || {}
+        const d = order.delivery  || {}
+
+        // Full name (only if field is empty)
+        const nameEl = document.getElementById('fullName')
+        if (nameEl && !nameEl.value.trim() && c.fullName) nameEl.value = c.fullName
+
+        // Telegram
+        const tgEl = document.getElementById('telegram')
+        if (tgEl && !tgEl.value.trim() && c.telegram) tgEl.value = c.telegram
+
+        // Delivery method detection
+        const methodRaw = (d.method || '').toLowerCase()
+        const isNova = methodRaw.includes('нова') || methodRaw === 'nova'
+        const isUkr  = methodRaw.includes('укр')  || methodRaw === 'ukr'
+
+        if (isNova || isUkr) {
+          const deliveryKey = isNova ? 'nova' : 'ukr'
+          const deliveryCard = document.querySelector(`[data-delivery="${deliveryKey}"]`)
+          if (deliveryCard) deliveryCard.click()
+
+          if (isNova) {
+            const cityEl = document.getElementById('np-city-input')
+            if (cityEl && d.city) {
+              cityEl.value = d.city
+              cityEl.dispatchEvent(new Event('input', { bubbles: true }))
+            }
+            if (d.warehouse) {
+              // Wait briefly so city input handler can fire first
+              setTimeout(() => {
+                const whEl = document.getElementById('np-warehouse-input')
+                if (whEl) {
+                  whEl.removeAttribute('disabled')
+                  whEl.value = d.warehouse
+                }
+              }, 700)
+            }
+          } else {
+            const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val }
+            set('up-region-input',   d.region)
+            set('up-district-input', d.district)
+            set('up-city-input',     d.city)
+            set('up-postcode-input', d.postcode)
+          }
+        }
+
+        showToast('✅ Дані заповнено з попереднього замовлення!', 'success')
+      }
+
+      /**
+       * Show the returning-customer modal with the last address info.
+       */
+      function _rcShowModal(order) {
+        _rcLastFoundOrder = order
+        const lastAddress = _rcBuildAddress(order)
+        const modal = document.getElementById('rc-modal')
+        if (!modal) return
+        document.getElementById('rc-last-address').textContent = lastAddress
+        modal.classList.remove('hidden')
+        // Animate in
+        requestAnimationFrame(() => modal.classList.add('rc-modal-visible'))
+      }
+
+      /**
+       * Hide the returning-customer modal.
+       */
+      function _rcHideModal() {
+        const modal = document.getElementById('rc-modal')
+        if (!modal) return
+        modal.classList.remove('rc-modal-visible')
+        setTimeout(() => modal.classList.add('hidden'), 280)
+      }
+
+      /**
+       * Main entry point: normalize phone, guard duplicates, query Firestore.
+       */
+      async function checkReturningCustomer(rawPhone) {
+        const digits = _rcNormalizePhone(rawPhone)
+        if (digits.length < 10) return
+
+        // Prevent firing again for same phone
+        if (_rcLastSearchedPhone === digits) return
+        _rcLastSearchedPhone = digits
+
+        try {
+          const order = await _rcFetchLastOrder(rawPhone)
+          if (order) _rcShowModal(order)
+        } catch (err) {
+          // Silent — never surface errors to the user
+          console.warn('[ReturningCustomer] Error during lookup:', err)
+        }
+      }
+
+      // Wire up modal buttons (delegated to avoid timing issues)
+      document.addEventListener('click', function (e) {
+        if (e.target.closest('#rc-btn-yes')) {
+          _rcHideModal()
+          if (_rcLastFoundOrder) _rcAutofill(_rcLastFoundOrder)
+        }
+        if (e.target.closest('#rc-btn-no') || e.target.closest('#rc-modal-overlay')) {
+          _rcHideModal()
+        }
+      })
 
       // ============================================
       // 🪙 USE CASHBACK TOGGLE LISTENER (50% rule)
@@ -5816,6 +6002,74 @@
       console.log("✅ Real-time listener attached successfully");
     }
   </script>
+
+  <!-- ============================================
+       🔄 RETURNING CUSTOMER MODAL
+       ============================================ -->
+  <style>
+    #rc-modal {
+      opacity: 0;
+      transform: scale(0.95);
+      transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.34, 1.3, 0.64, 1);
+    }
+    #rc-modal.rc-modal-visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+    /* On mobile push the card up so it clears the sticky submit bar (~88px) */
+    @media (max-width: 1023px) {
+      #rc-modal-card {
+        margin-bottom: 96px;
+      }
+    }
+  </style>
+
+  <div id="rc-modal" class="hidden fixed inset-0 z-[10001] flex items-end sm:items-center justify-center px-4 pb-4 sm:pb-0">
+    <!-- Backdrop -->
+    <div id="rc-modal-overlay" class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+
+    <!-- Card -->
+    <div id="rc-modal-card" class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+      <!-- Gradient header bar -->
+      <div class="h-1.5 bg-gradient-to-r from-orange-400 via-orange-500 to-red-400"></div>
+
+      <div class="p-6">
+        <!-- Icon + Heading -->
+        <div class="flex items-center gap-3 mb-4">
+          <div class="flex-shrink-0 w-12 h-12 rounded-2xl bg-orange-100 flex items-center justify-center text-2xl">
+            😊
+          </div>
+          <div>
+            <h3 class="text-lg font-extrabold text-gray-900">Вітаємо знову!</h3>
+            <p class="text-xs text-gray-400">Ми знайшли ваше попереднє замовлення</p>
+          </div>
+        </div>
+
+        <!-- Message -->
+        <div class="bg-orange-50 border border-orange-100 rounded-2xl p-4 mb-5">
+          <p class="text-sm text-gray-700 leading-relaxed">
+            Минулого разу ви замовляли сюди:
+          </p>
+          <p id="rc-last-address" class="mt-1 text-sm font-semibold text-orange-600 break-words"></p>
+          <p class="mt-3 text-sm text-gray-600">
+            Використати ці дані для цього замовлення?
+          </p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button id="rc-btn-yes"
+            class="flex-1 btn-primary text-white font-bold py-3 px-6 rounded-xl text-sm active:scale-95">
+            ✅ Так, заповнити
+          </button>
+          <button id="rc-btn-no"
+            class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-xl text-sm transition-colors active:scale-95">
+            Ні, я введу нові
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- 🪄 AI Checkout Smart Filler v3.0 -->
   <script src="js/ai-checkout-helper.js"></script>
