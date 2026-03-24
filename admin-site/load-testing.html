@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔥 Load Testing Control Panel | Latiao Admin</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            spicy: '#ff6b00',
+            cyber: {
+              dark: '#0a0a0f',
+              darker: '#050508',
+              accent: '#00ff88',
+              warning: '#ff4444',
+              blue: '#00b4ff'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
+    
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    body {
+      background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%);
+      min-height: 100vh;
+    }
+    
+    /* Matrix/Cyber Background Animation */
+    .cyber-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    
+    .cyber-bg::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(ellipse at 20% 80%, rgba(255, 107, 0, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(0, 255, 136, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(0, 180, 255, 0.05) 0%, transparent 70%);
+    }
+    
+    /* Grid Pattern */
+    .grid-pattern {
+      background-image: 
+        linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+    }
+    
+    /* Glowing Borders */
+    .glow-border {
+      box-shadow: 
+        0 0 0 1px rgba(0, 255, 136, 0.3),
+        0 0 20px rgba(0, 255, 136, 0.1),
+        inset 0 0 30px rgba(0, 0, 0, 0.5);
+    }
+    
+    .glow-red {
+      box-shadow: 
+        0 0 0 1px rgba(255, 68, 68, 0.5),
+        0 0 20px rgba(255, 68, 68, 0.2);
+    }
+    
+    .glow-green {
+      box-shadow: 
+        0 0 0 1px rgba(0, 255, 136, 0.5),
+        0 0 20px rgba(0, 255, 136, 0.2);
+    }
+    
+    /* Pulse Animation for Active Test */
+    @keyframes pulse-cyber {
+      0%, 100% {
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+      }
+      50% {
+        box-shadow: 0 0 40px rgba(0, 255, 136, 0.8), 0 0 60px rgba(0, 255, 136, 0.4);
+      }
+    }
+    
+    .pulse-active {
+      animation: pulse-cyber 1.5s ease-in-out infinite;
+    }
+    
+    /* Button Styles */
+    .btn-start {
+      background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+      color: #000;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+      transition: all 0.3s ease;
+    }
+    
+    .btn-start:hover:not(:disabled) {
+      transform: scale(1.05);
+      box-shadow: 0 0 30px rgba(0, 255, 136, 0.6);
+    }
+    
+    .btn-start:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .btn-stop {
+      background: linear-gradient(135deg, #ff4444 0%, #cc2222 100%);
+      color: white;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-stop:hover:not(:disabled) {
+      transform: scale(1.05);
+      box-shadow: 0 0 30px rgba(255, 68, 68, 0.6);
+    }
+    
+    .btn-stop:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    
+    /* Toggle Switch */
+    .toggle-switch {
+      position: relative;
+      width: 60px;
+      height: 30px;
+    }
+    
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #333;
+      border-radius: 30px;
+      transition: 0.4s;
+      border: 2px solid #444;
+    }
+    
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 2px;
+      bottom: 2px;
+      background: #666;
+      border-radius: 50%;
+      transition: 0.4s;
+    }
+    
+    input:checked + .toggle-slider {
+      background: #00ff88;
+      border-color: #00cc6a;
+    }
+    
+    input:checked + .toggle-slider:before {
+      transform: translateX(30px);
+      background: #000;
+    }
+    
+    /* Log Window */
+    .log-window {
+      background: rgba(0, 0, 0, 0.8);
+      border: 1px solid rgba(0, 255, 136, 0.2);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+    
+    .log-entry {
+      animation: fadeIn 0.3s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateX(-10px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    
+    .log-success { color: #00ff88; }
+    .log-error { color: #ff4444; }
+    .log-warning { color: #ffaa00; }
+    .log-info { color: #00b4ff; }
+    
+    /* Stats Card */
+    .stat-card {
+      background: rgba(20, 20, 30, 0.8);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+    
+    .stat-card:hover {
+      border-color: rgba(0, 255, 136, 0.3);
+      transform: translateY(-2px);
+    }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: #1a1a2e;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: #00ff88;
+      border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: #00cc6a;
+    }
+    
+    /* Input Styles */
+    .cyber-input {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(0, 255, 136, 0.3);
+      color: #fff;
+      transition: all 0.3s ease;
+    }
+    
+    .cyber-input:focus {
+      outline: none;
+      border-color: #00ff88;
+      box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+    }
+    
+    .cyber-select {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(0, 255, 136, 0.3);
+      color: #fff;
+    }
+    
+    /* Progress Bar */
+    .progress-bar {
+      background: linear-gradient(90deg, #00ff88, #00b4ff, #ff6b00);
+      background-size: 200% 100%;
+      animation: progressGradient 2s linear infinite;
+    }
+    
+    @keyframes progressGradient {
+      0% { background-position: 0% 0%; }
+      100% { background-position: 200% 0%; }
+    }
+  </style>
+</head>
+
+<body class="text-white">
+  <!-- Cyber Background -->
+  <div class="cyber-bg"></div>
+  <div class="fixed inset-0 grid-pattern pointer-events-none z-0"></div>
+  
+  <div class="relative z-10 min-h-screen p-4 md:p-8">
+    <!-- Header -->
+    <header class="mb-8">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <a href="index.html" class="text-gray-400 hover:text-white transition">
+            <i data-lucide="arrow-left" class="w-6 h-6"></i>
+          </a>
+          <div>
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-green-400 via-cyan-400 to-orange-500 bg-clip-text text-transparent">
+              🔥 Load Testing Control Panel
+            </h1>
+            <p class="text-gray-400 text-sm mt-1">Тестування навантаження Firestore & Cloud Functions</p>
+          </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+          <div id="connectionStatus" class="flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-yellow-500/20 text-yellow-400">
+            <span class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></span>
+            <span>Підключення...</span>
+          </div>
+        </div>
+      </div>
+    </header>
+    
+    <!-- Safety Warning Banner -->
+    <div class="mb-6 p-4 rounded-xl bg-red-900/30 border border-red-500/50 glow-red">
+      <div class="flex items-start gap-3">
+        <i data-lucide="alert-triangle" class="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5"></i>
+        <div>
+          <h3 class="font-bold text-red-400">⚠️ КРИТИЧНЕ ПОПЕРЕДЖЕННЯ БЕЗПЕКИ</h3>
+          <p class="text-gray-300 text-sm mt-1">
+            Цей тест використовує <strong class="text-green-400">тестову колекцію "stress_test"</strong> для уникнення впливу на production дані.
+            Реальні замовлення, KeyCRM та Monobank API <strong>НЕ</strong> будуть задіяні.
+          </p>
+          <p class="text-gray-400 text-xs mt-2">
+            💡 Для локального тестування рекомендується використовувати Firebase Emulator (127.0.0.1:8080)
+          </p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Left Column: Controls -->
+      <div class="lg:col-span-1 space-y-6">
+        
+        <!-- Test Parameters -->
+        <div class="stat-card rounded-2xl p-6 glow-border">
+          <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+            <i data-lucide="settings" class="w-5 h-5 text-green-400"></i>
+            Параметри тесту
+          </h2>
+          
+          <div class="space-y-5">
+            <!-- Virtual Users -->
+            <div>
+              <label class="block text-sm text-gray-400 mb-2">
+                👥 Кількість віртуальних користувачів
+              </label>
+              <input type="number" id="virtualUsers" value="10" min="1" max="1000"
+                class="cyber-input w-full px-4 py-3 rounded-lg mono text-lg">
+              <div class="flex gap-2 mt-2">
+                <button onclick="setUsers(10)" class="px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-sm">10</button>
+                <button onclick="setUsers(50)" class="px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-sm">50</button>
+                <button onclick="setUsers(100)" class="px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-sm">100</button>
+                <button onclick="setUsers(500)" class="px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-sm">500</button>
+              </div>
+            </div>
+            
+            <!-- Test Duration -->
+            <div>
+              <label class="block text-sm text-gray-400 mb-2">
+                ⏱️ Тривалість тесту (хвилини)
+              </label>
+              <input type="number" id="testDuration" value="1" min="1" max="60"
+                class="cyber-input w-full px-4 py-3 rounded-lg mono text-lg">
+              <div class="flex gap-2 mt-2">
+                <button onclick="setDuration(1)" class="px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-sm">1 хв</button>
+                <button onclick="setDuration(5)" class="px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-sm">5 хв</button>
+                <button onclick="setDuration(10)" class="px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-sm">10 хв</button>
+              </div>
+            </div>
+            
+            <!-- Scenario -->
+            <div>
+              <label class="block text-sm text-gray-400 mb-2">
+                📋 Сценарій тестування
+              </label>
+              <select id="testScenario" class="cyber-select w-full px-4 py-3 rounded-lg">
+                <option value="browse">🔍 Simple Browsing (тільки читання)</option>
+                <option value="cart" selected>🛒 Add to Cart (запис у кошик)</option>
+                <option value="checkout">💳 Full Checkout Simulation</option>
+              </select>
+            </div>
+            
+            <!-- Batch Size -->
+            <div>
+              <label class="block text-sm text-gray-400 mb-2">
+                📦 Розмір batch (паралельні запити)
+              </label>
+              <input type="number" id="batchSize" value="5" min="1" max="50"
+                class="cyber-input w-full px-4 py-3 rounded-lg mono">
+              <p class="text-xs text-gray-500 mt-1">Менший batch = повільніше, але стабільніше</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Safety Lock -->
+        <div class="stat-card rounded-2xl p-6" id="safetyLockCard">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <i data-lucide="shield-alert" class="w-6 h-6 text-red-400"></i>
+              <div>
+                <h3 class="font-bold">🔒 Запобіжник безпеки</h3>
+                <p class="text-xs text-gray-400">Увімкніть, щоб розблокувати START</p>
+              </div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="safetyLock" onchange="updateSafetyLock()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Control Buttons -->
+        <div class="grid grid-cols-2 gap-4">
+          <button id="startBtn" onclick="startTest()" disabled
+            class="btn-start py-4 rounded-xl font-bold text-xl flex items-center justify-center gap-2">
+            <i data-lucide="play" class="w-6 h-6"></i>
+            START
+          </button>
+          <button id="stopBtn" onclick="stopTest()" disabled
+            class="btn-stop py-4 rounded-xl font-bold text-xl flex items-center justify-center gap-2">
+            <i data-lucide="square" class="w-6 h-6"></i>
+            STOP
+          </button>
+        </div>
+        
+        <!-- Test Progress -->
+        <div id="progressSection" class="stat-card rounded-2xl p-4 hidden">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm text-gray-400">Прогрес тесту</span>
+            <span id="progressPercent" class="mono text-green-400">0%</span>
+          </div>
+          <div class="h-3 bg-gray-800 rounded-full overflow-hidden">
+            <div id="progressBar" class="h-full progress-bar rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+          <div class="flex justify-between mt-2 text-xs text-gray-500">
+            <span id="elapsedTime">00:00</span>
+            <span id="remainingTime">--:--</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Middle Column: Charts -->
+      <div class="lg:col-span-1 space-y-6">
+        <!-- Response Time Chart -->
+        <div class="stat-card rounded-2xl p-6">
+          <h3 class="font-bold mb-4 flex items-center gap-2">
+            <i data-lucide="activity" class="w-5 h-5 text-cyan-400"></i>
+            Час відповіді (мс)
+          </h3>
+          <div class="h-48">
+            <canvas id="latencyChart"></canvas>
+          </div>
+        </div>
+        
+        <!-- Success Rate Chart -->
+        <div class="stat-card rounded-2xl p-6">
+          <h3 class="font-bold mb-4 flex items-center gap-2">
+            <i data-lucide="pie-chart" class="w-5 h-5 text-green-400"></i>
+            Успішність запитів
+          </h3>
+          <div class="h-48">
+            <canvas id="successChart"></canvas>
+          </div>
+        </div>
+        
+        <!-- Active Users Chart -->
+        <div class="stat-card rounded-2xl p-6">
+          <h3 class="font-bold mb-4 flex items-center gap-2">
+            <i data-lucide="users" class="w-5 h-5 text-orange-400"></i>
+            Активні користувачі
+          </h3>
+          <div class="h-48">
+            <canvas id="usersChart"></canvas>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Right Column: Stats & Logs -->
+      <div class="lg:col-span-1 space-y-6">
+        <!-- Live Stats -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="stat-card rounded-xl p-4 text-center">
+            <div class="text-3xl font-bold mono text-green-400" id="totalRequests">0</div>
+            <div class="text-xs text-gray-400 mt-1">Всього запитів</div>
+          </div>
+          <div class="stat-card rounded-xl p-4 text-center">
+            <div class="text-3xl font-bold mono text-cyan-400" id="avgLatency">0</div>
+            <div class="text-xs text-gray-400 mt-1">Avg Latency (ms)</div>
+          </div>
+          <div class="stat-card rounded-xl p-4 text-center">
+            <div class="text-3xl font-bold mono text-green-400" id="successCount">0</div>
+            <div class="text-xs text-gray-400 mt-1">✅ Успішних</div>
+          </div>
+          <div class="stat-card rounded-xl p-4 text-center">
+            <div class="text-3xl font-bold mono text-red-400" id="errorCount">0</div>
+            <div class="text-xs text-gray-400 mt-1">❌ Помилок</div>
+          </div>
+          <div class="stat-card rounded-xl p-4 text-center">
+            <div class="text-3xl font-bold mono text-orange-400" id="activeUsers">0</div>
+            <div class="text-xs text-gray-400 mt-1">👥 Активних</div>
+          </div>
+          <div class="stat-card rounded-xl p-4 text-center">
+            <div class="text-3xl font-bold mono" id="successRate">0%</div>
+            <div class="text-xs text-gray-400 mt-1">📊 Success Rate</div>
+          </div>
+        </div>
+        
+        <!-- Peak Stats -->
+        <div class="stat-card rounded-2xl p-4">
+          <h3 class="font-bold mb-3 text-sm">📈 Пікові показники</h3>
+          <div class="grid grid-cols-2 gap-3 text-sm">
+            <div class="flex justify-between">
+              <span class="text-gray-400">Max Latency:</span>
+              <span class="mono text-yellow-400" id="maxLatency">0 ms</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Min Latency:</span>
+              <span class="mono text-green-400" id="minLatency">0 ms</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">RPS (зараз):</span>
+              <span class="mono text-cyan-400" id="currentRPS">0</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Peak RPS:</span>
+              <span class="mono text-orange-400" id="peakRPS">0</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Live Log -->
+        <div class="stat-card rounded-2xl p-4 flex flex-col" style="height: 350px;">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold flex items-center gap-2">
+              <i data-lucide="terminal" class="w-5 h-5 text-green-400"></i>
+              Live Log
+            </h3>
+            <button onclick="clearLogs()" class="text-xs text-gray-400 hover:text-white px-2 py-1 rounded bg-gray-700">
+              Clear
+            </button>
+          </div>
+          <div id="logWindow" class="log-window flex-1 rounded-lg p-3 overflow-y-auto">
+            <div class="log-entry log-info">[System] Load Testing Panel ініціалізовано</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="mt-8 text-center text-gray-500 text-sm">
+      <p>🔧 Latiao Load Testing Tool v1.0 | Використовує тестову колекцію <code class="text-green-400">stress_test</code></p>
+    </footer>
+  </div>
+
+  <!-- UI Helper Functions (must be loaded before module) -->
+  <script>
+    // ============================================
+    // LOGGING FUNCTIONS
+    // ============================================
+    function log(message, type = 'info') {
+      const logWindow = document.getElementById('logWindow');
+      if (!logWindow) {
+        console.log(`[${type}] ${message}`);
+        return;
+      }
+      const time = new Date().toLocaleTimeString('uk-UA');
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${type}`;
+      entry.innerHTML = `<span class="text-gray-500">[${time}]</span> ${message}`;
+      logWindow.appendChild(entry);
+      logWindow.scrollTop = logWindow.scrollHeight;
+      
+      // Keep only last 100 entries
+      while (logWindow.children.length > 100) {
+        logWindow.removeChild(logWindow.firstChild);
+      }
+    }
+
+    function clearLogs() {
+      document.getElementById('logWindow').innerHTML = 
+        '<div class="log-entry log-info">[System] Лог очищено</div>';
+    }
+
+    function updateConnectionStatus(mode) {
+      const el = document.getElementById('connectionStatus');
+      if (mode === 'emulator') {
+        el.innerHTML = `
+          <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+          <span>Emulator Mode</span>
+        `;
+        el.className = 'flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-cyan-500/20 text-cyan-400';
+      } else {
+        el.innerHTML = `
+          <span class="w-2 h-2 rounded-full bg-green-400"></span>
+          <span>Production</span>
+        `;
+        el.className = 'flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-green-500/20 text-green-400';
+      }
+    }
+
+    // ============================================
+    // UI HELPERS
+    // ============================================
+    function setUsers(n) {
+      document.getElementById('virtualUsers').value = n;
+    }
+
+    function setDuration(n) {
+      document.getElementById('testDuration').value = n;
+    }
+
+    function updateSafetyLock() {
+      const locked = document.getElementById('safetyLock').checked;
+      const startBtn = document.getElementById('startBtn');
+      const card = document.getElementById('safetyLockCard');
+      
+      if (locked) {
+        startBtn.disabled = false;
+        card.classList.add('glow-green');
+        card.classList.remove('glow-red');
+        log('🔓 Запобіжник знято. START розблоковано.', 'warning');
+      } else {
+        startBtn.disabled = true;
+        card.classList.remove('glow-green');
+        card.classList.add('glow-red');
+      }
+    }
+
+    // Placeholder functions - will be overwritten by module
+    window.startTest = function() {
+      log('⏳ Завантаження модуля Firebase...', 'warning');
+    }
+    window.stopTest = function() {
+      log('⏳ Модуль ще не завантажено', 'warning');
+    }
+  </script>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'
+    import { 
+      getFirestore, 
+      collection, 
+      doc, 
+      getDocs, 
+      getDoc,
+      setDoc,
+      addDoc,
+      query, 
+      limit,
+      orderBy,
+      connectFirestoreEmulator,
+      serverTimestamp
+    } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
+
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyQvItRyL4IKl9NmEItswwPOEiKAbWkMw",
+      authDomain: "my-magazin-81c96.firebaseapp.com",
+      projectId: "my-magazin-81c96",
+      storageBucket: "my-magazin-81c96.firebasestorage.app",
+      messagingSenderId: "129061757346",
+      appId: "1:129061757346:web:3e7bc5838cc5f7bda992fb"
+    }
+
+    const app = initializeApp(firebaseConfig)
+    const db = getFirestore(app)
+
+    // Check for local/emulator mode
+    const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    
+    if (isLocal) {
+      try {
+        connectFirestoreEmulator(db, '127.0.0.1', 8080);
+        log('Підключено до Firestore Emulator (127.0.0.1:8080)', 'success');
+        updateConnectionStatus('emulator');
+      } catch (e) {
+        log('Emulator вже підключено або помилка: ' + e.message, 'warning');
+        updateConnectionStatus('emulator');
+      }
+    } else {
+      log('Підключено до Production Firestore', 'info');
+      updateConnectionStatus('production');
+    }
+
+    // ============================================
+    // STATE MANAGEMENT
+    // ============================================
+    let testRunning = false;
+    let testAborted = false;
+    let stats = {
+      totalRequests: 0,
+      successCount: 0,
+      errorCount: 0,
+      latencies: [],
+      activeUsers: 0,
+      startTime: null,
+      requestsPerSecond: []
+    };
+
+    // Charts
+    let latencyChart, successChart, usersChart;
+    let chartData = {
+      labels: [],
+      latency: [],
+      success: [],
+      errors: [],
+      users: []
+    };
+
+    // ============================================
+    // CHART INITIALIZATION
+    // ============================================
+    function initCharts() {
+      const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 300 },
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          x: {
+            display: false
+          },
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(255,255,255,0.05)'
+            },
+            ticks: {
+              color: '#666',
+              font: { family: 'JetBrains Mono', size: 10 }
+            }
+          }
+        }
+      };
+
+      // Latency Chart
+      latencyChart = new Chart(document.getElementById('latencyChart'), {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            data: [],
+            borderColor: '#00b4ff',
+            backgroundColor: 'rgba(0, 180, 255, 0.1)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 0
+          }]
+        },
+        options: chartOptions
+      });
+
+      // Success Chart (Stacked bar)
+      successChart = new Chart(document.getElementById('successChart'), {
+        type: 'bar',
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: 'Success',
+              data: [],
+              backgroundColor: '#00ff88'
+            },
+            {
+              label: 'Errors',
+              data: [],
+              backgroundColor: '#ff4444'
+            }
+          ]
+        },
+        options: {
+          ...chartOptions,
+          scales: {
+            ...chartOptions.scales,
+            x: { stacked: true, display: false },
+            y: { ...chartOptions.scales.y, stacked: true }
+          }
+        }
+      });
+
+      // Users Chart
+      usersChart = new Chart(document.getElementById('usersChart'), {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            data: [],
+            borderColor: '#ff6b00',
+            backgroundColor: 'rgba(255, 107, 0, 0.1)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 0
+          }]
+        },
+        options: chartOptions
+      });
+    }
+
+    function updateStats() {
+      document.getElementById('totalRequests').textContent = stats.totalRequests;
+      document.getElementById('successCount').textContent = stats.successCount;
+      document.getElementById('errorCount').textContent = stats.errorCount;
+      document.getElementById('activeUsers').textContent = stats.activeUsers;
+      
+      const rate = stats.totalRequests > 0 
+        ? ((stats.successCount / stats.totalRequests) * 100).toFixed(1) 
+        : 0;
+      document.getElementById('successRate').textContent = rate + '%';
+      document.getElementById('successRate').className = 
+        `text-3xl font-bold mono ${rate >= 95 ? 'text-green-400' : rate >= 80 ? 'text-yellow-400' : 'text-red-400'}`;
+
+      if (stats.latencies.length > 0) {
+        const avg = Math.round(stats.latencies.reduce((a, b) => a + b, 0) / stats.latencies.length);
+        const max = Math.max(...stats.latencies);
+        const min = Math.min(...stats.latencies);
+        
+        document.getElementById('avgLatency').textContent = avg;
+        document.getElementById('maxLatency').textContent = max + ' ms';
+        document.getElementById('minLatency').textContent = min + ' ms';
+      }
+    }
+
+    function updateCharts(timestamp) {
+      const label = new Date().toLocaleTimeString('uk-UA', { minute: '2-digit', second: '2-digit' });
+      const maxPoints = 30;
+
+      // Latency
+      const recentLatencies = stats.latencies.slice(-10);
+      const avgLatency = recentLatencies.length > 0 
+        ? Math.round(recentLatencies.reduce((a, b) => a + b, 0) / recentLatencies.length)
+        : 0;
+      
+      latencyChart.data.labels.push(label);
+      latencyChart.data.datasets[0].data.push(avgLatency);
+      if (latencyChart.data.labels.length > maxPoints) {
+        latencyChart.data.labels.shift();
+        latencyChart.data.datasets[0].data.shift();
+      }
+      latencyChart.update('none');
+
+      // Success/Error
+      successChart.data.labels.push(label);
+      successChart.data.datasets[0].data.push(stats.successCount);
+      successChart.data.datasets[1].data.push(stats.errorCount);
+      if (successChart.data.labels.length > maxPoints) {
+        successChart.data.labels.shift();
+        successChart.data.datasets[0].data.shift();
+        successChart.data.datasets[1].data.shift();
+      }
+      successChart.update('none');
+
+      // Users
+      usersChart.data.labels.push(label);
+      usersChart.data.datasets[0].data.push(stats.activeUsers);
+      if (usersChart.data.labels.length > maxPoints) {
+        usersChart.data.labels.shift();
+        usersChart.data.datasets[0].data.shift();
+      }
+      usersChart.update('none');
+    }
+
+    // ============================================
+    // TEST SCENARIOS
+    // ============================================
+    
+    // ============================================
+    // MOCK PRODUCTS for load testing (no DB dependency)
+    // ============================================
+    const mockProducts = [
+      { id: 'prod_001', name: 'Латяо Класичне 100г', price: 89, sku: 'LAT-001' },
+      { id: 'prod_002', name: 'Латяо Гостре 100г', price: 99, sku: 'LAT-002' },
+      { id: 'prod_003', name: 'Латяо Екстра Гостре 100г', price: 109, sku: 'LAT-003' },
+      { id: 'prod_004', name: 'Латяо Сирне 100г', price: 119, sku: 'LAT-004' },
+      { id: 'prod_005', name: 'Латяо Мікс 200г', price: 179, sku: 'LAT-005' },
+      { id: 'prod_006', name: 'Латяо BBQ 100г', price: 99, sku: 'LAT-006' },
+      { id: 'prod_007', name: 'Латяо Томатне 100г', price: 89, sku: 'LAT-007' },
+      { id: 'prod_008', name: 'Латяо Преміум Набір', price: 299, sku: 'LAT-008' },
+    ];
+
+    function getRandomProduct() {
+      return mockProducts[Math.floor(Math.random() * mockProducts.length)];
+    }
+
+    function getRandomProducts(count) {
+      const shuffled = [...mockProducts].sort(() => 0.5 - Math.random());
+      return shuffled.slice(0, Math.min(count, mockProducts.length));
+    }
+
+    // Scenario: Simple Browsing (read from stress_test collection)
+    async function scenarioBrowsing(userId) {
+      const start = performance.now();
+      try {
+        // Read from stress_test to simulate DB load
+        const q = query(collection(db, 'stress_test'), limit(10));
+        const snapshot = await getDocs(q);
+        const latency = Math.round(performance.now() - start);
+        stats.latencies.push(latency);
+        stats.successCount++;
+        stats.totalRequests++;
+        return { success: true, latency, items: snapshot.size };
+      } catch (error) {
+        const latency = Math.round(performance.now() - start);
+        stats.latencies.push(latency);
+        stats.errorCount++;
+        stats.totalRequests++;
+        throw error;
+      }
+    }
+
+    // Scenario: Add to Cart (write to stress_test)
+    async function scenarioAddToCart(userId) {
+      const start = performance.now();
+      try {
+        // Use mock product (no DB read needed)
+        const randomProduct = getRandomProduct();
+
+        // Add to "cart" in stress_test collection
+        const cartRef = doc(db, 'stress_test', `cart_${userId}_${Date.now()}`);
+        await setDoc(cartRef, {
+          type: 'cart_item',
+          userId: `test_user_${userId}`,
+          productId: randomProduct.id,
+          productName: randomProduct.name,
+          productSku: randomProduct.sku,
+          price: randomProduct.price,
+          quantity: Math.floor(Math.random() * 3) + 1,
+          timestamp: serverTimestamp(),
+          testRun: stats.startTime
+        });
+
+        const latency = Math.round(performance.now() - start);
+        stats.latencies.push(latency);
+        stats.successCount++;
+        stats.totalRequests++;
+        return { success: true, latency, product: randomProduct.id };
+      } catch (error) {
+        const latency = Math.round(performance.now() - start);
+        stats.latencies.push(latency);
+        stats.errorCount++;
+        stats.totalRequests++;
+        throw error;
+      }
+    }
+
+    // Scenario: Full Checkout Simulation
+    async function scenarioFullCheckout(userId) {
+      const start = performance.now();
+      try {
+        // Use mock products
+        const cartItems = getRandomProducts(3).map(p => ({
+          productId: p.id,
+          name: p.name,
+          sku: p.sku,
+          price: p.price,
+          quantity: Math.floor(Math.random() * 2) + 1
+        }));
+
+        // 2. Calculate total
+        const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+        // 3. Create test order in stress_test collection
+        const orderRef = await addDoc(collection(db, 'stress_test'), {
+          type: 'test_order',
+          userId: `test_user_${userId}`,
+          items: cartItems,
+          itemCount: cartItems.length,
+          total: total,
+          status: 'test_pending',
+          customerName: `Test User ${userId}`,
+          customerPhone: `+38099${String(userId).padStart(7, '0')}`,
+          customerEmail: `test${userId}@loadtest.local`,
+          deliveryAddress: `Test Address ${userId}, Київ`,
+          deliveryMethod: 'nova_poshta',
+          paymentMethod: Math.random() > 0.5 ? 'card' : 'cash',
+          timestamp: serverTimestamp(),
+          testRun: stats.startTime,
+          note: '⚠️ LOAD TEST ORDER - DO NOT PROCESS'
+        });
+
+        const latency = Math.round(performance.now() - start);
+        stats.latencies.push(latency);
+        stats.successCount++;
+        stats.totalRequests++;
+        return { success: true, latency, orderId: orderRef.id };
+      } catch (error) {
+        const latency = Math.round(performance.now() - start);
+        stats.latencies.push(latency);
+        stats.errorCount++;
+        stats.totalRequests++;
+        throw error;
+      }
+    }
+
+    // ============================================
+    // MAIN TEST EXECUTION
+    // ============================================
+    window.startTest = async function() {
+      if (testRunning) return;
+      
+      const virtualUsers = parseInt(document.getElementById('virtualUsers').value);
+      const durationMin = parseInt(document.getElementById('testDuration').value);
+      const scenario = document.getElementById('testScenario').value;
+      const batchSize = parseInt(document.getElementById('batchSize').value);
+      
+      const durationMs = durationMin * 60 * 1000;
+      
+      // Reset stats
+      stats = {
+        totalRequests: 0,
+        successCount: 0,
+        errorCount: 0,
+        latencies: [],
+        activeUsers: 0,
+        startTime: Date.now(),
+        requestsPerSecond: []
+      };
+
+      // Reset charts
+      latencyChart.data.labels = [];
+      latencyChart.data.datasets[0].data = [];
+      successChart.data.labels = [];
+      successChart.data.datasets[0].data = [];
+      successChart.data.datasets[1].data = [];
+      usersChart.data.labels = [];
+      usersChart.data.datasets[0].data = [];
+
+      testRunning = true;
+      testAborted = false;
+
+      // UI Updates
+      document.getElementById('startBtn').disabled = true;
+      document.getElementById('stopBtn').disabled = false;
+      document.getElementById('progressSection').classList.remove('hidden');
+      document.getElementById('startBtn').classList.add('pulse-active');
+
+      log(`🚀 Запуск тесту: ${virtualUsers} користувачів, ${durationMin} хв, сценарій: ${scenario}`, 'success');
+      log(`📦 Batch size: ${batchSize}, інтервал: ~${Math.round(durationMs / (virtualUsers / batchSize))}ms`, 'info');
+
+      const scenarioFn = {
+        'browse': scenarioBrowsing,
+        'cart': scenarioAddToCart,
+        'checkout': scenarioFullCheckout
+      }[scenario];
+
+      const startTime = Date.now();
+      const endTime = startTime + durationMs;
+      let userId = 0;
+      let lastRPSCheck = Date.now();
+      let requestsSinceLastCheck = 0;
+      let peakRPS = 0;
+
+      // Chart update interval
+      const chartInterval = setInterval(() => {
+        if (!testRunning) return;
+        updateCharts();
+        updateStats();
+
+        // Calculate RPS
+        const now = Date.now();
+        const elapsed = (now - lastRPSCheck) / 1000;
+        if (elapsed >= 1) {
+          const rps = Math.round(requestsSinceLastCheck / elapsed);
+          document.getElementById('currentRPS').textContent = rps;
+          if (rps > peakRPS) {
+            peakRPS = rps;
+            document.getElementById('peakRPS').textContent = rps;
+          }
+          requestsSinceLastCheck = 0;
+          lastRPSCheck = now;
+        }
+      }, 1000);
+
+      // Progress update interval
+      const progressInterval = setInterval(() => {
+        if (!testRunning) return;
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min((elapsed / durationMs) * 100, 100);
+        document.getElementById('progressBar').style.width = progress + '%';
+        document.getElementById('progressPercent').textContent = progress.toFixed(1) + '%';
+        
+        const elapsedSec = Math.floor(elapsed / 1000);
+        const remainingSec = Math.max(0, Math.floor((durationMs - elapsed) / 1000));
+        document.getElementById('elapsedTime').textContent = 
+          `${Math.floor(elapsedSec / 60).toString().padStart(2, '0')}:${(elapsedSec % 60).toString().padStart(2, '0')}`;
+        document.getElementById('remainingTime').textContent = 
+          `${Math.floor(remainingSec / 60).toString().padStart(2, '0')}:${(remainingSec % 60).toString().padStart(2, '0')}`;
+      }, 500);
+
+      // Main execution loop
+      try {
+        while (Date.now() < endTime && !testAborted) {
+          // Create batch of virtual users
+          const batch = [];
+          for (let i = 0; i < batchSize && userId < virtualUsers; i++) {
+            userId++;
+            stats.activeUsers++;
+            batch.push(
+              scenarioFn(userId)
+                .then(result => {
+                  stats.activeUsers--;
+                  requestsSinceLastCheck++;
+                  if (Math.random() < 0.1) { // Log 10% of successes
+                    log(`✅ User ${userId}: ${result.latency}ms`, 'success');
+                  }
+                })
+                .catch(error => {
+                  stats.activeUsers--;
+                  requestsSinceLastCheck++;
+                  log(`❌ User ${userId}: ${error.message}`, 'error');
+                })
+            );
+          }
+
+          // Execute batch
+          await Promise.all(batch);
+
+          // If we've gone through all users, reset for another cycle
+          if (userId >= virtualUsers) {
+            userId = 0;
+          }
+
+          // Small delay between batches to control rate
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      } catch (error) {
+        log(`💥 Критична помилка: ${error.message}`, 'error');
+      }
+
+      // Cleanup
+      clearInterval(chartInterval);
+      clearInterval(progressInterval);
+      testRunning = false;
+
+      // Final UI updates
+      document.getElementById('startBtn').disabled = !document.getElementById('safetyLock').checked;
+      document.getElementById('stopBtn').disabled = true;
+      document.getElementById('startBtn').classList.remove('pulse-active');
+      document.getElementById('progressBar').style.width = '100%';
+      document.getElementById('progressPercent').textContent = '100%';
+
+      updateStats();
+      updateCharts();
+
+      if (testAborted) {
+        log('🛑 Тест зупинено вручну', 'warning');
+      } else {
+        log(`✅ Тест завершено! Всього: ${stats.totalRequests}, Успішних: ${stats.successCount}, Помилок: ${stats.errorCount}`, 'success');
+      }
+
+      // Final summary
+      const avgLatency = stats.latencies.length > 0 
+        ? Math.round(stats.latencies.reduce((a, b) => a + b, 0) / stats.latencies.length)
+        : 0;
+      log(`📊 Середній час відповіді: ${avgLatency}ms, Peak RPS: ${peakRPS}`, 'info');
+    }
+
+    window.stopTest = function() {
+      if (!testRunning) return;
+      testAborted = true;
+      log('⏹️ Зупинка тесту...', 'warning');
+    }
+
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+    function init() {
+      lucide.createIcons();
+      initCharts();
+      log('✅ Панель готова до роботи', 'success');
+    }
+
+    // Run init when DOM is ready (module scripts are deferred)
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+</html>

@@ -357,26 +357,16 @@
        VIEW: HOME (Main Storefront Content)
        ============================================ -->
   <div id="view-home">
-  <section class="relative min-h-screen flex items-center pt-20 lg:pt-0 overflow-hidden">
-    <div class="absolute top-20 left-10 text-8xl opacity-10 fire-accent">🌶️</div>
-    <div class="absolute bottom-20 right-10 text-7xl opacity-10 fire-accent" style="animation-delay: 0.5s;">🔥</div>
-    
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
-      <div class="max-w-4xl mx-auto text-center">
-        <div class="inline-flex items-center gap-2 bg-spicy/10 text-spicy px-4 py-2 rounded-full text-sm font-semibold mb-6">
-          <span class="fire-accent">🔥</span><span>Оригінальні снеки з Китаю</span>
-        </div>
-        <h1 class="text-3xl sm:text-5xl lg:text-7xl font-black text-gray-900 leading-tight mb-6">
-          Latiao Snack — <span class="text-spicy">гострі снеки</span>, які вибирає вся Україна
-        </h1>
-        <p class="text-base sm:text-xl lg:text-2xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
-          Оригінальні китайські латяо з доставкою по всій Україні. Спробуй справжній смак Азії!
-        </p>
-        <div class="flex items-center justify-center">
-          <a href="https://my-magazin-81c96.web.app/category.html?slug=us-tovari" class="btn-primary fire-gradient text-white px-8 py-4 rounded-2xl font-bold text-lg shadow-lg shadow-spicy/30 w-full sm:w-auto">Дивитись асортимент</a>
-        </div>
-      </div>
-    </div>
+  <!-- Головний банер (адаптивний) -->
+  <section class="w-full pt-16 lg:pt-20">
+    <a href="category.html?slug=us-tovari" class="block w-full cursor-pointer relative group">
+      <picture>
+        <source media="(min-width: 768px)" srcset="/images/banner-desktop.jpg">
+        <img src="/images/banner-mobile.jpg" alt="Оригінальні китайські латяо з доставкою по всій Україні" class="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-[1.01]">
+      </picture>
+      <!-- Запасна кнопка на банері, опціонально якщо на картинці її немає -->
+      <!-- <span class="absolute bottom-6 left-1/2 -translate-x-1/2 btn-primary fire-gradient text-white px-8 py-4 rounded-2xl font-bold text-lg shadow-lg shadow-spicy/30 whitespace-nowrap">Дивитись асортимент</span> -->
+    </a>
   </section>
 
   <section class="py-10 lg:py-24 bg-gray-50">
@@ -582,63 +572,67 @@
         <h2 class="text-3xl lg:text-5xl font-bold text-gray-900 mb-4">🌶️ Чому обирають <span class="bg-gradient-to-r from-spicy to-fire bg-clip-text text-transparent">Latiao Snack</span></h2>
       </div>
       
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-y-12 gap-x-8 max-w-6xl mx-auto mt-12">
         
-        <!-- Card 1: 30,000+ packages -->
-        <div class="group bg-gradient-to-br from-white to-blue-50 p-6 lg:p-8 rounded-2xl border border-blue-100 shadow-lg hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-200/50 transition-all duration-500 text-center fade-in">
-          <div class="text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">📦</div>
-          <div class="text-4xl font-extrabold bg-gradient-to-r from-spicy to-fire bg-clip-text text-transparent mb-2 group-hover:scale-105 transition-transform duration-300">30 000+</div>
-          <p class="text-gray-700 font-semibold flex items-center justify-center gap-1.5">
-            пачок продано по всій Україні 
-            <svg class="w-5 h-5 inline-block" viewBox="0 0 24 24" fill="none">
-              <rect width="24" height="24" rx="2" fill="#0057B7"/>
-              <rect y="12" width="24" height="12" rx="0" fill="#FFD700"/>
+        <div class="flex flex-col items-center text-center">
+          <div class="w-16 h-16 bg-orange-50 flex items-center justify-center rounded-3xl text-orange-500 mb-5 shadow-sm border border-orange-100">
+            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M21 16.5C21 16.88 20.79 17.21 20.47 17.38L12.5 21.82C12.19 21.99 11.81 21.99 11.5 21.82L3.53 17.38C3.21 17.21 3 16.88 3 16.5V7.5C3 7.12 3.21 6.79 3.53 6.62L11.5 2.18C11.81 2.01 12.19 2.01 12.5 2.18L20.47 6.62C20.79 6.79 21 7.12 21 7.5V16.5ZM12 4.15L5.6 7.71L12 11.27L18.4 7.71L12 4.15ZM19 8.89L13 12.22V19.35L19 16.01V8.89ZM5 8.89V16.01L11 19.35V12.22L5 8.89Z"/></svg>
+          </div>
+          <div class="text-3xl font-black text-gray-900 mb-2 tracking-tight">30 000+</div>
+          <p class="text-gray-600 font-medium">пачок продано по всій Україні</p>
+        </div>
+
+        <div class="flex flex-col items-center text-center">
+          <div class="w-16 h-16 bg-blue-50 flex items-center justify-center rounded-3xl text-blue-500 mb-5 shadow-sm border border-blue-100">
+            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11C17.66 11 18.99 9.66 18.99 8C18.99 6.34 17.66 5 16 5C14.34 5 13 6.34 13 8C13 9.66 14.34 11 16 11ZM8 11C9.66 11 10.99 9.66 10.99 8C10.99 6.34 9.66 5 8 5C6.34 5 5 6.34 5 8C5 9.66 6.34 11 8 11ZM8 13C5.67 13 1 14.17 1 16.5V19H15V16.5C15 14.17 10.33 13 8 13ZM16 13C15.71 13 15.38 13.02 15.03 13.05C16.19 13.89 17 15.02 17 16.5V19H23V16.5C23 14.17 18.33 13 16 13Z"/></svg>
+          </div>
+          <div class="text-3xl font-black text-gray-900 mb-2 tracking-tight">6 000+</div>
+          <p class="text-gray-600 font-medium">постійних клієнтів, які повертаються знову</p>
+        </div>
+
+        <div class="flex flex-col items-center text-center">
+          <div class="w-16 h-16 bg-gray-900 flex items-center justify-center rounded-3xl text-yellow-400 mb-5 shadow-md">
+            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
             </svg>
-          </p>
+          </div>
+          <div class="text-spicy font-bold text-sm tracking-widest uppercase mb-2">ТОП 🔥</div>
+          <p class="text-gray-900 font-bold text-lg">Ми — №1 серед любителів Латяо в Україні</p>
         </div>
-        
-        <!-- Card 2: 6,000+ customers -->
-        <div class="group bg-gradient-to-br from-white to-purple-50 p-6 lg:p-8 rounded-2xl border border-purple-100 shadow-lg hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-200/50 transition-all duration-500 text-center fade-in" style="transition-delay: 0.1s;">
-          <div class="text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">👥</div>
-          <div class="text-4xl font-extrabold bg-gradient-to-r from-spicy to-fire bg-clip-text text-transparent mb-2 group-hover:scale-105 transition-transform duration-300">6 000+</div>
-          <p class="text-gray-700 font-semibold">постійних клієнтів, які повертаються знову</p>
+
+        <div class="flex flex-col items-center text-center">
+          <div class="w-16 h-16 bg-emerald-50 flex items-center justify-center rounded-3xl text-emerald-500 mb-5 shadow-sm border border-emerald-100">
+            <svg class="w-9 h-9" fill="currentColor" viewBox="0 0 24 24"><path d="M20 8H17V4H3V16H4.78C5.23 17.72 6.96 19 9 19C11.04 19 12.77 17.72 13.22 16H15.78C16.23 17.72 17.96 19 20 19C22.04 19 23.77 17.72 24.22 16H25V13L20 8ZM9 17C8.45 17 8 16.55 8 16C8 15.45 8.45 15 9 15C9.55 15 10 15.45 10 16C10 16.55 9.55 17 9 17ZM20 17C19.45 17 19 16.55 19 16C19 15.45 19.45 15 20 15C20.55 15 21 15.45 21 16C21 16.55 20.55 17 20 17ZM18 10H22L23 13H18V10Z"/></svg>
+          </div>
+          <p class="text-gray-900 font-medium md:text-lg leading-relaxed px-4">Відправляємо щодня 2 рази на день — без очікувань</p>
         </div>
-        
-        <!-- Card 3: №1 (Special Highlight) -->
-        <div class="group bg-gradient-to-br from-orange-100 via-red-50 to-yellow-50 p-6 lg:p-8 rounded-2xl border-2 border-spicy shadow-2xl hover:-translate-y-3 hover:shadow-3xl hover:shadow-spicy/30 transition-all duration-500 text-center fade-in relative overflow-hidden" style="transition-delay: 0.2s;">
-          <div class="absolute top-0 right-0 bg-gradient-to-r from-spicy to-fire text-white text-xs font-bold px-3 py-1 rounded-bl-lg shadow-lg">ТОП</div>
-          <div class="text-5xl mb-4 group-hover:scale-125 group-hover:rotate-12 transition-all duration-300">🏆</div>
-          <p class="text-lg font-bold bg-gradient-to-r from-gray-900 via-spicy to-fire bg-clip-text text-transparent leading-snug">Ми — №1 серед любителів Латяо в Україні 🔥</p>
+
+        <div class="flex flex-col items-center text-center">
+          <div class="w-16 h-16 bg-indigo-50 flex items-center justify-center rounded-3xl text-indigo-500 mb-5 shadow-sm border border-indigo-100">
+            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M11 20H6C4.9 20 4 19.1 4 18V6C4 4.9 4.9 4 6 4H18C19.1 4 20 4.9 20 6V11L18 9V6H6V18H13L11 20ZM18 15V12L23 16.5L18 21V18H14V15H18Z"/></svg>
+          </div>
+          <p class="text-gray-900 font-medium md:text-lg leading-relaxed px-4">Працюємо напряму з китайськими виробниками</p>
         </div>
-        
-        <!-- Card 4: Fast delivery -->
-        <div class="group bg-gradient-to-br from-white to-emerald-50 p-6 lg:p-8 rounded-2xl border border-emerald-100 shadow-lg hover:-translate-y-2 hover:shadow-2xl hover:shadow-emerald-200/50 transition-all duration-500 text-center fade-in" style="transition-delay: 0.3s;">
-          <div class="text-5xl mb-4 group-hover:scale-110 group-hover:translate-x-2 transition-all duration-300">🚚</div>
-          <p class="text-gray-700 font-semibold leading-relaxed">Відправляємо щодня 2 рази на день — без очікувань</p>
+
+        <div class="flex flex-col items-center text-center">
+          <div class="w-16 h-16 bg-green-50 flex items-center justify-center rounded-3xl text-green-500 mb-5 shadow-sm border border-green-100">
+            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M23 11.99L20.56 9.22L20.9 5.54L17.29 4.72L15.4 1.54L12 3L8.6 1.54L6.71 4.72L3.1 5.53L3.44 9.21L1 11.99L3.44 14.77L3.1 18.45L6.71 19.27L8.6 22.45L12 20.99L15.4 22.45L17.29 19.27L20.9 18.45L20.56 14.77L23 11.99ZM10.09 16.72L6.44 13.11L7.91 11.64L10.09 13.82L15.84 8.09L17.31 9.56L10.09 16.72Z"/></svg>
+          </div>
+          <p class="text-gray-900 font-medium md:text-lg leading-relaxed px-4">Маємо сертифікати якості та контроль смаку</p>
         </div>
-        
-        <!-- Card 5: Direct from manufacturers -->
-        <div class="group bg-gradient-to-br from-white to-cyan-50 p-6 lg:p-8 rounded-2xl border border-cyan-100 shadow-lg hover:-translate-y-2 hover:shadow-2xl hover:shadow-cyan-200/50 transition-all duration-500 text-center fade-in" style="transition-delay: 0.4s;">
-          <div class="text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">🤝</div>
-          <p class="text-gray-700 font-semibold leading-relaxed">Працюємо напряму з китайськими виробниками</p>
+
+        <div class="flex flex-col items-center text-center">
+          <div class="w-16 h-16 bg-cyan-50 flex items-center justify-center rounded-3xl text-cyan-500 mb-5 shadow-sm border border-cyan-100">
+            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4C2.89 4 2.01 4.89 2.01 6L2 18C2 19.11 2.89 20 4 20H20C21.11 20 22 19.11 22 18V6C22 4.89 21.11 4 20 4ZM20 18H4V12H20V18ZM20 8H4V6H20V8Z"/></svg>
+          </div>
+          <p class="text-gray-900 font-medium md:text-lg leading-relaxed px-4">Постачаємо у великі магазини по країні</p>
         </div>
-        
-        <!-- Card 6: Certificates (Trust Signal) -->
-        <div class="group bg-gradient-to-br from-white to-green-50 p-6 lg:p-8 rounded-2xl border-2 border-green-200 shadow-lg hover:-translate-y-2 hover:shadow-2xl hover:shadow-green-200/60 transition-all duration-500 text-center fade-in" style="transition-delay: 0.5s;">
-          <div class="text-5xl mb-4 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">✅</div>
-          <p class="text-gray-700 font-semibold leading-relaxed">Маємо сертифікати якості та контроль смаку</p>
-        </div>
-        
-        <!-- Card 7: B2B Supply -->
-        <div class="group bg-gradient-to-br from-white to-pink-50 p-6 lg:p-8 rounded-2xl border border-pink-100 shadow-lg hover:-translate-y-2 hover:shadow-2xl hover:shadow-pink-200/50 transition-all duration-500 text-center fade-in" style="transition-delay: 0.6s;">
-          <div class="text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">🏪</div>
-          <p class="text-gray-700 font-semibold leading-relaxed">Постачаємо у великі магазини по країні</p>
-        </div>
-        
-        <!-- Card 8: New flavors -->
-        <div class="group bg-gradient-to-br from-white to-amber-50 p-6 lg:p-8 rounded-2xl border border-amber-100 shadow-lg hover:-translate-y-2 hover:shadow-2xl hover:shadow-amber-200/50 transition-all duration-500 text-center fade-in" style="transition-delay: 0.7s;">
-          <div class="text-5xl mb-4 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">✨</div>
-          <p class="text-gray-700 font-semibold leading-relaxed">Щомісяця додаємо нові смаки та формати</p>
+
+        <div class="flex flex-col items-center text-center">
+          <div class="w-16 h-16 bg-purple-50 flex items-center justify-center rounded-3xl text-purple-500 mb-5 shadow-sm border border-purple-100">
+            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M21.41 11.58L12.41 2.58C12.05 2.22 11.55 2 11 2H4C2.9 2 2 2.9 2 4V11C2 11.55 2.22 12.05 2.59 12.42L11.59 21.42C11.95 21.78 12.45 22 13 22C13.55 22 14.05 21.78 14.41 21.41L21.41 14.41C21.78 14.05 22 13.55 22 13C22 12.45 21.77 11.94 21.41 11.58ZM13 20.01L4 11V4H11V3.99L20 12.99L13 20.01ZM6.5 8C7.33 8 8 7.33 8 6.5C8 5.67 7.33 5 6.5 5C5.67 5 5 5.67 5 6.5C5 7.33 5.67 8 6.5 8Z"/></svg>
+          </div>
+          <p class="text-gray-900 font-medium md:text-lg leading-relaxed px-4">Щомісяця додаємо нові смаки та формати</p>
         </div>
         
       </div>
