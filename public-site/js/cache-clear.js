@@ -16,7 +16,7 @@
         console.log('🔄 New version detected, clearing cache...');
         
         // Clear localStorage (except important user data)
-        const keysToPreserve = ['latiao-theme', 'latiao-user-phone'];
+        const keysToPreserve = ['latiao-theme', 'latiao-user-phone', 'latiao_cart'];
         const preservedData = {};
         
         keysToPreserve.forEach(key => {

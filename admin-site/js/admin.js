@@ -735,6 +735,10 @@ window.openBulkDiscountModal = function() {
         // Reset to percentage by default
         const percentageRadio = document.querySelector('input[name="discount-type"][value="percentage"]');
         if (percentageRadio) percentageRadio.checked = true;
+
+        // Reset action to decrease by default
+        const decreaseRadio = document.querySelector('input[name="price-action"][value="decrease"]');
+        if (decreaseRadio) decreaseRadio.checked = true;
         
         updateDiscountPreview();
         
@@ -765,6 +769,7 @@ function updateDiscountPreview() {
     const previewEl = document.getElementById('discount-preview');
     const hintEl = document.getElementById('discount-hint');
     
+    const selectedAction = document.querySelector('input[name="price-action"]:checked')?.value || 'decrease';
     const selectedType = document.querySelector('input[name="discount-type"]:checked')?.value || 'percentage';
     const value = parseFloat(valueInput?.value) || 0;
     
@@ -773,22 +778,25 @@ function updateDiscountPreview() {
     }
     
     if (valueInput) {
-        valueInput.max = selectedType === 'percentage' ? 100 : 10000;
+        valueInput.max = selectedType === 'percentage' ? (selectedAction === 'decrease' ? 100 : 500) : 10000;
     }
     
     if (hintEl) {
-        hintEl.textContent = selectedType === 'percentage' 
-            ? 'Наприклад: 10% = нова ціна буде на 10% менша'
-            : 'Наприклад: 50₴ = ціна зменшиться на 50 гривень';
+        if (selectedAction === 'increase') {
+            hintEl.textContent = selectedType === 'percentage'
+                ? 'Наприклад: 10% = нова ціна буде на 10% більшою'
+                : 'Наприклад: 50₴ = ціна збільшиться на 50 гривень';
+        } else {
+            hintEl.textContent = selectedType === 'percentage'
+                ? 'Наприклад: 10% = нова ціна буде на 10% менша'
+                : 'Наприклад: 50₴ = ціна зменшиться на 50 гривень';
+        }
     }
     
     // Calculate preview (based on 100₴ example)
-    let newPrice = 100;
-    if (selectedType === 'percentage') {
-        newPrice = 100 - (100 * value / 100);
-    } else {
-        newPrice = 100 - value;
-    }
+    const oldPrice = 100;
+    const delta = selectedType === 'percentage' ? (oldPrice * value / 100) : value;
+    let newPrice = selectedAction === 'increase' ? oldPrice + delta : oldPrice - delta;
     newPrice = Math.max(0, newPrice);
     
     if (previewEl) {
@@ -798,6 +806,11 @@ function updateDiscountPreview() {
 
 // Add event listeners for discount type and value changes
 document.addEventListener('DOMContentLoaded', () => {
+    // Listen for action changes
+    document.querySelectorAll('input[name="price-action"]').forEach(radio => {
+        radio.addEventListener('change', updateDiscountPreview);
+    });
+
     // Listen for discount type changes
     document.querySelectorAll('input[name="discount-type"]').forEach(radio => {
         radio.addEventListener('change', updateDiscountPreview);
@@ -812,6 +825,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Also set up listeners when modal is opened (for dynamic content)
 const discountModalObserver = new MutationObserver(() => {
+    document.querySelectorAll('input[name="price-action"]').forEach(radio => {
+        radio.removeEventListener('change', updateDiscountPreview);
+        radio.addEventListener('change', updateDiscountPreview);
+    });
+
     document.querySelectorAll('input[name="discount-type"]').forEach(radio => {
         radio.removeEventListener('change', updateDiscountPreview);
         radio.addEventListener('change', updateDiscountPreview);
@@ -837,6 +855,7 @@ window.applyBulkDiscount = async function() {
         return;
     }
     
+    const selectedAction = document.querySelector('input[name="price-action"]:checked')?.value || 'decrease';
     const selectedType = document.querySelector('input[name="discount-type"]:checked')?.value || 'percentage';
     const valueInput = document.getElementById('bulk-discount-value');
     const discountValue = parseFloat(valueInput?.value) || 0;
@@ -846,7 +865,7 @@ window.applyBulkDiscount = async function() {
         return;
     }
     
-    if (selectedType === 'percentage' && discountValue > 100) {
+    if (selectedAction === 'decrease' && selectedType === 'percentage' && discountValue > 100) {
         alert('Відсоток знижки не може бути більше 100%!');
         return;
     }
@@ -854,7 +873,8 @@ window.applyBulkDiscount = async function() {
     // Confirmation
     const count = selectedProductIds.length;
     const discountText = selectedType === 'percentage' ? `${discountValue}%` : `${discountValue}₴`;
-    const confirmMsg = `Застосувати знижку ${discountText} до ${count} товарів?`;
+    const actionText = selectedAction === 'increase' ? 'збільшити' : 'зменшити';
+    const confirmMsg = `Масово ${actionText} ціну на ${discountText} для ${count} товарів?`;
     
     if (!confirm(confirmMsg)) {
         return;
@@ -869,7 +889,7 @@ window.applyBulkDiscount = async function() {
     }
     
     try {
-        console.log(`🏷️ Applying ${selectedType} discount: ${discountValue} to ${count} products`);
+        console.log(`🏷️ Applying bulk price ${selectedAction}: ${selectedType} ${discountValue} to ${count} products`);
         
         // Create batch
         const batch = writeBatch(db);
@@ -886,33 +906,46 @@ window.applyBulkDiscount = async function() {
             
             const productData = productSnap.data();
             const currentPrice = parseFloat(productData.price) || 0;
-            
-            // Determine original price (use existing or current price)
-            const originalPrice = productData.originalPrice || currentPrice;
-            
-            // Calculate new price based on ORIGINAL price (not current discounted price)
-            let newPrice;
-            if (selectedType === 'percentage') {
-                newPrice = originalPrice - (originalPrice * discountValue / 100);
-            } else {
-                newPrice = originalPrice - discountValue;
-            }
+
+            // For decreases use original/base price; for increases use current displayed price
+            const basePrice = selectedAction === 'decrease'
+                ? (productData.originalPrice || currentPrice)
+                : currentPrice;
+
+            const delta = selectedType === 'percentage'
+                ? (basePrice * discountValue / 100)
+                : discountValue;
+
+            let newPrice = selectedAction === 'increase'
+                ? (basePrice + delta)
+                : (basePrice - delta);
             
             // Ensure price doesn't go negative
             newPrice = Math.max(0, Math.round(newPrice * 100) / 100);
             
-            // Update document
-            batch.update(productRef, {
+            const updateData = {
                 price: newPrice,
-                originalPrice: originalPrice,
-                isOnSale: true,
-                discountType: selectedType,
-                discountValue: discountValue,
                 discountAppliedAt: new Date().toISOString()
-            });
+            };
+
+            if (selectedAction === 'decrease') {
+                updateData.originalPrice = basePrice;
+                updateData.isOnSale = true;
+                updateData.discountType = selectedType;
+                updateData.discountValue = discountValue;
+            } else {
+                // Increasing price should clear SALE state to avoid stale struck-through prices
+                updateData.originalPrice = null;
+                updateData.isOnSale = false;
+                updateData.discountType = null;
+                updateData.discountValue = null;
+            }
+
+            // Update document
+            batch.update(productRef, updateData);
             
             updatedCount++;
-            console.log(`  📦 ${productData.name}: ₴${originalPrice} → ₴${newPrice}`);
+            console.log(`  📦 ${productData.name}: ₴${basePrice} → ₴${newPrice}`);
         }
         
         // Commit batch
@@ -926,7 +959,10 @@ window.applyBulkDiscount = async function() {
         await window.loadProducts();
         
         // Show success toast
-        showToast(`✅ Знижку застосовано до ${updatedCount} товарів!`, 'success');
+        const successText = selectedAction === 'increase'
+            ? `✅ Ціну збільшено для ${updatedCount} товарів!`
+            : `✅ Ціну зменшено для ${updatedCount} товарів!`;
+        showToast(successText, 'success');
         
     } catch (error) {
         console.error('❌ Error applying bulk discount:', error);
@@ -1437,7 +1473,7 @@ window.loadAbandonedCarts = async function(loadMore = false) {
             html += `
                 <tr class="${hoverColor} transition-all duration-200 border-l-4 ${borderColor}">
                     <td class="px-4 py-4 text-center">
-                        <input type="checkbox" class="abandoned-cart-checkbox w-4 h-4 rounded border-gray-300 text-blue-600" data-cart-id="${phone}">
+                        <input type="checkbox" class="abandoned-cart-checkbox w-4 h-4 rounded border-gray-300 text-blue-600" data-cart-id="${phone}" onchange="updateAbandonedCartsSelection()">
                     </td>
                     <td class="px-6 py-4">
                         <div class="text-xs text-gray-500 mb-1">${dateStr}</div>

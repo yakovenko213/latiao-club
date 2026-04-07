@@ -2597,6 +2597,12 @@
                 <i data-lucide="archive-restore" class="w-4 h-4"></i>
                 <span>⬅️ Відновити</span>
               </button>
+              <button onclick="deleteSelectedAbandonedCarts()"
+                class="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition"
+                title="Видалити всі вибрані покинуті кошики назавжди">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                <span>🗑 Видалити вибрані</span>
+              </button>
 
             </div>
 
@@ -3369,6 +3375,40 @@
                 📅 Весь час
               </div>
             </div>
+          </div>
+
+          <!-- Analytics Debug Indicator (quick check for live events) -->
+          <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+              <div class="flex items-center gap-2">
+                <span id="stats-debug-status-dot" class="w-2.5 h-2.5 rounded-full bg-gray-400"></span>
+                <span class="text-sm font-semibold text-blue-900">Debug потоку analytics_* (останні 10 хв)</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span id="stats-debug-status-text" class="text-xs text-blue-700">перевірка...</span>
+                <button
+                  onclick="window.refreshStatsDebugIndicator && window.refreshStatsDebugIndicator()"
+                  class="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Оновити
+                </button>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="bg-white border border-blue-100 rounded-lg p-3">
+                <p class="text-xs text-gray-500">analytics_sessions</p>
+                <p id="stats-debug-sessions" class="text-lg font-bold text-gray-900">0</p>
+              </div>
+              <div class="bg-white border border-blue-100 rounded-lg p-3">
+                <p class="text-xs text-gray-500">analytics_cart_adds</p>
+                <p id="stats-debug-cart-adds" class="text-lg font-bold text-gray-900">0</p>
+              </div>
+              <div class="bg-white border border-blue-100 rounded-lg p-3">
+                <p class="text-xs text-gray-500">analytics_checkout_events</p>
+                <p id="stats-debug-checkout" class="text-lg font-bold text-gray-900">0</p>
+              </div>
+            </div>
+            <p id="stats-debug-updated-at" class="text-xs text-gray-500 mt-2">Оновлено: —</p>
           </div>
           
           <!-- Main Stats Grid -->
@@ -7173,7 +7213,7 @@
         <button onclick="window.openBulkDiscountModal()" 
           class="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl">
           <span>🏷️</span>
-          <span>Застосувати знижку</span>
+          <span>Змінити ціну</span>
         </button>
         <button onclick="window.removeBulkDiscount()" 
           class="flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all border border-gray-200">
@@ -7200,7 +7240,7 @@
             <span class="text-2xl">🏷️</span>
           </div>
           <div>
-            <h3 class="text-xl font-bold text-gray-900">Масова знижка</h3>
+            <h3 class="text-xl font-bold text-gray-900">Масова зміна ціни</h3>
             <p class="text-sm text-gray-500" id="discount-modal-subtitle">Вибрано: 0 товарів</p>
           </div>
         </div>
@@ -7211,9 +7251,34 @@
 
       <!-- Modal Body -->
       <div class="p-6 space-y-6">
+        <!-- Price Action Selection -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-3">Операція</label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="relative">
+              <input type="radio" name="price-action" value="decrease" class="peer hidden" checked>
+              <div class="p-4 border-2 rounded-xl cursor-pointer transition-all peer-checked:border-spicy peer-checked:bg-orange-50 hover:border-gray-300">
+                <div class="text-center">
+                  <span class="text-2xl">📉</span>
+                  <p class="text-sm font-medium text-gray-700 mt-1">Зменшити</p>
+                </div>
+              </div>
+            </label>
+            <label class="relative">
+              <input type="radio" name="price-action" value="increase" class="peer hidden">
+              <div class="p-4 border-2 rounded-xl cursor-pointer transition-all peer-checked:border-spicy peer-checked:bg-orange-50 hover:border-gray-300">
+                <div class="text-center">
+                  <span class="text-2xl">📈</span>
+                  <p class="text-sm font-medium text-gray-700 mt-1">Збільшити</p>
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
         <!-- Discount Type Selection -->
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-3">Тип знижки</label>
+          <label class="block text-sm font-semibold text-gray-700 mb-3">Формат зміни</label>
           <div class="grid grid-cols-2 gap-3">
             <label class="relative">
               <input type="radio" name="discount-type" value="percentage" class="peer hidden" checked>
@@ -7238,7 +7303,7 @@
 
         <!-- Discount Value Input -->
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-2">Значення знижки</label>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Значення зміни</label>
           <div class="relative">
             <input type="number" id="bulk-discount-value" min="1" max="100" value="10"
               class="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-xl text-lg font-semibold focus:border-spicy focus:ring-2 focus:ring-spicy/20 outline-none transition-all"
@@ -10767,6 +10832,64 @@
       }
     }
 
+    // Permanently delete selected abandoned carts
+    window.deleteSelectedAbandonedCarts = async function () {
+      const selectedIds = getSelectedAbandonedCartIds()
+
+      if (selectedIds.length === 0) {
+        alert('⚠️ Виберіть кошики для видалення')
+        return
+      }
+
+      const countWord = selectedIds.length === 1 ? 'кошик' : selectedIds.length < 5 ? 'кошики' : 'кошиків'
+      const confirmed = confirm(
+        `⚠️ Видалити ${selectedIds.length} ${countWord}?\n\n` +
+        `Ця дія незворотна. Вибрані покинуті кошики буде видалено назавжди.`
+      )
+      if (!confirmed) return
+
+      try {
+        const loadingToast = document.createElement('div')
+        loadingToast.id = 'abandoned-carts-bulk-delete-loading'
+        loadingToast.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-xl shadow-2xl z-[100] flex items-center gap-3'
+        loadingToast.innerHTML = `
+          <div class="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+          <span class="font-bold">Видалення ${selectedIds.length} ${countWord}...</span>
+        `
+        document.body.appendChild(loadingToast)
+
+        const batchSize = 500
+        const deleteCommits = []
+        for (let i = 0; i < selectedIds.length; i += batchSize) {
+          const batch = writeBatch(db)
+          const chunk = selectedIds.slice(i, i + batchSize)
+          chunk.forEach(cartId => {
+            batch.delete(doc(db, 'abandoned_carts', cartId))
+          })
+          deleteCommits.push(batch.commit())
+        }
+
+        await Promise.all(deleteCommits)
+        loadingToast.remove()
+
+        const toast = document.createElement('div')
+        toast.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-xl shadow-2xl z-[100] flex items-center gap-3'
+        toast.innerHTML = `
+          <i data-lucide="trash-2" class="w-5 h-5"></i>
+          <span class="font-bold">🗑 Видалено ${selectedIds.length} ${countWord}</span>
+        `
+        document.body.appendChild(toast)
+        lucide.createIcons()
+        setTimeout(() => toast.remove(), 3500)
+
+        loadAbandonedCarts()
+      } catch (error) {
+        console.error('❌ Error bulk deleting abandoned carts:', error)
+        document.getElementById('abandoned-carts-bulk-delete-loading')?.remove()
+        alert(`❌ Помилка масового видалення:\n\n${error.message}`)
+      }
+    }
+
     // Toggle between active and archived view
     window.toggleAbandonedCartsArchiveView = function () {
       showArchivedCarts = !showArchivedCarts
@@ -12571,6 +12694,79 @@
         return new Set()
       }
     }
+
+    // Debug indicator: verifies if fresh analytics events are arriving.
+    let statsDebugIntervalId = null
+
+    function isStatsViewVisible() {
+      const view = document.getElementById('view-stats')
+      return !!(view && !view.classList.contains('hidden'))
+    }
+
+    async function loadAnalyticsDebugIndicator() {
+      const dotEl = document.getElementById('stats-debug-status-dot')
+      const statusEl = document.getElementById('stats-debug-status-text')
+      const sessionsEl = document.getElementById('stats-debug-sessions')
+      const cartAddsEl = document.getElementById('stats-debug-cart-adds')
+      const checkoutEl = document.getElementById('stats-debug-checkout')
+      const updatedAtEl = document.getElementById('stats-debug-updated-at')
+
+      if (!dotEl || !statusEl || !sessionsEl || !cartAddsEl || !checkoutEl || !updatedAtEl) {
+        return
+      }
+
+      try {
+        const cutoff = new Date(Date.now() - 10 * 60 * 1000)
+
+        const [sessionsSnap, cartSnap, checkoutSnap] = await Promise.all([
+          getDocs(query(collection(db, 'analytics_sessions'), where('lastSeen', '>=', cutoff))),
+          getDocs(query(collection(db, 'analytics_cart_adds'), where('timestamp', '>=', cutoff))),
+          getDocs(query(collection(db, 'analytics_checkout_events'), where('lastVisit', '>=', cutoff)))
+        ])
+
+        const sessionsCount = sessionsSnap.size
+        const cartAddsCount = cartSnap.size
+        const checkoutCount = checkoutSnap.size
+        const totalRecent = sessionsCount + cartAddsCount + checkoutCount
+
+        sessionsEl.textContent = sessionsCount.toLocaleString('uk-UA')
+        cartAddsEl.textContent = cartAddsCount.toLocaleString('uk-UA')
+        checkoutEl.textContent = checkoutCount.toLocaleString('uk-UA')
+
+        if (totalRecent > 0) {
+          dotEl.className = 'w-2.5 h-2.5 rounded-full bg-green-500'
+          statusEl.textContent = `потік активний: ${totalRecent} подій/док. за 10 хв`
+          statusEl.className = 'text-xs text-green-700'
+        } else {
+          dotEl.className = 'w-2.5 h-2.5 rounded-full bg-amber-500'
+          statusEl.textContent = 'нових подій за 10 хв не знайдено'
+          statusEl.className = 'text-xs text-amber-700'
+        }
+
+        updatedAtEl.textContent = `Оновлено: ${new Date().toLocaleTimeString('uk-UA')}`
+      } catch (e) {
+        dotEl.className = 'w-2.5 h-2.5 rounded-full bg-red-500'
+        statusEl.textContent = `помилка читання analytics_*: ${e.message || 'unknown'}`
+        statusEl.className = 'text-xs text-red-700'
+      }
+    }
+
+    function startStatsDebugPolling() {
+      if (statsDebugIntervalId) {
+        clearInterval(statsDebugIntervalId)
+      }
+
+      loadAnalyticsDebugIndicator()
+
+      statsDebugIntervalId = setInterval(() => {
+        if (!isStatsViewVisible()) return
+        loadAnalyticsDebugIndicator()
+      }, 30000)
+    }
+
+    window.refreshStatsDebugIndicator = () => {
+      loadAnalyticsDebugIndicator()
+    }
     
     async function calculateAndRenderStats(orders, startDate = null, endDate = null) {
       // Debug: Log the filtering range
@@ -12859,6 +13055,8 @@
     async function loadStatsView() {
       const loadingEl = document.getElementById('stats-loading')
       const contentEl = document.getElementById('stats-content')
+
+      startStatsDebugPolling()
       
       // Show loading
       if (loadingEl) loadingEl.classList.remove('hidden')
@@ -16769,9 +16967,11 @@
         const currentTtnDisplay = document.getElementById('current-ttn-display')
         const currentTtnLink = document.getElementById('current-ttn-link')
         const currentTtnLogo = document.getElementById('current-ttn-logo')
+        const syncTtnBtn = document.getElementById('sync-ttn-from-keycrm-btn')
         
         // Store current order ID globally for save function
         window.currentEditingOrderId = orderId
+        window.currentEditingKeyCrmOrderId = order.keyCrmOrderId || ''
         
         // Get TTN from multiple possible locations
         const currentTtn = order.ttn || order.trackingNumber || order.delivery?.ttn || ''
@@ -16780,6 +16980,13 @@
         // Populate TTN input
         if (ttnInput) {
           ttnInput.value = currentTtn
+        }
+
+        if (syncTtnBtn) {
+          syncTtnBtn.disabled = false
+          syncTtnBtn.title = window.currentEditingKeyCrmOrderId
+            ? ''
+            : 'Пошук у KeyCRM буде виконано за номером замовлення'
         }
         
         // Set delivery service radio button
@@ -16842,11 +17049,89 @@
       modal.classList.remove('flex')
       // Clear the editing order ID
       window.currentEditingOrderId = null
+      window.currentEditingKeyCrmOrderId = null
     }
 
     // ============================================
     // TTN (TRACKING NUMBER) SAVE/CLEAR FUNCTIONS
     // ============================================
+
+    // Pull TTN from KeyCRM and fill order tracking data
+    window.syncOrderTTNFromKeyCRM = async function () {
+      const orderId = window.currentEditingOrderId
+      if (!orderId) {
+        showToast('⚠️ Спочатку відкрийте замовлення', 'error')
+        return
+      }
+
+      const syncBtn = document.getElementById('sync-ttn-from-keycrm-btn')
+      const originalBtnHtml = syncBtn ? syncBtn.innerHTML : ''
+
+      try {
+        if (syncBtn) {
+          syncBtn.disabled = true
+          syncBtn.innerHTML = '<div class="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div><span>Синхронізація...</span>'
+        }
+
+        const syncOrderTTNFromKeyCRM = httpsCallable(functions, 'syncOrderTTNFromKeyCRM')
+        const result = await syncOrderTTNFromKeyCRM({ orderId })
+        const data = result.data || {}
+
+        if (!data.success || !data.ttn) {
+          const message = data.message || 'У KeyCRM не знайдено ТТН для цього замовлення'
+          showToast(`ℹ️ ${message}`, 'info')
+          return
+        }
+
+        const ttn = data.ttn
+        const deliveryService = data.deliveryService || 'nova_poshta'
+
+        const ttnInput = document.getElementById('order-ttn-input')
+        const currentTtnDisplay = document.getElementById('current-ttn-display')
+        const currentTtnLink = document.getElementById('current-ttn-link')
+        const currentTtnLogo = document.getElementById('current-ttn-logo')
+
+        if (ttnInput) {
+          ttnInput.value = ttn
+        }
+
+        const deliveryRadio = document.querySelector(`input[name="delivery-service"][value="${deliveryService}"]`)
+        if (deliveryRadio) {
+          deliveryRadio.checked = true
+        }
+
+        if (currentTtnDisplay) {
+          currentTtnDisplay.classList.remove('hidden')
+        }
+
+        if (currentTtnLogo) {
+          currentTtnLogo.src = getDeliveryLogo(deliveryService)
+          currentTtnLogo.alt = deliveryService === 'ukr_poshta' ? 'Укрпошта' : 'Нова Пошта'
+        }
+
+        if (currentTtnLink) {
+          currentTtnLink.href = getTrackingUrl(deliveryService, ttn)
+          currentTtnLink.textContent = ttn
+        }
+
+        const orderIndex = allOrdersCache.findIndex(o => o.id === orderId)
+        if (orderIndex !== -1) {
+          allOrdersCache[orderIndex].ttn = ttn
+          allOrdersCache[orderIndex].deliveryService = deliveryService
+        }
+
+        showToast('✅ ТТН підтягнуто з KeyCRM', 'success')
+        loadOrders()
+      } catch (error) {
+        console.error('❌ Error syncing TTN from KeyCRM:', error)
+        showToast('❌ Помилка синхронізації ТТН з KeyCRM: ' + (error.message || error), 'error')
+      } finally {
+        if (syncBtn) {
+          syncBtn.disabled = false
+          syncBtn.innerHTML = originalBtnHtml
+        }
+      }
+    }
     
     // Save TTN to Firestore + Auto-set status to 'shipped'
     window.saveOrderTTN = async function () {
@@ -17930,7 +18215,7 @@
       syncBtn.innerHTML = '<div class="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mx-auto"></div>'
 
       try {
-        statusMessage.textContent = '📥 Синхронізація залишків з KeyCRM...'
+        statusMessage.textContent = '📥 Синхронізація залишків і цін з KeyCRM...'
         statusDetails.textContent = 'Виконується запит через Cloud Function...'
 
         const syncProductsFromKeyCRM = httpsCallable(functions, 'syncProductsFromKeyCRM')
@@ -17943,6 +18228,7 @@
           statusDetails.innerHTML = `
             <div class="space-y-1">
               <div><strong class="text-green-700">✅ Оновлено: ${data.productsUpdated || 0} товарів</strong></div>
+              <div class="text-xs text-gray-600">💰 Оновлено цін: ${data.productsPriceUpdated || 0}</div>
               <div class="text-xs text-gray-600">
                 📄 Сторінок: ${data.totalPages || 0} | 📦 KeyCRM: ${data.totalProducts || 0} | 🔗 Знайдено: ${data.productsMatched || 0}
               </div>
@@ -18729,6 +19015,13 @@
           const word = count === 1 ? 'товар' : count < 5 ? 'товари' : 'товарів';
           subtitle.textContent = `Вибрано: ${count} ${word}`;
         }
+
+        const percentageRadio = document.querySelector('input[name="discount-type"][value="percentage"]');
+        if (percentageRadio) percentageRadio.checked = true;
+
+        const decreaseRadio = document.querySelector('input[name="price-action"][value="decrease"]');
+        if (decreaseRadio) decreaseRadio.checked = true;
+
         updateDiscountPreview();
         lucide.createIcons();
       }
@@ -18745,21 +19038,34 @@
       const previewEl = document.getElementById('discount-preview');
       const hintEl = document.getElementById('discount-hint');
       
+      const selectedAction = document.querySelector('input[name="price-action"]:checked')?.value || 'decrease';
       const selectedType = document.querySelector('input[name="discount-type"]:checked')?.value || 'percentage';
       const value = parseFloat(valueInput?.value) || 0;
       
       if (unitSpan) unitSpan.textContent = selectedType === 'percentage' ? '%' : '₴';
-      if (valueInput) valueInput.max = selectedType === 'percentage' ? 100 : 10000;
+      if (valueInput) valueInput.max = selectedType === 'percentage' ? (selectedAction === 'decrease' ? 100 : 500) : 10000;
       if (hintEl) {
-        hintEl.textContent = selectedType === 'percentage' 
-          ? 'Наприклад: 10% = нова ціна буде на 10% менша'
-          : 'Наприклад: 50₴ = ціна зменшиться на 50 гривень';
+        if (selectedAction === 'increase') {
+          hintEl.textContent = selectedType === 'percentage'
+            ? 'Наприклад: 10% = нова ціна буде на 10% більшою'
+            : 'Наприклад: 50₴ = ціна збільшиться на 50 гривень';
+        } else {
+          hintEl.textContent = selectedType === 'percentage'
+            ? 'Наприклад: 10% = нова ціна буде на 10% менша'
+            : 'Наприклад: 50₴ = ціна зменшиться на 50 гривень';
+        }
       }
       
-      let newPrice = selectedType === 'percentage' ? 100 - (100 * value / 100) : 100 - value;
+      const oldPrice = 100;
+      const delta = selectedType === 'percentage' ? (oldPrice * value / 100) : value;
+      let newPrice = selectedAction === 'increase' ? oldPrice + delta : oldPrice - delta;
       newPrice = Math.max(0, newPrice);
       if (previewEl) previewEl.textContent = `→ ₴${newPrice.toFixed(0)}`;
     }
+
+    document.querySelectorAll('input[name="price-action"]').forEach(radio => {
+      radio.addEventListener('change', updateDiscountPreview);
+    });
 
     // Setup discount type listeners
     document.querySelectorAll('input[name="discount-type"]').forEach(radio => {
@@ -18773,6 +19079,7 @@
         return;
       }
       
+      const selectedAction = document.querySelector('input[name="price-action"]:checked')?.value || 'decrease';
       const selectedType = document.querySelector('input[name="discount-type"]:checked')?.value || 'percentage';
       const discountValue = parseFloat(document.getElementById('bulk-discount-value')?.value) || 0;
       
@@ -18781,14 +19088,15 @@
         return;
       }
       
-      if (selectedType === 'percentage' && discountValue > 100) {
+      if (selectedAction === 'decrease' && selectedType === 'percentage' && discountValue > 100) {
         alert('Відсоток знижки не може бути більше 100%!');
         return;
       }
       
       const count = window.selectedProductIds.length;
       const discountText = selectedType === 'percentage' ? `${discountValue}%` : `${discountValue}₴`;
-      if (!confirm(`Застосувати знижку ${discountText} до ${count} товарів?`)) return;
+      const actionText = selectedAction === 'increase' ? 'збільшити' : 'зменшити';
+      if (!confirm(`Масово ${actionText} ціну на ${discountText} для ${count} товарів?`)) return;
       
       const applyBtn = document.querySelector('#bulk-discount-modal button[onclick="window.applyBulkDiscount()"]');
       const originalBtnText = applyBtn?.innerHTML;
@@ -18809,22 +19117,39 @@
           
           const productData = productSnap.data();
           const currentPrice = parseFloat(productData.price) || 0;
-          const originalPrice = productData.originalPrice || currentPrice;
-          
-          let newPrice = selectedType === 'percentage' 
-            ? originalPrice - (originalPrice * discountValue / 100)
-            : originalPrice - discountValue;
+
+          const basePrice = selectedAction === 'decrease'
+            ? (productData.originalPrice || currentPrice)
+            : currentPrice;
+
+          const delta = selectedType === 'percentage'
+            ? (basePrice * discountValue / 100)
+            : discountValue;
+
+          let newPrice = selectedAction === 'increase'
+            ? (basePrice + delta)
+            : (basePrice - delta);
           
           newPrice = Math.max(0, Math.round(newPrice * 100) / 100);
-          
-          batch.update(productRef, {
+
+          const updateData = {
             price: newPrice,
-            originalPrice: originalPrice,
-            isOnSale: true,
-            discountType: selectedType,
-            discountValue: discountValue,
             discountAppliedAt: new Date().toISOString()
-          });
+          };
+
+          if (selectedAction === 'decrease') {
+            updateData.originalPrice = basePrice;
+            updateData.isOnSale = true;
+            updateData.discountType = selectedType;
+            updateData.discountValue = discountValue;
+          } else {
+            updateData.originalPrice = null;
+            updateData.isOnSale = false;
+            updateData.discountType = null;
+            updateData.discountValue = null;
+          }
+
+          batch.update(productRef, updateData);
           
           updatedCount++;
         }
@@ -18835,7 +19160,10 @@
         window.clearProductSelection();
         await loadProducts();
         
-        showToast(`✅ Знижку застосовано до ${updatedCount} товарів!`, 'success');
+        const successText = selectedAction === 'increase'
+          ? `✅ Ціну збільшено для ${updatedCount} товарів!`
+          : `✅ Ціну зменшено для ${updatedCount} товарів!`;
+        showToast(successText, 'success');
         
       } catch (error) {
         console.error('❌ Error applying bulk discount:', error);
@@ -28480,6 +28808,15 @@
                   class="w-full px-4 py-3 border-2 border-indigo-300 rounded-xl font-mono text-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                 >
               </div>
+              <button 
+                type="button"
+                id="sync-ttn-from-keycrm-btn"
+                onclick="syncOrderTTNFromKeyCRM()"
+                class="px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-bold transition-colors flex items-center gap-2 whitespace-nowrap"
+              >
+                <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                З KeyCRM
+              </button>
               <button 
                 type="button"
                 onclick="saveOrderTTN()"

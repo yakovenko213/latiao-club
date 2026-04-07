@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Latiao Sidebar Navigation Component</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            spicy: '#ff6b00',
+            fire: '#ff4444'
+          },
+          boxShadow: {
+            card: '0 1px 3px rgba(0,0,0,0.1)',
+            cardHover: '0 20px 40px rgba(255,107,0,0.15)',
+            spicyBtn: '0 10px 30px rgba(255,107,0,0.4)',
+            sidebar: '0 20px 60px rgba(0,0,0,0.15)'
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    :root {
+      --spicy: #ff6b00;
+      --fire: #ff4444;
+      --bg-main: #ffffff;
+      --bg-section: #f9fafb;
+      --text-primary: #111827;
+      --text-secondary: #4b5563;
+      --text-muted: #9ca3af;
+      --border-light: #f3f4f6;
+      --border-card: #e5e7eb;
+    }
+
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background: var(--bg-section);
+      color: var(--text-primary);
+    }
+
+    .fire-gradient {
+      background: linear-gradient(135deg, #ff6b00 0%, #ff4444 100%);
+    }
+
+    .menu-item {
+      transition: all 200ms ease;
+    }
+
+    .menu-item .menu-icon {
+      transition: all 200ms ease;
+    }
+
+    .menu-item .menu-label {
+      transition: all 200ms ease;
+    }
+
+    .menu-item:hover:not(.active) {
+      background: rgba(255, 107, 0, 0.08);
+      transform: translateX(2px);
+    }
+
+    .menu-item:hover:not(.active) .menu-label {
+      color: var(--spicy);
+    }
+
+    .menu-item:hover:not(.active) .menu-icon {
+      background: rgba(255, 107, 0, 0.15);
+    }
+
+    .menu-item.active {
+      background: linear-gradient(135deg, #ff6b00 0%, #ff4444 100%);
+      box-shadow: 0 10px 30px rgba(255, 107, 0, 0.25);
+    }
+
+    .menu-item.active .menu-label {
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .menu-item.active .menu-icon {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .badge-pill {
+      min-width: 20px;
+      height: 20px;
+      border-radius: 9999px;
+      background: var(--spicy);
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 6px;
+    }
+
+    .sidebar-shell {
+      width: 280px;
+      transform: translateX(calc(-100% + 60px));
+      transition: transform 300ms ease;
+      border-right: 1px solid var(--border-light);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    }
+
+    .sidebar-shell.open {
+      transform: translateX(0);
+    }
+
+    .sidebar-shell.mobile-closed {
+      transform: translateX(-100%);
+    }
+
+    .close-btn {
+      transition: all 200ms ease;
+    }
+
+    .close-btn:hover {
+      background: #f3f4f6;
+      transform: rotate(90deg);
+    }
+
+    .cta-btn {
+      animation: pulse-glow 2s infinite;
+      transition: all 300ms ease;
+    }
+
+    .cta-btn:hover {
+      transform: scale(1.02);
+      box-shadow: 0 10px 30px rgba(255, 107, 0, 0.4);
+    }
+
+    .social-btn {
+      transition: transform 200ms ease;
+    }
+
+    .social-btn:hover {
+      transform: scale(1.1);
+    }
+
+    .hamburger-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: #ffffff;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transition: all 200ms ease;
+    }
+
+    .hamburger-btn:hover {
+      background: #fff7ed;
+      transform: translateY(-1px);
+    }
+
+    @keyframes pulse-glow {
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.4);
+      }
+      50% {
+        box-shadow: 0 0 20px 5px rgba(255, 107, 0, 0.3);
+      }
+    }
+
+    @media (max-width: 767px) {
+      .sidebar-shell {
+        transform: translateX(-100%);
+      }
+
+      .sidebar-shell.open {
+        transform: translateX(0);
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <button
+    id="openSidebarBtn"
+    aria-label="Відкрити меню"
+    class="hamburger-btn fixed top-4 left-4 z-50 flex items-center justify-center text-xl text-gray-700"
+  >
+    ☰
+  </button>
+
+  <div id="sidebarOverlay" class="fixed inset-0 z-40 hidden bg-black/50 backdrop-blur-sm md:hidden"></div>
+
+  <aside
+    id="sidebar"
+    class="sidebar-shell fixed top-0 left-0 z-50 h-screen bg-white flex flex-col"
+    aria-label="Бокова навігація"
+  >
+    <div class="px-4 pt-5 pb-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="h-12 w-12 rounded-2xl fire-gradient flex items-center justify-center text-2xl shadow-lg text-white">🌶️</div>
+          <div>
+            <p class="text-[11px] font-semibold uppercase tracking-wide text-orange-400">Spicy Store</p>
+            <p class="text-lg font-extrabold text-gray-900 leading-tight">Latiao Snack</p>
+          </div>
+        </div>
+        <button id="closeSidebarBtn" class="close-btn h-10 w-10 rounded-full flex items-center justify-center text-gray-500 text-xl" aria-label="Закрити меню">
+          ✕
+        </button>
+      </div>
+      <div class="mt-4 h-[2px] w-full rounded-full fire-gradient"></div>
+    </div>
+
+    <nav class="px-3 space-y-1.5" aria-label="Основна навігація">
+      <button class="menu-item active w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-left">
+        <span class="menu-icon flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 text-lg">🏠</span>
+        <span class="menu-label text-[15px] font-medium text-gray-700">Головна</span>
+      </button>
+
+      <button class="menu-item w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-left">
+        <span class="menu-icon flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 text-lg">🛍️</span>
+        <span class="menu-label text-[15px] font-medium text-gray-700">Каталог</span>
+        <span class="ml-auto rounded-full bg-orange-100 px-3 py-1 text-[11px] font-bold text-spicy">30+ видів</span>
+      </button>
+
+      <button class="menu-item w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-left">
+        <span class="menu-icon flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 text-lg">🔥</span>
+        <span class="menu-label text-[15px] font-medium text-gray-700">Акції</span>
+      </button>
+
+      <button class="menu-item w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-left">
+        <span class="menu-icon flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 text-lg">⭐</span>
+        <span class="menu-label text-[15px] font-medium text-gray-700">Обране</span>
+        <span id="favoritesBadge" class="badge-pill ml-auto">0</span>
+      </button>
+
+      <button class="menu-item w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-left">
+        <span class="menu-icon flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 text-lg">🛒</span>
+        <span class="menu-label text-[15px] font-medium text-gray-700">Кошик</span>
+        <span id="cartBadge" class="badge-pill ml-auto">0</span>
+      </button>
+
+      <button class="menu-item w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-left">
+        <span class="menu-icon flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 text-lg">📦</span>
+        <span class="menu-label text-[15px] font-medium text-gray-700">Мої замовлення</span>
+      </button>
+
+      <button class="menu-item w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-left">
+        <span class="menu-icon flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 text-lg">👤</span>
+        <span class="menu-label text-[15px] font-medium text-gray-700">Особистий кабінет</span>
+      </button>
+
+      <button class="menu-item w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-left">
+        <span class="menu-icon flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 text-lg">❓</span>
+        <span class="menu-label text-[15px] font-medium text-gray-700">FAQ</span>
+      </button>
+    </nav>
+
+    <div class="px-4 mt-5">
+      <div class="rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 to-red-50 p-4">
+        <p class="text-xs text-gray-500 mb-2">Наші результати</p>
+        <div class="space-y-1">
+          <p class="text-[13px] text-gray-700"><span class="font-bold text-spicy">6 500+</span> клієнтів 👥</p>
+          <p class="text-[13px] text-gray-700"><span class="font-bold text-spicy">4.9</span> ⭐ рейтинг</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-auto px-4 pb-5 pt-5">
+      <button class="cta-btn w-full rounded-2xl fire-gradient py-3.5 text-center text-sm font-bold text-white">Обрати латяо 🌶️</button>
+
+      <div class="mt-4">
+        <p class="text-center text-xs text-gray-400">Ми в соцмережах</p>
+        <div class="mt-3 flex items-center justify-center gap-3">
+          <a href="https://t.me/sales_latiao" target="_blank" rel="noopener noreferrer" class="social-btn flex h-10 w-10 items-center justify-center rounded-xl bg-[#229ED9] text-white text-lg" aria-label="Telegram">✈️</a>
+          <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="social-btn flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 via-red-500 to-orange-400 text-white text-lg" aria-label="Instagram">📷</a>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="p-6 md:pl-[88px]">
+    <section class="mx-auto max-w-4xl rounded-2xl border border-gray-100 bg-white p-6 shadow-card md:p-8">
+      <p class="inline-flex items-center gap-2 rounded-full bg-orange-500/10 px-4 py-2 text-sm font-semibold text-spicy">
+        🔥 Sidebar Demo
+      </p>
+      <h1 class="mt-4 text-3xl font-black text-gray-900 md:text-4xl">Навігаційний сайдбар для Latiao Snack</h1>
+      <p class="mt-3 text-base font-medium text-gray-600">
+        Компонент зроблено у фірмовому стилі: spicy orange + fire red, rounded-2xl, м'які переходи та акцентні бейджі.
+        Відкрий меню через кнопку зліва.
+      </p>
+      <div class="mt-6 grid gap-4 sm:grid-cols-2">
+        <div class="rounded-2xl border border-gray-200 bg-gray-50 p-5">
+          <p class="text-sm font-semibold text-gray-900">Responsive</p>
+          <p class="mt-1 text-sm text-gray-600">На мобільному сайдбар перекриває контент і має backdrop.</p>
+        </div>
+        <div class="rounded-2xl border border-gray-200 bg-gray-50 p-5">
+          <p class="text-sm font-semibold text-gray-900">Dynamic Badges</p>
+          <p class="mt-1 text-sm text-gray-600">Лічильники для обраного і кошика оновлюються з localStorage.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      const openBtn = document.getElementById('openSidebarBtn');
+      const closeBtn = document.getElementById('closeSidebarBtn');
+      const favoritesBadge = document.getElementById('favoritesBadge');
+      const cartBadge = document.getElementById('cartBadge');
+
+      const FAVORITES_KEY = 'latiao_favorites';
+      const CART_KEY = 'latiao_cart';
+
+      function isMobile() {
+        return window.matchMedia('(max-width: 767px)').matches;
+      }
+
+      function setClosedStateByViewport() {
+        if (!sidebar) return;
+        if (isMobile()) {
+          sidebar.classList.add('mobile-closed');
+          sidebar.classList.remove('open');
+        } else {
+          sidebar.classList.remove('mobile-closed');
+          sidebar.classList.remove('open');
+          hideOverlay();
+        }
+      }
+
+      function showOverlay() {
+        if (!overlay) return;
+        if (isMobile()) {
+          overlay.classList.remove('hidden');
+        }
+      }
+
+      function hideOverlay() {
+        if (!overlay) return;
+        overlay.classList.add('hidden');
+      }
+
+      function openSidebar() {
+        if (!sidebar) return;
+        sidebar.classList.remove('mobile-closed');
+        sidebar.classList.add('open');
+        if (openBtn) openBtn.classList.add('hidden');
+        showOverlay();
+      }
+
+      function closeSidebar() {
+        if (!sidebar) return;
+        sidebar.classList.remove('open');
+        if (isMobile()) {
+          sidebar.classList.add('mobile-closed');
+        }
+        if (openBtn) openBtn.classList.remove('hidden');
+        hideOverlay();
+      }
+
+      function parseStorageCount(key) {
+        try {
+          const raw = localStorage.getItem(key);
+          if (!raw) return 0;
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed.length;
+          if (typeof parsed === 'number') return parsed;
+          if (parsed && typeof parsed.count === 'number') return parsed.count;
+          return 0;
+        } catch (err) {
+          return 0;
+        }
+      }
+
+      function updateBadges() {
+        const favoritesCount = parseStorageCount(FAVORITES_KEY);
+        const cartCount = parseStorageCount(CART_KEY);
+
+        if (favoritesBadge) favoritesBadge.textContent = String(favoritesCount);
+        if (cartBadge) cartBadge.textContent = String(cartCount);
+      }
+
+      if (openBtn) openBtn.addEventListener('click', openSidebar);
+      if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+      if (overlay) overlay.addEventListener('click', closeSidebar);
+
+      window.addEventListener('resize', setClosedStateByViewport);
+      window.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+          closeSidebar();
+        }
+      });
+
+      window.addEventListener('storage', updateBadges);
+
+      document.querySelectorAll('.menu-item').forEach(function (item) {
+        item.addEventListener('click', function () {
+          document.querySelectorAll('.menu-item').forEach(function (other) {
+            other.classList.remove('active');
+          });
+          item.classList.add('active');
+          if (isMobile()) {
+            closeSidebar();
+          }
+        });
+      });
+
+      updateBadges();
+      setClosedStateByViewport();
+    })();
+  </script>
+</body>
+</html>

@@ -374,6 +374,365 @@ exports.syncOrderToKeyCRM = functions.https.onCall(async (data, context) => {
   return await syncToKeyCRM(orderId);
 });
 
+function pickFirstNonEmptyValue(candidates = []) {
+  for (const value of candidates) {
+    if (typeof value === 'string' && value.trim() !== '') {
+      return value.trim();
+    }
+
+    // Some CRM fields can be returned as numeric IDs/waybills.
+    if ((typeof value === 'number' || typeof value === 'bigint') && Number.isFinite(Number(value))) {
+      const normalized = String(value).trim();
+      if (normalized !== '') {
+        return normalized;
+      }
+    }
+  }
+  return null;
+}
+
+function isLikelyTTNFieldName(fieldName = '') {
+  const normalized = fieldName.toLowerCase();
+  return (
+    normalized.includes('ttn') ||
+    normalized.includes('tracking') ||
+    normalized.includes('waybill') ||
+    normalized.includes('declaration') ||
+    normalized.includes('awb') ||
+    normalized.includes('express_waybill')
+  );
+}
+
+function normalizeTTNCandidateValue(value) {
+  if (typeof value === 'string') {
+    const normalized = value.trim();
+    if (!normalized || normalized.toLowerCase().startsWith('http')) {
+      return null;
+    }
+    return normalized;
+  }
+
+  if ((typeof value === 'number' || typeof value === 'bigint') && Number.isFinite(Number(value))) {
+    return String(value).trim() || null;
+  }
+
+  return null;
+}
+
+function extractTTNByDeepScan(value, maxDepth = 5, currentDepth = 0) {
+  if (!value || currentDepth > maxDepth) {
+    return null;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const nestedMatch = extractTTNByDeepScan(item, maxDepth, currentDepth + 1);
+      if (nestedMatch) {
+        return nestedMatch;
+      }
+    }
+    return null;
+  }
+
+  if (typeof value !== 'object') {
+    return null;
+  }
+
+  for (const [key, nestedValue] of Object.entries(value)) {
+    if (isLikelyTTNFieldName(key)) {
+      const direct = normalizeTTNCandidateValue(nestedValue);
+      if (direct) {
+        return direct;
+      }
+    }
+
+    if (typeof nestedValue === 'object' && nestedValue !== null) {
+      const nested = extractTTNByDeepScan(nestedValue, maxDepth, currentDepth + 1);
+      if (nested) {
+        return nested;
+      }
+    }
+  }
+
+  return null;
+}
+
+function detectDeliveryServiceFromKeyCRM(keyCrmOrderData = {}) {
+  const serviceRaw = (
+    keyCrmOrderData.shipping?.shipping_service ||
+    keyCrmOrderData.shipping?.delivery_service ||
+    keyCrmOrderData.delivery_service ||
+    ''
+  ).toString().toLowerCase();
+
+  if (serviceRaw.includes('укр') || serviceRaw.includes('ukr')) {
+    return 'ukr_poshta';
+  }
+
+  if (serviceRaw.includes('нова') || serviceRaw.includes('nova')) {
+    return 'nova_poshta';
+  }
+
+  return null;
+}
+
+function extractTTNFromKeyCRMOrder(keyCrmOrderData = {}) {
+  const shipping = keyCrmOrderData.shipping || {};
+  const firstDelivery = Array.isArray(keyCrmOrderData.deliveries) ? keyCrmOrderData.deliveries[0] || {} : {};
+  const firstWaybill = Array.isArray(shipping.waybills) ? shipping.waybills[0] || {} : {};
+
+  const directMatch = pickFirstNonEmptyValue([
+    keyCrmOrderData.ttn,
+    keyCrmOrderData.trackingNumber,
+    keyCrmOrderData.tracking_number,
+    keyCrmOrderData.tracking_no,
+    keyCrmOrderData.declaration_number,
+    keyCrmOrderData.waybill_number,
+    keyCrmOrderData.waybill,
+    keyCrmOrderData.awb,
+    shipping.ttn,
+    shipping.trackingNumber,
+    shipping.tracking_number,
+    shipping.tracking_no,
+    shipping.declaration_number,
+    shipping.waybill_number,
+    shipping.waybill,
+    shipping.express_waybill,
+    shipping.awb,
+    firstDelivery.ttn,
+    firstDelivery.trackingNumber,
+    firstDelivery.tracking_number,
+    firstDelivery.tracking_no,
+    firstDelivery.declaration_number,
+    firstDelivery.waybill_number,
+    firstDelivery.waybill,
+    firstWaybill.number,
+    firstWaybill.ttn,
+    firstWaybill.tracking_number,
+    firstWaybill.tracking_no
+  ]);
+
+  if (directMatch) {
+    return directMatch;
+  }
+
+  // Fallback for unexpected KeyCRM payload shapes.
+  return extractTTNByDeepScan(keyCrmOrderData);
+}
+
+function normalizeCompareValue(value) {
+  return (value || '').toString().trim().toLowerCase();
+}
+
+function parseKeyCrmOrdersList(payload = {}) {
+  if (Array.isArray(payload?.data)) {
+    return payload.data;
+  }
+
+  if (Array.isArray(payload?.data?.items)) {
+    return payload.data.items;
+  }
+
+  if (Array.isArray(payload?.orders)) {
+    return payload.orders;
+  }
+
+  if (Array.isArray(payload?.items)) {
+    return payload.items;
+  }
+
+  return [];
+}
+
+function pickMatchingKeyCrmOrder(orders = [], orderId = '') {
+  const normalizedOrderId = normalizeCompareValue(orderId);
+  if (!normalizedOrderId) {
+    return null;
+  }
+
+  const exactMatch = orders.find((order) => {
+    const candidates = [
+      order?.source_uuid,
+      order?.sourceUuid,
+      order?.number,
+      order?.order_number,
+      order?.id
+    ].map(normalizeCompareValue);
+
+    return candidates.some((value) => value === normalizedOrderId);
+  });
+
+  if (exactMatch) {
+    return exactMatch;
+  }
+
+  return orders.find((order) => {
+    const comment = normalizeCompareValue(order?.manager_comment || order?.buyer_comment);
+    return comment.includes(normalizedOrderId);
+  }) || null;
+}
+
+async function fetchKeyCrmOrderByOrderIdOrNumber({ keyCrmApiKey, keyCrmOrderId, orderId }) {
+  const headers = {
+    'Authorization': `Bearer ${keyCrmApiKey}`,
+    'Content-Type': 'application/json'
+  };
+
+  if (keyCrmOrderId) {
+    const response = await fetch(`https://openapi.keycrm.app/v1/order/${keyCrmOrderId}`, {
+      method: 'GET',
+      headers
+    });
+
+    if (response.ok) {
+      const payload = await response.json();
+      const keyCrmOrderData = payload?.data || payload || {};
+      return {
+        keyCrmOrderData,
+        resolvedKeyCrmOrderId: keyCrmOrderData?.id || keyCrmOrderId,
+        lookupMethod: 'keyCrmOrderId'
+      };
+    }
+  }
+
+  const searchCandidates = [orderId, (orderId || '').toString().substring(0, 8).toUpperCase()].filter(Boolean);
+
+  for (const candidate of searchCandidates) {
+    const urls = [
+      `https://openapi.keycrm.app/v1/order?limit=50&filter[source_uuid]=${encodeURIComponent(candidate)}`,
+      `https://openapi.keycrm.app/v1/order?limit=50&search=${encodeURIComponent(candidate)}`
+    ];
+
+    for (const url of urls) {
+      const response = await fetch(url, { method: 'GET', headers });
+      if (!response.ok) {
+        continue;
+      }
+
+      const payload = await response.json();
+      const orders = parseKeyCrmOrdersList(payload);
+      const matchedOrder = pickMatchingKeyCrmOrder(orders, orderId) || pickMatchingKeyCrmOrder(orders, candidate);
+
+      if (matchedOrder) {
+        return {
+          keyCrmOrderData: matchedOrder,
+          resolvedKeyCrmOrderId: matchedOrder?.id || keyCrmOrderId || null,
+          lookupMethod: `search:${candidate}`
+        };
+      }
+    }
+  }
+
+  // If no order is found after all attempts, log the last search payload for debugging
+  if (urls && urls.length > 0) {
+    try {
+      const lastUrl = urls[urls.length - 1];
+      const debugResponse = await fetch(lastUrl, { method: 'GET', headers });
+      const debugPayload = await debugResponse.json();
+      console.log(`ℹ️ [KeyCRM TTN Sync] Order lookup failed for orderId: ${orderId}. Last search response from ${lastUrl}:`, JSON.stringify(debugPayload, null, 2));
+    } catch (e) {
+      console.error(`[KeyCRM TTN Sync] Failed to fetch debug payload for orderId: ${orderId}`, e);
+    }
+  }
+
+
+  return {
+    keyCrmOrderData: null,
+    resolvedKeyCrmOrderId: keyCrmOrderId || null,
+    lookupMethod: 'not_found'
+  };
+}
+
+exports.syncOrderTTNFromKeyCRM = functions.https.onCall(async (data, context) => {
+  try {
+    const orderId = data?.orderId ||
+      (data?.data && data.data.orderId) ||
+      (data?.body && data.body.data && data.body.data.orderId);
+
+    if (!orderId) {
+      throw new functions.https.HttpsError('invalid-argument', 'Order ID is required');
+    }
+
+    const orderRef = admin.firestore().collection('orders').doc(orderId);
+    const orderDoc = await orderRef.get();
+
+    if (!orderDoc.exists) {
+      throw new functions.https.HttpsError('not-found', 'Order not found');
+    }
+
+    const orderData = orderDoc.data();
+    const keyCrmOrderId = orderData?.keyCrmOrderId;
+
+    const settingsDoc = await admin.firestore().collection('settings').doc('admin').get();
+    if (!settingsDoc.exists) {
+      throw new functions.https.HttpsError('failed-precondition', 'Admin settings not configured');
+    }
+
+    const { keyCrmApiKey } = settingsDoc.data() || {};
+    if (!keyCrmApiKey) {
+      throw new functions.https.HttpsError('failed-precondition', 'KeyCRM API key is missing');
+    }
+
+    const { keyCrmOrderData, resolvedKeyCrmOrderId, lookupMethod } = await fetchKeyCrmOrderByOrderIdOrNumber({
+      keyCrmApiKey,
+      keyCrmOrderId,
+      orderId
+    });
+
+    if (!keyCrmOrderData) {
+      return {
+        success: false,
+        orderId,
+        keyCrmOrderId: keyCrmOrderId || null,
+        message: 'Order not found in KeyCRM by ID or order number'
+      };
+    }
+
+    const ttn = extractTTNFromKeyCRMOrder(keyCrmOrderData);
+    const deliveryService = detectDeliveryServiceFromKeyCRM(keyCrmOrderData);
+
+    if (!ttn) {
+      return {
+        success: false,
+        orderId,
+        keyCrmOrderId: resolvedKeyCrmOrderId,
+        lookupMethod,
+        message: 'TTN not found in KeyCRM order'
+      };
+    }
+
+    const updateData = {
+      ttn,
+      ttnSyncedFromKeyCrmAt: admin.firestore.FieldValue.serverTimestamp(),
+      ttnUpdatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+
+    if (resolvedKeyCrmOrderId && !orderData?.keyCrmOrderId) {
+      updateData.keyCrmOrderId = resolvedKeyCrmOrderId;
+    }
+
+    if (deliveryService) {
+      updateData.deliveryService = deliveryService;
+    }
+
+    await orderRef.update(updateData);
+
+    return {
+      success: true,
+      orderId,
+      keyCrmOrderId: resolvedKeyCrmOrderId,
+      lookupMethod,
+      ttn,
+      deliveryService: deliveryService || null
+    };
+  } catch (error) {
+    if (error instanceof functions.https.HttpsError) {
+      throw error;
+    }
+    throw new functions.https.HttpsError('internal', getSafeErrorMessage(error));
+  }
+});
+
 // 1. СТВОРЕННЯ РАХУНКУ
 exports.createMonoInvoice = functions.https.onCall(async (data, context) => {
   try {
@@ -793,6 +1152,41 @@ async function performProductSync() {
 
     console.log(`📊 Firebase products loaded: ${firebaseProductsMap.size}`);
 
+    const extractCrmPrice = (crmProduct) => {
+      const directCandidates = [
+        crmProduct.price,
+        crmProduct.selling_price,
+        crmProduct.sale_price,
+        crmProduct.retail_price,
+        crmProduct.offer_price,
+        crmProduct.base_price,
+        crmProduct.purchase_price
+      ];
+
+      for (const candidate of directCandidates) {
+        const numeric = parseFloat(candidate);
+        if (!isNaN(numeric) && numeric >= 0) return numeric;
+      }
+
+      if (crmProduct.prices && typeof crmProduct.prices === 'object') {
+        const nestedCandidates = [
+          crmProduct.prices.price,
+          crmProduct.prices.selling_price,
+          crmProduct.prices.sale_price,
+          crmProduct.prices.retail_price,
+          crmProduct.prices.offer_price,
+          crmProduct.prices.base_price
+        ];
+
+        for (const candidate of nestedCandidates) {
+          const numeric = parseFloat(candidate);
+          if (!isNaN(numeric) && numeric >= 0) return numeric;
+        }
+      }
+
+      return null;
+    };
+
     // 4. Match products and prepare updates
     const updates = [];
     const matched = [];
@@ -817,14 +1211,20 @@ async function performProductSync() {
 
       if (firebaseProduct) {
         const stockValue = parseInt(crmStock);
+        const crmPrice = extractCrmPrice(crmProduct);
         updates.push({
           docId: firebaseProduct.id,
           sku: crmSKU,
           oldStock: firebaseProduct.currentStock,
-          newStock: isNaN(stockValue) || stockValue < 0 ? 0 : stockValue
+          newStock: isNaN(stockValue) || stockValue < 0 ? 0 : stockValue,
+          newPrice: crmPrice
         });
         matched.push(crmSKU);
-        console.log(`✅ Matched: SKU "${crmSKU}" → Stock: ${crmStock}`);
+        if (crmPrice !== null) {
+          console.log(`✅ Matched: SKU "${crmSKU}" → Stock: ${crmStock}, Price: ${crmPrice}`);
+        } else {
+          console.log(`✅ Matched: SKU "${crmSKU}" → Stock: ${crmStock}, Price: not provided`);
+        }
       } else {
         notFound.push(crmSKU);
         console.warn(`⚠️ SKU "${crmSKU}" found in KeyCRM but missing in Firebase`);
@@ -837,6 +1237,7 @@ async function performProductSync() {
     if (updates.length > 0) {
       const batchSize = 500;
       let batchCount = 0;
+      let priceUpdatesCount = 0;
 
       for (let i = 0; i < updates.length; i += batchSize) {
         const batch = admin.firestore().batch();
@@ -844,11 +1245,18 @@ async function performProductSync() {
 
         chunk.forEach(update => {
           const docRef = admin.firestore().collection('products').doc(update.docId);
-          batch.update(docRef, {
+          const payload = {
             stock: update.newStock,
             updatedAt: new Date().toISOString(),
             lastSyncedFromCRM: new Date().toISOString()
-          });
+          };
+
+          if (update.newPrice !== null) {
+            payload.price = Math.round(update.newPrice * 100) / 100;
+            priceUpdatesCount++;
+          }
+
+          batch.update(docRef, payload);
         });
 
         await batch.commit();
@@ -856,7 +1264,25 @@ async function performProductSync() {
         console.log(`✅ Batch ${batchCount}/${Math.ceil(updates.length / batchSize)} committed (${chunk.length} updates)`);
       }
 
-      console.log(`🎉 Sync completed! Updated ${updates.length} products`);
+      console.log(`🎉 Sync completed! Updated ${updates.length} products (price updated: ${priceUpdatesCount})`);
+
+      const endTime = new Date();
+      const duration = endTime - startTime;
+      console.log('✅ Sync finished at:', endTime.toISOString());
+      console.log(`⏱️ Total sync duration: ${duration}ms (${(duration / 1000).toFixed(2)}s)`);
+
+      return {
+        success: true,
+        products: allCrmProducts, // Return products array for client-side processing
+        totalProducts: allCrmProducts.length,
+        totalPages: currentPage - 1,
+        productsMatched: matched.length,
+        productsUpdated: updates.length,
+        productsPriceUpdated: priceUpdatesCount,
+        productsNotFound: notFound.length,
+        notFoundSKUs: notFound.slice(0, 10), // Return first 10 for logging
+        syncDuration: duration
+      };
     }
 
     const endTime = new Date();
@@ -871,6 +1297,7 @@ async function performProductSync() {
       totalPages: currentPage - 1,
       productsMatched: matched.length,
       productsUpdated: updates.length,
+      productsPriceUpdated: 0,
       productsNotFound: notFound.length,
       notFoundSKUs: notFound.slice(0, 10), // Return first 10 for logging
       syncDuration: duration
@@ -916,6 +1343,7 @@ exports.syncProductsFromKeyCRM = functions.https.onCall(async (data, context) =>
         success: true,
         totalProducts: result.totalProducts,
         productsUpdated: result.productsUpdated,
+        productsPriceUpdated: result.productsPriceUpdated || 0,
         productsNotFound: result.productsNotFound,
         productsMatched: result.productsMatched
       },
@@ -1007,6 +1435,7 @@ exports.scheduledStockSync = onSchedule({
         success: true,
         totalProducts: result.totalProducts,
         productsUpdated: result.productsUpdated,
+        productsPriceUpdated: result.productsPriceUpdated || 0,
         productsNotFound: result.productsNotFound,
         productsMatched: result.productsMatched
       },
@@ -1730,3 +2159,4 @@ exports.getGoogleFeed = functions.https.onRequest(async (req, res) => {
 </rss>`);
     }
   });
+});
