@@ -1460,9 +1460,14 @@
       const subtotal = cartItems.reduce((s,i) => s + i.price*(i.qty||i.quantity||1), 0);
       const minAmt   = p.minOrderAmount || 0;
       if (minAmt > 0 && subtotal < minAmt) throw new Error(`Мінімальна сума — ${minAmt} грн`);
-      promoDiscount  = p.type === 'percent' ? Math.round(subtotal*p.value/100) : Math.min(p.value, subtotal);
+      let rawDiscount = p.type === 'percent' ? Math.round(subtotal * p.value / 100) : p.value;
+      const maxDisc   = p.maxDiscountAmount || 0;
+      if (maxDisc > 0) rawDiscount = Math.min(rawDiscount, maxDisc);
+      promoDiscount  = Math.min(rawDiscount, subtotal);
       promoApplied   = true; appliedPromoId = pd.id;
-      msg.textContent = `✅ Знижку ${p.type==='percent' ? p.value+'%' : p.value+' грн'} застосовано!`;
+      let discLabel = p.type === 'percent' ? `${p.value}%` : `${p.value} грн`;
+      if (maxDisc > 0 && p.type === 'percent') discLabel += ` (макс. ${maxDisc} грн)`;
+      msg.textContent = `✅ Знижку ${discLabel} застосовано!`;
       msg.classList.add('ok');
     } catch(e) {
       promoApplied = false; promoDiscount = 0; appliedPromoId = null;

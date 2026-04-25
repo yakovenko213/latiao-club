@@ -2661,6 +2661,7 @@ function renderNavigation({ categories, pages }) {
       'Усі товари': '<img src="/images/icons/icon-all.png" alt="Усі товари" class="w-6 h-6 object-contain group-hover:scale-110 transition-transform" loading="lazy">',
       'Сушені крабики': '<img src="/images/icons/icon-crab.png" alt="Сушені крабики" class="w-6 h-6 object-contain group-hover:scale-110 transition-transform" loading="lazy">',
       'Гостре латяо': '<img src="/images/icons/icon-spicy.png" alt="Гостре латяо" class="w-6 h-6 object-contain group-hover:scale-110 transition-transform" loading="lazy">',
+      'Сети': '<img src="/images/icons/icon-snacks.png" alt="Сети" class="w-6 h-6 object-contain group-hover:scale-110 transition-transform" loading="lazy">',
       'Негостре латяо': '<img src="/images/icons/icon-spicy.png" alt="Негостре латяо" class="w-6 h-6 object-contain group-hover:scale-110 transition-transform" loading="lazy">',
       'Помірно гостре латяо': '<img src="/images/icons/icon-spicy.png" alt="Помірно гостре латяо" class="w-6 h-6 object-contain group-hover:scale-110 transition-transform" loading="lazy">',
       'Локшина Buldak': '<img src="/images/icons/icon-spicy.png" alt="Локшина Buldak" class="w-6 h-6 object-contain group-hover:scale-110 transition-transform" loading="lazy">',

@@ -171,6 +171,28 @@
     .cat-btn:hover { border-color: var(--red); color: var(--red); }
     .cat-btn.active { background: var(--red); border-color: var(--red); color: #fff; }
 
+    .cat-btn.cat-btn-attention:not(.active) {
+      border-color: #f4bbb7;
+      animation: setiSoftGlow 2.6s ease-in-out infinite;
+    }
+
+    @keyframes setiSoftGlow {
+      0%, 100% {
+        box-shadow: 0 0 0 0 rgba(232, 40, 26, 0);
+        background: #fff;
+      }
+      50% {
+        box-shadow: 0 0 0 5px rgba(232, 40, 26, 0.11);
+        background: #fff8f7;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .cat-btn.cat-btn-attention:not(.active) {
+        animation: none;
+      }
+    }
+
     /* ── MAIN ── */
     main {
       max-width: 1200px;
@@ -215,6 +237,13 @@
     }
 
     .product-card.hidden { display: none; }
+
+    .grid-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 0;
+      color: var(--muted);
+    }
 
     .card-img {
       width: 100%;
@@ -453,6 +482,7 @@
       transition: border-color .15s, background .15s, color .15s, opacity .15s, transform .1s;
       flex-shrink: 0;
       opacity: .72;
+      margin-right: 2px;
     }
 
     .cart-remove-btn:hover {
@@ -582,6 +612,7 @@
       margin-bottom: 8px;
       display: -webkit-box;
       -webkit-line-clamp: 2;
+      line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
@@ -1921,6 +1952,221 @@
       display: block;
     }
 
+    /* ── PROMO BANNER ── */
+    .promo-top-banner {
+      background: var(--red);
+      color: #fff;
+      text-align: center;
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      line-height: 1.4;
+    }
+    .promo-top-banner-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      padding: 0;
+      white-space: nowrap;
+      transition: opacity .15s;
+    }
+    .promo-top-banner-btn:hover { opacity: .8; }
+
+    /* ── PROMO MODAL ── */
+    .promo-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .22s;
+    }
+    .promo-modal-overlay.open { opacity: 1; pointer-events: all; }
+
+    .promo-modal {
+      background: #fff;
+      border-radius: var(--radius);
+      border-top: 3px solid var(--red);
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: translateY(14px);
+      transition: transform .22s;
+      display: flex;
+      flex-direction: column;
+    }
+    .promo-modal-overlay.open .promo-modal { transform: translateY(0); }
+
+    .promo-modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 18px 14px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 1;
+    }
+    .promo-modal-head h2 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 20px;
+      letter-spacing: .6px;
+      color: var(--text);
+      line-height: 1.2;
+    }
+    .promo-modal-close {
+      background: none;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      width: 34px;
+      height: 34px;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--text);
+      transition: border-color .15s, color .15s;
+    }
+    .promo-modal-close:hover { border-color: var(--red); color: var(--red); }
+
+    .promo-modal-img {
+      width: 100%;
+      max-height: 345px;
+      object-fit: cover;
+      object-position: center top;
+      display: block;
+    }
+
+    .promo-modal-body {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .promo-modal-desc {
+      font-size: 14px;
+      line-height: 1.55;
+      color: var(--text);
+    }
+
+    .promo-steps-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: var(--red);
+      margin-bottom: 10px;
+    }
+
+    .promo-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .promo-step {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text);
+    }
+
+    .promo-step-num {
+      background: var(--red);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      min-width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .promo-code-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--red-light);
+      border: 1.5px dashed var(--red);
+      border-radius: var(--radius);
+      padding: 7px 12px;
+      margin-top: 6px;
+    }
+
+    .promo-code-text {
+      font-family: 'Oswald', sans-serif;
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      color: var(--red);
+    }
+
+    .promo-copy-btn {
+      background: var(--red);
+      border: none;
+      border-radius: var(--radius);
+      color: #fff;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background .15s, transform .1s;
+    }
+    .promo-copy-btn:hover { background: var(--red-dark); }
+    .promo-copy-btn:active { transform: scale(.92); }
+
+    @media (max-width: 480px) {
+      .promo-modal-overlay { padding: 0; align-items: flex-end; }
+      .promo-modal {
+        max-width: 100%;
+        border-radius: 16px 16px 0 0;
+        border-top: none;
+        max-height: 92dvh;
+        transform: translateY(100%);
+      }
+      .promo-modal-overlay.open .promo-modal { transform: translateY(0); }
+      .promo-modal::before {
+        content: '';
+        display: block;
+        width: 36px;
+        height: 4px;
+        background: #ddd;
+        border-radius: 4px;
+        margin: 10px auto 0;
+        flex-shrink: 0;
+      }
+    }
+
     /* ── SPLASH SCREEN ── */
     .splash-screen {
       position: fixed;
@@ -1981,6 +2227,12 @@
   <div class="splash-inner">
     <img class="splash-img" src="image-removebg-preview.png" alt="Латяо">
   </div>
+</div>
+
+<!-- PROMO BANNER -->
+<div class="promo-top-banner">
+  <span>🔥 Новим клієнтам — знижка&nbsp;−15% до кінця травня.</span>
+  <button class="promo-top-banner-btn" onclick="openPromoModal()">тиць сюди</button>
 </div>
 
 <!-- HEADER -->
@@ -2144,6 +2396,54 @@
         Написати менеджеру
       </a>
 
+    </div>
+  </div>
+</div>
+
+<!-- PROMO MODAL -->
+<div class="promo-modal-overlay" id="promoModalOverlay">
+  <div class="promo-modal" id="promoModal">
+    <div class="promo-modal-head">
+      <h2>−15% на перше замовлення</h2>
+      <button class="promo-modal-close" onclick="closePromoModal()">✕</button>
+    </div>
+    <img class="promo-modal-img" src="images/salesse.png" alt="Акція -15%">
+    <div class="promo-modal-body">
+      <p class="promo-modal-desc">
+        Новим клієнтам до кінця травня даруємо промо-код на <strong>−15% знижки</strong> на перше замовлення в нашому магазині. Просто введіть код при оформленні — і знижка застосується автоматично.
+      </p>
+
+      <div>
+        <div class="promo-steps-title">Як використати:</div>
+        <div class="promo-steps">
+          <div class="promo-step">
+            <span class="promo-step-num">1</span>
+            <span>Оберіть латяо та додайте до кошика</span>
+          </div>
+          <div class="promo-step">
+            <span class="promo-step-num">2</span>
+            <span>Введіть контактні дані та адресу доставки</span>
+          </div>
+          <div class="promo-step">
+            <span class="promo-step-num">3</span>
+            <div>
+              <div>Введіть промо-код у відповідне поле:</div>
+              <div class="promo-code-badge">
+                <span class="promo-code-text" id="promoCodeText">980940</span>
+                <button class="promo-copy-btn" id="promoCopyBtn" onclick="copyPromoCode()" title="Скопіювати код">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="promo-step">
+            <span class="promo-step-num">4</span>
+            <span>Готово! Знижка застосована — очікуйте відправку протягом найближчих годин 🎉</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -2500,6 +2800,12 @@
     const bar = document.getElementById('catBar');
     let cats = allCategories;
 
+    const isSetsCategory = (cat) => {
+      const slugOrId = String(cat?.slug || cat?.id || '').toLowerCase();
+      const name = String(cat?.name || '').toLowerCase();
+      return slugOrId === 'seti' || slugOrId === 'sety' || name.includes('сети');
+    };
+
     // Fallback: derive unique categories from loaded products
     if (!cats.length && allProducts.length) {
       const slugSet = new Set();
@@ -2525,8 +2831,26 @@
       return an - bn;
     });
 
-    bar.innerHTML = `<button class="cat-btn" data-cat="all">Усі товари</button>`;
-    cats.forEach(cat => {
+    const setsCats = cats.filter(isSetsCategory);
+    const otherCats = cats.filter(cat => !isSetsCategory(cat));
+
+    bar.innerHTML = '';
+
+    setsCats.forEach(cat => {
+      const btn = document.createElement('button');
+      btn.className = 'cat-btn cat-btn-attention';
+      btn.dataset.cat = cat.slug || cat.id;
+      btn.textContent = getCategoryDisplayName(cat);
+      bar.appendChild(btn);
+    });
+
+    const allBtn = document.createElement('button');
+    allBtn.className = 'cat-btn';
+    allBtn.dataset.cat = 'all';
+    allBtn.textContent = 'Усі товари';
+    bar.appendChild(allBtn);
+
+    otherCats.forEach(cat => {
       const btn = document.createElement('button');
       btn.className = 'cat-btn';
       btn.dataset.cat = cat.slug || cat.id;
@@ -2548,6 +2872,36 @@
     document.getElementById('errorState').style.display   = 'none';
     document.getElementById('grid').style.display         = '';
     renderProducts(allProducts);
+    applyHashFilter();
+    warmupProductImages(allProducts);
+  }
+
+  function warmupProductImages(products) {
+    const urls = products
+      .map(p => p.image)
+      .filter(Boolean);
+
+    if (!urls.length) return;
+
+    const preloadChunk = (start = 0) => {
+      const chunk = urls.slice(start, start + 8);
+      chunk.forEach(src => {
+        const img = new Image();
+        img.decoding = 'async';
+        img.src = src;
+      });
+
+      const next = start + 8;
+      if (next < urls.length) {
+        setTimeout(() => preloadChunk(next), 120);
+      }
+    };
+
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(() => preloadChunk(0), { timeout: 2000 });
+    } else {
+      setTimeout(() => preloadChunk(0), 250);
+    }
   }
 
   window.loadProducts = async function() {
@@ -2625,23 +2979,25 @@
       return;
     }
 
-    grid.innerHTML = products.map(p => {
+    grid.innerHTML = products.map((p, index) => {
       const name     = p.title || p.name || 'Товар';
       const price    = Number(p.price) || 0;
       const catId    = p.category || p.categoryId || '';
-      const catLabel = getCategoryLabel(catId);
+      const categories = Array.isArray(p.categories)
+        ? p.categories.filter(Boolean)
+        : [catId].filter(Boolean);
       const outOfStock = getStock(p) <= 0;
       const spiciness  = p.spiciness || 0;
       const spicinessHtml = spiciness ? '🌶️'.repeat(Math.min(spiciness, 5)) : '';
 
       // Image: real photo or emoji fallback
       const imgHtml = p.image
-        ? `<img src="${p.image}" alt="${name}" class="card-img-photo" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+        ? `<img src="${p.image}" alt="${name}" class="card-img-photo" loading="lazy" decoding="async" fetchpriority="${index < 8 ? 'high' : 'low'}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
         : '';
       const emojiHtml = `<div class="card-img" style="${p.image ? 'display:none' : ''}">${p.emoji || getCategoryEmoji(catId)}</div>`;
 
       return `
-        <div class="product-card ${outOfStock ? 'out-of-stock' : ''}" data-cat="${catId}" data-id="${p.id}">
+        <div class="product-card ${outOfStock ? 'out-of-stock' : ''}" data-cat="${catId}" data-cats="${categories.join('|')}" data-id="${p.id}">
           <div class="card-img-wrap">
             ${imgHtml}${emojiHtml}
             ${outOfStock ? '<div class="out-badge">Немає в наявності</div>' : ''}
@@ -2669,6 +3025,48 @@
           </div>
         </div>`;
     }).join('');
+  }
+
+  function updateGridEmptyState(visibleCount) {
+    const grid = document.getElementById('grid');
+    if (!grid) return;
+
+    const oldEmpty = document.getElementById('gridEmptyState');
+    if (oldEmpty) oldEmpty.remove();
+
+    if (visibleCount > 0) return;
+
+    const empty = document.createElement('div');
+    empty.id = 'gridEmptyState';
+    empty.className = 'grid-empty';
+    empty.innerHTML = '<div style="font-size:32px;margin-bottom:12px">🔍</div><div style="font-size:14px;font-weight:600">Товарів не знайдено</div>';
+    grid.appendChild(empty);
+  }
+
+  function animateCategoryTransition() {
+    const grid = document.getElementById('grid');
+    if (!grid || grid.style.display === 'none') return;
+
+    const cards = Array.from(grid.querySelectorAll('.product-card'));
+    if (!cards.length) return;
+
+    const isAll = activeFilter === 'all';
+    const setsSlugs = new Set(['seti', 'sety', 'sets']);
+    const visibleCards = [];
+
+    cards.forEach(card => {
+      const id = card.dataset.id;
+      const cats = (card.dataset.cats || '').split('|').filter(Boolean);
+      const hasSetsCategory = cats.some(cat => setsSlugs.has(String(cat).toLowerCase()));
+      const categoryMatch = isAll ? !hasSetsCategory : cats.includes(activeFilter);
+      const wishlistMatch = !wishlistFilter || wishlist.has(id);
+      const shouldShow = categoryMatch && wishlistMatch;
+
+      card.classList.toggle('hidden', !shouldShow);
+      if (shouldShow) visibleCards.push(card);
+    });
+
+    updateGridEmptyState(visibleCards.length);
   }
 
   // ── MOBILE INFO TICKER ───────────────────────────────────────────
@@ -2886,6 +3284,15 @@
       const atMax = isFinite(stockLimit) && item.qty >= stockLimit;
       return `
       <div class="cart-item">
+        <button class="cart-remove-btn" data-id="${item.id}" title="Видалити товар" aria-label="Видалити товар">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M3 6H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M8 6V4C8 2.9 8.9 2 10 2H14C15.1 2 16 2.9 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M19 6V20C19 21.1 18.1 22 17 22H7C5.9 22 5 21.1 5 20V6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M10 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M14 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
         <div class="cart-item-emoji">
           ${item.image
             ? `<img src="${item.image}" style="width:100%;height:100%;object-fit:cover;border-radius:4px" onerror="this.style.display='none'">`
@@ -2899,15 +3306,6 @@
           <button class="qty-btn" data-id="${item.id}" data-delta="-1">−</button>
           <span class="qty-val">${item.qty}</span>
           <button class="qty-btn" data-id="${item.id}" data-delta="1" ${atMax ? 'disabled title="Максимум доступна кількість"' : ''}>+</button>
-          <button class="cart-remove-btn" data-id="${item.id}" title="Видалити товар" aria-label="Видалити товар">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <path d="M3 6H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              <path d="M8 6V4C8 2.9 8.9 2 10 2H14C15.1 2 16 2.9 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              <path d="M19 6V20C19 21.1 18.1 22 17 22H7C5.9 22 5 21.1 5 20V6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              <path d="M10 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              <path d="M14 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </button>
         </div>
       </div>`;
     }).join('');
@@ -3336,18 +3734,9 @@
       b.classList.toggle('active', b.dataset.cat === activeFilter);
     });
 
-    const activeBtn = document.querySelector(`.cat-btn[data-cat="${activeFilter}"]`);
-
     if (!allProducts.length) return;
 
-    const filtered = activeFilter === 'all'
-      ? allProducts
-      : allProducts.filter(p => {
-          const cats = Array.isArray(p.categories) ? p.categories : [p.category || p.categoryId];
-          return cats.includes(activeFilter);
-        });
-
-    renderProducts(filtered);
+    animateCategoryTransition();
   }
 
   document.getElementById('catBar').addEventListener('click', e => {
@@ -3442,8 +3831,7 @@
     wishlistFilter = !wishlistFilter;
     renderWishlistHeader();
     if (wishlistFilter) {
-      const liked = allProducts.filter(p => wishlist.has(p.id));
-      renderProducts(liked);
+      animateCategoryTransition();
     } else {
       applyHashFilter();
     }
@@ -3488,6 +3876,32 @@
     // Show after 1 minute on site
     setTimeout(showSplash, 60000);
   })();
+
+  // ── PROMO MODAL ──────────────────────────────────────────────────
+  window.openPromoModal = function() {
+    document.getElementById('promoModal').scrollTop = 0;
+    document.getElementById('promoModalOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  };
+  window.closePromoModal = function() {
+    document.getElementById('promoModalOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+  };
+  document.getElementById('promoModalOverlay').addEventListener('click', function(e) {
+    if (e.target === this) window.closePromoModal();
+  });
+  window.copyPromoCode = function() {
+    const code = document.getElementById('promoCodeText').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+      const btn = document.getElementById('promoCopyBtn');
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+      btn.style.background = '#16a34a';
+      setTimeout(() => {
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+        btn.style.background = '';
+      }, 1500);
+    });
+  };
 
   // ── INIT ─────────────────────────────────────────────────────────
   trackSessionStart();

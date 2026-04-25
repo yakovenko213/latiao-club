@@ -20,9 +20,6 @@
   
   <!-- 🔀 DOMAIN REDIRECT - Redirect Firebase domains to primary domain -->
   <script src="./js/domain-redirect.js"></script>
-
-  <!-- 🛑 IP BLACKLIST HARD BLOCK - must run before any page content renders -->
-  <script type="module" src="./js/blacklist-check.js"></script>
   
   <!-- 🎯 SEO: Canonical Tag -->
   <link rel="canonical" href="https://latiao-snack.com.ua/">
@@ -329,216 +326,9 @@
     .favorite-pop-out {
       animation: favoritePopOut 0.3s ease-out;
     }
-
-    /* Spicy Sidebar Navigation */
-    .spicy-sidebar {
-      width: 280px;
-      border-right: 1px solid #f3f4f6;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-      transition: transform 0.3s ease;
-      transform: translateX(calc(-100% + 60px));
-    }
-
-    .spicy-sidebar.open {
-      transform: translateX(0);
-    }
-
-    .spicy-sidebar.mobile-closed {
-      transform: translateX(-100%);
-    }
-
-    .spicy-sidebar-item {
-      transition: all 0.2s ease;
-    }
-
-    .spicy-sidebar-item .spicy-sidebar-icon,
-    .spicy-sidebar-item .spicy-sidebar-label {
-      transition: all 0.2s ease;
-    }
-
-    .spicy-sidebar-item:hover:not(.active) {
-      background: rgba(255, 107, 0, 0.08);
-    }
-
-    .spicy-sidebar-item:hover:not(.active) .spicy-sidebar-label {
-      color: #ff6b00;
-    }
-
-    .spicy-sidebar-item:hover:not(.active) .spicy-sidebar-icon {
-      background: rgba(255, 107, 0, 0.15);
-    }
-
-    .spicy-sidebar-item.active {
-      background: linear-gradient(135deg, #ff6b00 0%, #ff4444 100%);
-      box-shadow: 0 10px 30px rgba(255, 107, 0, 0.25);
-    }
-
-    .spicy-sidebar-item.active .spicy-sidebar-label {
-      color: #ffffff;
-      font-weight: 600;
-    }
-
-    .spicy-sidebar-item.active .spicy-sidebar-icon {
-      background: rgba(255, 255, 255, 0.2);
-    }
-
-    .spicy-sidebar-badge {
-      min-width: 20px;
-      height: 20px;
-      border-radius: 9999px;
-      background: #ff6b00;
-      color: #ffffff;
-      font-size: 11px;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0 6px;
-      line-height: 1;
-    }
-
-    .spicy-sidebar-close-btn {
-      transition: all 0.2s ease;
-    }
-
-    .spicy-sidebar-close-btn:hover {
-      transform: rotate(90deg);
-      background: #f3f4f6;
-    }
-
-    .spicy-sidebar-cta {
-      animation: pulse-glow 2s infinite;
-      transition: all 0.3s ease;
-    }
-
-    .spicy-sidebar-cta:hover {
-      transform: scale(1.02);
-      box-shadow: 0 10px 30px rgba(255, 107, 0, 0.4);
-    }
-
-    .spicy-sidebar-social {
-      transition: transform 0.2s ease;
-    }
-
-    .spicy-sidebar-social:hover {
-      transform: scale(1.1);
-    }
-
-    .spicy-sidebar-hamburger {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      transition: all 0.2s ease;
-    }
-
-    .spicy-sidebar-hamburger:hover {
-      background: #fff7ed;
-    }
-
-    @media (max-width: 767px) {
-      .spicy-sidebar {
-        transform: translateX(-100%);
-      }
-
-      .spicy-sidebar.open {
-        transform: translateX(0);
-      }
-    }
   </style>
 </head>
 <body class="bg-white text-gray-900 overflow-x-hidden">
-
-  <!-- Spicy Sidebar Trigger -->
-  <button id="spicy-sidebar-open-btn" class="spicy-sidebar-hamburger fixed top-4 left-4 z-[95] hidden items-center justify-center bg-white text-xl text-gray-700" aria-label="Відкрити навігацію">
-    ☰
-  </button>
-
-  <!-- Spicy Sidebar Mobile Overlay -->
-  <div id="spicy-sidebar-overlay" class="fixed inset-0 z-[90] hidden bg-black/50 backdrop-blur-sm md:hidden"></div>
-
-  <!-- Spicy Sidebar -->
-  <aside id="spicy-sidebar" class="spicy-sidebar fixed top-0 left-0 z-[94] flex h-screen flex-col bg-white" aria-label="Бічне меню">
-    <div class="px-4 pt-5 pb-4">
-      <div class="flex items-center justify-between">
-        <a href="./index.html" class="flex items-center gap-3">
-          <div class="flex h-12 w-12 items-center justify-center rounded-2xl fire-gradient text-2xl text-white shadow-lg">🌶️</div>
-          <div>
-            <p class="text-[11px] font-semibold uppercase tracking-wide text-orange-400">Spicy Store</p>
-            <p class="text-lg font-extrabold leading-tight text-gray-900">Latiao Snack</p>
-          </div>
-        </a>
-        <button id="spicy-sidebar-close-btn" class="spicy-sidebar-close-btn flex h-10 w-10 items-center justify-center rounded-full text-xl text-gray-500" aria-label="Закрити навігацію">✕</button>
-      </div>
-      <div class="mt-4 h-[2px] w-full rounded-full fire-gradient"></div>
-    </div>
-
-    <nav class="space-y-1.5 px-3" aria-label="Розділи">
-      <a href="./index.html" data-sidebar-item="home" class="spicy-sidebar-item active flex items-center gap-3 rounded-2xl px-4 py-3">
-        <span class="spicy-sidebar-icon flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 text-lg">🏠</span>
-        <span class="spicy-sidebar-label text-[15px] font-medium text-gray-700">Головна</span>
-      </a>
-
-      <a href="./category.html?slug=us-tovari" data-sidebar-item="catalog" class="spicy-sidebar-item flex items-center gap-3 rounded-2xl px-4 py-3">
-        <span class="spicy-sidebar-icon flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 text-lg">🛍️</span>
-        <span class="spicy-sidebar-label text-[15px] font-medium text-gray-700">Каталог</span>
-        <span class="ml-auto rounded-full bg-orange-100 px-3 py-1 text-[11px] font-bold text-spicy">30+ видів</span>
-      </a>
-
-      <a href="./category.html?slug=aktsiyi" data-sidebar-item="sale" class="spicy-sidebar-item flex items-center gap-3 rounded-2xl px-4 py-3">
-        <span class="spicy-sidebar-icon flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 text-lg">🔥</span>
-        <span class="spicy-sidebar-label text-[15px] font-medium text-gray-700">Акції</span>
-      </a>
-
-      <a href="./favorites.html" data-sidebar-item="favorites" class="spicy-sidebar-item flex items-center gap-3 rounded-2xl px-4 py-3">
-        <span class="spicy-sidebar-icon flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 text-lg">⭐</span>
-        <span class="spicy-sidebar-label text-[15px] font-medium text-gray-700">Обране</span>
-        <span id="spicy-sidebar-favorites-badge" class="spicy-sidebar-badge ml-auto">0</span>
-      </a>
-
-      <button id="spicy-sidebar-cart-btn" data-sidebar-item="cart" class="spicy-sidebar-item flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left">
-        <span class="spicy-sidebar-icon flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 text-lg">🛒</span>
-        <span class="spicy-sidebar-label text-[15px] font-medium text-gray-700">Кошик</span>
-        <span id="spicy-sidebar-cart-badge" class="spicy-sidebar-badge ml-auto">0</span>
-      </button>
-
-      <a href="./dashboard.html" data-sidebar-item="orders" class="spicy-sidebar-item flex items-center gap-3 rounded-2xl px-4 py-3">
-        <span class="spicy-sidebar-icon flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 text-lg">📦</span>
-        <span class="spicy-sidebar-label text-[15px] font-medium text-gray-700">Мої замовлення</span>
-      </a>
-
-      <button id="spicy-sidebar-profile-btn" data-sidebar-item="profile" class="spicy-sidebar-item flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left">
-        <span class="spicy-sidebar-icon flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 text-lg">👤</span>
-        <span class="spicy-sidebar-label text-[15px] font-medium text-gray-700">Особистий кабінет</span>
-      </button>
-
-      <a href="#faq" data-sidebar-item="faq" class="spicy-sidebar-item flex items-center gap-3 rounded-2xl px-4 py-3">
-        <span class="spicy-sidebar-icon flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 text-lg">❓</span>
-        <span class="spicy-sidebar-label text-[15px] font-medium text-gray-700">FAQ</span>
-      </a>
-    </nav>
-
-    <div class="mt-5 px-4">
-      <div class="rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 to-red-50 p-4">
-        <p class="mb-2 text-xs text-gray-500">Наші результати</p>
-        <div class="space-y-1">
-          <p class="text-[13px] text-gray-700"><span class="font-bold text-spicy">6 500+</span> клієнтів 👥</p>
-          <p class="text-[13px] text-gray-700"><span class="font-bold text-spicy">4.9</span> ⭐ рейтинг</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="mt-auto px-4 pt-5 pb-5">
-      <a href="./category.html?slug=us-tovari" class="spicy-sidebar-cta block w-full rounded-2xl fire-gradient py-3.5 text-center text-sm font-bold text-white">Обрати латяо 🌶️</a>
-      <div class="mt-4">
-        <p class="text-center text-xs text-gray-400">Ми в соцмережах</p>
-        <div class="mt-3 flex items-center justify-center gap-3">
-          <a href="https://t.me/sales_latiao" target="_blank" class="spicy-sidebar-social flex h-10 w-10 items-center justify-center rounded-xl bg-[#229ED9] text-lg text-white" aria-label="Telegram">✈️</a>
-          <a href="https://www.instagram.com" target="_blank" class="spicy-sidebar-social flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 via-red-500 to-orange-400 text-lg text-white" aria-label="Instagram">📷</a>
-        </div>
-      </div>
-    </div>
-  </aside>
 
   <!-- Skeleton Loader: Shown instantly while content loads -->
   <div class="page-skeleton">
@@ -1103,7 +893,7 @@
             <span class="font-semibold text-base sm:text-lg text-gray-900">💳 Оплата при отриманні — є?</span>
             <i data-lucide="chevron-down" class="w-5 h-5 text-gray-500 transition-transform"></i>
           </button>
-          <div class="accordion-content px-6"><p id="faq-cod-answer" class="text-gray-600 pb-6">Так, можна!<br><br>Ми просимо передоплату 100 грн, решту — при отриманні.<br><br>⚠️ Комісія Нової Пошти — 20 грн + 2% від суми замовлення.</p></div>
+          <div class="accordion-content px-6"><p class="text-gray-600 pb-6">Так, можна!<br><br>Ми просимо передоплату 100 грн, решту — при отриманні.<br><br>⚠️ Комісія Нової Пошти — 20 грн + 2% від суми замовлення.</p></div>
         </div>
         <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
           <button class="accordion-btn w-full flex items-center justify-between p-4 sm:p-6 text-left">
@@ -1167,7 +957,7 @@
   <section class="py-10 lg:py-24 fire-gradient relative overflow-hidden">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center relative z-10">
       <h2 class="text-2xl sm:text-4xl lg:text-6xl font-black text-white mb-6 leading-tight">Спробуй один раз — і зупинитися неможливо 🌶️</h2>
-      <a href="https://latiao-snack.com.ua/category.html?slug=us-tovari" class="inline-block bg-white text-spicy px-8 py-4 sm:px-10 sm:py-5 rounded-2xl font-bold text-lg sm:text-xl hover:scale-105 transition-transform shadow-lg">Обрати латяо</a>
+      <a href="#shop" class="inline-block bg-white text-spicy px-8 py-4 sm:px-10 sm:py-5 rounded-2xl font-bold text-lg sm:text-xl hover:scale-105 transition-transform shadow-lg">Перейти в магазин</a>
     </div>
   </section>
 
@@ -1346,35 +1136,6 @@
 
   <!-- Load Firebase Initialization (Must be first!) -->
   <script type="module" src="./js/firebase-init.js?v=1770245460083"></script>
-
-  <!-- 💳 Dynamic FAQ: Payment on Delivery answer based on requireDeposit setting -->
-  <script type="module">
-    import { db } from './js/firebase-init.js';
-    import { doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-
-    const COD_ANSWER_WITH_DEPOSIT =
-      'Так, можна!<br><br>Ми просимо передоплату 100 грн, решту — при отриманні.<br><br>⚠️ Комісія Нової Пошти — 20 грн + 2% від суми замовлення.';
-
-    const COD_ANSWER_NO_DEPOSIT =
-      'Так, звичайно 🙂<br>Можна оплатити при отриманні на Новій Пошті.<br>Комісія за накладений платіж — 20 грн + 2% від суми переказу.';
-
-    function updateFaqCodAnswer(requireDeposit) {
-      const el = document.getElementById('faq-cod-answer');
-      if (!el) return;
-      el.innerHTML = requireDeposit ? COD_ANSWER_WITH_DEPOSIT : COD_ANSWER_NO_DEPOSIT;
-    }
-
-    const paymentRef = doc(db, 'settings', 'payment');
-    onSnapshot(paymentRef,
-      (snap) => {
-        const requireDeposit = snap.exists() && snap.data().requireDeposit !== undefined
-          ? snap.data().requireDeposit
-          : true; // safe fallback
-        updateFaqCodAnswer(requireDeposit);
-      },
-      (err) => console.warn('⚠️ [FAQ] Could not load payment setting:', err)
-    );
-  </script>
 
   <!-- 📊 Visitor Device Tracking - Logs ONCE per session -->
   <script src="./js/visitor-tracker.js?v=1770245460083"></script>
@@ -2014,8 +1775,6 @@
       
       // Toggle favorite status
       window.toggleFavorite = function(event, productId) {
-        console.log('❤️ Heart clicked for ID:', productId);
-        
         // Prevent triggering parent link
         event.preventDefault();
         event.stopPropagation();
@@ -2040,55 +1799,6 @@
           icon.setAttribute('fill', 'currentColor');
           button.classList.add('favorite-active', 'favorite-pop');
           setTimeout(() => button.classList.remove('favorite-pop'), 300);
-          
-          console.log('➕ Added to favorites, localStorage updated');
-          
-          // 📊 TRACK ANALYTICS: Record favorite action in background
-          // Force immediate sync to Firestore with lazy imports
-          (async () => {
-            try {
-              const title = button.dataset.title || 'Unknown Product';
-              const price = parseFloat(button.dataset.price) || 0;
-              const image = button.dataset.image || '';
-              const sku = button.dataset.sku || productId;
-              
-              console.log('📊 Lazy loading Firebase modules...');
-              
-              // Lazy import Firebase
-              if (!window.db) {
-                const { db } = await import('./js/firebase-init.js');
-                window.db = db;
-                console.log('✅ Firebase db loaded');
-              }
-              
-              const { doc, setDoc, increment, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-              console.log('✅ Firestore functions loaded');
-              
-              const analyticsData = {
-                productId: productId,
-                title: title,
-                price: price,
-                image: image,
-                sku: sku,
-                addedCount: increment(1),
-                lastAddedAt: serverTimestamp()
-              };
-              
-              console.log('📊 Syncing to analytics_favorites:', analyticsData);
-              
-              const analyticsRef = doc(window.db, 'analytics_favorites', productId);
-              await setDoc(analyticsRef, analyticsData, { merge: true });
-              
-              console.log('✅ Analytics synced successfully!');
-            } catch (err) {
-              console.error('❌ Analytics sync failed:', err);
-              console.error('Error details:', {
-                code: err.code,
-                message: err.message,
-                stack: err.stack
-              });
-            }
-          })();
         }
         
         saveFavorites(favorites);
@@ -2096,53 +1806,6 @@
         // Re-init Lucide icons
         if (typeof lucide !== 'undefined') {
           lucide.createIcons();
-        }
-      }
-      
-      // ============================================
-      // 📊 FAVORITES ANALYTICS TRACKING
-      // ============================================
-      
-      /**
-       * Track when a product is added to favorites
-       * Runs silently in background without affecting user experience
-       */
-      async function trackFavoriteAnalytics(productId, button) {
-        try {
-          // Extract product data from data attributes
-          const title = button.dataset.title || 'Unknown Product';
-          const price = parseFloat(button.dataset.price) || 0;
-          const image = button.dataset.image || '';
-          const sku = button.dataset.sku || productId;
-          
-          console.log('📊 Tracking favorite:', { productId, title, price });
-          
-          // Lazy import Firebase if not already loaded
-          if (!window.db) {
-            const { db } = await import('./js/firebase-init.js');
-            window.db = db;
-          }
-          
-          const { doc, setDoc, increment, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-          
-          // Reference to analytics_favorites collection
-          const analyticsRef = doc(window.db, 'analytics_favorites', productId);
-          
-          // Increment or create document
-          await setDoc(analyticsRef, {
-            productId: productId,
-            title: title,
-            price: price,
-            image: image,
-            sku: sku,
-            addedCount: increment(1),
-            lastAddedAt: serverTimestamp()
-          }, { merge: true }); // merge:true ensures we increment existing or create new
-          
-          console.log('✅ Favorite analytics tracked successfully');
-        } catch (error) {
-          // Silent fail - don't disrupt user experience
-          console.warn('⚠️ Could not track favorite analytics:', error.message);
         }
       }
       
@@ -2529,185 +2192,5 @@
     
     console.log('✅ [PEPPER #1] Module loaded, window.initFaqPepper() available');
   </script>
-
-  <!-- Promotional Sub-Footer -->
-  <div class="bg-gray-900 border-t border-white/10 py-4 text-center">
-    <p class="text-[11px] uppercase tracking-widest text-white/60">
-      Треба створити сайт?
-      <a href="https://t.me/yarus_lik" target="_blank" class="text-white hover:text-blue-400 transition-all font-semibold ml-1 underline decoration-blue-500/50 underline-offset-4">
-        Напишіть нам
-      </a>
-    </p>
-  </div>
-
-  <script>
-    (function() {
-      const sidebar = document.getElementById('spicy-sidebar');
-      const overlay = document.getElementById('spicy-sidebar-overlay');
-      const openBtn = document.getElementById('spicy-sidebar-open-btn');
-      const closeBtn = document.getElementById('spicy-sidebar-close-btn');
-      const cartBtn = document.getElementById('spicy-sidebar-cart-btn');
-      const profileBtn = document.getElementById('spicy-sidebar-profile-btn');
-      const favoritesBadge = document.getElementById('spicy-sidebar-favorites-badge');
-      const cartBadge = document.getElementById('spicy-sidebar-cart-badge');
-
-      if (!sidebar || !openBtn || !closeBtn) return;
-
-      function isMobile() {
-        return window.matchMedia('(max-width: 767px)').matches;
-      }
-
-      function setOpenButtonVisibility() {
-        const isOpen = sidebar.classList.contains('open');
-        if (isOpen) {
-          openBtn.classList.add('hidden');
-          openBtn.classList.remove('flex');
-        } else {
-          openBtn.classList.remove('hidden');
-          openBtn.classList.add('flex');
-        }
-      }
-
-      function showOverlay() {
-        if (!overlay) return;
-        if (isMobile()) {
-          overlay.classList.remove('hidden');
-        }
-      }
-
-      function hideOverlay() {
-        if (!overlay) return;
-        overlay.classList.add('hidden');
-      }
-
-      function openSidebar() {
-        sidebar.classList.remove('mobile-closed');
-        sidebar.classList.add('open');
-        showOverlay();
-        setOpenButtonVisibility();
-      }
-
-      function closeSidebar() {
-        sidebar.classList.remove('open');
-        if (isMobile()) {
-          sidebar.classList.add('mobile-closed');
-        }
-        hideOverlay();
-        setOpenButtonVisibility();
-      }
-
-      function setLayoutByViewport() {
-        if (isMobile()) {
-          sidebar.classList.add('mobile-closed');
-          sidebar.classList.remove('open');
-          hideOverlay();
-        } else {
-          sidebar.classList.remove('mobile-closed');
-          hideOverlay();
-        }
-        setOpenButtonVisibility();
-      }
-
-      function parseCount(key) {
-        try {
-          const raw = localStorage.getItem(key);
-          if (!raw) return 0;
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) return parsed.length;
-          if (typeof parsed === 'number') return parsed;
-          if (parsed && typeof parsed.count === 'number') return parsed.count;
-          return 0;
-        } catch (err) {
-          return 0;
-        }
-      }
-
-      function parseCartCount() {
-        try {
-          const raw = localStorage.getItem('latiao_cart');
-          if (!raw) return 0;
-          const parsed = JSON.parse(raw);
-          if (!Array.isArray(parsed)) return 0;
-          return parsed.reduce((sum, item) => sum + (item.quantity || item.qty || 1), 0);
-        } catch (err) {
-          return 0;
-        }
-      }
-
-      function updateBadges() {
-        if (favoritesBadge) {
-          favoritesBadge.textContent = String(parseCount('latiao_favorites'));
-        }
-        if (cartBadge) {
-          cartBadge.textContent = String(parseCartCount());
-        }
-      }
-
-      function setActiveItemByUrl() {
-        const path = window.location.pathname;
-        const hash = window.location.hash;
-        const items = sidebar.querySelectorAll('[data-sidebar-item]');
-        items.forEach((item) => item.classList.remove('active'));
-
-        let activeKey = 'home';
-        if (path.endsWith('/favorites.html')) activeKey = 'favorites';
-        else if (path.endsWith('/dashboard.html')) activeKey = 'orders';
-        else if (path.endsWith('/category.html')) activeKey = 'catalog';
-        else if (hash === '#faq') activeKey = 'faq';
-
-        const activeItem = sidebar.querySelector('[data-sidebar-item="' + activeKey + '"]');
-        if (activeItem) activeItem.classList.add('active');
-      }
-
-      openBtn.addEventListener('click', openSidebar);
-      closeBtn.addEventListener('click', closeSidebar);
-
-      if (overlay) {
-        overlay.addEventListener('click', closeSidebar);
-      }
-
-      if (cartBtn) {
-        cartBtn.addEventListener('click', function() {
-          if (typeof window.openCart === 'function') {
-            window.openCart();
-          }
-          if (isMobile()) closeSidebar();
-        });
-      }
-
-      if (profileBtn) {
-        profileBtn.addEventListener('click', function() {
-          if (typeof window.showLoginView === 'function') {
-            window.showLoginView();
-          }
-          if (isMobile()) closeSidebar();
-        });
-      }
-
-      sidebar.querySelectorAll('a.spicy-sidebar-item').forEach((link) => {
-        link.addEventListener('click', function() {
-          if (isMobile()) closeSidebar();
-        });
-      });
-
-      window.addEventListener('resize', setLayoutByViewport);
-      window.addEventListener('storage', updateBadges);
-      window.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
-          closeSidebar();
-        }
-      });
-
-      setLayoutByViewport();
-      updateBadges();
-      setActiveItemByUrl();
-
-      window.updateSpicySidebarBadges = updateBadges;
-      document.addEventListener('visibilitychange', function() {
-        if (!document.hidden) updateBadges();
-      });
-    })();
-  </script>
-
 </body>
 </html>

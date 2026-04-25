@@ -303,6 +303,7 @@ window.editPromoCode = async (promoId) => {
   document.getElementById('limit-total').value = promoData.limits?.total || 0;
   document.getElementById('limit-per-user').value = promoData.limits?.perUser || 1;
   document.getElementById('min-order-amount').value = promoData.minOrderAmount || 0;
+  document.getElementById('max-discount-amount').value = promoData.maxDiscountAmount || 0;
   document.getElementById('promo-active').checked = promoData.isActive ?? true;
   document.getElementById('promo-internal-note').value = promoData.internalNote || '';
 
@@ -714,6 +715,7 @@ function initializeEventListeners() {
       const limitTotal = parseInt(document.getElementById('limit-total').value) || 0;
       const limitPerUser = parseInt(document.getElementById('limit-per-user').value) || 1;
       const minOrderAmount = parseInt(document.getElementById('min-order-amount').value) || 0;
+      const maxDiscountAmount = parseInt(document.getElementById('max-discount-amount').value) || 0;
       const isActive = document.getElementById('promo-active').checked;
       const internalNote = document.getElementById('promo-internal-note').value.trim();
 
@@ -743,6 +745,7 @@ function initializeEventListeners() {
             type: type,
             value: value,
             minOrderAmount: minOrderAmount,
+            maxDiscountAmount: maxDiscountAmount,
             limits: {
               total: limitTotal,
               perUser: limitPerUser
@@ -770,6 +773,7 @@ function initializeEventListeners() {
           type: type,
           value: value,
           minOrderAmount: minOrderAmount,
+          maxDiscountAmount: maxDiscountAmount,
           limits: {
             total: limitTotal,
             perUser: limitPerUser
