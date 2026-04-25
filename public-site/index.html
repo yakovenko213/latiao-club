@@ -2877,30 +2877,35 @@
   }
 
   function warmupProductImages(products) {
-    const urls = products
-      .map(p => p.image)
-      .filter(Boolean);
-
+    const urls = products.map(p => p.image).filter(Boolean);
     if (!urls.length) return;
 
-    const preloadChunk = (start = 0) => {
-      const chunk = urls.slice(start, start + 8);
-      chunk.forEach(src => {
+    // First 8 — inject <link rel="preload"> immediately (browser fetch queue)
+    urls.slice(0, 8).forEach(src => {
+      if (document.querySelector(`link[rel="preload"][href="${src}"]`)) return;
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'image';
+      link.href = src;
+      link.fetchPriority = 'high';
+      document.head.appendChild(link);
+    });
+
+    // Rest — preload in background chunks
+    const preloadRest = (start = 8) => {
+      urls.slice(start, start + 6).forEach(src => {
         const img = new Image();
         img.decoding = 'async';
         img.src = src;
       });
-
-      const next = start + 8;
-      if (next < urls.length) {
-        setTimeout(() => preloadChunk(next), 120);
-      }
+      const next = start + 6;
+      if (next < urls.length) setTimeout(() => preloadRest(next), 150);
     };
 
     if ('requestIdleCallback' in window) {
-      window.requestIdleCallback(() => preloadChunk(0), { timeout: 2000 });
+      window.requestIdleCallback(() => preloadRest(), { timeout: 1500 });
     } else {
-      setTimeout(() => preloadChunk(0), 250);
+      setTimeout(() => preloadRest(), 200);
     }
   }
 
@@ -2992,7 +2997,7 @@
 
       // Image: real photo or emoji fallback
       const imgHtml = p.image
-        ? `<img src="${p.image}" alt="${name}" class="card-img-photo" loading="lazy" decoding="async" fetchpriority="${index < 8 ? 'high' : 'low'}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+        ? `<img src="${p.image}" alt="${name}" class="card-img-photo" loading="${index < 8 ? 'eager' : 'lazy'}" decoding="async" fetchpriority="${index < 8 ? 'high' : 'low'}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
         : '';
       const emojiHtml = `<div class="card-img" style="${p.image ? 'display:none' : ''}">${p.emoji || getCategoryEmoji(catId)}</div>`;
 
