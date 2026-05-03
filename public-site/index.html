@@ -299,6 +299,37 @@
       font-variant-numeric: tabular-nums;
     }
 
+    .card-price-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .card-price-sale {
+      color: #e53e3e;
+      font-size: 20px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+    .card-price-old {
+      font-size: 14px;
+      font-weight: 600;
+      color: #a0aec0;
+      text-decoration: line-through;
+      line-height: 1;
+    }
+    .card-sale-badge {
+      display: inline-block;
+      background: #fff0f0;
+      color: #e53e3e;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 20px;
+      line-height: 1.4;
+    }
+
     .add-btn {
       background: var(--red);
       color: #fff;
@@ -677,90 +708,129 @@
       box-shadow: 0 2px 8px rgba(232,40,26,.5);
     }
 
-    /* ── PRODUCT MODAL ── */
+    /* ── PRODUCT PAGE (повноцінна сторінка) ── */
     .pm-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,.45);
+      background: #fff;
       z-index: 400;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
       opacity: 0;
       pointer-events: none;
-      transition: opacity .22s;
+      transition: opacity .25s, transform .25s cubic-bezier(.4,0,.2,1);
+      overflow-y: auto;
+      overflow-x: hidden;
+      transform: translateX(28px);
     }
-    .pm-overlay.open { opacity: 1; pointer-events: all; }
+    .pm-overlay.open { opacity: 1; pointer-events: all; transform: translateX(0); }
 
     .pm-modal {
-      background: #fff;
-      border-radius: var(--radius);
-      border-top: 3px solid var(--red);
-      width: 100%;
-      max-width: 700px;
-      height: 90vh;
-      max-height: 90vh;
-      overflow: hidden;
-      transform: translateY(14px);
-      transition: transform .22s;
+      min-height: 100%;
       display: flex;
       flex-direction: column;
+      background-color: #fff;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg fill='none' stroke='%23f0dedd' stroke-width='1.2' stroke-linecap='round'%3E%3Cellipse cx='24' cy='22' rx='5' ry='9' transform='rotate(-20 24 22)'/%3E%3Cpath d='M24 13 C26 8 30 7 31 5'/%3E%3Cellipse cx='80' cy='68' rx='5' ry='9' transform='rotate(15 80 68)'/%3E%3Cpath d='M80 59 C82 54 86 53 87 51'/%3E%3Cellipse cx='50' cy='100' rx='3.5' ry='6.5' transform='rotate(-35 50 100)'/%3E%3Cpath d='M50 93 C52 89 55 88 56 86'/%3E%3Cellipse cx='105' cy='30' rx='3.5' ry='6.5' transform='rotate(30 105 30)'/%3E%3Cpath d='M105 23 C107 19 110 18 111 16'/%3E%3C/g%3E%3C/svg%3E");
+      background-size: 120px 120px;
     }
-    .pm-overlay.open .pm-modal { transform: translateY(0); }
 
-    .pm-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--border);
+    /* ── PRODUCT PAGE: HEADER ── */
+    .pp-header {
       position: sticky;
       top: 0;
+      z-index: 10;
       background: #fff;
-      z-index: 1;
+      border-bottom: 2px solid var(--red);
+      padding: 0 24px;
     }
-    .pm-head-title {
-      font-family: 'Inter', sans-serif;
-      font-size: 20px;
-      letter-spacing: .8px;
+    .pp-header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
     }
-    .pm-close {
+    .pp-back-btn {
       background: none;
       border: 1.5px solid var(--border);
       border-radius: var(--radius);
-      width: 34px;
-      height: 34px;
+      padding: 8px 14px;
       cursor: pointer;
-      font-size: 16px;
       display: flex;
       align-items: center;
-      justify-content: center;
-      transition: border-color .18s, color .18s;
-      flex-shrink: 0;
-      line-height: 1;
+      gap: 6px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
       color: var(--text);
+      transition: border-color .2s, background .2s, color .2s;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
-    .pm-close:hover { border-color: var(--red); color: var(--red); }
-
-    .pm-body {
+    .pp-back-btn:hover { border-color: var(--red); background: var(--red-light); color: var(--red); }
+    .pp-header-right {
+      margin-left: auto;
       display: flex;
-      gap: 0;
-      flex: 1;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* ── PRODUCT PAGE: BREADCRUMB ── */
+    .pp-breadcrumb {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+    }
+    .pp-breadcrumb-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 10px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
       overflow: hidden;
     }
+    .pp-bc-link {
+      background: none;
+      border: none;
+      color: var(--red);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      padding: 0;
+      white-space: nowrap;
+      transition: opacity .15s;
+    }
+    .pp-bc-link:hover { opacity: .75; }
+    .pp-bc-sep { color: var(--muted); flex-shrink: 0; }
+    .pp-bc-cat { color: var(--muted); white-space: nowrap; }
+    .pp-bc-name { color: var(--text); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+    /* ── PRODUCT PAGE: CONTENT GRID ── */
+    .pp-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 40px 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: start;
+    }
+
+    /* ── PRODUCT PAGE: GALLERY ── */
     .pm-gallery {
-      width: 42%;
-      flex-shrink: 0;
       background: linear-gradient(135deg, #fff5f5 0%, #ffe8e5 100%);
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 10px;
-      padding: 20px;
-      overflow-y: auto;
-      border-right: 1.5px solid var(--border);
+      gap: 12px;
+      padding: 24px;
+      border-radius: var(--radius);
+      border: 1.5px solid var(--border);
+      position: sticky;
+      top: 80px;
     }
     .pm-main-img {
       width: 100%;
@@ -789,8 +859,8 @@
       justify-content: center;
     }
     .pm-thumb {
-      width: 50px;
-      height: 50px;
+      width: 56px;
+      height: 56px;
       object-fit: cover;
       border-radius: var(--radius);
       border: 1.5px solid var(--border);
@@ -800,20 +870,38 @@
     }
     .pm-thumb.active, .pm-thumb:hover { border-color: var(--red); }
 
+    /* ── PRODUCT PAGE: INFO ── */
     .pm-info {
-      flex: 1;
-      padding: 20px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 18px;
       min-width: 0;
-      overflow-y: auto;
     }
 
     .pm-name {
-      font-size: 20px;
+      font-size: 26px;
       font-weight: 700;
       line-height: 1.3;
+    }
+
+    /* ── PRODUCT PAGE: REVIEWS SECTION ── */
+    .pp-reviews {
+      border-top: 1px solid var(--border);
+      padding: 0 24px;
+      background: rgba(255,255,255,.85);
+    }
+    .pp-reviews-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 0 40px;
+    }
+
+    /* ── PRODUCT PAGE: FOOTER ── */
+    .pp-footer {
+      text-align: center;
+      padding: 20px 24px 32px;
+      border-top: 1px solid var(--border);
+      margin-top: auto;
     }
 
     .pm-sku {
@@ -951,7 +1039,7 @@
     }
     .pm-price {
       font-family: 'Inter', sans-serif;
-      font-size: 30px;
+      font-size: 36px;
       font-weight: 800;
       letter-spacing: -.5px;
       line-height: 1;
@@ -1367,116 +1455,66 @@
     }
     .cart-btn-float.hidden-fab { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(10px); }
 
-    /* ── PRODUCT MODAL mobile — bottom sheet ── */
-    @media (max-width: 600px) {
-      .pm-overlay {
-        align-items: flex-end;
-        padding: 0;
-      }
-      .pm-modal {
-        height: 95dvh;
-        max-height: 95dvh;
-        border-radius: 20px 20px 0 0;
-        border-top: none;
-        transform: translateY(100%);
-        display: flex;
-        flex-direction: column;
-      }
-      .pm-overlay.open .pm-modal { transform: translateY(0); }
+    /* ── PRODUCT PAGE — mobile ── */
+    @media (max-width: 768px) {
+      .pp-header { padding: 0 12px; }
+      .pp-header-inner { height: 56px; gap: 10px; }
+      .pp-back-btn { font-size: 13px; padding: 7px 11px; }
+      .pp-breadcrumb { display: none; }
 
-      /* drag handle indicator */
-      .pm-modal::before {
-        content: '';
-        display: block;
-        width: 40px;
-        height: 4px;
-        background: #ddd;
-        border-radius: 4px;
-        margin: 10px auto 0;
-        flex-shrink: 0;
+      .pp-content {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 16px 12px 24px;
       }
 
-      /* compact header */
-      .pm-head {
-        padding: 10px 16px;
-        border-bottom: 1px solid var(--border);
-      }
-      .pm-head-title { font-size: 17px; }
-      .pm-close { width: 34px; height: 34px; font-size: 16px; }
-
-      /* single column scroll */
-      .pm-body {
-        flex-direction: column;
-        overflow-y: auto;
-        overflow-x: hidden;
-        -webkit-overflow-scrolling: touch;
-        flex: 1;
-      }
-
-      /* gallery — wide image */
       .pm-gallery {
-        width: 100%;
-        padding: 16px 16px 10px;
-        overflow: hidden;
-        background: linear-gradient(135deg, #fff5f5 0%, #ffe8e5 100%);
-        border-right: none;
-        border-bottom: 1.5px solid var(--border);
-        flex-shrink: 0;
+        position: static;
+        padding: 16px;
+        border-radius: var(--radius);
+        align-items: flex-start;
       }
+
       .pm-main-img {
         width: 100%;
         height: auto;
-        max-height: 300px;
+        max-height: 320px;
         aspect-ratio: unset;
         object-fit: contain;
         object-position: center;
-        border-radius: var(--radius);
-        border: 1.5px solid rgba(232,40,26,.12);
-        cursor: zoom-in;
-        display: block;
         background: rgba(255,255,255,.6);
       }
+
       .pm-main-emoji {
         aspect-ratio: 1/1;
         max-height: 260px;
         font-size: 88px;
-      }
-      .pm-thumbs {
-        padding: 8px 0 4px;
-        justify-content: flex-start;
-        gap: 8px;
-      }
-      .pm-thumb {
-        width: 52px;
-        height: 52px;
-        border-radius: var(--radius);
-        object-fit: cover;
+        width: 100%;
       }
 
-      /* info */
-      .pm-info {
-        padding: 16px 16px 32px;
-        gap: 12px;
-        overflow: visible;
-      }
-      .pm-name { font-size: 18px; }
+      .pm-thumbs { padding: 8px 0 2px; justify-content: flex-start; gap: 8px; }
+      .pm-thumb { width: 52px; height: 52px; }
+
+      .pm-info { gap: 14px; }
+      .pm-name { font-size: 20px; }
       .pm-price { font-size: 28px; }
 
-      /* bigger tap targets for qty */
       .pm-qty-btn { width: 40px; height: 40px; font-size: 22px; }
       .pm-qty-val { font-size: 18px; }
 
-      /* bigger add button */
-      .pm-add-btn {
-        padding: 16px;
-        font-size: 16px;
-        border-radius: 10px;
-        letter-spacing: .3px;
-      }
+      .pm-add-btn { padding: 16px; font-size: 16px; border-radius: 10px; letter-spacing: .3px; }
 
-      /* accordion bigger tap area */
       .pm-acc-btn { padding: 14px 0; font-size: 13px; }
       .pm-acc-body { font-size: 14px; }
+
+      .pp-reviews { padding: 0 12px; }
+      .pp-reviews-inner { padding: 20px 0 32px; }
+      .pp-footer { padding: 16px 12px 24px; }
+    }
+
+    @media (max-width: 480px) {
+      .pp-header-inner { height: 52px; }
+      .pm-add-btn { letter-spacing: 0; }
     }
 
     /* ── LIGHTBOX ── */
@@ -1557,30 +1595,25 @@
     }
 
     /* ── CUSTOM SCROLLBAR ── */
-    .pm-info::-webkit-scrollbar,
-    .pm-gallery::-webkit-scrollbar,
+    .pm-overlay::-webkit-scrollbar,
     .drawer-body::-webkit-scrollbar {
-      width: 4px;
+      width: 5px;
     }
-    .pm-info::-webkit-scrollbar-track,
-    .pm-gallery::-webkit-scrollbar-track,
+    .pm-overlay::-webkit-scrollbar-track,
     .drawer-body::-webkit-scrollbar-track {
       background: var(--red-light);
       border-radius: 4px;
     }
-    .pm-info::-webkit-scrollbar-thumb,
-    .pm-gallery::-webkit-scrollbar-thumb,
+    .pm-overlay::-webkit-scrollbar-thumb,
     .drawer-body::-webkit-scrollbar-thumb {
       background: var(--red);
       border-radius: 4px;
     }
-    .pm-info::-webkit-scrollbar-thumb:hover,
-    .pm-gallery::-webkit-scrollbar-thumb:hover,
+    .pm-overlay::-webkit-scrollbar-thumb:hover,
     .drawer-body::-webkit-scrollbar-thumb:hover {
       background: var(--red-dark);
     }
-    .pm-info { scrollbar-width: thin; scrollbar-color: var(--red) var(--red-light); }
-    .pm-gallery { scrollbar-width: thin; scrollbar-color: var(--red) var(--red-light); }
+    .pm-overlay { scrollbar-width: thin; scrollbar-color: var(--red) var(--red-light); }
     .drawer-body { scrollbar-width: thin; scrollbar-color: var(--red) var(--red-light); }
 
     /* ── WISHLIST BUTTON (header) ── */
@@ -2231,8 +2264,7 @@
 
 <!-- PROMO BANNER -->
 <div class="promo-top-banner">
-  <span>🔥 Новим клієнтам — знижка&nbsp;−15% до кінця травня.</span>
-  <button class="promo-top-banner-btn" onclick="openPromoModal()">тиць сюди</button>
+  <span>🔥 Новим клієнтам — знижка&nbsp;−15% до кінця квітня.</span>
 </div>
 
 <!-- HEADER -->
@@ -2410,7 +2442,7 @@
     <img class="promo-modal-img" src="images/salesse.png" alt="Акція -15%">
     <div class="promo-modal-body">
       <p class="promo-modal-desc">
-        Новим клієнтам до кінця травня даруємо промо-код на <strong>−15% знижки</strong> на перше замовлення в нашому магазині. Просто введіть код при оформленні — і знижка застосується автоматично.
+        Новим клієнтам до кінця квітня даруємо промо-код на <strong>−15% знижки</strong> на перше замовлення в нашому магазині. Просто введіть код при оформленні — і знижка застосується автоматично.
       </p>
 
       <div>
@@ -2454,25 +2486,57 @@
   Оплата та Доставка
 </button>
 
-<!-- PRODUCT MODAL -->
+<!-- PRODUCT PAGE -->
 <div class="pm-overlay" id="pmOverlay">
   <div class="pm-modal" id="pmModal">
-    <div class="pm-head">
-      <span class="pm-head-title">Деталі товару</span>
-      <div class="pm-head-actions">
-        <button class="pm-wish-btn" id="pmWishBtn" title="Додати до обраного">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path class="heart-path" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span class="pm-wish-stat-num" id="pmWishStatCount"></span>
+
+    <!-- Sticky site-like header -->
+    <div class="pp-header">
+      <div class="pp-header-inner">
+        <button class="pp-back-btn" id="pmClose">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          Назад
         </button>
-        <button class="pm-close" id="pmClose">✕</button>
+        <a class="logo" href="#" onclick="closeProductModal();return false;">
+          <span class="logo-fire">🔥</span>
+          <span class="logo-text">Latiao<span> Snack</span></span>
+        </a>
+        <div class="pp-header-right">
+          <button class="pm-wish-btn" id="pmWishBtn" title="Додати до обраного">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path class="heart-path" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="pm-wish-stat-num" id="pmWishStatCount"></span>
+          </button>
+          <button class="cart-btn" id="ppCartOpen">
+            <span class="cart-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M16 10a4 4 0 0 1-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            Кошик
+            <span class="cart-count hidden" id="ppCartCount">0</span>
+          </button>
+        </div>
       </div>
     </div>
-    <div class="pm-body">
+
+    <!-- Breadcrumb -->
+    <div class="pp-breadcrumb">
+      <div class="pp-breadcrumb-inner">
+        <button class="pp-bc-link" id="ppBcHome">Усі товари</button>
+        <span class="pp-bc-sep">›</span>
+        <span class="pp-bc-cat" id="ppBcCat"></span>
+        <span class="pp-bc-sep" id="ppBcSep2">›</span>
+        <span class="pp-bc-name" id="ppBcName"></span>
+      </div>
+    </div>
+
+    <!-- 2-column product content -->
+    <div class="pp-content">
+
+      <!-- Gallery -->
       <div class="pm-gallery" id="pmGallery">
         <div class="pm-main-emoji" id="pmMainEmoji" style="display:none">📦</div>
         <img class="pm-main-img" id="pmMainImg" src="" alt="" style="display:none">
         <div class="pm-thumbs" id="pmThumbs"></div>
       </div>
+
+      <!-- Info -->
       <div class="pm-info">
         <div class="pm-sku" id="pmSku"></div>
         <div class="pm-name-row">
@@ -2543,8 +2607,12 @@
           </button>
           <div class="pm-acc-body" id="pmSpecs"></div>
         </div>
+      </div>
+    </div>
 
-        <!-- REVIEWS STRIP -->
+    <!-- Reviews (full width below 2-column) -->
+    <div class="pp-reviews">
+      <div class="pp-reviews-inner">
         <div class="pm-reviews-section" id="pmReviewsSection">
           <div class="pm-reviews-header">
             <span class="pm-reviews-title">Відгуки</span>
@@ -2557,6 +2625,21 @@
         </div>
       </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="pp-footer">
+      <div class="footer-inner">
+        <a href="https://instagram.com" target="_blank" class="ig-link" title="Ми в Instagram">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="2" width="20" height="20" rx="5.5" stroke="currentColor" stroke-width="1.8"/>
+            <circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.8"/>
+            <circle cx="17.5" cy="6.5" r="1" fill="currentColor"/>
+          </svg>
+          @latiao_snack
+        </a>
+      </div>
+    </footer>
+
   </div>
 </div>
 
@@ -3012,7 +3095,14 @@
             <div class="card-name">${name}</div>
             ${p.description ? `<div class="card-desc">${p.description}</div>` : ''}
             <div class="card-footer">
-              <span class="card-price">${price} грн</span>
+              ${(p.originalPrice && p.originalPrice > price)
+                ? `<div class="card-price-row">
+                     <span class="card-price-sale">${price} грн</span>
+                     <span class="card-price-old">${p.originalPrice} грн</span>
+                     <span class="card-sale-badge">-${Math.round(((p.originalPrice - price) / p.originalPrice) * 100)}%</span>
+                   </div>`
+                : `<span class="card-price">${price} грн</span>`
+              }
               ${outOfStock
                 ? ''
                 : `<button class="add-btn"
@@ -3263,6 +3353,9 @@
 
     countEl.textContent = qty;
     countEl.classList.toggle('hidden', qty === 0);
+    // Sync cart count on product page header
+    const ppCount = document.getElementById('ppCartCount');
+    if (ppCount) { ppCount.textContent = qty; ppCount.classList.toggle('hidden', qty === 0); }
     totalEl.textContent = total + ' грн';
     warnEl.classList.toggle('show', items.length > 0 && total < 100);
     checkEl.disabled = total < 100;
@@ -3390,9 +3483,17 @@
     document.body.style.overflow = 'hidden';
   }
   function closeDrawer() {
-    document.getElementById('drawer').classList.remove('open');
-    document.getElementById('overlay').classList.remove('open');
-    document.body.style.overflow = '';
+    const drawer = document.getElementById('drawer');
+    const overlay = document.getElementById('overlay');
+    drawer.classList.remove('open');
+    overlay.classList.remove('open');
+    // Reset elevated z-index (set when opened from product page)
+    drawer.style.zIndex = '';
+    overlay.style.zIndex = '';
+    // Restore body scroll only if product page is also closed
+    if (!document.getElementById('pmOverlay').classList.contains('open')) {
+      document.body.style.overflow = '';
+    }
   }
 
   document.getElementById('cartToggle').addEventListener('click', openDrawer);
@@ -3467,10 +3568,24 @@
   let pmQty = 1;
   let pmProduct = null;
 
+  let productPagePushed = false;
+
   function openProductModal(p) {
     pmProduct = p;
     pmQty = 1;
     document.getElementById('pmQtyVal').textContent = 1;
+
+    // Scroll product page to top
+    const overlay = document.getElementById('pmOverlay');
+    overlay.scrollTop = 0;
+
+    // Update breadcrumb
+    const productName = p.name || p.title || 'Товар';
+    const catId = p.category || p.categoryId || '';
+    const catName = getCategoryLabel(catId);
+    document.getElementById('ppBcName').textContent = productName;
+    document.getElementById('ppBcCat').textContent = catName;
+    document.getElementById('ppBcSep2').style.display = catName ? '' : 'none';
 
     // SKU
     const skuEl = document.getElementById('pmSku');
@@ -3562,6 +3677,12 @@
     document.getElementById('pmOverlay').classList.add('open');
     document.body.style.overflow = 'hidden';
 
+    // Push history state so browser Back button works
+    if (!productPagePushed) {
+      history.pushState({ productPage: true }, '');
+      productPagePushed = true;
+    }
+
     // Wishlist state for this product
     updateModalWishBtn(p.id);
 
@@ -3573,9 +3694,15 @@
   }
 
   function closeProductModal() {
-    document.getElementById('pmOverlay').classList.remove('open');
+    const overlay = document.getElementById('pmOverlay');
+    if (!overlay.classList.contains('open')) return;
+    overlay.classList.remove('open');
     document.body.style.overflow = '';
     pmProduct = null;
+    if (productPagePushed) {
+      productPagePushed = false;
+      history.back();
+    }
   }
 
   // ── REVIEWS HELPERS ──────────────────────────────────────────────
@@ -3649,8 +3776,26 @@
   }
 
   document.getElementById('pmClose').addEventListener('click', closeProductModal);
-  document.getElementById('pmOverlay').addEventListener('click', e => {
-    if (e.target === document.getElementById('pmOverlay')) closeProductModal();
+  document.getElementById('ppBcHome').addEventListener('click', closeProductModal);
+
+  // Cart button on product page — elevate drawer above product page overlay
+  document.getElementById('ppCartOpen').addEventListener('click', () => {
+    const drawer = document.getElementById('drawer');
+    const overlayEl = document.getElementById('overlay');
+    drawer.style.zIndex = '450';
+    overlayEl.style.zIndex = '449';
+    openDrawer();
+  });
+
+  // Browser Back button closes product page
+  window.addEventListener('popstate', () => {
+    const overlay = document.getElementById('pmOverlay');
+    if (overlay && overlay.classList.contains('open')) {
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+      pmProduct = null;
+      productPagePushed = false;
+    }
   });
 
   // Accordion toggle

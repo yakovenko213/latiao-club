@@ -1145,7 +1145,8 @@ async function performProductSync() {
         const normalizedSku = data.sku.trim().toLowerCase();
         firebaseProductsMap.set(normalizedSku, {
           id: doc.id,
-          currentStock: data.stock || 0
+          currentStock: data.stock || 0,
+          isOnSale: data.isOnSale === true
         });
       }
     });
@@ -1217,7 +1218,8 @@ async function performProductSync() {
           sku: crmSKU,
           oldStock: firebaseProduct.currentStock,
           newStock: isNaN(stockValue) || stockValue < 0 ? 0 : stockValue,
-          newPrice: crmPrice
+          newPrice: crmPrice,
+          isOnSale: firebaseProduct.isOnSale
         });
         matched.push(crmSKU);
         if (crmPrice !== null) {
@@ -1251,7 +1253,7 @@ async function performProductSync() {
             lastSyncedFromCRM: new Date().toISOString()
           };
 
-          if (update.newPrice !== null) {
+          if (update.newPrice !== null && !update.isOnSale) {
             payload.price = Math.round(update.newPrice * 100) / 100;
             priceUpdatesCount++;
           }
@@ -2158,5 +2160,4 @@ exports.getGoogleFeed = functions.https.onRequest(async (req, res) => {
 </channel>
 </rss>`);
     }
-  });
 });

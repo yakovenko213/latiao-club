@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Дякуємо за замовлення! | Latiao Snack</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red: #E8281A;
+      --red-dark: #C01F14;
+      --red-light: #fdf2f1;
+      --text: #1a1a1a;
+      --muted: #6b6b6b;
+      --border: #e8e8e8;
+      --bg: #ffffff;
+      --card-bg: #fafafa;
+      --radius: 5px;
+    }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background-color: #fff;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg fill='none' stroke='%23f0dedd' stroke-width='1.2' stroke-linecap='round'%3E%3Cellipse cx='24' cy='22' rx='5' ry='9' transform='rotate(-20 24 22)'/%3E%3Cpath d='M24 13 C26 8 30 7 31 5'/%3E%3Cellipse cx='80' cy='68' rx='5' ry='9' transform='rotate(15 80 68)'/%3E%3Cpath d='M80 59 C82 54 86 53 87 51'/%3E%3Cellipse cx='50' cy='100' rx='3.5' ry='6.5' transform='rotate(-35 50 100)'/%3E%3Cpath d='M50 93 C52 89 55 88 56 86'/%3E%3Cellipse cx='105' cy='30' rx='3.5' ry='6.5' transform='rotate(30 105 30)'/%3E%3Cpath d='M105 23 C107 19 110 18 111 16'/%3E%3Cpath d='M10 80 C10 74 14 72 13 68 C16 72 14 76 18 78 C16 74 19 70 17 66 C21 71 20 77 22 80 C22 86 16 90 16 90 C10 90 10 84 10 80Z' stroke='%23f5cdc9' stroke-width='1'/%3E%3Cpath d='M90 10 C90 4 94 2 93 -2 C96 2 94 6 98 8 C96 4 99 0 97 -4 C101 1 100 7 102 10 C102 16 96 20 96 20 C90 20 90 14 90 10Z' stroke='%23f5cdc9' stroke-width='1'/%3E%3C/g%3E%3C/svg%3E");
+      background-size: 120px 120px;
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #fff;
+      border-bottom: 2px solid var(--red);
+      padding: 0 24px;
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+
+    .logo-text {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 26px;
+      letter-spacing: 1px;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .logo-text span { color: var(--red); }
+    .logo-fire { font-size: 20px; }
+
+    .back-link {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      text-decoration: none;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 7px 13px;
+      transition: border-color .18s, color .18s;
+    }
+
+    .back-link:hover { border-color: var(--red); color: var(--red); }
+
+    /* ── LOADING / ERROR ── */
+    .state-screen {
+      max-width: 480px;
+      margin: 80px auto;
+      padding: 0 24px;
+      text-align: center;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid var(--border);
+      border-top-color: var(--red);
+      border-radius: 50%;
+      margin: 0 auto 20px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .state-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 24px;
+      letter-spacing: .6px;
+      margin-bottom: 8px;
+    }
+
+    .state-sub { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
+
+    .countdown-badge {
+      display: inline-block;
+      background: var(--red-light);
+      border: 1px solid #f5c6c3;
+      color: var(--red-dark);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+    }
+
+    .btn-red {
+      display: inline-block;
+      background: var(--red);
+      color: #fff;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 800;
+      font-size: 14px;
+      padding: 11px 24px;
+      border-radius: var(--radius);
+      text-decoration: none;
+      transition: background .18s;
+    }
+
+    .btn-red:hover { background: var(--red-dark); }
+
+    /* ── SUCCESS WRAP ── */
+    .page-wrap {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 36px 24px 80px;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-up { animation: fadeUp .4s ease both; }
+
+    /* ── SUCCESS BANNER ── */
+    .success-banner {
+      text-align: center;
+      margin-bottom: 36px;
+      animation: fadeUp .5s ease both;
+    }
+
+    .success-icon {
+      width: 72px;
+      height: 72px;
+      background: var(--red);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 18px;
+      font-size: 30px;
+      animation: pop .5s cubic-bezier(.34,1.56,.64,1) .1s both;
+    }
+
+    @keyframes pop {
+      from { transform: scale(.5); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+
+    .success-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .success-sub {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 520px;
+      margin: 0 auto 20px;
+    }
+
+    .order-id-chip {
+      display: inline-block;
+      background: var(--red-light);
+      border: 1px solid #f5c6c3;
+      border-radius: var(--radius);
+      padding: 6px 14px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px;
+      color: var(--red);
+      letter-spacing: 1px;
+    }
+
+    /* ── GRID ── */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 760px) {
+      .content-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 16px;
+      animation: fadeUp .4s ease both;
+    }
+
+    .card:last-child { margin-bottom: 0; }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 18px;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-head-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-head-icon { font-size: 18px; }
+
+    .card-head-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 17px;
+      letter-spacing: .5px;
+    }
+
+    .card-body { padding: 16px 18px; }
+
+    /* ── ORDER ITEMS ── */
+    .order-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .order-item:last-child { border-bottom: none; }
+
+    .order-item-img {
+      width: 52px;
+      height: 52px;
+      border-radius: var(--radius);
+      background: var(--red-light);
+      overflow: hidden;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .order-item-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .order-item-name { font-size: 14px; font-weight: 700; flex: 1; min-width: 0; }
+    .order-item-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .order-item-price { font-size: 14px; font-weight: 800; flex-shrink: 0; }
+
+    .totals-divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+
+    .totals-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+
+    .totals-row span:last-child { font-weight: 700; color: var(--text); }
+
+    .totals-row.green { color: #16a34a; }
+    .totals-row.green span:last-child { color: #16a34a; }
+
+    .totals-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1.5px solid var(--border);
+    }
+
+    .totals-total-label { font-size: 15px; font-weight: 800; }
+
+    .totals-total-price {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 26px;
+      color: var(--red);
+      letter-spacing: .5px;
+    }
+
+    .note { font-size: 11px; color: var(--muted); margin-top: 8px; }
+
+    /* ── INFO ROWS (right column) ── */
+    .info-label {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--muted);
+      margin-bottom: 4px;
+      margin-top: 12px;
+    }
+
+    .info-label:first-child { margin-top: 0; }
+
+    .info-value {
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .info-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--red-light);
+      border: 1px solid #f5c6c3;
+      border-radius: var(--radius);
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--red-dark);
+      margin-top: 10px;
+    }
+
+    .delivery-logo {
+      height: 20px;
+      width: auto;
+      object-fit: contain;
+      border-radius: 3px;
+      vertical-align: middle;
+      margin-right: 4px;
+    }
+
+    /* ── COD BREAKDOWN ── */
+    .cod-box {
+      background: var(--red-light);
+      border: 1px solid #f5c6c3;
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      margin-top: 12px;
+    }
+
+    .cod-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      margin-bottom: 5px;
+    }
+
+    .cod-row:last-child { margin-bottom: 0; }
+
+    .cod-row.big {
+      font-weight: 800;
+      font-size: 14px;
+      color: var(--red-dark);
+      padding-top: 8px;
+      margin-top: 6px;
+      border-top: 1px dashed #f5c6c3;
+    }
+
+    /* ── CASHBACK ── */
+    .cashback-box {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      margin-top: 10px;
+    }
+
+    .cashback-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .cashback-row:last-child { margin-bottom: 0; }
+    .cashback-row .earned { color: #16a34a; }
+    .cashback-row .used   { color: #d97706; }
+    .cashback-note { font-size: 11px; color: #92400e; margin-top: 8px; border-top: 1px solid #fde68a; padding-top: 8px; }
+
+    /* ── ACTION BUTTONS ── */
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 28px;
+      animation: fadeUp .5s .2s ease both;
+    }
+
+    .btn-outline {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 18px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      text-decoration: none;
+      transition: border-color .18s, color .18s;
+    }
+
+    .btn-outline:hover { border-color: var(--red); color: var(--red); }
+
+    /* ── HELP CARD ── */
+    .help-card {
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-align: center;
+      background: #fff;
+      margin-top: 24px;
+      animation: fadeUp .5s .25s ease both;
+    }
+
+    .help-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px;
+      letter-spacing: .5px;
+      margin-bottom: 6px;
+    }
+
+    .help-sub { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+
+    .tg-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #229ED9;
+      color: #fff;
+      font-family: 'Nunito', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px 20px;
+      border-radius: var(--radius);
+      text-decoration: none;
+      transition: background .18s;
+    }
+
+    .tg-btn:hover { background: #1a8bbf; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: #1a1a1a;
+      color: #fff;
+      padding: 48px 24px;
+      margin-top: 48px;
+    }
+
+    .footer-inner {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr; } }
+
+    .stat-card {
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-align: center;
+    }
+
+    .stat-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      color: var(--red);
+      letter-spacing: 1px;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .stat-label { font-size: 13px; color: rgba(255,255,255,.55); font-weight: 600; }
+
+    .footer-tagline {
+      text-align: center;
+      font-size: 14px;
+      color: rgba(255,255,255,.45);
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    .footer-copy {
+      text-align: center;
+      font-size: 12px;
+      color: rgba(255,255,255,.25);
+    }
+
+    @media (max-width: 500px) {
+      .actions { flex-direction: column; }
+      .actions .btn-red, .actions .btn-outline { text-align: center; justify-content: center; }
+    }
+
+    /* ══════════════════════════════════
+       MOBILE — max-width: 480px
+    ══════════════════════════════════ */
+    @media (max-width: 480px) {
+      /* Header */
+      header { padding: 0 12px; }
+      .header-inner { height: 52px; }
+      .logo-text { font-size: 22px; }
+      .logo-fire { font-size: 17px; }
+      .back-link { font-size: 12px; padding: 6px 10px; }
+
+      /* Page wrap */
+      .page-wrap { padding: 18px 12px 60px; }
+
+      /* Success banner */
+      .success-banner { margin-bottom: 22px; }
+      .success-icon { width: 56px; height: 56px; font-size: 24px; margin-bottom: 12px; }
+      .success-title { font-size: 26px; }
+      .success-sub { font-size: 13px; margin-bottom: 14px; }
+      .order-id-chip { font-size: 17px; padding: 5px 12px; }
+
+      /* Cards */
+      .card { margin-bottom: 10px; border-radius: 8px; }
+      .card-head { padding: 11px 14px; }
+      .card-head-title { font-size: 15px; }
+      .card-head-icon { font-size: 16px; }
+      .card-body { padding: 12px 14px; }
+
+      /* Order items */
+      .order-item-img { width: 42px; height: 42px; font-size: 20px; }
+      .order-item-name { font-size: 13px; }
+      .order-item-meta { font-size: 11px; }
+      .order-item-price { font-size: 13px; }
+
+      /* Totals */
+      .totals-row { font-size: 12px; }
+      .totals-total-label { font-size: 14px; }
+      .totals-total-price { font-size: 24px; }
+
+      /* Info blocks */
+      .info-label { font-size: 10px; margin-top: 10px; }
+      .info-value { font-size: 13px; }
+
+      /* Actions */
+      .actions { margin-top: 18px; gap: 8px; }
+      .btn-red { font-size: 14px; padding: 13px 20px; border-radius: 8px; }
+
+      /* Help card */
+      .help-card { padding: 14px; margin-top: 16px; border-radius: 8px; }
+      .help-title { font-size: 17px; }
+      .help-sub { font-size: 12px; margin-bottom: 10px; }
+
+      /* Footer */
+      footer { padding: 28px 16px; margin-top: 28px; }
+      .stats-grid { gap: 10px; }
+      .stat-card { padding: 14px; }
+      .stat-num { font-size: 28px; }
+      .stat-label { font-size: 12px; }
+      .footer-tagline { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <a class="logo" href="latiao-snack.html">
+      <span class="logo-fire">🔥</span>
+      <span class="logo-text">Latiao<span> Snack</span></span>
+    </a>
+    <a class="back-link" href="latiao-snack.html">← До магазину</a>
+  </div>
+</header>
+
+<!-- LOADING -->
+<div id="loading-state" class="state-screen">
+  <div class="spinner"></div>
+  <div class="state-title">Завантаження замовлення...</div>
+  <div class="state-sub">Зачекайте кілька секунд</div>
+</div>
+
+<!-- ERROR -->
+<div id="error-state" class="state-screen" style="display:none">
+  <div style="font-size:48px;margin-bottom:16px">😢</div>
+  <div class="state-title">Замовлення не знайдено</div>
+  <div class="state-sub">Можливо, посилання застаріло або замовлення було видалено.</div>
+  <div class="countdown-badge">Перенаправлення через <span id="countdown">5</span> сек...</div>
+  <br>
+  <a class="btn-red" href="latiao-snack.html">До магазину</a>
+</div>
+
+<!-- SUCCESS -->
+<div id="success-state" style="display:none">
+  <div class="page-wrap">
+
+    <!-- Banner -->
+    <div class="success-banner">
+      <div class="success-icon">✓</div>
+      <div class="success-title">Дякуємо за замовлення! 🎉</div>
+      <p class="success-sub">
+        Ми вже почали готувати ваш пакунок. Детальну інформацію про дату та точний час відправки саме вашого замовлення ви знайдете нижче у розділі «Доставка».
+      </p>
+      <div class="order-id-chip" id="order-id-display">#------</div>
+    </div>
+
+    <!-- Content grid -->
+    <div class="content-grid">
+
+      <!-- LEFT: order items + totals -->
+      <div>
+        <div class="card fade-up">
+          <div class="card-head">
+            <div class="card-head-left">
+              <span class="card-head-icon">🛍️</span>
+              <span class="card-head-title">Ваше замовлення</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="order-items-list">
+              <div style="text-align:center;padding:24px 0;color:var(--muted)">
+                <div class="spinner" style="width:28px;height:28px;margin-bottom:10px"></div>
+                Завантаження...
+              </div>
+            </div>
+
+            <hr class="totals-divider" />
+
+            <div class="totals-row"><span>Кількість пачок</span><span id="s-packs">—</span></div>
+            <div class="totals-row"><span>Вартість товарів</span><span id="s-subtotal">—</span></div>
+            <div class="totals-row green" id="s-discount-row" style="display:none">
+              <span>🏷 Знижка</span><span id="s-discount">—</span>
+            </div>
+            <div class="totals-row" id="s-delivery-row">
+              <span>Доставка</span><span id="s-delivery">За тарифами перевізника</span>
+            </div>
+
+            <div class="totals-total">
+              <span class="totals-total-label">До сплати:</span>
+              <span class="totals-total-price" id="s-total">—</span>
+            </div>
+            <p class="note">🚚 Вартість доставки оплачується окремо при отриманні</p>
+
+            <!-- COD breakdown -->
+            <div class="cod-box" id="cod-box" style="display:none">
+              <div class="cod-row"><span>Загальна вартість</span><span id="cod-full">—</span></div>
+              <div class="cod-row" style="color:#16a34a"><span>Вже сплачено (передоплата)</span><span>100 грн</span></div>
+              <div class="cod-row big"><span>📦 При отриманні</span><span id="cod-due">—</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cashback -->
+        <div class="card fade-up" id="cashback-card" style="display:none">
+          <div class="card-head">
+            <div class="card-head-left">
+              <span class="card-head-icon">🪙</span>
+              <span class="card-head-title">Кешбек</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="cashback-box">
+              <div class="cashback-row" id="cashback-earned-row" style="display:none">
+                <span>За це замовлення нараховано:</span>
+                <span class="earned" id="cashback-earned">+0 грн</span>
+              </div>
+              <div class="cashback-row" id="cashback-used-row" style="display:none">
+                <span>Використано кешбеку:</span>
+                <span class="used" id="cashback-used">-0 грн</span>
+              </div>
+              <div class="cashback-note">Баланс буде оновлено після підтвердження оплати.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions">
+          <a class="btn-red" href="latiao-snack.html">🛍️ Продовжити покупки</a>
+        </div>
+
+        <!-- Help -->
+        <div class="help-card">
+          <div class="help-title">Є питання щодо замовлення?</div>
+          <div class="help-sub">Відповідаємо швидко — напишіть нам у Telegram</div>
+        </div>
+      </div>
+
+      <!-- RIGHT: info cards -->
+      <div>
+
+        <!-- Delivery -->
+        <div class="card fade-up" style="animation-delay:.05s">
+          <div class="card-head">
+            <div class="card-head-left">
+              <span class="card-head-icon">🚚</span>
+              <span class="card-head-title">Доставка</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="info-label">Служба</div>
+            <div class="info-value" id="delivery-method">—</div>
+
+            <div class="info-label" id="delivery-city-label">Місто</div>
+            <div class="info-value" id="delivery-city">—</div>
+
+            <div id="delivery-branch-block">
+              <div class="info-label">Відділення</div>
+              <div class="info-value" id="delivery-branch">—</div>
+            </div>
+
+            <div class="info-badge" id="dispatch-badge" style="display:none">
+              <span>🕒</span>
+              <span id="dispatch-text"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment -->
+        <div class="card fade-up" style="animation-delay:.1s">
+          <div class="card-head">
+            <div class="card-head-left">
+              <span class="card-head-icon">💳</span>
+              <span class="card-head-title">Оплата</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="info-label">Спосіб</div>
+            <div class="info-value" id="payment-method">—</div>
+          </div>
+        </div>
+
+        <!-- Customer -->
+        <div class="card fade-up" style="animation-delay:.15s">
+          <div class="card-head">
+            <div class="card-head-left">
+              <span class="card-head-icon">👤</span>
+              <span class="card-head-title">Контакти</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="info-label">Отримувач</div>
+            <div class="info-value" id="customer-name">—</div>
+
+            <div class="info-label">Телефон</div>
+            <div class="info-value" id="customer-phone">—</div>
+
+            <div id="customer-tg-block" style="display:none">
+              <div class="info-label">Telegram</div>
+              <div class="info-value" id="customer-telegram">—</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-inner">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-num counter" data-target="6100">0</span>
+          <span class="stat-label">Замовлень відправлено</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-num counter" data-target="30000">0</span>
+          <span class="stat-label">Пачок продано</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-num counter" data-target="6500">0</span>
+          <span class="stat-label">Задоволених клієнтів</span>
+        </div>
+      </div>
+      <div class="footer-tagline">Дякуємо, що стали частиною нашої смачної сім'ї! ✨</div>
+      <div class="footer-copy">© 2026 Latiao Snack. Всі права захищені.</div>
+    </div>
+  </footer>
+</div>
+
+<!-- FIREBASE + LOGIC -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+  import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCS3a6pn2Jok3bM9mSUMiP2DqiHeqrG2R4",
+    authDomain: "my-magazin-81c96.firebaseapp.com",
+    projectId: "my-magazin-81c96",
+    storageBucket: "my-magazin-81c96.firebasestorage.app",
+    messagingSenderId: "441200032717",
+    appId: "1:441200032717:web:a51eb14e5ebb2af7cef35f"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  // ── HELPERS ──────────────────────────────────────────────────────
+  const $ = id => document.getElementById(id);
+  const fmt = n => Math.round(n) + ' грн';
+
+  function getDispatchText(method) {
+    const h   = new Date().getHours();
+    const isNova = method.includes('nova') || method.includes('нова');
+    const isUkr  = method.includes('ukr')  || method.includes('укр');
+    if (isNova) {
+      if (h < 10) return 'Відправка сьогодні до 11:00';
+      if (h < 15) return 'Відправка сьогодні до 17:00';
+      return 'Відправка завтра до 12:00';
+    }
+    if (isUkr) {
+      const day = new Date().getDay();
+      if (day === 0 || day === 1 || h >= 11) {
+        let d = new Date(); d.setDate(d.getDate() + (h >= 11 ? 1 : 0));
+        while (d.getDay() === 0 || d.getDay() === 1) d.setDate(d.getDate() + 1);
+        const name = d.toLocaleDateString('uk-UA', { weekday: 'long' });
+        return `Відправка у ${name}`;
+      }
+      return 'Відправка сьогодні до 12:00';
+    }
+    return null;
+  }
+
+  function showLoading(show) {
+    $('loading-state').style.display = show ? 'block' : 'none';
+  }
+
+  function showError() {
+    $('loading-state').style.display = 'none';
+    $('error-state').style.display   = 'block';
+    let s = 5;
+    $('countdown').textContent = s;
+    const t = setInterval(() => {
+      s--;
+      $('countdown').textContent = s;
+      if (s <= 0) { clearInterval(t); window.location.href = 'latiao-snack.html'; }
+    }, 1000);
+  }
+
+  // ── RENDER ───────────────────────────────────────────────────────
+  function render(order, orderId) {
+    $('loading-state').style.display  = 'none';
+    $('success-state').style.display  = 'block';
+
+    // Order ID
+    $('order-id-display').textContent = '#' + orderId;
+
+    // ── ITEMS ────────────────────────────────────────────────────
+    const items = order.items || [];
+    const list  = $('order-items-list');
+
+    if (items.length) {
+      list.innerHTML = items.map(item => {
+        const qty   = item.quantity || 1;
+        const price = item.price || 0;
+        const img   = item.image
+          ? `<img src="${item.image}" alt="${item.name}" onerror="this.style.display='none'">`
+          : '';
+        return `
+          <div class="order-item">
+            <div class="order-item-img">${img || '📦'}</div>
+            <div style="flex:1;min-width:0">
+              <div class="order-item-name">${item.name || 'Товар'}</div>
+              <div class="order-item-meta">${qty} шт. × ${fmt(price)}</div>
+            </div>
+            <div class="order-item-price">${fmt(price * qty)}</div>
+          </div>`;
+      }).join('');
+    } else {
+      list.innerHTML = '<p style="text-align:center;color:var(--muted);padding:20px 0">Товари не знайдено</p>';
+    }
+
+    // ── TOTALS ───────────────────────────────────────────────────
+    const summary = order.summary || {};
+    const total   = Number(summary.total) || Number(order.totalAmount) || 0;
+    const subtotal = Number(summary.subtotal) || total;
+    const discount = Number(summary.discountAmount) || 0;
+    const packs   = summary.totalQuantity || items.reduce((s,i) => s + (i.quantity||1), 0);
+
+    $('s-packs').textContent   = packs + ' шт.';
+    $('s-subtotal').textContent = fmt(subtotal);
+    $('s-total').textContent    = fmt(total);
+
+    if (discount > 0) {
+      $('s-discount-row').style.display = 'flex';
+      $('s-discount').textContent = '- ' + fmt(discount);
+    }
+
+    if (total >= 1100) {
+      $('s-delivery').innerHTML = '<span style="color:#16a34a;font-weight:700">🎉 Безкоштовно</span>';
+    }
+
+    // ── PAYMENT ──────────────────────────────────────────────────
+    const payment = order.payment || {};
+    const pMethod = (payment.method || '').toLowerCase();
+    const isCod   = pMethod.includes('накладений') || pMethod === 'cod' || pMethod === 'prepayment';
+
+    if (isCod) {
+      $('payment-method').textContent = 'Накладений платіж';
+      const due = Math.max(0, total - 100);
+      $('cod-full').textContent = fmt(total);
+      $('cod-due').textContent  = fmt(due);
+      $('cod-box').style.display = 'block';
+    } else {
+      $('payment-method').textContent = 'Онлайн оплата';
+    }
+
+    // ── DELIVERY ─────────────────────────────────────────────────
+    const delivery  = order.delivery || {};
+    const dMethod   = (delivery.method || '').toLowerCase();
+    const isNova    = dMethod.includes('nova') || dMethod.includes('нова');
+    const isUkr     = dMethod.includes('ukr')  || dMethod.includes('укр');
+
+    // Service name with logo
+    const logoSrc = isNova
+      ? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRz2w7BxtR4oDjLouwXrZ_nemt0R6PUZR8qcw&s'
+      : isUkr
+      ? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR19Fzy1r4-i6x9ytwyP3p-I0E4Df7UJKQqnQ&s'
+      : null;
+
+    const methodName = delivery.method || '—';
+
+    if (logoSrc) {
+      $('delivery-method').innerHTML = `<img class="delivery-logo" src="${logoSrc}" alt="${methodName}"> ${methodName}`;
+    } else {
+      $('delivery-method').textContent = methodName;
+    }
+
+    if (isUkr) {
+      $('delivery-city-label').textContent = 'Адреса доставки';
+      $('delivery-branch-block').style.display = 'none';
+      const addr = [delivery.region, delivery.district, delivery.city, delivery.postcode ? 'індекс ' + delivery.postcode : ''].filter(Boolean).join(', ');
+      $('delivery-city').textContent = addr || '—';
+    } else {
+      $('delivery-city').textContent   = delivery.city || '—';
+      $('delivery-branch').textContent = delivery.warehouse || delivery.branch || delivery.address || '—';
+    }
+
+    // Dispatch badge
+    const dispatch = getDispatchText(dMethod);
+    if (dispatch) {
+      $('dispatch-text').textContent       = dispatch;
+      $('dispatch-badge').style.display    = 'inline-flex';
+    }
+
+    // ── CUSTOMER ─────────────────────────────────────────────────
+    const cust = order.customer || {};
+    $('customer-name').textContent  = cust.fullName || '—';
+    $('customer-phone').textContent = cust.phone    || '—';
+    if (cust.telegram) {
+      $('customer-tg-block').style.display = 'block';
+      $('customer-telegram').textContent   = '@' + cust.telegram;
+    }
+
+    // ── CASHBACK ─────────────────────────────────────────────────
+    const earned = Number(order.pointsEarned) || 0;
+    const used   = Number(order.cashbackUsed)  || 0;
+    if (earned > 0 || used > 0) {
+      $('cashback-card').style.display = 'block';
+      if (earned > 0) { $('cashback-earned-row').style.display = 'flex'; $('cashback-earned').textContent = '+' + fmt(earned); }
+      if (used > 0)   { $('cashback-used-row').style.display   = 'flex'; $('cashback-used').textContent   = '-' + fmt(used); }
+    }
+
+  }
+
+  // ── FETCH WITH RETRY ─────────────────────────────────────────────
+  async function fetchOrder(orderId, tries = 3) {
+    for (let i = 1; i <= tries; i++) {
+      try {
+        const snap = await getDoc(doc(db, 'orders', orderId));
+        if (snap.exists()) return snap.data();
+      } catch(e) {
+        console.warn(`Attempt ${i} failed:`, e.message);
+      }
+      if (i < tries) await new Promise(r => setTimeout(r, 1000));
+    }
+    return null;
+  }
+
+  // ── INIT ─────────────────────────────────────────────────────────
+  const orderId = new URLSearchParams(window.location.search).get('orderId');
+
+  if (!orderId) {
+    showError();
+  } else {
+    fetchOrder(orderId).then(data => {
+      if (data) render(data, orderId);
+      else showError();
+    });
+  }
+
+  // ── COUNTER ANIMATION ─────────────────────────────────────────────
+  const counterObserver = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      counterObserver.unobserve(e.target);
+      const target = parseInt(e.target.dataset.target);
+      let cur = 0;
+      const step = target / (1800 / 16);
+      const tick = () => {
+        cur += step;
+        if (cur < target) { e.target.textContent = Math.floor(cur).toLocaleString('uk-UA'); requestAnimationFrame(tick); }
+        else e.target.textContent = target.toLocaleString('uk-UA');
+      };
+      tick();
+    });
+  }, { threshold: .5 });
+
+  document.querySelectorAll('.counter').forEach(el => counterObserver.observe(el));
+</script>
+</body>
+</html>
